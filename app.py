@@ -598,7 +598,7 @@ elif page == "Points":
         "Game",
         "Player", "Pos", "Team", "Opp", 
         "Matrix_Points",
-        "Conf_Points", "Green","Tier_Tag","Best_Drought", "🔥", 
+        "Conf_Points", "Green","Tier_Tag","Drought_P""Best_Drought", "🔥", 
         "Reg_Heat_P", "Reg_Gap_P10", "Exp_P_10", "L10_P",
         "iXA%", "iXG%", "v2_player_stability", "Opp_Goalie", "Opp_SV",
         "Goalie_Weak", "Opp_DefWeak",
@@ -634,7 +634,7 @@ elif page == "Assists":
         "Game",
         "Player", "Pos", "Team", "Opp", 
         "Matrix_Assists",
-        "Conf_Assists", "Green","Tier_Tag","Best_Drought",
+        "Conf_Assists", "Green","Tier_Tag","Drought_A","Best_Drought",
         "Assist_ProofCount", "Assist_Why",
         "Reg_Heat_A", "Reg_Gap_A10", "Exp_A_10", "L10_A",
         "iXA%", "v2_player_stability", 
@@ -673,7 +673,7 @@ elif page == "SOG":
         "Game",
         "Player", "Pos", "Team", "Opp", 
         "Matrix_SOG",
-        "Conf_SOG", "Green","Tier_Tag","Best_Drought",
+        "Conf_SOG", "Green","Tier_Tag","Drought_SOG","Best_Drought",
         "Reg_Heat_S", "Reg_Gap_S10", "Exp_S_10", "L10_S",
          "Med10_SOG", "Avg5_SOG", "ShotIntent", "ShotIntent_Pct", "Opp_Goalie", "Opp_SV",
         "Goalie_Weak", "Opp_DefWeak",
@@ -709,7 +709,7 @@ elif page == "Goal":
         "Game",
         "Player", "Pos", "Team", "Opp",
         "Matrix_Goal", 
-        "Conf_Goal", "Green","Tier_Tag","Best_Drought",
+        "Conf_Goal", "Green","Tier_Tag","Best_Drought","Best_Drought",
         "Reg_Heat_G", "Reg_Gap_G10", "Exp_G_10", "L10_G",
         "iXG%", "iXA%", "L5_G", "Opp_Goalie", "Opp_SV",
         "Goalie_Weak", "Opp_DefWeak",
@@ -725,4 +725,5 @@ elif page == "Goal":
 else:
     st.subheader("Raw CSV (all columns)")
     st.dataframe(df_f, use_container_width=True, hide_index=True)
+
 
