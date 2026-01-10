@@ -675,7 +675,7 @@ elif page == "SOG":
         "Matrix_SOG",
         "Conf_SOG", "Green","Tier_Tag","Drought_SOG","Best_Drought",
         "Reg_Heat_S", "Reg_Gap_S10", "Exp_S_10", "L10_S",
-         "Med10_SOG", "Avg5_SOG", "ShotIntent", "ShotIntent_Pct", "Opp_Goalie", "Opp_SV",
+        "Med10_SOG", "Avg5_SOG", "ShotIntent", "ShotIntent_Pct", "Opp_Goalie", "Opp_SV",
         "Goalie_Weak", "Opp_DefWeak",
         "Line", "Odds", "Result",
     ]
@@ -725,6 +725,7 @@ elif page == "Goal":
 else:
     st.subheader("Raw CSV (all columns)")
     st.dataframe(df_f, use_container_width=True, hide_index=True)
+
 
 
 
