@@ -559,7 +559,7 @@ if page == "Board":
         "Player", "Pos", "Team", "Opp",
         "Best_Market",
         "Best_Conf","Tier_Tag", "iXG%", "iXA%",
-        "🔥", "Play_Tag",
+        "🔥", 
         "Goalie_Weak", "Opp_DefWeak",
         "Opp_Goalie", "Opp_SV", "Opp_GAA",
         "Matrix_Points", "Conf_Points", "Reg_Heat_P", "Reg_Gap_P10",
@@ -725,3 +725,4 @@ elif page == "Goal":
 else:
     st.subheader("Raw CSV (all columns)")
     st.dataframe(df_f, use_container_width=True, hide_index=True)
+
