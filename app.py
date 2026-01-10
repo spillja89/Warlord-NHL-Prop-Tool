@@ -223,6 +223,16 @@ def filter_common(df: pd.DataFrame) -> pd.DataFrame:
         sel_teams = st.sidebar.multiselect("Team", teams, default=[])
         if sel_teams:
             out = out[out["Team"].astype(str).isin(sel_teams)]
+    # Matchup filter
+    if "Game" in out.columns:
+        games = sorted(
+            [g for g in out["Game"].dropna().astype(str).unique().tolist() if g.strip()]
+        )
+        sel_games = st.sidebar.multiselect("Matchup", games, default=[])
+        if sel_games:
+            out = out[out["Game"].astype(str).isin(sel_games)]
+
+    
 
     # Only flagged plays
     only_fire = st.sidebar.checkbox("Only 🔥 plays", value=False)
