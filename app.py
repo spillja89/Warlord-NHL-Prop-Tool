@@ -475,7 +475,7 @@ for c in ["iXA%", "Conf_Assists", "v2_player_stability", "team_5v5_xGF60_pct", "
 df["Assist_ProofCount"] = 0
 df["Assist_Why"] = ""
 
-proof_ixA = (df["iXA%"] >= 88)
+proof_ixA = (df["iXA%"] >= 92)
 proof_v2 = (df["v2_player_stability"] >= 65)
 proof_team = (df["team_5v5_xGF60_pct"] >= 65)
 proof_vol = (
@@ -640,7 +640,7 @@ elif page == "Assists":
         "iXA%", "v2_player_stability", 
         "Opp_Goalie", "Opp_SV",
         "Goalie_Weak", "Opp_DefWeak",
-        "Play_Tag",
+        
         "Line", "Odds", "Result",
     ]
 
@@ -725,6 +725,7 @@ elif page == "Goal":
 else:
     st.subheader("Raw CSV (all columns)")
     st.dataframe(df_f, use_container_width=True, hide_index=True)
+
 
 
 
