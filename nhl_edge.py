@@ -69,7 +69,7 @@ MIN_GOALIE_GP = 5
 # Star prior strength (small nudge)
 TALENT_MULT_MAX = 1.10
 TALENT_MULT_MIN = 0.94
-TALENT_MULT_STRENGTH = 0.12  # +/- ~6% around 50->100, 50->0
+TALENT_MULT_STRENGTH = 0.18  # +/- ~6% around 50->100, 50->0
 
 # Usage weighting into confidence (small)
 USAGE_WEIGHT_SOG = 0.08
@@ -1469,10 +1469,10 @@ def matrix_sog(ixg_pct: float, med10: Optional[float], pos: str,
     if ixg_pct >= 91 and med10 >= green_line:
         return "Green"
 
-    if ixg_pct >= 87 and med10 >= (green_line - 0.30) and sip >= 70 and toi >= 60 and tsf >= 60:
+    if ixg_pct >= 90 and med10 >= (green_line - 0.30) and sip >= 83 and toi >= 60 and tsf >= 60:
         return "Green"
 
-    if ixg_pct >= 82 and med10 >= (green_line - 0.20) and sip >= 65 and odw >= 65:
+    if ixg_pct >= 87 and med10 >= (green_line - 0.20) and sip >= 90 and odw >= 65:
         return "Green"
 
     if med10 >= yellow_line:
@@ -1490,16 +1490,16 @@ def matrix_sog(ixg_pct: float, med10: Optional[float], pos: str,
 
 def matrix_goal_v2(ixg_pct: float, med10: Optional[float], pos: str,
                    g5_total: Optional[int], goalie_weak: float) -> str:
-    if ixg_pct < 85:
+    if ixg_pct < 88:
         return "Red"
     if med10 is None:
         return "Yellow"
-    need = 4.0 if not is_defense(pos) else 3.0
+    need = 3.3 if not is_defense(pos) else 2.8
     if med10 < (need - 0.5):
         return "Red"
     if med10 >= need and (g5_total or 0) >= 2:
         return "Green"
-    if med10 >= need and goalie_weak >= 60:
+    if med10 >= need and goalie_weak >= 70:
         return "Green"
     return "Yellow"
 
@@ -1555,7 +1555,7 @@ def matrix_assists_v1(ixa_pct: float, v2_stab: Optional[float], reg_heat_a: str 
     return "Yellow"
 
 def conf_sog(ixg_pct: float, shot_intent_pct: float, defweak: float, goalieweak: float, toi_pct: float) -> int:
-    base = 0.50 * ixg_pct + 0.28 * shot_intent_pct + 0.20 * defweak + 0.12 * goalieweak
+    base = 0.50 * ixg_pct + 0.28 * shot_intent_pct + 0.15 * defweak + 0.12 * goalieweak
     base += USAGE_WEIGHT_SOG * (toi_pct - 50.0)
     return int(round(clamp(base)))
 
@@ -1567,7 +1567,7 @@ def conf_goal(ixg_pct: float, g5: Optional[int], defweak: float, goalieweak: flo
 
 def conf_points(ixa_pct: float, p10_gap: Optional[float], stab: float, defweak: float, goalieweak: float, toi_pct: float) -> int:
     reg = 65.0 if p10_gap is None else clamp((p10_gap / 4.0) * 100.0)
-    base = 0.52 * ixa_pct + 0.10 * stab + 0.10 * defweak + 0.06 * goalieweak + 0.12 * reg
+    base = 0.52 * ixa_pct + 0.10 * stab + 0.10 * defweak + 0.08 * goalieweak + 0.14 * reg
     base += USAGE_WEIGHT_POINTS * (toi_pct - 50.0)
     return int(round(clamp(base)))
 
