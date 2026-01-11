@@ -402,11 +402,13 @@ def _tier_color(conf):
 
 def _green_conf_threshold(market: str, slate_games: int) -> int:
     if slate_games >= 8:
-        return {"SOG": 75, "Points": 77, "Goal": 79}[market]
+        return {"SOG": 80, "Points": 77, "Goal": 85, "Assists": 77}[market]
     elif slate_games >= 5:
-        return {"SOG": 74, "Points": 76, "Goal": 78}[market]
+        return {"SOG": 80, "Points": 76, "Goal": 84, "Assists": 77}[market]
     else:
-        return {"SOG": 73, "Points": 75, "Goal": 77}[market]
+        return {"SOG": 80, "Points": 75, "Goal": 83, "Assists": 77}[market]
+
+
 
 
 # --- Earned greens (match YOUR columns)
@@ -725,6 +727,7 @@ elif page == "Goal":
 else:
     st.subheader("Raw CSV (all columns)")
     st.dataframe(df_f, use_container_width=True, hide_index=True)
+
 
 
 
