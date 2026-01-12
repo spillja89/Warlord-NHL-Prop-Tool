@@ -1936,76 +1936,7 @@ def build_tracker(today_local: date, debug: bool = False) -> str:
     goalie_cols = sk.apply(_goalie_pack, axis=1)
     sk = pd.concat([sk, goalie_cols], axis=1)
 
-    # -------------------------
-    # Context-only: PPG + Elite context (v7.2 SAFE — NO scoring impact)
-    # Uses MoneyPuck season totals: goals + assists (from skaters.csv ALL situations)
-    # -------------------------
-
-    # Ensure season stat columns exist on sk
-    for c in ["games_played"]:
-        if c not in sk.columns:
-            sk[c] = np.nan
-
-    # MoneyPuck ALL-situations goals/assists may not be present in your normalized output.
-    # We can reconstruct PPG from iXG_raw/iXA_raw? No — that's expected stats, not actual.
-    # So: compute PPG only if actual goals/assists exist; otherwise leave blank safely.
-    # Try to detect actual season goals/assists columns if they exist on sk.
-    col_g = None
-    col_a = None
-    for cand in ["goals", "Goals", "I_F_goals", "I_F_goals_all", "G"]:
-        if cand in sk.columns:
-            col_g = cand
-            break
-    for cand in ["assists", "Assists", "I_F_assists", "A"]:
-        if cand in sk.columns:
-            col_a = cand
-            break
-
-    # Default blank columns
-    sk["PPG"] = np.nan
-    sk["Elite_Flag"] = sk["Talent_Tier"].astype(str).str.upper().eq("ELITE") if "Talent_Tier" in sk.columns           else False
-
-
-    # Only compute PPG if we truly have actual G/A + GP
-    if col_g is not None and col_a is not None:
-        gp = pd.to_numeric(sk.get("games_played"), errors="coerce").replace(0, np.nan)
-        g = pd.to_numeric(sk.get(col_g), errors="coerce").fillna(0)
-        a = pd.to_numeric(sk.get(col_a), errors="coerce").fillna(0)
-        sk["PPG"] = ((g + a) / gp).round(3)
-
-    # Elite cohort average PPG (context only)
-    elite_ppg_avg = np.nan
-    try:
-        elite_mask = sk["Elite_Flag"].fillna(False).astype(bool)
-        if elite_mask.any() and sk["PPG"].notna().any():
-            elite_ppg_avg = float(sk.loc[elite_mask, "PPG"].mean())
-    except Exception:
-        elite_ppg_avg = np.nan
-
-    sk["Elite_PPG_Avg"] = elite_ppg_avg
-    sk["PPG_vs_EliteAvg"] = sk["PPG"] - elite_ppg_avg
-
-    def elite_bucket(ppg: Any) -> str:
-        try:
-            if ppg is None or (isinstance(ppg, float) and math.isnan(ppg)):
-                return ""
-            p = float(ppg)
-        except Exception:
-            return ""
-        if p >= 1.10:
-            return "Elite 1.10+"
-        if p >= 0.95:
-            return "Elite 0.95-1.10"
-        if p >= 0.80:
-            return "Elite 0.80-0.95"
-        return "Elite <0.80"
-
-    sk["Elite_PPG_Bucket"] = sk.apply(
-        lambda r: elite_bucket(r.get("PPG")) if bool(r.get("Elite_Flag", False)) else "",
-        axis=1
-    )
-
-
+ 
     sk["Goalie_Weak"] = sk.apply(
         lambda r: goalie_weak_score(
             safe_float(r.get("Opp_GP")),
@@ -2145,6 +2076,45 @@ def build_tracker(today_local: date, debug: bool = False) -> str:
 
     # Talent tiers
     sk = add_talent_tiers(sk, debug=debug)
+
+    # -------------------------
+    # Context-only: Elite PPG cohort (SAFE — no scoring impact)
+    # -------------------------
+    # PPG already computed inside add_talent_tiers(): sk["PPG"]
+    # Elite mask should use your tier system (NOT Elite_Flag).
+    elite_mask = sk.get("Talent_Tier", "NONE").astype(str).str.upper().eq("ELITE")
+
+    elite_ppg_avg = np.nan
+    if elite_mask.any():
+        elite_ppg_avg = float(pd.to_numeric(sk.loc[elite_mask, "PPG"], errors="coerce").mean())
+
+    sk["Elite_PPG_Avg"] = elite_ppg_avg
+    sk["PPG_vs_EliteAvg"] = pd.to_numeric(sk.get("PPG"), errors="coerce") - elite_ppg_avg
+
+    def elite_bucket(ppg: Any) -> str:
+        try:
+            if ppg is None or (isinstance(ppg, float) and math.isnan(ppg)):
+                return ""
+            p = float(ppg)
+        except Exception:
+            return ""
+        if p >= 1.10:
+            return "Elite 1.10+"
+        if p >= 0.95:
+            return "Elite 0.95-1.10"
+        if p >= 0.80:
+            return "Elite 0.80-0.95"
+        return "Elite <0.80"
+
+    sk["Elite_PPG_Bucket"] = np.where(
+        elite_mask,
+        sk["PPG"].apply(elite_bucket),
+        ""
+    )
+
+    
+  
+
     # Simple UI tag (emoji label)
     sk["Tier_Tag"] = np.where(
         sk.get("Talent_Tier", "NONE").astype(str).str.upper().eq("ELITE"),
@@ -2153,8 +2123,8 @@ def build_tracker(today_local: date, debug: bool = False) -> str:
             sk.get("Talent_Tier", "NONE").astype(str).str.upper().eq("STAR"),
             "⭐ STAR",
             ""
+        )
     )
-)
 
     
 
@@ -2649,8 +2619,8 @@ def build_tracker(today_local: date, debug: bool = False) -> str:
     is_star = tier.isin(["ELITE", "STAR"])
 
     earned_gate = (
-        (tracker["Assist_ProofCount"] >= 2) |
-        (is_star & (tracker["Assist_ProofCount"] >= 1))
+        (tracker["Assist_ProofCount"] >= 3) |
+        (is_star & (tracker["Assist_ProofCount"] >= 2))
     )
 
     assists_green_earned = (
@@ -2680,7 +2650,7 @@ def build_tracker(today_local: date, debug: bool = False) -> str:
     "🅰️ ASSISTS EARNED"
 )
     
-        # -------------------------
+    # -------------------------
     # SOG earned rule (shot profile playable)
     # Purpose:
     # - Keep CONF tight (>=70)
@@ -2717,7 +2687,7 @@ def build_tracker(today_local: date, debug: bool = False) -> str:
     proof_reg = (
         tracker["Reg_Heat_S"].astype(str).str.upper().isin(["HOT", "WARM"]) |
         (tracker["Reg_Gap_S10"] >= 1.5) |
-        (tracker["Drought_SOG"] >= 1)
+        (tracker["Drought_SOG"] >= 1.5)
     )
 
     # 3) Volume floor (true shooter)
@@ -2737,7 +2707,7 @@ def build_tracker(today_local: date, debug: bool = False) -> str:
     tracker["SOG_ProofCount"] = proofs.sum(axis=1)
 
     # ---- HARD CONFIDENCE GATE (DO NOT LOOSEN) ----
-    conf_gate = (tracker["Conf_SOG"] >= 70)
+    conf_gate = (tracker["Conf_SOG"] >= 77)
 
     # ---- EARNED SOG PLAY ----
     # Require:

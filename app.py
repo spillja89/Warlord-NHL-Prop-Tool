@@ -670,7 +670,7 @@ with st.expander("Debug: loaded columns"):
 # Navigation
 page = st.sidebar.radio(
     "Page",
-    ["Board", "Points", "Assists", "SOG", "Goal", "Ledger", "Raw CSV"],
+    ["Board", "Points", "Assists", "SOG", "Goal","Guide", "Ledger", "Raw CSV"],
     index=0
 )
 
@@ -855,6 +855,141 @@ elif page == "Goal":
     ]
 
     show_table(df_g, goal_cols, "Goal View")
+
+elif page == "Guide":
+    st.subheader("📘 Guide — How to use The Warlord’s NHL Prop Tool")
+
+    st.markdown("""
+## The 60-second workflow
+1) **Start on Board**
+   - Sort is already best-first (Best_Conf, then Goalie_Weak, then Opp_DefWeak).
+   - Look for **Tier_Tag + HOT regression + weak matchup** stacking.
+
+2) **Open the market view** (Points / SOG / Goal / Assists)
+   - Use **Min Conf** slider to tighten.
+   - Use **Colors** to hide red.
+
+3) **Only bet “earned greens”**
+   - Your “🟢” badge inside each market page is the *actual playable* signal.
+
+---
+
+## Your key signals (what to trust most)
+### 1) Matrix_*  (Green/Yellow/Red)
+- **Green** = model conditions met (baseline signal)
+- **Yellow** = mixed / borderline
+- **Red** = failed conditions
+
+### 2) Conf_* (0–100)
+- Model confidence after adjustments (injury, environment gates, etc.)
+- You’re using color tiers via `_tier_color()`.
+
+### 3) Earned Green (🟢)
+This is your “final boss” gating.
+A player can look good in raw confidence, but **earned green is what you actually play**.
+
+---
+
+## Earned Green rules (current app logic)
+
+### ✅ SOG Earned Green
+Requires:
+- Matrix_SOG == **Green**
+- Conf_SOG >= threshold (slate-size gated)
+
+### ✅ Points Earned Green
+Requires:
+- Matrix_Points == **Green**
+- Conf_Points >= threshold
+- AND one of:
+  - Reg_Heat_P == **HOT**
+  - Play_Tag contains **HOT**
+  - 🔥 flagged
+
+### ✅ Goal Earned Green
+Requires:
+- Matrix_Goal == **Green**
+- Conf_Goal >= threshold
+- AND one of:
+  - Reg_Heat_G == **HOT**
+  - Goalie_Weak >= **80**
+
+### ✅ Assists Earned Green (v1 FINAL)
+Requires:
+- Matrix_Assists == **Green**
+- Conf_Assists >= **77**
+- AND earned proof gate:
+  - ProofCount >= 2
+  - OR (STAR/ELITE AND ProofCount >= 1)
+
+**Assist proofs:**
+- iXA% >= 92  → `iXA`
+- v2_player_stability >= 65 → `v2`
+- team_5v5_xGF60_pct >= 65 → `xGF`
+- Assist_Volume >= 6 OR i5v5_primaryAssists60 >= 0.50 → `VOL`
+
+You’ll see: **Assist_ProofCount** and **Assist_Why**.
+
+---
+
+## The matchup columns (how to use them)
+- **Goalie_Weak**
+  - Higher = worse goalie environment (more attackable)
+  - Your styling only “screams red” when >= 75
+
+- **Opp_DefWeak**
+  - Higher = softer defense environment / more chances allowed
+
+Best spots are when **Best_Conf is high** AND **Goalie_Weak / Opp_DefWeak are elevated**.
+
+---
+
+## Regression columns (how to interpret)
+- **Reg_Heat_*:** HOT / WARM / COOL
+- **Reg_Gap_*:** expected minus actual (bigger gap = more “due”)
+- **Exp_*_10:** expected output over next 10 (or model window)
+
+In your model:
+- **HOT** is not “they’re on a heater”
+- **HOT means they’re due** (positive regression pressure)
+
+---
+
+## Drought columns (what they mean in practice)
+- **Drought_*:** how long since last event in that market
+- **Best_Drought:** whichever drought is most relevant for the player
+
+Drought is useful when it aligns with:
+- Matrix Green
+- Conf high
+- Regression HOT
+- Matchup weakness
+
+---
+
+## Filters you should use daily
+- **Search player**: fast lookup
+- **Team / Matchup**: reduce noise
+- **Only 🔥 plays**: isolate your flagged list
+
+---
+
+## Recommended rules for real wagers
+**The safe “test phase” rule:**
+- Only play **🟢 earned greens**
+- Prefer **Tier_Tag (STAR/ELITE)** when slate is big
+- Prefer **HOT regression** when choices are similar
+- Avoid plays with major injury tags unless you’re intentionally fading
+
+---
+
+## Troubleshooting quick hits
+- Missing columns expander = normal (older CSV)
+- If a market page looks blank:
+  - Your **Min Conf slider** may be too high
+  - Or **Color filters** are hiding everything
+""")
+
 
 elif page == "Ledger":
     st.subheader("📜 Ledger — What everything means")
