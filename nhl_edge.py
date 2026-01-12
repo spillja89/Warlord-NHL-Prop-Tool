@@ -63,6 +63,13 @@ SOG_MED10_YELLOW_DEF = 1.9
 REG_HOT_GAP = 2.5
 REG_WARM_GAP = 1.5
 
+# -------------------------
+# TEAM RECENT GOALS FOR HARD GATE (applies to GOAL / POINTS / ASSISTS)
+# -------------------------
+TEAM_GF_WINDOW = 5
+TEAM_GF_MIN_AVG = 2.70   # HARD FAIL threshold
+
+
 # Goalie weakness thresholds
 MIN_GOALIE_GP = 5
 
@@ -1472,7 +1479,7 @@ def matrix_sog(ixg_pct: float, med10: Optional[float], pos: str,
     if ixg_pct >= 90 and med10 >= (green_line - 0.30) and sip >= 83 and toi >= 60 and tsf >= 60:
         return "Green"
 
-    if ixg_pct >= 87 and med10 >= (green_line - 0.20) and sip >= 90 and odw >= 65:
+    if ixg_pct >= 80 and med10 >= 3.5 and sip >= 95 and odw >= 60:
         return "Green"
 
     if med10 >= yellow_line:
@@ -1728,6 +1735,58 @@ def add_talent_tiers(sk: pd.DataFrame, debug: bool = False) -> pd.DataFrame:
 
     return out
 
+def get_team_recent_gf(sess: requests.Session, team_abbrev: str, n_games: int = 5, debug: bool = False) ->  tuple[int, float, int]:
+    """
+    Returns (gf_sum, gf_avg, n_used) over the last n completed games.
+    Uses api-web.nhle.com club schedule endpoint.
+    """
+    team_abbrev = norm_team(team_abbrev)
+    url = f"https://api-web.nhle.com/v1/club-schedule-season/{team_abbrev}/now"
+
+    try:
+        data = http_get_json(sess, url)
+    except Exception as e:
+        if debug:
+            print(f"[TEAM_GF] fetch failed for {team_abbrev}: {type(e).__name__}: {e}")
+        return 0, 0.0, 0
+
+    games = data.get("games", []) or []
+
+    # Keep only completed games
+    completed = []
+    for g in games:
+        state = str(g.get("gameState", "") or "").upper()
+        if state in ("OFF", "FINAL", "FINAL_OT", "FINAL_SO"):
+            completed.append(g)
+
+    # Sort by date ascending, then take the most recent n
+    def _gdate(x):
+        return str(x.get("gameDate", "") or x.get("startTimeUTC", "") or "")
+    completed.sort(key=_gdate)
+
+    last = completed[-n_games:] if completed else []
+    gf = 0
+
+    for g in last:
+        home = g.get("homeTeam", {}) or {}
+        away = g.get("awayTeam", {}) or {}
+
+        h_abbrev = str(home.get("abbrev", "") or home.get("teamAbbrev", "") or "").upper()
+        a_abbrev = str(away.get("abbrev", "") or away.get("teamAbbrev", "") or "").upper()
+
+        h_score = int(home.get("score", 0) or 0)
+        a_score = int(away.get("score", 0) or 0)
+
+        if h_abbrev == team_abbrev:
+            gf += h_score
+        elif a_abbrev == team_abbrev:
+            gf += a_score
+
+    n_used = len(last)
+    avg = (gf / n_used) if n_used > 0 else 0.0
+    return gf, round(avg, 2), n_used
+
+
 
 # ============================
 # Drought bumps (game regression)
@@ -1816,6 +1875,20 @@ def build_tracker(today_local: date, debug: bool = False) -> str:
 
     print("")
 
+    # -------------------------
+    # TEAM GF L5 HARD GATE (2.70) — affects GOAL/POINTS/ASSISTS
+    # -------------------------
+    team_gf = {}
+    for t in sorted(teams_playing):
+        gf, avg, n_used = get_team_recent_gf(sess, t, n_games=TEAM_GF_WINDOW, debug=debug)
+        team_gf[t] = {"GF_L5": gf, "GF_Avg_L5": avg, "GF_N": n_used, "GF_Gate": (avg >= TEAM_GF_MIN_AVG)}
+
+    
+    if debug:
+        bad = {k: v for k, v in team_gf.items() if not v.get("GF_Gate")}
+        print(f"[TEAM_GF] gate={TEAM_GF_MIN_AVG:.2f} window={TEAM_GF_WINDOW} | failing teams:", bad)
+
+
     # MoneyPuck skaters
     sk_raw = load_moneypuck_best_effort(sess, "skaters")
     sk = normalize_skaters_all(sk_raw, debug=debug)
@@ -1853,6 +1926,12 @@ def build_tracker(today_local: date, debug: bool = False) -> str:
             "Opp_Goalie_Source": g.get("Source", ""),
             "Opp_Goalie_Status": dfo_map.get(opp_team, {}).get("status", ""),
         })
+
+    # attach to skaters
+    sk["Team_GF_L5"] = sk["Team"].map(lambda x: team_gf.get(norm_team(x), {}).get("GF_L5", 0))
+    sk["Team_GF_Avg_L5"] = sk["Team"].map(lambda x: team_gf.get(norm_team(x), {}).get("GF_Avg_L5", 0.0))
+    sk["Team_GF_Gate"] = sk["Team"].map(lambda x: bool(team_gf.get(norm_team(x), {}).get("GF_Gate", False)))
+
 
     goalie_cols = sk.apply(_goalie_pack, axis=1)
     sk = pd.concat([sk, goalie_cols], axis=1)
@@ -2206,13 +2285,25 @@ def build_tracker(today_local: date, debug: bool = False) -> str:
         axis=1
     )
 
+    # -------------------------
     # Injury adjustment into confidence (GTD down, ROLE+ up)
-    inj_adj = (pd.to_numeric(sk.get("Injury_DFO_Score"), errors="coerce").fillna(0.0) * INJURY_CONF_MULT)
-    inj_adj = inj_adj.clip(-6.0, 2.0)
-    for c in ["Conf_SOG", "Conf_Goal", "Conf_Points", "Conf_Assists"]:
-        sk[c] = (pd.to_numeric(sk[c], errors="coerce").fillna(0) + inj_adj).clip(0, 100).astype(int)
+    # -------------------------
+    inj_adj = (
+        pd.to_numeric(sk.get("Injury_DFO_Score"), errors="coerce")
+        .fillna(0.0)
+        * INJURY_CONF_MULT
+    ).clip(-6.0, 2.0)
 
-        # -------------------------
+    for c in ["Conf_SOG", "Conf_Goal", "Conf_Points", "Conf_Assists"]:
+        sk[c] = (
+            pd.to_numeric(sk[c], errors="coerce")
+            .fillna(0)
+            .add(inj_adj)
+            .clip(0, 100)
+            .astype(int)
+        )
+
+    # -------------------------
     # Game regression bumps (drought)
     # -------------------------
     sk["Drought_SOG"] = np.where(
@@ -2245,11 +2336,88 @@ def build_tracker(today_local: date, debug: bool = False) -> str:
     drought_df = sk.apply(_apply_drought, axis=1)
     sk = pd.concat([sk, drought_df], axis=1)
 
-    # apply drought bumps into confidence
-    sk["Conf_SOG"]     = (pd.to_numeric(sk["Conf_SOG"], errors="coerce").fillna(0)     + pd.to_numeric(sk["GameReg_Bump_SOG"], errors="coerce").fillna(0)).clip(0, 100).astype(int)
-    sk["Conf_Points"]  = (pd.to_numeric(sk["Conf_Points"], errors="coerce").fillna(0)  + pd.to_numeric(sk["GameReg_Bump_Points"], errors="coerce").fillna(0)).clip(0, 100).astype(int)
-    sk["Conf_Assists"] = (pd.to_numeric(sk["Conf_Assists"], errors="coerce").fillna(0) + pd.to_numeric(sk["GameReg_Bump_Assists"], errors="coerce").fillna(0)).clip(0, 100).astype(int)
-    sk["Conf_Goal"]    = (pd.to_numeric(sk["Conf_Goal"], errors="coerce").fillna(0)    + pd.to_numeric(sk["GameReg_Bump_Goal"], errors="coerce").fillna(0)).clip(0, 100).astype(int)
+    # -------------------------
+    # Best Drought (ALL markets) — longest drought overall
+    # -------------------------
+    def _best_drought_all_markets(r: pd.Series) -> tuple[str, int]:
+        def _to_int(x) -> int:
+            v = pd.to_numeric(x, errors="coerce")
+            if pd.isna(v):
+                return 0
+            return int(v)
+
+        d_p = _to_int(r.get("Drought_P"))
+        d_a = _to_int(r.get("Drought_A"))
+        d_g = _to_int(r.get("Drought_G"))
+        d_s = _to_int(r.get("Drought_SOG"))
+
+        opts = [
+            ("GOAL", d_g),
+            ("ASSISTS", d_a),
+            ("POINTS", d_p),
+            ("SOG", d_s),
+        ]
+
+        # Longest drought wins; tie-breaker order = GOAL > ASSISTS > POINTS > SOG (because of list order)
+        opts.sort(key=lambda x: x[1], reverse=True)
+        return opts[0][0], opts[0][1]
+
+    best_d = sk.apply(_best_drought_all_markets, axis=1, result_type="expand")
+    sk["Best_Drought_Market"] = best_d[0].astype(str)
+    sk["Best_Drought"] = pd.to_numeric(best_d[1], errors="coerce").fillna(0).astype(int)
+    sk["Best_Drought_Tag"] = np.where(
+        sk["Best_Drought"] > 0,
+        sk["Best_Drought_Market"] + " " + sk["Best_Drought"].astype(str),
+        ""
+    )
+
+
+    # -------------------------
+    # Apply drought bumps into confidence
+    # -------------------------
+    sk["Conf_SOG"] = (
+        pd.to_numeric(sk["Conf_SOG"], errors="coerce")
+        .fillna(0)
+        .add(pd.to_numeric(sk["GameReg_Bump_SOG"], errors="coerce").fillna(0))
+        .clip(0, 100)
+        .astype(int)
+    )
+
+    sk["Conf_Points"] = (
+        pd.to_numeric(sk["Conf_Points"], errors="coerce")
+        .fillna(0)
+        .add(pd.to_numeric(sk["GameReg_Bump_Points"], errors="coerce").fillna(0))
+        .clip(0, 100)
+        .astype(int)
+    )
+
+    sk["Conf_Assists"] = (
+        pd.to_numeric(sk["Conf_Assists"], errors="coerce")
+        .fillna(0)
+        .add(pd.to_numeric(sk["GameReg_Bump_Assists"], errors="coerce").fillna(0))
+        .clip(0, 100)
+        .astype(int)
+    )
+
+    sk["Conf_Goal"] = (
+        pd.to_numeric(sk["Conf_Goal"], errors="coerce")
+        .fillna(0)
+        .add(pd.to_numeric(sk["GameReg_Bump_Goal"], errors="coerce").fillna(0))
+        .clip(0, 100)
+        .astype(int)
+    )
+
+    # -------------------------
+    # HARD FAIL: team scoring environment gate
+    # If team GF L5 avg < 2.70 => NO GOAL / POINTS / ASSISTS
+    # -------------------------
+    gf_fail = ~sk.get("Team_GF_Gate", False).astype(bool)
+
+    sk.loc[gf_fail, ["Conf_Goal", "Conf_Points", "Conf_Assists"]] = 0
+
+    sk.loc[gf_fail, "Matrix_Goal"] = "FAIL_GF"
+    sk.loc[gf_fail, "Matrix_Points"] = "FAIL_GF"
+    sk.loc[gf_fail, "Matrix_Assists"] = "FAIL_GF"
 
     # -------------------------
     # Best market
@@ -2268,9 +2436,8 @@ def build_tracker(today_local: date, debug: bool = False) -> str:
     sk["Best_Market"] = best[0]
     sk["Best_Conf"] = best[1]
 
-    # Filter unavailable
+    # Filter unavailable players
     sk = sk[sk["Available"]].reset_index(drop=True)
-
     # -------------------------
     # Output tracker
     # -------------------------
@@ -2318,6 +2485,11 @@ def build_tracker(today_local: date, debug: bool = False) -> str:
         "team_5v5_xGF60": sk.get("team_5v5_xGF60"),
         "team_5v5_SF60_pct": sk.get("team_5v5_SF60_pct"),
         "team_5v5_xGF60_pct": sk.get("team_5v5_xGF60_pct"),
+        # --- Team Recent Scoring (HARD GF GATE) ---
+        "Team_GF_L5": sk.get("Team_GF_L5"),
+        "Team_GF_Avg_L5": sk.get("Team_GF_Avg_L5"),
+        "Team_GF_Gate": sk.get("Team_GF_Gate"),
+
 
         "Med10_SOG": sk.get("Median10_SOG"),
         "Trim10_SOG": sk.get("TrimMean10_SOG"),
@@ -2446,6 +2618,7 @@ def build_tracker(today_local: date, debug: bool = False) -> str:
     )
     tracker.loc[hot_points, "Play_Tag"] = "🔥"
     tracker.loc[hot_points, "Plays_Points"] = True
+    
 
     # Assists earned rule (single version)
     for c in [
@@ -2506,6 +2679,102 @@ def build_tracker(today_local: date, debug: bool = False) -> str:
     tracker.loc[mask, "Play_Tag"].fillna("").astype(str) + " | 🅰️ ASSISTS EARNED",
     "🅰️ ASSISTS EARNED"
 )
+    
+        # -------------------------
+    # SOG earned rule (shot profile playable)
+    # Purpose:
+    # - Keep CONF tight (>=70)
+    # - Promote elite shot profiles even if Matrix_SOG is Yellow
+    # - Require alignment of the TOP 4 SOG categories
+    # -------------------------
+
+    # Ensure numeric safety
+    for c in [
+        "Conf_SOG",
+        "ShotIntent_Pct",
+        "Goalie_Weak",
+        "Med10_SOG",
+        "Avg5_SOG",
+        "Reg_Gap_S10",
+        "Drought_SOG"
+    ]:
+        if c in tracker.columns:
+            tracker[c] = pd.to_numeric(tracker[c], errors="coerce")
+
+    if "Plays_SOG" not in tracker.columns:
+        tracker["Plays_SOG"] = False
+
+    tracker["SOG_ProofCount"] = 0
+    tracker["SOG_Why"] = ""
+
+    # ---- TOP 4 SOG PROOFS ----
+
+    # 1) ShotIntent (elite intent, not noisy volume)
+    proof_si = (tracker["ShotIntent_Pct"] >= 95)
+
+    # 2) Regression / timing
+    # HOT/WARM OR meaningful positive gap OR drought
+    proof_reg = (
+        tracker["Reg_Heat_S"].astype(str).str.upper().isin(["HOT", "WARM"]) |
+        (tracker["Reg_Gap_S10"] >= 1.5) |
+        (tracker["Drought_SOG"] >= 1)
+    )
+
+    # 3) Volume floor (true shooter)
+    proof_vol = (
+        (tracker["Med10_SOG"] >= 3.5) |
+        (tracker["Avg5_SOG"] >= 3.5)
+    )
+
+    # 4) Goalie environment (not a brick wall)
+    proof_goalie = (tracker["Goalie_Weak"] >= 70)
+
+    proofs = pd.concat(
+        [proof_si, proof_reg, proof_vol, proof_goalie],
+        axis=1
+    ).fillna(False)
+
+    tracker["SOG_ProofCount"] = proofs.sum(axis=1)
+
+    # ---- HARD CONFIDENCE GATE (DO NOT LOOSEN) ----
+    conf_gate = (tracker["Conf_SOG"] >= 70)
+
+    # ---- EARNED SOG PLAY ----
+    # Require:
+    # - Confidence gate
+    # - At least 3 of the 4 SOG proofs
+    sog_earned = (
+        conf_gate &
+        (tracker["SOG_ProofCount"] >= 3)
+    )
+
+    tracker.loc[sog_earned, "Plays_SOG"] = True
+
+    # Optional explanation tag
+    def _sog_why(r):
+        reasons = []
+        if r.get("ShotIntent_Pct", 0) >= 95: reasons.append("SI")
+        if (
+            str(r.get("Reg_Heat_S", "")).upper() in {"HOT", "WARM"} or
+            (r.get("Reg_Gap_S10", 0) >= 1.5) or
+            (r.get("Drought_SOG", 0) >= 1)
+        ): reasons.append("REG")
+        if (r.get("Med10_SOG", 0) >= 3.5 or r.get("Avg5_SOG", 0) >= 3.5): reasons.append("VOL")
+        if r.get("Goalie_Weak", 0) >= 70: reasons.append("G")
+        return ",".join(reasons)
+
+    tracker.loc[sog_earned, "SOG_Why"] = tracker.loc[sog_earned].apply(_sog_why, axis=1)
+
+    # Optional UI tag (does NOT override other tags)
+    mask = sog_earned & ~tracker["Play_Tag"].fillna("").str.contains("SOG EARNED", regex=False)
+
+    tracker.loc[mask, "Play_Tag"] = np.where(
+        tracker.loc[mask, "Play_Tag"].fillna("").astype(str).str.len() > 0,
+        tracker.loc[mask, "Play_Tag"].fillna("").astype(str) + " | 🎯 SOG EARNED",
+        "🎯 SOG EARNED"
+    )
+
+    
 
     # Sort
     tracker["_bc"] = pd.to_numeric(tracker["Best_Conf"], errors="coerce").fillna(0)
@@ -2513,7 +2782,7 @@ def build_tracker(today_local: date, debug: bool = False) -> str:
     tracker["_dw"] = pd.to_numeric(tracker["Opp_DefWeak"], errors="coerce").fillna(50)
     tracker = tracker.sort_values(["_bc", "_gw", "_dw"], ascending=[False, False, False]).drop(columns=["_bc", "_gw", "_dw"])
 
-        # -------------------------
+    # -------------------------
     # FORCE rounding right before write (for Streamlit display consistency)
     # -------------------------
     ROUND_1 = [

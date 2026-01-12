@@ -7,6 +7,70 @@ import numpy as np
 import pandas as pd
 import streamlit as st
 
+COLUMN_WIDTHS = {
+    # identity
+    "Game": "small",
+    "Pos": "small",
+    "Team": "small",
+    "Opp": "small",
+    "Player": "medium",
+
+    # core decision columns
+    "Matrix_Points": "small",
+    "Matrix_SOG": "small",
+    "Matrix_Goal": "small",
+    "Matrix_Assists": "small",
+
+    "Conf_Points": "small",
+    "Conf_SOG": "small",
+    "Conf_Goal": "small",
+    "Conf_Assists": "small",
+    "Best_Conf": "small",
+
+    # indicators
+    "Green": "small",
+    "GF_Gate_Badge": "small",
+    "Tier_Tag": "small",
+    "🔥": "small",
+
+    # drought
+    "Drought_P": "small",
+    "Drought_A": "small",
+    "Drought_G": "small",
+    "Drought_SOG": "small",
+    "Best_Drought": "small",
+
+    # goalie / defense
+    "Opp_Goalie": "medium",
+    "Opp_SV": "small",
+    "Opp_GAA": "small",
+    "Goalie_Weak": "small",
+    "Opp_DefWeak": "small",
+
+    # misc
+    "Line": "small",
+    "Odds": "small",
+    "Result": "small",
+}
+
+def build_column_config(df: pd.DataFrame, cols: list[str]) -> dict:
+    cfg = {}
+
+    for c in cols:
+        width = COLUMN_WIDTHS.get(c, "small")
+
+        if c not in df.columns:
+            cfg[c] = st.column_config.TextColumn(width=width)
+            continue
+
+        if pd.api.types.is_numeric_dtype(df[c]):
+            cfg[c] = st.column_config.NumberColumn(width=width)
+        else:
+            cfg[c] = st.column_config.TextColumn(width=width)
+
+    return cfg
+
+
 
 # -------------------------
 # Safe getters
@@ -33,6 +97,37 @@ def _is_hot(reg_scored: str) -> bool:
 # -------------------------
 OUTPUT_DIR = "output"
 st.set_page_config(page_title="NHL Prop Tool", layout="wide")
+
+# =========================
+# GLOBAL TABLE COMPACT CSS (Option A)
+# =========================
+st.markdown(
+    """
+    <style>
+      /* Tighten the dataframe (works for st.dataframe + Styler) */
+      div[data-testid="stDataFrame"] table {
+        font-size: 12px;
+      }
+      div[data-testid="stDataFrame"] thead tr th {
+        padding-top: 2px !important;
+        padding-bottom: 2px !important;
+      }
+      div[data-testid="stDataFrame"] tbody tr td {
+        padding-top: 1px !important;
+        padding-bottom: 1px !important;
+        line-height: 1.05 !important;
+        white-space: nowrap !important;
+      }
+
+      /* Optional: make header slightly tighter too */
+      div[data-testid="stDataFrame"] thead tr th div {
+        line-height: 1.05 !important;
+      }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
+
 
 
 # =========================
@@ -63,6 +158,7 @@ def to_bool_series(s: pd.Series) -> pd.Series:
         .str.lower()
         .isin(["true", "1", "yes", "y", "t"])
     )
+
 
 
 def safe_num(df: pd.DataFrame, col: str, default=0.0) -> pd.Series:
@@ -159,9 +255,9 @@ def style_df(df: pd.DataFrame, cols: list[str]) -> "pd.io.formats.style.Styler":
 
     fmt1_cols = [
         "iXA%", "iXG%",
-        "Goalie_Weak", "Opp_DefWeak",
-        "TOI_Pct", "StarScore",
-        "ShotIntent_Pct",
+        "Goalie_Weak", "Opp_DefWeak","L10_P","L10_A","L10_G","L10_SOG",
+        "TOI_Pct", "StarScore","Med10_SOG","ShotIntent","Avg5_SOG","Drought_SOG",
+        "ShotIntent_Pct","Drought_A","Drought_P","Drought_G",
         "v2_player_stability",
         "team_5v5_SF60_pct",
         "team_5v5_xGF60_pct",
@@ -197,6 +293,9 @@ def add_ui_columns(df: pd.DataFrame) -> pd.DataFrame:
 
     # Fire indicator
     out["🔥"] = plays_points.map(lambda x: "🔥" if x else "")
+
+ 
+
 
     return out
 
@@ -304,7 +403,14 @@ def show_table(df: pd.DataFrame, cols: list[str], title: str):
             st.write(missing)
 
     styled = style_df(df, existing)
-    st.dataframe(styled, use_container_width=True, hide_index=True)
+
+    # ✅ Option A: keeps your Styler colors
+    st.dataframe(
+    styled,
+    use_container_width=True,
+    hide_index=True,
+    column_config=build_column_config(df, existing),
+)
 
 
 # =========================
@@ -374,6 +480,27 @@ df["Tier_Tag"] = np.where(
     "👑 ELITE",
     np.where(tt.eq("STAR"), "⭐ STAR", "")
 )
+
+# -------------------------
+# Ensure TEAM GF gate columns exist (older CSV safe)
+# -------------------------
+if "Team_GF_Gate" not in df.columns:
+    df["Team_GF_Gate"] = True  # default "passes" if old CSV
+if "Team_GF_Avg_L5" not in df.columns:
+    df["Team_GF_Avg_L5"] = np.nan
+if "Team_GF_L5" not in df.columns:
+    df["Team_GF_L5"] = np.nan
+
+# Create badge if missing (or overwrite if you want consistency)
+if "GF_Gate_Badge" not in df.columns:
+    # Normalize gate to bool (handles True/False, 1/0, "true"/"false")
+    gate_bool = df["Team_GF_Gate"].astype(str).str.strip().str.lower().isin(["true","1","yes","y","t"])
+    df["GF_Gate_Badge"] = np.where(
+        gate_bool,
+        "",  # passed gate = no badge
+        "⛔ GF GATE"  # failed gate badge
+    )
+
 
 
 
@@ -482,7 +609,7 @@ proof_v2 = (df["v2_player_stability"] >= 65)
 proof_team = (df["team_5v5_xGF60_pct"] >= 65)
 proof_vol = (
     (df["Assist_Volume"] >= 6)
-    | (df["i5v5_primaryAssists60"] >= 0.45)
+    | (df["i5v5_primaryAssists60"] >= 0.50)
 )
 
 proofs = pd.concat([proof_ixA, proof_v2, proof_team, proof_vol], axis=1).fillna(False)
@@ -495,7 +622,7 @@ earned_gate = (df["Assist_ProofCount"] >= 2) | (is_star & (df["Assist_ProofCount
 
 assists_green_earned = (
     (safe_str(df, "Matrix_Assists", "").str.strip().str.lower() == "green")
-    & (safe_num(df, "Conf_Assists", 0) >= 72)
+    & (safe_num(df, "Conf_Assists", 0) >= 77)
     & earned_gate
 )
 
@@ -505,11 +632,11 @@ def _assist_why(r):
     reasons = []
     if _get(r, "iXA%", 0) >= 92:
         reasons.append("iXA")
-    if _get(r, "v2_player_stability", 0) >= 60:
+    if _get(r, "v2_player_stability", 0) >= 65:
         reasons.append("v2")
-    if _get(r, "team_5v5_xGF60_pct", 0) >= 60:
+    if _get(r, "team_5v5_xGF60_pct", 0) >= 65:
         reasons.append("xGF")
-    if (_get(r, "Assist_Volume", 0) >= 6) or (_get(r, "i5v5_primaryAssists60", 0) >= 0.45):
+    if (_get(r, "Assist_Volume", 0) >= 6) or (_get(r, "i5v5_primaryAssists60", 0) >= 0.50):
         reasons.append("VOL")
     return ",".join(reasons)
 
@@ -541,9 +668,12 @@ with st.expander("Debug: loaded columns"):
     st.write(list(df.columns))
 
 # Navigation
-page = st.sidebar.radio("Page", ["Board", "Points", "Assists", "SOG", "Goal", "Raw CSV"], index=0)
+page = st.sidebar.radio(
+    "Page",
+    ["Board", "Points", "Assists", "SOG", "Goal", "Ledger", "Raw CSV"],
+    index=0
+)
 
-# Apply shared filters
 df_f = filter_common(df)
 
 # Show slate times table
@@ -571,6 +701,8 @@ if page == "Board":
         "Line", "Odds", "Result",
     ]
 
+    
+
     show_table(df_b, board_cols, "Board (sorted by Best_Conf)")
 
 
@@ -583,7 +715,7 @@ elif page == "Points":
     df_p = df_p.sort_values(["_cp"], ascending=[False]).drop(columns=["_cp"], errors="ignore")
 
     st.sidebar.subheader("Points Filters")
-    min_conf = st.sidebar.slider("Min Conf (Points)", 0, 100, 80, 1)
+    min_conf = st.sidebar.slider("Min Conf (Points)", 0, 100, 77, 1)
     color_pick = st.sidebar.multiselect(
         "Colors (Points)",
         ["green", "yellow", "blue", "red"],
@@ -597,15 +729,19 @@ elif page == "Points":
     df_p["Green"] = df_p["Green_Points"].map(lambda x: "🟢" if bool(x) else "")
 
     points_cols = [
-        "Game",
-        "Player", "Pos", "Team", "Opp", 
-        "Matrix_Points",
-        "Conf_Points", "Green","Tier_Tag","Drought_P","Best_Drought", "🔥", 
-        "Reg_Heat_P", "Reg_Gap_P10", "Exp_P_10", "L10_P",
-        "iXA%", "iXG%", "v2_player_stability", "Opp_Goalie", "Opp_SV",
-        "Goalie_Weak", "Opp_DefWeak",
-        "Line", "Odds", "Result",
-    ]
+        "Game","Player","Pos","Team","Opp",
+        "Matrix_Points","Conf_Points","Green","GF_Gate_Badge","Tier_Tag",
+        "Reg_Heat_P","Reg_Gap_P10","Exp_P_10","L10_P",
+        "iXG%","iXA%",
+        "Opp_Goalie","Opp_SV","Opp_GAA","Goalie_Weak","Opp_DefWeak",
+        "Drought_P","Best_Drought",
+        "Line","Odds","Result",
+]
+
+
+
+
+
 
     show_table(df_p, points_cols, "Points View")
 
@@ -619,7 +755,7 @@ elif page == "Assists":
     df_a = df_a.sort_values(["_ca"], ascending=[False]).drop(columns=["_ca"], errors="ignore")
 
     st.sidebar.subheader("Assists Filters")
-    min_conf = st.sidebar.slider("Min Conf (Assists)", 0, 100, 80, 1)
+    min_conf = st.sidebar.slider("Min Conf (Assists)", 0, 100, 77, 1)
     color_pick = st.sidebar.multiselect(
         "Colors (Assists)",
         ["green", "yellow", "blue", "red"],
@@ -636,7 +772,7 @@ elif page == "Assists":
         "Game",
         "Player", "Pos", "Team", "Opp", 
         "Matrix_Assists",
-        "Conf_Assists", "Green","Tier_Tag","Drought_A","Best_Drought",
+        "Conf_Assists", "Green","GF_Gate_Badge", "Tier_Tag","Drought_A","Best_Drought",
         "Assist_ProofCount", "Assist_Why",
         "Reg_Heat_A", "Reg_Gap_A10", "Exp_A_10", "L10_A",
         "iXA%", "v2_player_stability", 
@@ -658,7 +794,7 @@ elif page == "SOG":
     df_s = df_s.sort_values(["_cs"], ascending=[False]).drop(columns=["_cs"], errors="ignore")
 
     st.sidebar.subheader("SOG Filters")
-    min_conf = st.sidebar.slider("Min Conf (SOG)", 0, 100, 80, 1)
+    min_conf = st.sidebar.slider("Min Conf (SOG)", 0, 100, 77, 1)
     color_pick = st.sidebar.multiselect(
         "Colors (SOG)",
         ["green", "yellow", "blue", "red"],
@@ -694,7 +830,7 @@ elif page == "Goal":
     df_g = df_g.sort_values(["_cg"], ascending=[False]).drop(columns=["_cg"], errors="ignore")
 
     st.sidebar.subheader("Goal Filters")
-    min_conf = st.sidebar.slider("Min Conf (Goal)", 0, 100, 80, 1)
+    min_conf = st.sidebar.slider("Min Conf (Goal)", 0, 100, 77, 1)
     color_pick = st.sidebar.multiselect(
         "Colors (Goal)",
         ["green", "yellow", "blue", "red"],
@@ -711,7 +847,7 @@ elif page == "Goal":
         "Game",
         "Player", "Pos", "Team", "Opp",
         "Matrix_Goal", 
-        "Conf_Goal", "Green","Tier_Tag","Drought_G","Best_Drought",
+        "Conf_Goal", "Green","GF_Gate_Badge", "Tier_Tag","Drought_G","Best_Drought",
         "Reg_Heat_G", "Reg_Gap_G10", "Exp_G_10", "L10_G",
         "iXG%", "iXA%", "L5_G", "Opp_Goalie", "Opp_SV",
         "Goalie_Weak", "Opp_DefWeak",
@@ -719,6 +855,60 @@ elif page == "Goal":
     ]
 
     show_table(df_g, goal_cols, "Goal View")
+
+elif page == "Ledger":
+    st.subheader("📜 Ledger — What everything means")
+
+    st.markdown("""
+### Core ideas
+- **Matrix_*:** quick “signal” (Green/Yellow/Red) based on the model’s conditions.
+- **Conf_*:** 0–100 confidence score *after* adjustments (injury, drought bump, etc.).
+- **Green_*:** “earned green” rules (your stricter gating) — not just raw confidence.
+
+---
+### Badges / Tags
+- **🔥** = flagged play tag (your manual/auto “this is a real look” indicator).
+- **👑 ELITE / ⭐ STAR** = talent tier tags.
+- **⛔ GF GATE** = team scoring environment failed (team’s recent scoring too low).  
+  When this triggers, **Goal/Points/Assists confidence is forced to 0** and Matrix becomes **FAIL_GF**.
+
+---
+### Colors (how to read them)
+- **Matrix colors**
+  - **Green** = conditions met
+  - **Yellow** = borderline / mixed
+  - **Red** = conditions failed
+  - **FAIL_GF** = hard fail due to team scoring gate
+
+- **Confidence colors**
+  - **Green** = high confidence (your thresholding)
+  - **Yellow** = mid
+  - **Blue** = lower but usable
+  - **Red** = avoid
+
+- **Regression heat**
+  - **HOT** = due/overdue (bump potential)
+  - **WARM** = mild
+  - **COOL** = not due
+
+---
+### Key columns (most important)
+- **Best_Market / Best_Conf** = which market looks best *for that player*.
+- **Reg_Gap_* / Exp_*:** expected vs actual gap (how “due” they are).
+- **Goalie_Weak / Opp_DefWeak** = matchup-based vulnerability.
+- **ShotIntent / ShotIntent_Pct** = volume + intent proxy for SOG.
+- **Assist_ProofCount / Assist_Why** = why assists earned green was triggered.
+
+---
+### Injury logic
+- **Injury_Status / Injury_Badge / Injury_DFO_Score**
+  - GTD knocks confidence down
+  - ROLE+ boosts slightly (if you coded it)
+  - OUT/IR should be filtered via **Available**
+""")
+
+    st.info("If you want, I can generate this ledger automatically from a Python dict so it stays synced when you add columns.")
+
 
 
 # =========================
