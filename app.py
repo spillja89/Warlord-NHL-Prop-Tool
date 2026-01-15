@@ -453,6 +453,19 @@ else:
     df = load_csv(latest_path)
 
 # -------------------------
+# FIX: Styler requires unique index + columns
+# -------------------------
+# 1) reset index (unique)
+df = df.reset_index(drop=True)
+
+# 2) de-dupe column names (keep first occurrence)
+if df.columns.duplicated().any():
+    dupes = df.columns[df.columns.duplicated()].tolist()
+    st.warning(f"Duplicate columns detected and removed: {dupes}")
+    df = df.loc[:, ~df.columns.duplicated()].copy()
+
+
+# -------------------------
 # Ensure injury columns exist (older CSV safe)
 # -------------------------
 if "Injury_Badge" not in df.columns:
@@ -543,10 +556,22 @@ thr_s = _green_conf_threshold("SOG", slate_games)
 thr_p = _green_conf_threshold("Points", slate_games)
 thr_g = _green_conf_threshold("Goal", slate_games)
 
+thr_s = _green_conf_threshold("SOG", slate_games)
+
+sog_volume_proof = (
+    (safe_num(df, "Med10_SOG", 0) >= 3.0)
+    | (safe_num(df, "Avg5_SOG", 0) >= 3.0)
+)
+
 df["Green_SOG"] = (
     (safe_num(df, "Conf_SOG", 0) >= thr_s)
     & (safe_str(df, "Matrix_SOG", "").str.strip().str.lower() == "green")
+    & (
+        (safe_num(df, "ShotIntent_Pct", 0) >= 85)
+        | sog_volume_proof
+    )
 )
+
 
 df["Green_Points"] = (
     (safe_num(df, "Conf_Points", 0) >= thr_p)
@@ -775,7 +800,7 @@ elif page == "Assists":
         "Conf_Assists", "Green","GF_Gate_Badge", "Tier_Tag","Drought_A","Best_Drought",
         "Assist_ProofCount", "Assist_Why",
         "Reg_Heat_A", "Reg_Gap_A10", "Exp_A_10", "L10_A",
-        "iXA%", "v2_player_stability", 
+        "iXA%","iXG%", "v2_player_stability", 
         "Opp_Goalie", "Opp_SV",
         "Goalie_Weak", "Opp_DefWeak",
         
@@ -912,7 +937,7 @@ Requires:
 - Conf_Goal >= threshold
 - AND one of:
   - Reg_Heat_G == **HOT**
-  - Goalie_Weak >= **80**
+  - Goalie_Weak >= **70**
 
 ### ✅ Assists Earned Green (v1 FINAL)
 Requires:

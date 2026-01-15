@@ -74,13 +74,13 @@ TEAM_GF_MIN_AVG = 2.70   # HARD FAIL threshold
 MIN_GOALIE_GP = 5
 
 # Star prior strength (small nudge)
-TALENT_MULT_MAX = 1.10
+TALENT_MULT_MAX = 1.35
 TALENT_MULT_MIN = 0.94
-TALENT_MULT_STRENGTH = 0.18  # +/- ~6% around 50->100, 50->0
+TALENT_MULT_STRENGTH = 0.40# +/- ~6% around 50->100, 50->0
 
 # Usage weighting into confidence (small)
 USAGE_WEIGHT_SOG = 0.08
-USAGE_WEIGHT_POINTS = 0.08
+USAGE_WEIGHT_POINTS = 0.10
 
 # Injury impact into confidence (small; GTD hurts, ROLE+ helps)
 INJURY_CONF_MULT = 2.0  # Injury_DFO_Score * this added into conf (clamped)
@@ -92,17 +92,17 @@ INJURY_CONF_MULT = 2.0  # Injury_DFO_Score * this added into conf (clamped)
 ELITE_SEED = set()
 STAR_SEED  = set()
 
-ELITE_STARSCORE = 95.0
+ELITE_STARSCORE = 93.0
 STAR_STARSCORE  = 90.0
 
-ELITE_TOI_PCT = 73.0
-STAR_TOI_PCT  = 68.0
+ELITE_TOI_PCT = 70.0
+STAR_TOI_PCT  = 66.0
 
-ELITE_TOPPCT = 95.0
-STAR_TOPPCT  = 90.0
+ELITE_TOPPCT = 93.0
+STAR_TOPPCT  = 88.0
 
-ELITE_SHOTINTENT_PCT = 96.0
-STAR_SHOTINTENT_PCT  = 90.0
+ELITE_SHOTINTENT_PCT = 94.0
+STAR_SHOTINTENT_PCT  = 89.0
 
 ELITE_MIN_PPG = 1.10  # tune: 0.95–1.10
 STAR_MIN_PPG  = 0.90   # tune: 0.70–0.85
@@ -134,6 +134,192 @@ def norm_team(x: Any) -> str:
 
 def is_defense(pos: str) -> bool:
     return (pos or "").upper().strip() in {"D", "LD", "RD"}
+
+# ----------------------------
+# Market-specific Talent Proofs
+# ----------------------------
+
+MARKET_TIER_RULES = {
+    "SOG": {
+        "thresholds": {
+            "TOI_STAR": 58.0,
+            "TOI_ELITE": 68.0,
+            "IXG_STAR": 65.0,
+            "IXG_ELITE": 75.0,
+            "SHOT_INTENT_STAR": 60.0,
+            "SHOT_INTENT_ELITE": 72.0,
+            "MED10_SOG_STAR": 2.4,
+            "MED10_SOG_ELITE": 3.0,
+        },
+        "elite_requires": ["TOI", "MED10_SOG"],
+        "star_min_proofs": 3,
+        "elite_min_proofs": 4,
+    },
+
+    "Points": {
+        "thresholds": {
+            "PPG_STAR": 0.75,
+            "PPG_ELITE": 0.95,
+            "TOI_STAR": 60.0,
+            "TOI_ELITE": 70.0,
+            "IXA_STAR": 65.0,
+            "IXA_ELITE": 75.0,
+            "IXG_STAR": 60.0,
+            "IXG_ELITE": 70.0,
+        },
+        "elite_requires": ["PPG", "TOI"],
+        "star_min_proofs": 3,
+        "elite_min_proofs": 4,
+    },
+
+    "Goal": {
+        "thresholds": {
+            "PPG_STAR": 0.65,
+            "PPG_ELITE": 0.85,
+            "TOI_STAR": 58.0,
+            "TOI_ELITE": 68.0,
+            "IXG_STAR": 70.0,
+            "IXG_ELITE": 82.0,
+            "MED10_SOG_STAR": 2.6,
+            "MED10_SOG_ELITE": 3.1,
+        },
+        "elite_requires": ["IXG", "MED10_SOG"],
+        "star_min_proofs": 3,
+        "elite_min_proofs": 4,
+    },
+
+    "Assists": {
+        "thresholds": {
+            "PPG_STAR": 0.70,
+            "PPG_ELITE": 0.90,
+            "TOI_STAR": 60.0,
+            "TOI_ELITE": 70.0,
+            "IXA_STAR": 72.0,
+            "IXA_ELITE": 82.0,
+            "IXG_STAR": 55.0,
+            "IXG_ELITE": 65.0,
+        },
+        "elite_requires": ["IXA", "TOI"],
+        "star_min_proofs": 3,
+        "elite_min_proofs": 4,
+    },
+}
+
+def _safe_float(x, default=None):
+    try:
+        if x is None:
+            return default
+        if isinstance(x, float) and math.isnan(x):
+            return default
+        return float(x)
+    except Exception:
+        return default
+
+def market_tier_tag(row: "pd.Series", market: str) -> str:
+    rules = MARKET_TIER_RULES[market]
+    t = rules["thresholds"]
+
+    # --- pull from YOUR column names (and accept alternates) ---
+    ppg = _safe_float(row.get("PPG"), default=None)
+
+    toi = _safe_float(row.get("TOI_Pct"), default=None)          # <-- FIX
+    if toi is None:
+        toi = _safe_float(row.get("TOI_PCT"), default=None)
+
+    ixg = _safe_float(row.get("iXG_pct"), default=None)          # <-- FIX
+    if ixg is None:
+        ixg = _safe_float(row.get("ixG_pct"), default=None)
+
+    ixa = _safe_float(row.get("iXA_pct"), default=None)          # <-- FIX
+    if ixa is None:
+        ixa = _safe_float(row.get("ixA_pct"), default=None)
+
+    shot_intent = _safe_float(row.get("ShotIntent_Pct"), default=None)  # <-- FIX
+    if shot_intent is None:
+        shot_intent = _safe_float(row.get("ShotIntent_pct"), default=None)
+
+    med10_sog = _safe_float(row.get("Median10_SOG"), default=None)
+
+    # ----------------
+    # STAR proofs
+    # ----------------
+    proofs = 0
+    def pass_star():
+        nonlocal proofs
+        proofs += 1
+
+    if market in ("Points", "Goal", "Assists"):
+        if ppg is not None and ppg >= t.get("PPG_STAR", 9e9):
+            pass_star()
+
+    if toi is not None and toi >= t.get("TOI_STAR", 9e9):
+        pass_star()
+
+    if ixg is not None and ixg >= t.get("IXG_STAR", 9e9):
+        pass_star()
+
+    if market in ("Points", "Assists"):
+        if ixa is not None and ixa >= t.get("IXA_STAR", 9e9):
+            pass_star()
+
+    if market == "SOG":
+        if shot_intent is not None and shot_intent >= t.get("SHOT_INTENT_STAR", 9e9):
+            pass_star()
+        if med10_sog is not None and med10_sog >= t.get("MED10_SOG_STAR", 9e9):
+            pass_star()
+        if ixg is not None and ixg >= t.get("IXG_STAR", 9e9):
+            pass_star()
+
+    if market == "Goal":
+        if med10_sog is not None and med10_sog >= t.get("MED10_SOG_STAR", 9e9):
+            pass_star()
+
+    is_star = proofs >= rules["star_min_proofs"]
+
+    # ----------------
+    # ELITE proofs
+    # ----------------
+    elite_proofs = 0
+    elite_passed = set()
+
+    def pass_elite(name: str):
+        nonlocal elite_proofs
+        elite_proofs += 1
+        elite_passed.add(name)
+
+    if market in ("Points", "Goal", "Assists"):
+        if ppg is not None and ppg >= t.get("PPG_ELITE", 9e9):
+            pass_elite("PPG")
+
+    if toi is not None and toi >= t.get("TOI_ELITE", 9e9):
+        pass_elite("TOI")
+
+    if ixg is not None and ixg >= t.get("IXG_ELITE", 9e9):
+        pass_elite("IXG")
+
+    if market in ("Points", "Assists"):
+        if ixa is not None and ixa >= t.get("IXA_ELITE", 9e9):
+            pass_elite("IXA")
+
+    if market == "SOG":
+        if shot_intent is not None and shot_intent >= t.get("SHOT_INTENT_ELITE", 9e9):
+            pass_elite("SHOT_INTENT")
+        if med10_sog is not None and med10_sog >= t.get("MED10_SOG_ELITE", 9e9):
+            pass_elite("MED10_SOG")
+
+    if market == "Goal":
+        if med10_sog is not None and med10_sog >= t.get("MED10_SOG_ELITE", 9e9):
+            pass_elite("MED10_SOG")
+
+    gates_ok = all(g in elite_passed for g in rules["elite_requires"])
+    is_elite = (elite_proofs >= rules["elite_min_proofs"]) and gates_ok
+
+    if is_elite:
+        return "ELITE"
+    if is_star:
+        return "STAR"
+    return ""
+
 
 
 # ============================
@@ -249,6 +435,77 @@ def per60(stat: Any, toi: Any) -> pd.Series:
     out.loc[sec] = s.loc[sec] * 3600.0 / t.loc[sec]
     out.loc[mins] = s.loc[mins] * 60.0 / t.loc[mins]
     return out
+
+# ----------------------------
+# Market-specific Talent Proofs
+# ----------------------------
+
+MARKET_TIER_RULES = {
+    "SOG": {
+        "thresholds": {
+            "TOI_STAR": 58.0,
+            "TOI_ELITE": 68.0,
+            "IXG_STAR": 65.0,
+            "IXG_ELITE": 75.0,
+            "SHOT_INTENT_STAR": 70,
+            "SHOT_INTENT_ELITE": 85,
+            "MED10_SOG_STAR": 2.4,
+            "MED10_SOG_ELITE": 3.3
+        },
+        "elite_requires": ["TOI", "MED10_SOG"],
+        "star_min_proofs": 3,
+        "elite_min_proofs": 4,
+    },
+
+    "Points": {
+        "thresholds": {
+            "PPG_STAR": 0.75,
+            "PPG_ELITE": 0.95,
+            "TOI_STAR": 60.0,
+            "TOI_ELITE": 70.0,
+            "IXA_STAR": 85,
+            "IXA_ELITE": 85,
+            "IXG_STAR": 60.0,
+            "IXG_ELITE": 70.0,
+        },
+        "elite_requires": ["PPG", "TOI"],
+        "star_min_proofs": 3,
+        "elite_min_proofs": 4,
+    },
+
+    "Goal": {
+        "thresholds": {
+            "PPG_STAR": 0.65,
+            "PPG_ELITE": 0.85,
+            "TOI_STAR": 58.0,
+            "TOI_ELITE": 68.0,
+            "IXG_STAR": 70.0,
+            "IXG_ELITE": 90,
+            "MED10_SOG_STAR": 2.7,
+            "MED10_SOG_ELITE": 3.3,
+        },
+        "elite_requires": ["IXG", "MED10_SOG"],
+        "star_min_proofs": 3,
+        "elite_min_proofs": 4,
+    },
+
+    "Assists": {
+        "thresholds": {
+            "PPG_STAR": 0.70,
+            "PPG_ELITE": 0.90,
+            "TOI_STAR": 60.0,
+            "TOI_ELITE": 70.0,
+            "IXA_STAR": 72.0,
+            "IXA_ELITE": 90,
+            "IXG_STAR": 55.0,
+            "IXG_ELITE": 65.0,
+        },
+        "elite_requires": ["IXA", "TOI"],
+        "star_min_proofs": 3,
+        "elite_min_proofs": 4,
+    },
+}
+
 
 
 # ============================
@@ -973,8 +1230,16 @@ def normalize_skaters_all(df: pd.DataFrame, debug: bool = False) -> pd.DataFrame
     out["Player"] = out["Player"].astype(str)
     out["Pos"] = out["Pos"].astype(str).replace({"nan": "F", "None": "F"}).fillna("F")
 
-    gp = pd.to_numeric(out["games_played"], errors="coerce")
-    out["TOI_per_game"] = (pd.to_numeric(out["icetime"], errors="coerce") / gp).replace([np.inf, -np.inf], np.nan)
+    gp = pd.to_numeric(out["games_played"], errors="coerce").replace(0, np.nan)
+    toi_raw = pd.to_numeric(out["icetime"], errors="coerce")
+
+    # MoneyPuck icetime is season TOTAL in SECONDS (usually > 10,000)
+    # Convert to minutes before per-game calc
+    toi_minutes = toi_raw.copy()
+    sec_mask = toi_raw > 10000
+    toi_minutes.loc[sec_mask] = toi_raw.loc[sec_mask] / 60.0
+
+    out["TOI_per_game"] = (toi_minutes / gp).replace([np.inf, -np.inf], np.nan)
 
     # ensure numeric for totals if present
     for c in ["G", "A", "P"]:
@@ -1473,10 +1738,10 @@ def matrix_sog(ixg_pct: float, med10: Optional[float], pos: str,
     tsf = 50.0 if team_sf_pct is None else float(team_sf_pct)
     odw = 50.0 if opp_defweak is None else float(opp_defweak)
 
-    if ixg_pct >= 91 and med10 >= green_line:
+    if ixg_pct >= 95 and med10 >= green_line and sip >= 90:
         return "Green"
 
-    if ixg_pct >= 90 and med10 >= (green_line - 0.30) and sip >= 83 and toi >= 60 and tsf >= 60:
+    if ixg_pct >= 85 and med10 >= (green_line - 0.30) and sip >= 92 and toi >= 60 and tsf >= 60:
         return "Green"
 
     if ixg_pct >= 80 and med10 >= 3.5 and sip >= 95 and odw >= 60:
@@ -1548,27 +1813,57 @@ def matrix_assists_v1(ixa_pct: float, v2_stab: Optional[float], reg_heat_a: str 
     if ixa_pct < 78:
         return "Red" if ixa_pct < 70 else "Yellow"
 
-    if ixa_pct >= 92 and stab >= 58:
+    if ixa_pct >= 94 and stab >= 68:
         return "Green"
     if ixa_pct >= 90 and stab >= 60 and reg_heat_a == "HOT":
         return "Green"
     if ixa_pct >= 90 and stab >= 63 and tx >= 60:
         return "Green"
-    if ixa_pct >= 92 and stab >= 58 and dw >= 60:
+    if ixa_pct >= 92 and stab >= 60 and dw >= 60:
         return "Green"
-    if ixa_pct >= 90 and stab >= 60 and sa_pct >= 70 and toi >= 55:
+    if ixa_pct >= 90 and stab >= 60 and sa_pct >= 70 and toi >= 60:
         return "Green"
 
     return "Yellow"
 
-def conf_sog(ixg_pct: float, shot_intent_pct: float, defweak: float, goalieweak: float, toi_pct: float) -> int:
-    base = 0.50 * ixg_pct + 0.28 * shot_intent_pct + 0.15 * defweak + 0.12 * goalieweak
+def conf_sog(
+    ixg_pct: float,
+    shot_intent_pct: float,
+    shot_intent: float,
+    defweak: float,
+    toi_pct: float = 50.0,  # default keeps engine safe
+) -> int:
+    # SOG is volume-driven — goalie weakness is irrelevant
+    base = (
+        0.54 * ixg_pct
+        + 0.20 * shot_intent_pct
+        + 0.16 * defweak
+        + 0.08 * shot_intent
+    )
     base += USAGE_WEIGHT_SOG * (toi_pct - 50.0)
     return int(round(clamp(base)))
 
-def conf_goal(ixg_pct: float, g5: Optional[int], defweak: float, goalieweak: float, toi_pct: float) -> int:
+def conf_goal(
+    ixg_pct: float,
+    ixa_pct: float,
+    g5: Optional[int],
+    defweak: float,
+    goalieweak: float,
+    toi_pct: float,
+) -> int:
     g5s = 50.0 if g5 is None else clamp((g5 / 5.0) * 100.0)
-    base = 0.60 * ixg_pct + 0.18 * g5s + 0.10 * defweak + 0.12 * goalieweak
+
+    base = (
+        0.60 * ixg_pct
+        + 0.18 * g5s
+        + 0.10 * defweak
+        + 0.12 * goalieweak
+    )
+
+    # identity bias: shooter vs facilitator
+    goal_bias = 5 if (ixg_pct - ixa_pct) >= 20 else 0
+    base += goal_bias
+
     base += 0.05 * (toi_pct - 50.0)
     return int(round(clamp(base)))
 
@@ -1578,25 +1873,55 @@ def conf_points(ixa_pct: float, p10_gap: Optional[float], stab: float, defweak: 
     base += USAGE_WEIGHT_POINTS * (toi_pct - 50.0)
     return int(round(clamp(base)))
 
-def conf_assists(ixa_pct: float, a10_gap: Optional[float], stab: float, defweak: float,
-                 team_xgf_pct: float, toi_pct: float, sa60: Optional[float] = None) -> int:
-    reg = 65.0 if a10_gap is None else clamp((a10_gap / 3.0) * 100.0)
-    sa = 50.0
-    if sa60 is not None and not (isinstance(sa60, float) and math.isnan(sa60)):
-        sa = clamp(float(sa60) * 20.0)
-
+def conf_assists(
+    ixa_pct: float,
+    ixg_pct: float,
+    stab: float,
+    defweak: float,
+    goalieweak: float,
+    toi_pct: float,
+    reg_gap_a10: Optional[float] = None,
+    assist_vol: Optional[float] = None,
+    i5v5_shotassists60: Optional[float] = None,
+) -> int:
+    # ----------------------------
+    # 1) Baseline (cannot be penalized by optional signals)
+    # ----------------------------
     base = (
-        0.50 * ixa_pct +
-        0.10 * stab +
-        0.10 * defweak +
-        0.10 * team_xgf_pct +
-        0.10 * reg +
-        0.10 * sa
+        0.42 * ixa_pct +
+        0.14 * ixg_pct +
+        0.14 * stab +
+        0.12 * defweak +
+        0.08 * goalieweak
     )
-    base += 0.06 * (toi_pct - 50.0)
-    return int(round(clamp(base)))
+    base += 0.10 * (toi_pct - 50.0)  # light usage tilt
 
+    # ----------------------------
+    # 2) Bonus-only signals (never negative)
+    # ----------------------------
+    bonus = 0.0
 
+    # Regression gap bonus: only applies if present and positive
+    # (If you want "missing" to be neutral, do NOT default to 65 here.)
+    if reg_gap_a10 is not None and not (isinstance(reg_gap_a10, float) and math.isnan(reg_gap_a10)):
+        # Example scaling: +0 to +10
+        bonus += clamp((reg_gap_a10 / 4.0) * 10.0, 0.0, 10.0)
+
+    # Assist volume bonus: only above neutral earns points
+    if assist_vol is not None and not (isinstance(assist_vol, float) and math.isnan(assist_vol)):
+        # Treat 5.0 as neutral; only reward above that (cap bonus)
+        bonus += clamp((assist_vol - 5.0) * 1.5, 0.0, 5.0)
+
+    # 5v5 shot-assists/60 bonus: only above neutral earns points
+    if i5v5_shotassists60 is not None and not (isinstance(i5v5_shotassists60, float) and math.isnan(i5v5_shotassists60)):
+        # Treat 2.0 as neutral; reward above (cap bonus)
+        bonus += clamp((i5v5_shotassists60 - 2.0) * 2.0, 0.0, 5.0)
+
+    # ----------------------------
+    # 3) Final clamp
+    # ----------------------------
+    conf = clamp(base + bonus, 0.0, 100.0)
+    return int(round(conf))
 # ============================
 # v2 stability + opponent defweak (0-100)
 # ============================
@@ -1638,8 +1963,8 @@ def add_star_prior(sk: pd.DataFrame) -> pd.DataFrame:
     mult = 1.0 + ((star - 50.0) / 100.0) * TALENT_MULT_STRENGTH
     mult = mult.clip(TALENT_MULT_MIN, TALENT_MULT_MAX)
     out["TalentMult"] = mult.round(3)
-    return out
 
+    return out
 def add_talent_tiers(sk: pd.DataFrame, debug: bool = False) -> pd.DataFrame:
     out = sk.copy()
 
@@ -1716,6 +2041,23 @@ def add_talent_tiers(sk: pd.DataFrame, debug: bool = False) -> pd.DataFrame:
     out["Talent_Tier"] = "NONE"
     out.loc[out["Is_Star"],  "Talent_Tier"] = "STAR"
     out.loc[out["Is_Elite"], "Talent_Tier"] = "ELITE"
+
+    # -------------------------
+    # Tier-based talent premium (applied AFTER tiers exist)
+    # -------------------------
+    if "TalentMult" not in out.columns:
+        out["TalentMult"] = 1.0
+
+    out.loc[out["Talent_Tier"] == "ELITE", "TalentMult"] *= 1.06
+    out.loc[out["Talent_Tier"] == "STAR",  "TalentMult"] *= 1.03
+
+    out["TalentMult"] = (
+        pd.to_numeric(out["TalentMult"], errors="coerce")
+        .fillna(1.0)
+        .clip(TALENT_MULT_MIN, TALENT_MULT_MAX)
+        .round(3)
+    )
+
 
     if debug:
         print("\n[TALENT] Tier counts:", out["Talent_Tier"].value_counts(dropna=False).to_dict())
@@ -1802,12 +2144,12 @@ def drought_bump(tier: str, market: str, drought: Optional[int]) -> tuple[int, b
     if market in {"SOG", "POINTS"}:
         if tier == "ELITE":
             if d >= 1: bump = 2
-            if d >= 2: bump = 5
-            if d >= 3: bump = 8; flag = True
+            if d >= 2: bump = 6
+            if d >= 3: bump = 11; flag = True
         elif tier == "STAR":
             if d >= 2: bump = 2
-            if d >= 3: bump = 5
-            if d >= 4: bump = 8; flag = True
+            if d >= 3: bump = 6
+            if d >= 4: bump = 10; flag = True
         else:
             if d >= 3: bump = 2
             if d >= 4: bump = 5
@@ -1815,11 +2157,11 @@ def drought_bump(tier: str, market: str, drought: Optional[int]) -> tuple[int, b
 
     if market in {"GOAL", "ASSISTS"}:
         if tier == "ELITE":
-            if d >= 2: bump = 4
-            if d >= 3: bump = 7; flag = True
+            if d >= 2: bump = 5
+            if d >= 3: bump = 8; flag = True
         elif tier == "STAR":
-            if d >= 3: bump = 3
-            if d >= 4: bump = 6; flag = True
+            if d >= 3: bump = 4
+            if d >= 4: bump = 7; flag = True
         else:
             if d >= 4: bump = 2
             if d >= 5: bump = 5; flag = True
@@ -2160,6 +2502,12 @@ def build_tracker(today_local: date, debug: bool = False) -> str:
     sk["Reg_Heat_G"] = sk["Reg_Gap_G10"].apply(lambda x: heat_from_gap(safe_float(x)))
     sk["Reg_Heat_S"] = sk["Reg_Gap_S10"].apply(lambda x: heat_from_gap(safe_float(x)))
 
+  
+     
+
+
+    
+
     # Matrices
     sk["Matrix_SOG"] = sk.apply(
         lambda r: matrix_sog(
@@ -2211,26 +2559,33 @@ def build_tracker(today_local: date, debug: bool = False) -> str:
     )
 
     # Confidence (base)
+    
+    # Confidence (base)
     sk["Conf_SOG"] = sk.apply(
         lambda r: conf_sog(
-            float(r.get("iXG_pct", 50)),
-            float(r.get("ShotIntent_Pct", 50)),
-            float(r.get("Opp_DefWeak", 50)),
-            float(r.get("Goalie_Weak", 50)),
-            float(r.get("TOI_Pct", 50)),
+            ixg_pct=float(r.get("iXG_pct", 50)),
+            shot_intent_pct=float(r.get("ShotIntent_Pct", 50)),
+            shot_intent=float(r.get("ShotIntent", 0))
+                if pd.notna(r.get("ShotIntent")) else 0.0,
+            defweak=float(r.get("Opp_DefWeak", 50)),
+            toi_pct=float(r.get("TOI_Pct", 50)),
         ),
         axis=1
     )
+
+    
     sk["Conf_Goal"] = sk.apply(
         lambda r: conf_goal(
             float(r.get("iXG_pct", 50)),
-            safe_int(r.get("G5_total")),
+            float(r.get("iXA_pct", 50)),
+            r.get("G5_total", None),
             float(r.get("Opp_DefWeak", 50)),
             float(r.get("Goalie_Weak", 50)),
             float(r.get("TOI_Pct", 50)),
-        ),
-        axis=1
-    )
+       ),
+       axis=1
+    ) 
+
     sk["Conf_Points"] = sk.apply(
         lambda r: conf_points(
             float(r.get("iXA_pct", 50)),
@@ -2245,15 +2600,70 @@ def build_tracker(today_local: date, debug: bool = False) -> str:
     sk["Conf_Assists"] = sk.apply(
         lambda r: conf_assists(
             float(r.get("iXA_pct", 50)),
-            safe_float(r.get("Reg_Gap_A10")),
+            float(r.get("iXG_pct", 50)),            # ✅ add this
             float(r.get("v2_player_stability", 50)),
             float(r.get("Opp_DefWeak", 50)),
-            float(r.get("team_5v5_xGF60_pct", 50)),
+            float(r.get("Goalie_Weak", 50)),
             float(r.get("TOI_Pct", 50)),
-            safe_float(r.get("i5v5_shotAssists60")),
+            reg_gap_a10=safe_float(r.get("Reg_Gap_A10")),
+            assist_vol=safe_float(r.get("Assist_Volume")),
+            i5v5_shotassists60=safe_float(r.get("i5v5_shotAssists60")),
         ),
         axis=1
     )
+
+
+    # ----------------------------
+    # MARKET-SPECIFIC TALENT TIERS + MULTIPLIERS
+    # ----------------------------
+
+    # Tier tags (market-specific)
+    sk["Tier_Tag_SOG"] = sk.apply(
+        lambda r: market_tier_tag(r, "SOG"),
+        axis=1
+    )
+    sk["Tier_Tag_Points"] = sk.apply(
+        lambda r: market_tier_tag(r, "Points"),
+        axis=1
+    )
+    sk["Tier_Tag_Goal"] = sk.apply(
+        lambda r: market_tier_tag(r, "Goal"),
+        axis=1
+    )
+    sk["Tier_Tag_Assists"] = sk.apply(
+        lambda r: market_tier_tag(r, "Assists"),
+        axis=1
+    )
+
+    # Talent multipliers
+    STAR_MULT = 1.10
+    ELITE_MULT = 1.35
+
+    def talent_mult_from_tag(tag):
+        tag = (tag or "").upper().strip()
+        if tag == "ELITE":
+            return ELITE_MULT
+        if tag == "STAR":
+            return STAR_MULT
+        return 1.0
+
+    sk["Talent_Mult_Points"] = sk["Tier_Tag_Points"].map(talent_mult_from_tag)
+    sk["Talent_Mult_Goal"] = sk["Tier_Tag_Goal"].map(talent_mult_from_tag)
+    sk["Talent_Mult_Assists"] = sk["Tier_Tag_Assists"].map(talent_mult_from_tag)
+    sk["Talent_Mult_SOG"] = sk["Tier_Tag_SOG"].map(talent_mult_from_tag)
+
+    # Apply multipliers to expectations
+    sk["Exp_P_10"] = (sk["Exp_P_10"] * sk["Talent_Mult_Points"]).round(2)
+    sk["Exp_G_10"] = (sk["Exp_G_10"] * sk["Talent_Mult_Goal"]).round(2)
+    sk["Exp_A_10"] = (sk["Exp_A_10"] * sk["Talent_Mult_Assists"]).round(2)
+    sk["Exp_S_10"] = (sk["Exp_S_10"] * sk["Talent_Mult_SOG"]).round(2)
+
+
+        
+
+
+    
+
 
     # -------------------------
     # Injury adjustment into confidence (GTD down, ROLE+ up)
@@ -2446,7 +2856,7 @@ def build_tracker(today_local: date, debug: bool = False) -> str:
         "TOI_per_game": sk["TOI_per_game"].round(2),
         "TOI_Pct": sk["TOI_Pct"].round(1),
         "StarScore": sk["StarScore"].round(1),
-        "TalentMult": sk["TalentMult"].round(3),
+        "TalentMult": sk["TalentMult"].round(2),
         "Talent_Tier": sk.get("Talent_Tier", "NONE"),
         "Is_Elite": sk.get("Is_Elite", False),
         "Is_Star": sk.get("Is_Star", False),
@@ -2584,7 +2994,7 @@ def build_tracker(today_local: date, debug: bool = False) -> str:
     hot_points = (
         (tracker["Matrix_Points"] == "Green") &
         (tracker["Reg_Heat_P"] == "HOT") &
-        (tracker["Conf_Points"] >= 70)
+        (tracker["Conf_Points"] >= 77)
     )
     tracker.loc[hot_points, "Play_Tag"] = "🔥"
     tracker.loc[hot_points, "Plays_Points"] = True
@@ -2625,7 +3035,7 @@ def build_tracker(today_local: date, debug: bool = False) -> str:
 
     assists_green_earned = (
         (tracker["Matrix_Assists"] == "Green") &
-        (tracker["Conf_Assists"] >= 72) &
+        (tracker["Conf_Assists"] >= 77) &
         earned_gate
     ).fillna(False)
 
@@ -2653,7 +3063,7 @@ def build_tracker(today_local: date, debug: bool = False) -> str:
     # -------------------------
     # SOG earned rule (shot profile playable)
     # Purpose:
-    # - Keep CONF tight (>=70)
+    # - Keep CONF tight (>=77)
     # - Promote elite shot profiles even if Matrix_SOG is Yellow
     # - Require alignment of the TOP 4 SOG categories
     # -------------------------
@@ -2677,13 +3087,12 @@ def build_tracker(today_local: date, debug: bool = False) -> str:
     tracker["SOG_ProofCount"] = 0
     tracker["SOG_Why"] = ""
 
-    # ---- TOP 4 SOG PROOFS ----
+    # ---- TOP 4 SOG PROOFS (NO GOALIE) ----
 
     # 1) ShotIntent (elite intent, not noisy volume)
     proof_si = (tracker["ShotIntent_Pct"] >= 95)
 
     # 2) Regression / timing
-    # HOT/WARM OR meaningful positive gap OR drought
     proof_reg = (
         tracker["Reg_Heat_S"].astype(str).str.upper().isin(["HOT", "WARM"]) |
         (tracker["Reg_Gap_S10"] >= 1.5) |
@@ -2696,11 +3105,11 @@ def build_tracker(today_local: date, debug: bool = False) -> str:
         (tracker["Avg5_SOG"] >= 3.5)
     )
 
-    # 4) Goalie environment (not a brick wall)
-    proof_goalie = (tracker["Goalie_Weak"] >= 70)
+    # 4) Team shot environment (pace + pressure)
+    proof_team = (tracker["team_5v5_SF60_pct"] >= 60)
 
     proofs = pd.concat(
-        [proof_si, proof_reg, proof_vol, proof_goalie],
+        [proof_si, proof_reg, proof_vol, proof_team],
         axis=1
     ).fillna(False)
 
