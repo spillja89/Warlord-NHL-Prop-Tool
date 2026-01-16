@@ -67,7 +67,7 @@ REG_WARM_GAP = 1.5
 # TEAM RECENT GOALS FOR HARD GATE (applies to GOAL / POINTS / ASSISTS)
 # -------------------------
 TEAM_GF_WINDOW = 5
-TEAM_GF_MIN_AVG = 2.70   # HARD FAIL threshold
+TEAM_GF_MIN_AVG = 2.7   # HARD FAIL threshold
 
 
 # Goalie weakness thresholds
@@ -2998,6 +2998,106 @@ def build_tracker(today_local: date, debug: bool = False) -> str:
     )
     tracker.loc[hot_points, "Play_Tag"] = "🔥"
     tracker.loc[hot_points, "Plays_Points"] = True
+
+
+        # -------------------------
+    # GOAL earned rule (finisher profile playable)
+    # Purpose:
+    # - Keep CONF tight (>=77)
+    # - Promote elite goal profiles even if Matrix_Goal is Yellow
+    # - Require alignment of top goal categories
+    # -------------------------
+
+    # Ensure numeric safety
+    for c in [
+        "Conf_Goal",
+        "iXG%",
+        "Med10_SOG",
+        "Reg_Gap_G10",
+        "Drought_G",
+        "Goalie_Weak",
+        "L5_G",
+    ]:
+        if c in tracker.columns:
+            tracker[c] = pd.to_numeric(tracker[c], errors="coerce")
+
+    if "Plays_Goal" not in tracker.columns:
+        tracker["Plays_Goal"] = False
+
+    tracker["Goal_ProofCount"] = 0
+    tracker["Goal_Why"] = ""
+
+    # ---- TOP 4 GOAL PROOFS ----
+
+    # 1) Finisher quality
+    proof_ixg = (tracker["iXG%"] >= 92)
+
+    # 2) Shot volume / opportunity floor
+    proof_sogfloor = (tracker["Med10_SOG"] >= 3.2)
+
+    # 3) Timing / regression / drought
+    proof_reg = (
+        tracker["Reg_Heat_G"].astype(str).str.upper().isin(["HOT", "WARM"]) |
+        (tracker["Reg_Gap_G10"] >= 1.5) |
+        (tracker["Drought_G"] >= 2)
+    )
+
+    # 4) Goalie weakness (goal market DOES care)
+    proof_goalie = (tracker["Goalie_Weak"] >= 65)
+
+    goal_proofs = pd.concat(
+        [proof_ixg, proof_sogfloor, proof_reg, proof_goalie],
+        axis=1
+    ).fillna(False)
+
+    tracker["Goal_ProofCount"] = goal_proofs.sum(axis=1)
+
+    # ---- HARD CONFIDENCE GATE ----
+    conf_gate_goal = (tracker["Conf_Goal"] >= 77)
+
+    # ---- EARNED GOAL PLAY ----
+    goal_earned = conf_gate_goal & (tracker["Goal_ProofCount"] >= 3)
+
+    tracker.loc[goal_earned, "Plays_Goal"] = True
+
+    def _goal_why(r):
+        reasons = []
+        if float(r.get("iXG%", 0) or 0) >= 92:
+            reasons.append("iXG")
+        if float(r.get("Med10_SOG", 0) or 0) >= 3.2:
+            reasons.append("SOG")
+        if (
+            str(r.get("Reg_Heat_G", "")).upper() in {"HOT", "WARM"} or
+            float(r.get("Reg_Gap_G10", 0) or 0) >= 1.5 or
+            float(r.get("Drought_G", 0) or 0) >= 2
+        ):
+            reasons.append("REG")
+        if float(r.get("Goalie_Weak", 0) or 0) >= 65:
+            reasons.append("G")
+        return ",".join(reasons)
+
+    tracker.loc[goal_earned, "Goal_Why"] = (
+        tracker.loc[goal_earned].apply(_goal_why, axis=1)
+    )
+
+    mask = (
+        goal_earned &
+        ~tracker["Play_Tag"]
+            .fillna("")
+            .str.contains("GOAL EARNED", regex=False)
+    )
+
+    tracker.loc[mask, "Play_Tag"] = np.where(
+        tracker.loc[mask, "Play_Tag"]
+            .fillna("")
+            .astype(str)
+            .str.len() > 0,
+        tracker.loc[mask, "Play_Tag"].fillna("").astype(str) + " | 🥅 GOAL EARNED",
+        "🥅 GOAL EARNED"
+    )
+
+
+    
     
 
     # Assists earned rule (single version)

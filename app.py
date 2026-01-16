@@ -554,9 +554,75 @@ def _green_conf_threshold(market: str, slate_games: int) -> int:
 # --- Earned greens (match YOUR columns)
 thr_s = _green_conf_threshold("SOG", slate_games)
 thr_p = _green_conf_threshold("Points", slate_games)
+thr_s = _green_conf_threshold("SOG", slate_games)
+# =========================
+# GOAL — earned green (v2 proof-count + tier-aware drought)
+# =========================
+
 thr_g = _green_conf_threshold("Goal", slate_games)
 
-thr_s = _green_conf_threshold("SOG", slate_games)
+# numeric safety
+for c in ["Conf_Goal", "iXG%", "Med10_SOG", "Avg5_SOG", "Goalie_Weak", "Opp_DefWeak", "Reg_Gap_G10", "Drought_G"]:
+    if c in df.columns:
+        df[c] = pd.to_numeric(df[c], errors="coerce")
+
+tier_g = safe_str(df, "Talent_Tier", "NONE").str.upper()
+is_star_g = tier_g.isin(["ELITE", "STAR"])
+
+# Tier-aware drought trigger:
+# ELITE: >=2, STAR: >=3, NONE: >=4
+goal_drought_ok = (
+    ((tier_g == "ELITE") & (safe_num(df, "Drought_G", 0) >= 2)) |
+    ((tier_g == "STAR")  & (safe_num(df, "Drought_G", 0) >= 3)) |
+    (~tier_g.isin(["ELITE", "STAR"]) & (safe_num(df, "Drought_G", 0) >= 4))
+)
+
+# Proofs
+proof_ixg = (safe_num(df, "iXG%", 0) >= 92)
+proof_volume = (
+    (safe_num(df, "Med10_SOG", 0) >= 3.0) |
+    (safe_num(df, "Avg5_SOG", 0) >= 3.0)
+)
+proof_env = (
+    (safe_num(df, "Goalie_Weak", 0) >= 70) |
+    (safe_num(df, "Opp_DefWeak", 0) >= 70)
+)
+proof_due = (
+    (safe_str(df, "Reg_Heat_G", "").str.strip().str.upper() == "HOT") |
+    (safe_num(df, "Reg_Gap_G10", 0) >= 0.80) |
+    goal_drought_ok
+)
+
+goal_proofs = pd.concat([proof_ixg, proof_volume, proof_env, proof_due], axis=1).fillna(False)
+df["Goal_ProofCount"] = goal_proofs.sum(axis=1)
+
+needed_g = np.where(is_star_g, 2, 3)
+
+df["Green_Goal"] = (
+    (safe_num(df, "Conf_Goal", 0) >= thr_g)
+    & (safe_str(df, "Matrix_Goal", "").str.strip().str.lower() == "green")
+    & (df["Goal_ProofCount"] >= needed_g)
+)
+
+# optional: debug why
+def _goal_why(r):
+    reasons = []
+    if _get(r, "iXG%", 0) >= 92:
+        reasons.append("iXG")
+    if (_get(r, "Med10_SOG", 0) >= 3.0) or (_get(r, "Avg5_SOG", 0) >= 3.0):
+        reasons.append("VOL")
+    if (_get(r, "Goalie_Weak", 0) >= 70) or (_get(r, "Opp_DefWeak", 0) >= 70):
+        reasons.append("ENV")
+    if str(_get(r, "Reg_Heat_G", "")).strip().upper() == "HOT" or _get(r, "Reg_Gap_G10", 0) >= 0.80:
+        reasons.append("DUE")
+    if _get(r, "Drought_G", 0) >= 2:
+        reasons.append("DRT")
+    return ",".join(reasons)
+
+df["Goal_Why"] = ""
+m = df["Green_Goal"].fillna(False)
+df.loc[m, "Goal_Why"] = df.loc[m].apply(_goal_why, axis=1)
+
 
 sog_volume_proof = (
     (safe_num(df, "Med10_SOG", 0) >= 3.0)
@@ -567,28 +633,110 @@ df["Green_SOG"] = (
     (safe_num(df, "Conf_SOG", 0) >= thr_s)
     & (safe_str(df, "Matrix_SOG", "").str.strip().str.lower() == "green")
     & (
-        (safe_num(df, "ShotIntent_Pct", 0) >= 85)
+        (safe_num(df, "ShotIntent_Pct", 0) >= 90)
         | sog_volume_proof
     )
 )
 
 
+# =========================
+# POINTS — earned green (v3 proof-count, more accurate)
+# =========================
+
+thr_p = _green_conf_threshold("Points", slate_games)
+
+# numeric safety
+for c in [
+    "Conf_Points",
+    "iXG%", "iXA%",
+    "Med10_SOG", "Avg5_SOG",
+    "Goalie_Weak", "Opp_DefWeak",
+    "team_5v5_xGF60_pct",
+    "Reg_Gap_P10", "Drought_P",
+    "TOI_Pct",
+    "Assist_Volume", "i5v5_primaryAssists60",
+]:
+    if c in df.columns:
+        df[c] = pd.to_numeric(df[c], errors="coerce")
+
+# ---- Proofs (4 lanes) ----
+# 1) Finisher involvement
+proof_finisher = (
+    (safe_num(df, "iXG%", 0) >= 90)
+    | (safe_num(df, "Med10_SOG", 0) >= 3.0)
+    | (safe_num(df, "Avg5_SOG", 0) >= 3.0)
+)
+
+# 2) Playmaking involvement
+proof_playmaker = (
+    (safe_num(df, "iXA%", 0) >= 90)
+    | (safe_num(df, "Assist_Volume", 0) >= 6)
+    | (safe_num(df, "i5v5_primaryAssists60", 0) >= 0.50)
+)
+
+# 3) Environment (you need events to get points)
+proof_env = (
+    (safe_num(df, "team_5v5_xGF60_pct", 0) >= 65)
+    | (safe_num(df, "Goalie_Weak", 0) >= 70)
+    | (safe_num(df, "Opp_DefWeak", 0) >= 70)
+)
+
+# 4) Due lane (regression/drought)
+proof_due = (
+    (safe_str(df, "Reg_Heat_P", "").str.strip().str.upper() == "HOT")
+    | (safe_num(df, "Reg_Gap_P10", 0) >= 1.25)
+    | (safe_num(df, "Drought_P", 0) >= 3)
+)
+
+points_proofs = pd.concat(
+    [proof_finisher, proof_playmaker, proof_env, proof_due],
+    axis=1
+).fillna(False)
+
+df["Points_ProofCount"] = points_proofs.sum(axis=1)
+
+# Tier-aware gate (ELITE/STAR can pass with 2 proofs; others need 3)
+tier = safe_str(df, "Talent_Tier", "NONE").str.upper()
+is_star = tier.isin(["ELITE", "STAR"])
+
+needed = np.where(is_star, 2, 3)
+
 df["Green_Points"] = (
     (safe_num(df, "Conf_Points", 0) >= thr_p)
     & (safe_str(df, "Matrix_Points", "").str.strip().str.lower() == "green")
-    & (
-        (safe_str(df, "Reg_Heat_P", "").str.strip().str.upper() == "HOT")
-        | (safe_str(df, "Play_Tag", "").str.contains("HOT", case=False, na=False))
-        | (safe_str(df, "🔥", "") == "🔥")
-    )
+    & (df["Points_ProofCount"] >= needed)
 )
+
+# Make Points usable everywhere + revive 🔥
+df["Plays_Points"] = df["Green_Points"].fillna(False)
+# refresh 🔥 now that Plays_Points is defined in-streamlit
+df["🔥"] = df["Plays_Points"].map(lambda x: "🔥" if bool(x) else "")
+
+
+# Optional: why string (helps debugging)
+def _points_why(r):
+    reasons = []
+    if _get(r, "iXG%", 0) >= 90 or _get(r, "Med10_SOG", 0) >= 3.0 or _get(r, "Avg5_SOG", 0) >= 3.0:
+        reasons.append("FIN")
+    if _get(r, "iXA%", 0) >= 90 or _get(r, "Assist_Volume", 0) >= 6 or _get(r, "i5v5_primaryAssists60", 0) >= 0.50:
+        reasons.append("PLY")
+    if _get(r, "team_5v5_xGF60_pct", 0) >= 65 or _get(r, "Goalie_Weak", 0) >= 70 or _get(r, "Opp_DefWeak", 0) >= 70:
+        reasons.append("ENV")
+    if str(_get(r, "Reg_Heat_P", "")).strip().upper() == "HOT" or _get(r, "Reg_Gap_P10", 0) >= 1.25 or _get(r, "Drought_P", 0) >= 3:
+        reasons.append("DUE")
+    return ",".join(reasons)
+
+df["Points_Why"] = ""
+mask = df["Green_Points"].fillna(False)
+df.loc[mask, "Points_Why"] = df.loc[mask].apply(_points_why, axis=1)
 
 df["Green_Goal"] = (
     (safe_num(df, "Conf_Goal", 0) >= thr_g)
     & (safe_str(df, "Matrix_Goal", "").str.strip().str.lower() == "green")
     & (
         (safe_str(df, "Reg_Heat_G", "").str.strip().str.upper() == "HOT")
-        | (safe_num(df, "Goalie_Weak", 0) >= 80)
+        | (safe_num(df, "Goalie_Weak", 0) >= 70)
+        | (safe_num(df, "Drought_G", 0) >= 2)
     )
 )
 
@@ -676,6 +824,16 @@ df.loc[assists_green_earned, "Play_Tag"] = np.where(
 
 df["Color_Assists"] = safe_num(df, "Conf_Assists", 0).apply(_tier_color)
 df["Green_Assists"] = df["Plays_Assists"].fillna(False)
+# =========================
+# 🔥 GLOBAL PLAY FLAG (any market)
+# =========================
+df["🔥"] = (
+    df.get("Plays_Points", False).fillna(False)
+    | df.get("Plays_Assists", False).fillna(False)
+    | df.get("Green_SOG", False).fillna(False)
+    | df.get("Green_Goal", False).fillna(False)
+).map(lambda x: "🔥" if bool(x) else "")
+
 
 
 # Header info
@@ -931,13 +1089,59 @@ Requires:
   - Play_Tag contains **HOT**
   - 🔥 flagged
 
-### ✅ Goal Earned Green
-Requires:
-- Matrix_Goal == **Green**
-- Conf_Goal >= threshold
-- AND one of:
-  - Reg_Heat_G == **HOT**
-  - Goalie_Weak >= **70**
+    # -------------------------
+    # 🥅 GOAL Earned Green (Streamlit boolean) + Drought lane
+    # Requires:
+    # - Matrix_Goal == Green
+    # - Conf_Goal >= threshold
+    # - AND one of:
+    #   - Reg_Heat_G == HOT
+    #   - Goalie_Weak >= 70
+    #   - Goal drought qualifies (tier-aware)
+    # -------------------------
+    GOAL_CONF_GREEN = 77
+
+    # Ensure numeric safety
+    for c in ["Conf_Goal", "Goalie_Weak", "Drought_G"]:
+        if c in tracker.columns:
+            tracker[c] = pd.to_numeric(tracker[c], errors="coerce")
+
+    tier = tracker.get("Talent_Tier", "").astype(str).str.upper()
+
+    # Tier-aware drought trigger:
+    # ELITE: drought >= 2
+    # STAR:  drought >= 3
+    # NONE:  drought >= 4
+    goal_drought_ok = (
+        ((tier == "ELITE") & (tracker["Drought_G"].fillna(0) >= 2)) |
+        ((tier == "STAR")  & (tracker["Drought_G"].fillna(0) >= 3)) |
+        (~tier.isin(["ELITE", "STAR"]) & (tracker["Drought_G"].fillna(0) >= 4))
+    )
+
+    tracker["Plays_Goal"] = (
+        (tracker["Matrix_Goal"].astype(str) == "Green") &
+        (tracker["Conf_Goal"].fillna(0) >= GOAL_CONF_GREEN) &
+        (
+            tracker["Reg_Heat_G"].astype(str).str.upper().eq("HOT") |
+            (tracker["Goalie_Weak"].fillna(0) >= 70) |
+            goal_drought_ok
+        )
+    ).fillna(False)
+
+    # Optional: add a tag so it "pops" in Streamlit
+    mask = (
+        tracker["Plays_Goal"] &
+        ~tracker["Play_Tag"].fillna("").str.contains("GOAL EARNED", regex=False)
+    )
+
+    tracker.loc[mask, "Play_Tag"] = np.where(
+        tracker.loc[mask, "Play_Tag"].fillna("").astype(str).str.len() > 0,
+        tracker.loc[mask, "Play_Tag"].fillna("").astype(str) + " | 🥅 GOAL EARNED",
+        "🥅 GOAL EARNED"
+    )
+
+
+
 
 ### ✅ Assists Earned Green (v1 FINAL)
 Requires:
