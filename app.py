@@ -261,6 +261,62 @@ st.markdown(
 )
 
 
+# =========================
+# VENGEANCE CLOCK (Board)
+# =========================
+def render_vengeance_clock():
+    """Analog ticking clock widget (pure HTML/CSS/JS)."""
+    st.markdown(
+        """
+        <div style="display:flex;align-items:center;gap:14px;justify-content:flex-end;margin-top:-8px;margin-bottom:6px;">
+          <div style="font-weight:900;letter-spacing:0.4px;font-size:14px;opacity:0.95;">
+            🕰️ <span style="text-transform:uppercase;">The clock strikes vengeance</span>
+          </div>
+          <div id="vengeanceClock" style="position:relative;width:54px;height:54px;border-radius:50%;
+               border:2px solid rgba(255,255,255,0.75); box-shadow:0 6px 18px rgba(0,0,0,0.25);
+               background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.18), rgba(0,0,0,0.15));">
+            <div style="position:absolute;inset:5px;border-radius:50%;border:1px solid rgba(255,255,255,0.18);"></div>
+            <div id="vcHour" style="position:absolute;left:50%;top:50%;width:3px;height:16px;background:rgba(255,255,255,0.85);
+                 transform-origin:50% 90%;border-radius:2px;transform:translate(-50%,-90%) rotate(0deg);"></div>
+            <div id="vcMin" style="position:absolute;left:50%;top:50%;width:2px;height:21px;background:rgba(255,255,255,0.85);
+                 transform-origin:50% 92%;border-radius:2px;transform:translate(-50%,-92%) rotate(0deg);"></div>
+            <div id="vcSec" style="position:absolute;left:50%;top:50%;width:1px;height:23px;background:rgba(255,0,0,0.85);
+                 transform-origin:50% 92%;border-radius:2px;transform:translate(-50%,-92%) rotate(0deg);"></div>
+            <div style="position:absolute;left:50%;top:50%;width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,0.9);
+                 transform:translate(-50%,-50%);"></div>
+          </div>
+        </div>
+
+        <script>
+          (function() {
+            function tickVengeanceClock(){
+              const d = new Date();
+              const s = d.getSeconds();
+              const m = d.getMinutes();
+              const h = d.getHours() % 12;
+
+              const secDeg = s * 6;                 // 360/60
+              const minDeg = (m + s/60) * 6;
+              const hourDeg = (h + m/60) * 30;      // 360/12
+
+              const sec = document.getElementById('vcSec');
+              const min = document.getElementById('vcMin');
+              const hour = document.getElementById('vcHour');
+              if (!sec || !min || !hour) return;
+
+              sec.style.transform = `translate(-50%,-92%) rotate(${secDeg}deg)`;
+              min.style.transform = `translate(-50%,-92%) rotate(${minDeg}deg)`;
+              hour.style.transform = `translate(-50%,-90%) rotate(${hourDeg}deg)`;
+            }
+            tickVengeanceClock();
+            window.__vcInterval = window.__vcInterval || setInterval(tickVengeanceClock, 1000);
+          })();
+        </script>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
 
 # =========================
 # HELPERS
@@ -1114,7 +1170,13 @@ show_games_times(df_f)
 # =========================
 if page == "Board":
     # ---- Board quick controls (visual-only) ----
-    st.subheader("Board")
+    # Header + clock
+    h1, h2 = st.columns([3, 1])
+    with h1:
+        st.subheader("Board")
+    with h2:
+        render_vengeance_clock()
+
     c1, c2, c3, c4 = st.columns([1, 1, 1, 2])
     with c1:
         greens_only = st.toggle("🟢 Greens only", value=False)
@@ -1202,24 +1264,61 @@ elif page == "Points":
     df_p["_cp"] = safe_num(df_p, "Conf_Points", 0)
     df_p = df_p.sort_values(["_cp"], ascending=[False]).drop(columns=["_cp"], errors="ignore")
 
-    st.sidebar.subheader("Points Filters")
-    show_all = st.sidebar.checkbox("Show all players (ignore filters)", value=False, key="show_all_points")
-    min_conf = st.sidebar.slider("Min Conf (Points)", 0, 100, 77, 1)
-    color_pick = st.sidebar.multiselect(
+    st.subheader("Points")
+    c1, c2, c3, c4, c5, c6 = st.columns([1, 1, 1, 1, 1, 2])
+    with c1:
+        greens_only = st.toggle("🟢 Greens only", value=False, key="pts_greens_only")
+    with c2:
+        ev_only = st.toggle("💰 +EV only", value=False, key="pts_ev_only")
+    with c3:
+        hide_red_rows = st.toggle("Hide 🔴 rows", value=True, key="pts_hide_reds")
+    with c4:
+        plays_first = st.toggle("Plays first", value=True, key="pts_plays_first")
+    with c5:
+        show_all = st.toggle("Show all", value=False, key="pts_show_all")
+    with c6:
+        min_conf = st.slider("Min Conf (Points)", 0, 100, 77, 1, key="pts_min_conf")
+
+    color_pick = st.multiselect(
         "Colors (Points)",
         ["green", "yellow", "blue", "red"],
-        default=["green", "yellow", "blue"]
+        default=["green", "yellow", "blue"],
+        key="pts_colors",
     )
+
 
     if not show_all:
         df_p = df_p[df_p["Conf_Points"].fillna(0) >= min_conf]
         if "Color_Points" in df_p.columns and color_pick:
             df_p = df_p[df_p["Color_Points"].isin(color_pick)]
+    # ---- Visual-style filters (Board-like) ----
+    if hide_red_rows and "Matrix_Points" in df_p.columns:
+        df_p = df_p[safe_str(df_p, "Matrix_Points", "").str.strip().str.lower() != "red"]
+
+    if greens_only and "Green_Points" in df_p.columns:
+        df_p = df_p[df_p["Green_Points"].fillna(False).astype(bool)]
+
+    if ev_only:
+        if "Plays_EV_Points" in df_p.columns:
+            df_p = df_p[df_p["Plays_EV_Points"].astype(str) == "💰"]
+        elif "💰" in df_p.columns:
+            df_p = df_p[df_p["💰"] == "💰"]
+
+    # Markets pills for quick scan
+    if "Markets" not in df_p.columns:
+        df_p["Markets"] = df_p.apply(_markets_pills_row, axis=1)
+
+    if plays_first:
+        df_p["_g"] = df_p.get("Green_Points", False).fillna(False).astype(bool)
+        df_p["_ev"] = (df_p.get("Plays_EV_Points", "").astype(str) == "💰")
+        df_p["_c"] = safe_num(df_p, "Conf_Points", 0)
+        df_p = df_p.sort_values(["_g", "_ev", "_c"], ascending=[False, False, False]).drop(columns=["_g","_ev","_c"], errors="ignore")
+
 
     df_p["Green"] = df_p["Green_Points"].map(lambda x: "🟢" if bool(x) else "")
 
     points_cols = [
-        "Game","Player","Pos","Team","Opp",
+        "Game","Player","Pos","Team","Opp","Markets",
         "Matrix_Points","Conf_Points","Green","Points_Call","GF_Gate_Badge","Tier_Tag","💰",
 
         # --- EV / Odds ---
@@ -1254,25 +1353,61 @@ elif page == "Assists":
     df_a["_ca"] = safe_num(df_a, "Conf_Assists", 0)
     df_a = df_a.sort_values(["_ca"], ascending=[False]).drop(columns=["_ca"], errors="ignore")
 
-    st.sidebar.subheader("Assists Filters")
-    show_all = st.sidebar.checkbox("Show all players (ignore filters)", value=False, key="show_all_assists")
-    min_conf = st.sidebar.slider("Min Conf (Assists)", 0, 100, 77, 1)
-    color_pick = st.sidebar.multiselect(
+    st.subheader("Assists")
+    c1, c2, c3, c4, c5, c6 = st.columns([1, 1, 1, 1, 1, 2])
+    with c1:
+        greens_only = st.toggle("🟢 Greens only", value=False, key="ast_greens_only")
+    with c2:
+        ev_only = st.toggle("💰 +EV only", value=False, key="ast_ev_only")
+    with c3:
+        hide_red_rows = st.toggle("Hide 🔴 rows", value=True, key="ast_hide_reds")
+    with c4:
+        plays_first = st.toggle("Plays first", value=True, key="ast_plays_first")
+    with c5:
+        show_all = st.toggle("Show all", value=False, key="ast_show_all")
+    with c6:
+        min_conf = st.slider("Min Conf (Assists)", 0, 100, 77, 1, key="ast_min_conf")
+
+    color_pick = st.multiselect(
         "Colors (Assists)",
         ["green", "yellow", "blue", "red"],
-        default=["green", "yellow", "blue"]
+        default=["green", "yellow", "blue"],
+        key="ast_colors",
     )
+
 
     if not show_all:
         df_a = df_a[df_a["Conf_Assists"].fillna(0) >= min_conf]
         if "Color_Assists" in df_a.columns and color_pick:
             df_a = df_a[df_a["Color_Assists"].isin(color_pick)]
+    # ---- Visual-style filters (Board-like) ----
+    if hide_red_rows and "Matrix_Assists" in df_a.columns:
+        df_a = df_a[safe_str(df_a, "Matrix_Assists", "").str.strip().str.lower() != "red"]
+
+    if greens_only and "Green_Assists" in df_a.columns:
+        df_a = df_a[df_a["Green_Assists"].fillna(False).astype(bool)]
+
+    if ev_only:
+        if "Plays_EV_Assists" in df_a.columns:
+            df_a = df_a[df_a["Plays_EV_Assists"].astype(str) == "💰"]
+        elif "💰" in df_a.columns:
+            df_a = df_a[df_a["💰"] == "💰"]
+
+    if "Markets" not in df_a.columns:
+        df_a["Markets"] = df_a.apply(_markets_pills_row, axis=1)
+
+    if plays_first:
+        df_a["_g"] = df_a.get("Green_Assists", False).fillna(False).astype(bool)
+        df_a["_ev"] = (df_a.get("Plays_EV_Assists", "").astype(str) == "💰")
+        df_a["_c"] = safe_num(df_a, "Conf_Assists", 0)
+        df_a = df_a.sort_values(["_g", "_ev", "_c"], ascending=[False, False, False]).drop(columns=["_g","_ev","_c"], errors="ignore")
+
 
     df_a["Green"] = df_a.get("Green_Assists", False).map(lambda x: "🟢" if bool(x) else "")
 
     assists_cols = [
         "Game",
-        "Player", "Pos", "Team", "Opp", 
+        "Player", "Pos", "Team", "Opp","Markets", 
         "Matrix_Assists",
         "Conf_Assists", "Green","Assists_Call","GF_Gate_Badge", "Tier_Tag","💰","Drought_A","Best_Drought",
 
@@ -1304,25 +1439,61 @@ elif page == "SOG":
     df_s["_cs"] = safe_num(df_s, "Conf_SOG", 0)
     df_s = df_s.sort_values(["_cs"], ascending=[False]).drop(columns=["_cs"], errors="ignore")
 
-    st.sidebar.subheader("SOG Filters")
-    show_all = st.sidebar.checkbox("Show all players (ignore filters)", value=False, key="show_all_sog")
-    min_conf = st.sidebar.slider("Min Conf (SOG)", 0, 100, 77, 1)
-    color_pick = st.sidebar.multiselect(
+    st.subheader("SOG")
+    c1, c2, c3, c4, c5, c6 = st.columns([1, 1, 1, 1, 1, 2])
+    with c1:
+        greens_only = st.toggle("🟢 Greens only", value=False, key="sog_greens_only")
+    with c2:
+        ev_only = st.toggle("💰 +EV only", value=False, key="sog_ev_only")
+    with c3:
+        hide_red_rows = st.toggle("Hide 🔴 rows", value=True, key="sog_hide_reds")
+    with c4:
+        plays_first = st.toggle("Plays first", value=True, key="sog_plays_first")
+    with c5:
+        show_all = st.toggle("Show all", value=False, key="sog_show_all")
+    with c6:
+        min_conf = st.slider("Min Conf (SOG)", 0, 100, 77, 1, key="sog_min_conf")
+
+    color_pick = st.multiselect(
         "Colors (SOG)",
         ["green", "yellow", "blue", "red"],
-        default=["green", "yellow", "blue"]
+        default=["green", "yellow", "blue"],
+        key="sog_colors",
     )
+
 
     if not show_all:
         df_s = df_s[df_s["Conf_SOG"].fillna(0) >= min_conf]
         if "Color_SOG" in df_s.columns and color_pick:
             df_s = df_s[df_s["Color_SOG"].isin(color_pick)]
+    # ---- Visual-style filters (Board-like) ----
+    if hide_red_rows and "Matrix_SOG" in df_s.columns:
+        df_s = df_s[safe_str(df_s, "Matrix_SOG", "").str.strip().str.lower() != "red"]
+
+    if greens_only and "Green_SOG" in df_s.columns:
+        df_s = df_s[df_s["Green_SOG"].fillna(False).astype(bool)]
+
+    if ev_only:
+        if "Plays_EV_SOG" in df_s.columns:
+            df_s = df_s[df_s["Plays_EV_SOG"].astype(str) == "💰"]
+        elif "💰" in df_s.columns:
+            df_s = df_s[df_s["💰"] == "💰"]
+
+    if "Markets" not in df_s.columns:
+        df_s["Markets"] = df_s.apply(_markets_pills_row, axis=1)
+
+    if plays_first:
+        df_s["_g"] = df_s.get("Green_SOG", False).fillna(False).astype(bool)
+        df_s["_ev"] = (df_s.get("Plays_EV_SOG", "").astype(str) == "💰")
+        df_s["_c"] = safe_num(df_s, "Conf_SOG", 0)
+        df_s = df_s.sort_values(["_g", "_ev", "_c"], ascending=[False, False, False]).drop(columns=["_g","_ev","_c"], errors="ignore")
+
 
     df_s["Green"] = df_s["Green_SOG"].map(lambda x: "🟢" if bool(x) else "")
 
     sog_cols = [
        "Game",
-       "Player", "Pos", "Team", "Opp",
+       "Player", "Pos", "Team", "Opp","Markets",
        "Matrix_SOG",
        "Conf_SOG", "Green", "SOG_Call", "Tier_Tag", "💰", "Drought_SOG", "Best_Drought",
 
@@ -1356,25 +1527,61 @@ elif page == "GOAL (1+)":
     df_g["_cg"] = safe_num(df_g, "Conf_Goal", 0)
     df_g = df_g.sort_values(["_cg"], ascending=[False]).drop(columns=["_cg"], errors="ignore")
 
-    st.sidebar.subheader("Goal Filters")
-    show_all = st.sidebar.checkbox("Show all players (ignore filters)", value=False)
-    min_conf = st.sidebar.slider("Min Conf (Goal)", 0, 100, 77, 1)
-    color_pick = st.sidebar.multiselect(
+    st.subheader("GOAL (1+)")
+    c1, c2, c3, c4, c5, c6 = st.columns([1, 1, 1, 1, 1, 2])
+    with c1:
+        greens_only = st.toggle("🟢 Greens only", value=False, key="g_greens_only")
+    with c2:
+        ev_only = st.toggle("💰 +EV only", value=False, key="g_ev_only")
+    with c3:
+        hide_red_rows = st.toggle("Hide 🔴 rows", value=True, key="g_hide_reds")
+    with c4:
+        plays_first = st.toggle("Plays first", value=True, key="g_plays_first")
+    with c5:
+        show_all = st.toggle("Show all", value=False, key="g_show_all")
+    with c6:
+        min_conf = st.slider("Min Conf (Goal)", 0, 100, 77, 1, key="g_min_conf")
+
+    color_pick = st.multiselect(
         "Colors (Goal)",
         ["green", "yellow", "blue", "red"],
-        default=["green", "yellow", "blue"]
+        default=["green", "yellow", "blue"],
+        key="g_colors",
     )
+
 
     if not show_all:
         df_g = df_g[df_g["Conf_Goal"].fillna(0) >= min_conf]
         if "Color_Goal" in df_g.columns and color_pick:
             df_g = df_g[df_g["Color_Goal"].isin(color_pick)]
+    # ---- Visual-style filters (Board-like) ----
+    if hide_red_rows and "Matrix_Goal" in df_g.columns:
+        df_g = df_g[safe_str(df_g, "Matrix_Goal", "").str.strip().str.lower() != "red"]
+
+    if greens_only and "Green_Goal" in df_g.columns:
+        df_g = df_g[df_g["Green_Goal"].fillna(False).astype(bool)]
+
+    if ev_only:
+        if "Plays_EV_ATG" in df_g.columns:
+            df_g = df_g[df_g["Plays_EV_ATG"].astype(str) == "💰"]
+        elif "💰" in df_g.columns:
+            df_g = df_g[df_g["💰"] == "💰"]
+
+    if "Markets" not in df_g.columns:
+        df_g["Markets"] = df_g.apply(_markets_pills_row, axis=1)
+
+    if plays_first:
+        df_g["_g"] = df_g.get("Green_Goal", False).fillna(False).astype(bool)
+        df_g["_ev"] = (df_g.get("Plays_EV_ATG", "").astype(str) == "💰")
+        df_g["_c"] = safe_num(df_g, "Conf_Goal", 0)
+        df_g = df_g.sort_values(["_g", "_ev", "_c"], ascending=[False, False, False]).drop(columns=["_g","_ev","_c"], errors="ignore")
+
 
     df_g["Green"] = df_g.get("Green_Goal", False).map(lambda x: "🟢" if bool(x) else "")
 
     goal_cols = [
         "Game",
-        "Player", "Pos", "Team", "Opp",
+        "Player", "Pos", "Team", "Opp","Markets",
         "Matrix_Goal",
         "Conf_Goal", "Green", "ATG_Call", "GF_Gate_Badge", "Tier_Tag", "💰",
         "ATG_Line", "ATG_Book", "ATG_Odds_Over",
