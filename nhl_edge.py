@@ -1031,9 +1031,71 @@ def fetch_dfo_injuries_for_teams(teams: set[str], debug: bool = False) -> pd.Dat
     if not rows:
         return pd.DataFrame(columns=["Team", "Player", "Status", "Injury", "Expected_Return", "Player_norm"])
 
-    df = pd.DataFrame(rows)
-    df["Player_norm"] = df["Player"].astype(str).map(_norm_name)
-    df["Team"] = df["Team"].astype(str).map(norm_team)
+def merge_bdl_mainlines(df: pd.DataFrame, path: str = "data/cache/bdl_mainlines_best.json") -> pd.DataFrame:
+    import json
+    import pandas as pd
+
+    def _norm_name(x):
+        return "" if x is None else str(x).strip().lower()
+
+    def _norm_team(x):
+        return "" if x is None else str(x).strip().upper()
+
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            bdl_rows = json.load(f)
+        if not bdl_rows:
+            return df
+    except Exception:
+        return df
+
+    bdl = pd.DataFrame(bdl_rows)
+    if bdl.empty:
+        return df
+
+    bdl["player_key"] = bdl["player"].map(_norm_name)
+    bdl["team_key"]   = bdl["team"].map(_norm_team)
+
+    df["player_key"] = df["Player_norm"] if "Player_norm" in df.columns else df["Player"].map(_norm_name)
+    df["team_key"]   = df["Team_norm"]   if "Team_norm"   in df.columns else df["Team"].map(_norm_team)
+
+    wide = bdl.pivot_table(
+        index=["player_key", "team_key"],
+        columns="prop_type",
+        values=["main_line_plus", "main_odds", "vendor"],
+        aggfunc="first"
+    )
+    wide.columns = [f"{a}_{b}" for a, b in wide.columns]
+    wide = wide.reset_index()
+
+    df = df.merge(wide, on=["player_key", "team_key"], how="left")
+
+    df.rename(columns={
+        "main_line_plus_shots_on_goal": "BDL_SOG_Line",
+        "main_odds_shots_on_goal": "BDL_SOG_Odds",
+        "vendor_shots_on_goal": "BDL_SOG_Book",
+
+        "main_line_plus_goals": "BDL_Goal_Line",
+        "main_odds_goals": "BDL_Goal_Odds",
+        "vendor_goals": "BDL_Goal_Book",
+
+        "main_line_plus_points": "BDL_Points_Line",
+        "main_odds_points": "BDL_Points_Odds",
+        "vendor_points": "BDL_Points_Book",
+
+        "main_line_plus_assists": "BDL_Assists_Line",
+        "main_odds_assists": "BDL_Assists_Odds",
+        "vendor_assists": "BDL_Assists_Book",
+
+        "main_line_plus_saves": "BDL_Saves_Line",
+        "main_odds_saves": "BDL_Saves_Odds",
+        "vendor_saves": "BDL_Saves_Book",
+
+        "main_line_plus_power_play_points": "BDL_PPP_Line",
+        "main_odds_power_play_points": "BDL_PPP_Odds",
+        "vendor_power_play_points": "BDL_PPP_Book",
+    }, inplace=True)
+
     return df
 
 def apply_injury_dfo(sk: pd.DataFrame, inj_df: pd.DataFrame, debug: bool = False) -> pd.DataFrame:
@@ -3284,6 +3346,63 @@ def build_tracker(today_local: date, debug: bool = False) -> str:
     for c in ROUND_2:
         if c in tracker.columns:
             tracker[c] = pd.to_numeric(tracker[c], errors="coerce").round(2)
+
+    
+ 
+    # ============================
+    # BallDontLie odds + EV merge (saved into tracker CSV)
+    # ============================
+    try:
+        from odds_ev_bdl import merge_bdl_props_mainlines, add_bdl_ev_all
+
+        tracker = merge_bdl_props_mainlines(
+            tracker,
+            game_date=today_local.isoformat(),
+            api_key=(os.getenv("BALLDONTLIE_API_KEY") or os.getenv("BDL_API_KEY") or ""),
+            vendors=["draftkings", "fanduel", "caesars"],
+            debug=bool(debug),
+        )
+        tracker = add_bdl_ev_all(tracker)
+
+        # Hard guard: if API key is present, require meaningful coverage across at least one market
+        if (os.getenv("BALLDONTLIE_API_KEY", "") or os.getenv("BDL_API_KEY", "")).strip():
+            cov_cols = [
+                "SOG_Odds_Over",
+                "Points_Odds_Over",
+                "Goal_Odds_Over",
+                "ATG_Odds_Over",
+                "Assists_Odds_Over",
+            ]
+            cov = 0
+            for c in cov_cols:
+                if c in tracker.columns:
+                    cov = max(cov, int(pd.to_numeric(tracker[c], errors="coerce").notna().sum()))
+            if bool(debug):
+                print(f"[odds/ev] max odds coverage across markets: {cov}")
+            if cov < 50:
+                raise RuntimeError(f"BDL odds coverage too low: {cov} players (<50)")
+
+        # $EV play flags (so every $EV column has a companion Plays_EV_* column)
+        def _mk_play(col_ev: str) -> pd.Series:
+            if col_ev not in tracker.columns:
+                return pd.Series([False] * len(tracker))
+            return pd.to_numeric(tracker[col_ev], errors="coerce").fillna(0) >= 10
+
+        if "Plays_EV_SOG" not in tracker.columns:
+            tracker["Plays_EV_SOG"] = _mk_play("SOG_EVpct_over")
+        if "Plays_EV_Points" not in tracker.columns:
+            tracker["Plays_EV_Points"] = _mk_play("Points_EVpct_over")
+        if "Plays_EV_Goal" not in tracker.columns:
+            tracker["Plays_EV_Goal"] = _mk_play("Goal_EVpct_over")
+        if "Plays_EV_ATG" not in tracker.columns:
+            tracker["Plays_EV_ATG"] = _mk_play("ATG_EVpct_over")
+        if "Plays_EV_Assists" not in tracker.columns:
+            tracker["Plays_EV_Assists"] = _mk_play("Assists_EVpct_over")
+
+        print("[odds/ev] merged BDL odds + EV")
+    except Exception as e:
+        print(f"[odds/ev] skipped: {e}")
+
 
     
  

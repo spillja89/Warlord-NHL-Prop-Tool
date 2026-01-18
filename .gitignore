@@ -1,0 +1,28 @@
+# Python
+__pycache__/
+*.pyc
+
+# Virtual environment
+.venv/
+
+# Runtime cache / scraped data
+cache/
+data/
+output/
+*.json
+*.csv
+
+# Patch / backup folders
+patch_*/
+nhl_patch_*/
+nhl_prop_tool_sslfix/
+Nhl_Prop_Tool_fixed/
+
+# Scratch / experiments
+apyp.py
+bdl_probe_nhl_props.py
+tatus
+
+# OS junk
+.DS_Store
+Thumbs.db

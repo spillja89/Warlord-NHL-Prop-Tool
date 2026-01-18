@@ -7,6 +7,37 @@ import numpy as np
 import pandas as pd
 import streamlit as st
 
+
+# -------------------------
+# Number formatting helpers
+# -------------------------
+def _is_nan(x) -> bool:
+    try:
+        return x is None or (isinstance(x, float) and math.isnan(x))
+    except Exception:
+        return True
+
+
+def snap_half(x):
+    """Snap a numeric value to the nearest 0.5 (prop lines should look like 2.5, 3.0, etc.)."""
+    try:
+        if _is_nan(x):
+            return np.nan
+        v = float(x)
+        return round(v * 2.0) / 2.0
+    except Exception:
+        return np.nan
+
+
+def snap_int(x):
+    """Cast odds to int-ish (American odds should be -110, +120, etc.)."""
+    try:
+        if _is_nan(x):
+            return np.nan
+        return int(round(float(x)))
+    except Exception:
+        return np.nan
+
 COLUMN_WIDTHS = {
     # identity
     "Game": "small",
@@ -32,6 +63,7 @@ COLUMN_WIDTHS = {
     "GF_Gate_Badge": "small",
     "Tier_Tag": "small",
     "🔥": "small",
+    "💰": "small",
 
     # drought
     "Drought_P": "small",
@@ -39,6 +71,48 @@ COLUMN_WIDTHS = {
     "Drought_G": "small",
     "Drought_SOG": "small",
     "Best_Drought": "small",
+
+    "SOG_Line": "small",
+    "SOG_Book": "small",
+    "SOG_Odds_Over": "small",
+    "SOG_EVpct_over": "small",
+    "SOG_p_model_over": "small",
+    "SOG_p_imp_over": "small",
+    "Plays_EV_SOG": "small",
+
+    # EV / odds for other markets
+    "Points_Line": "small",
+    "Points_Book": "small",
+    "Points_Odds_Over": "small",
+    "Points_p_model_over": "small",
+    "Points_p_imp_over": "small",
+    "Points_EVpct_over": "small",
+    "Plays_EV_Points": "small",
+
+    "Goal_Line": "small",
+    "Goal_Book": "small",
+    "Goal_Odds_Over": "small",
+    "Goal_p_model_over": "small",
+    "Goal_p_imp_over": "small",
+    "Goal_EVpct_over": "small",
+    "Plays_EV_Goal": "small",
+
+    "ATG_Line": "small",
+    "ATG_Book": "small",
+    "ATG_Odds_Over": "small",
+    "ATG_p_model_over": "small",
+    "ATG_p_imp_over": "small",
+    "ATG_EVpct_over": "small",
+    "Plays_EV_ATG": "small",
+
+    "Assists_Line": "small",
+    "Assists_Book": "small",
+    "Assists_Odds_Over": "small",
+    "Assists_p_model_over": "small",
+    "Assists_p_imp_over": "small",
+    "Assists_EVpct_over": "small",
+    "Plays_EV_Assists": "small",
+
 
     # goalie / defense
     "Opp_Goalie": "medium",
@@ -64,7 +138,15 @@ def build_column_config(df: pd.DataFrame, cols: list[str]) -> dict:
             continue
 
         if pd.api.types.is_numeric_dtype(df[c]):
-            cfg[c] = st.column_config.NumberColumn(width=width)
+            # Betting-friendly numeric formats
+            if c.endswith("_Line") or c == "Line":
+                cfg[c] = st.column_config.NumberColumn(width=width, format="%.1f")
+            elif c.endswith("_Odds_Over") or c == "Odds":
+                cfg[c] = st.column_config.NumberColumn(width=width, format="%.0f")
+            elif c.endswith("_Model%") or c.endswith("_Imp%") or c.endswith("_EV%"):
+                cfg[c] = st.column_config.NumberColumn(width=width, format="%.1f")
+            else:
+                cfg[c] = st.column_config.NumberColumn(width=width)
         else:
             cfg[c] = st.column_config.TextColumn(width=width)
 
@@ -134,13 +216,7 @@ st.markdown(
 # HELPERS
 # =========================
 def find_latest_tracker_csv(output_dir: str) -> str | None:
-    patterns = [
-        os.path.join(output_dir, "tracker_*.csv"),
-        os.path.join(output_dir, "*.csv"),
-    ]
-    files = []
-    for p in patterns:
-        files.extend(glob.glob(p))
+    files = glob.glob(os.path.join(output_dir, "tracker_*.csv"))
     files = [f for f in files if os.path.isfile(f)]
     if not files:
         return None
@@ -174,7 +250,16 @@ def safe_str(df: pd.DataFrame, col: str, default="") -> pd.Series:
 
 
 def style_df(df: pd.DataFrame, cols: list[str]) -> "pd.io.formats.style.Styler":
-    view = df[cols].copy()
+    # --- Pandas Styler REQUIRES unique index + unique columns ---
+    # de-dupe requested columns while preserving order
+    cols = [c for c in dict.fromkeys(cols) if c in df.columns]
+
+    # safe view with unique index
+    view = df.loc[:, cols].copy().reset_index(drop=True)
+
+    # if anything upstream produced duplicate column names, drop them
+    if view.columns.duplicated().any():
+        view = view.loc[:, ~view.columns.duplicated()].copy()
 
     # --- Matrix: Green/Yellow/Red ---
     def matrix_style(v):
@@ -210,6 +295,21 @@ def style_df(df: pd.DataFrame, cols: list[str]) -> "pd.io.formats.style.Styler":
             return "background-color:#b38f00;color:white;font-weight:700;"
         return "background-color:#8b1a1a;color:white;font-weight:700;"
 
+
+
+    # --- EV%: Green >= +10, Yellow +5..+10, Red <0 ---
+    def ev_style(v):
+        try:
+            x = float(v)
+        except Exception:
+            return ""
+        if x >= 10:
+            return "background-color:#1f7a1f;color:white;font-weight:700;"
+        if x >= 5:
+            return "background-color:#b38f00;color:white;font-weight:700;"
+        if x < 0:
+            return "background-color:#8b1a1a;color:white;font-weight:700;"
+        return ""
     # --- Weakness: only flag extreme weakness (red) ---
     def weak_style(v):
         try:
@@ -237,11 +337,26 @@ def style_df(df: pd.DataFrame, cols: list[str]) -> "pd.io.formats.style.Styler":
         if c in view.columns:
             sty = sty.applymap(conf_style, subset=[c])
 
+
+    # EV columns
+    for c in [c for c in view.columns if c.endswith("EVpct_over")]:
+        sty = sty.applymap(ev_style, subset=[c])
+
+    # Plays_EV_* booleans (highlight when true)
+    def play_ev_style(v):
+        try:
+            return "background-color:#1f7a1f;color:white;font-weight:700;" if bool(v) else ""
+        except Exception:
+            return ""
+
+    for c in [c for c in view.columns if c.startswith("Plays_EV_")]:
+        sty = sty.applymap(play_ev_style, subset=[c])
+
     # Weakness columns (only extreme)
     for c in ["Goalie_Weak", "Opp_DefWeak"]:
         if c in view.columns:
             sty = sty.applymap(weak_style, subset=[c])
-        # -------------------------
+    # -------------------------
     # FORCE DECIMALS (Styler tables)
     # -------------------------
     fmt2_cols = [
@@ -271,6 +386,22 @@ def style_df(df: pd.DataFrame, cols: list[str]) -> "pd.io.formats.style.Styler":
         if c in view.columns:
             format_dict[c] = "{:.1f}"
 
+    # --- Betting UI: lines + odds ---
+    # Lines: show 1 decimal, and they're already snapped to .0/.5 upstream (or we snap later)
+    for c in view.columns:
+        if c.endswith("_Line") or c in ("Line",):
+            format_dict.setdefault(c, "{:.1f}")
+
+    # American odds: show no decimals
+    for c in view.columns:
+        if c.endswith("_Odds_Over") or c in ("Odds",):
+            format_dict.setdefault(c, "{:.0f}")
+
+    # Probabilities (0-1): show as clean percent (e.g., 53.4%)
+    for c in view.columns:
+        if c.endswith("_p_model_over") or c.endswith("_p_imp_over"):
+            format_dict.setdefault(c, "{:.1%}")
+
     if format_dict:
         sty = sty.format(format_dict, na_rep="")
 
@@ -294,8 +425,15 @@ def add_ui_columns(df: pd.DataFrame) -> pd.DataFrame:
     # Fire indicator
     out["🔥"] = plays_points.map(lambda x: "🔥" if x else "")
 
- 
-
+    # 💰 EV indicator (any market): show when Plays_EV_* is true
+    ev_cols = [
+        "Plays_EV_SOG", "Plays_EV_Points", "Plays_EV_Goal", "Plays_EV_ATG", "Plays_EV_Assists",
+    ]
+    ev_any = pd.Series(False, index=out.index)
+    for c in ev_cols:
+        if c in out.columns:
+            ev_any = ev_any | to_bool_series(out[c])
+    out["💰"] = ev_any.map(lambda x: "💰" if bool(x) else "")
 
     return out
 
@@ -330,13 +468,14 @@ def filter_common(df: pd.DataFrame) -> pd.DataFrame:
         sel_games = st.sidebar.multiselect("Matchup", games, default=[])
         if sel_games:
             out = out[out["Game"].astype(str).isin(sel_games)]
-
-    
-
     # Only flagged plays
     only_fire = st.sidebar.checkbox("Only 🔥 plays", value=False)
     if only_fire and "🔥" in out.columns:
         out = out[out["🔥"] == "🔥"]
+
+    only_ev = st.sidebar.checkbox("Only 💰 plays", value=False)
+    if only_ev and "💰" in out.columns:
+        out = out[out["💰"] == "💰"]
 
     return out
 
@@ -395,6 +534,15 @@ def show_games_times(df: pd.DataFrame):
 def show_table(df: pd.DataFrame, cols: list[str], title: str):
     st.subheader(title)
 
+    # Styler requires unique index + columns; filtering a df can preserve a non-unique index.
+    # Also de-dupe the requested column list (some views may accidentally include repeats).
+    df = df.copy().reset_index(drop=True)
+    if df.columns.duplicated().any():
+        df = df.loc[:, ~df.columns.duplicated()].copy()
+
+    # de-dupe requested cols while preserving order
+    cols = list(dict.fromkeys(cols))
+
     existing = [c for c in cols if c in df.columns]
     missing = [c for c in cols if c not in df.columns]
 
@@ -406,11 +554,11 @@ def show_table(df: pd.DataFrame, cols: list[str], title: str):
 
     # ✅ Option A: keeps your Styler colors
     st.dataframe(
-    styled,
-    use_container_width=True,
-    hide_index=True,
-    column_config=build_column_config(df, existing),
-)
+        styled,
+        use_container_width=True,
+        hide_index=True,
+        column_config=build_column_config(df, existing),
+    )
 
 
 # =========================
@@ -518,6 +666,48 @@ if "GF_Gate_Badge" not in df.columns:
 
 
 df = add_ui_columns(df)
+
+# =========================
+# ODDS / EV UI DERIVED COLS (readable)
+# =========================
+# Convert p_model / p_imp into human % columns and create a global 💰 marker.
+for m in ["Points","Goal","Assists","ATG","SOG"]:
+    pm = f"{m}_p_model_over"
+    pi = f"{m}_p_imp_over"
+    ev = f"{m}_EVpct_over"
+    if pm in df.columns:
+        df[f"{m}_Model%"] = (pd.to_numeric(df[pm], errors="coerce") * 100).round(1)
+    if pi in df.columns:
+        df[f"{m}_Imp%"] = (pd.to_numeric(df[pi], errors="coerce") * 100).round(1)
+    if ev in df.columns:
+        df[f"{m}_EV%"] = pd.to_numeric(df[ev], errors="coerce").round(1)
+
+# Replace Plays_EV_* booleans with a 💰 icon for readability (keep the original name)
+for c in ["Plays_EV_Points","Plays_EV_Goal","Plays_EV_Assists","Plays_EV_ATG","Plays_EV_SOG"]:
+    if c in df.columns:
+        df[c] = df[c].apply(lambda x: "💰" if bool(x) else "")
+
+# Global 💰 if any EV-play is active
+_ev_play_cols = [c for c in ["Plays_EV_Points","Plays_EV_Goal","Plays_EV_Assists","Plays_EV_ATG","Plays_EV_SOG"] if c in df.columns]
+if _ev_play_cols:
+    df["💰"] = (df[_ev_play_cols].astype(str).apply(lambda r: any(v=="💰" for v in r), axis=1)).map(lambda x: "💰" if x else "")
+else:
+    df["💰"] = ""
+
+
+# =========================
+# BETTING DISPLAY CLEANUP
+# =========================
+# Snap all *_Line columns to .0/.5 so you never see ugly 2.49999997 style floats.
+for c in list(df.columns):
+    if c.endswith("_Line") or c == "Line":
+        df[c] = pd.to_numeric(df[c], errors="coerce").apply(snap_half)
+
+# American odds should be whole numbers (no decimals)
+for c in list(df.columns):
+    if c.endswith("_Odds_Over") or c == "Odds":
+        df[c] = pd.to_numeric(df[c], errors="coerce").apply(snap_int)
+
 
 # --- slate size (safe)
 try:
@@ -874,7 +1064,7 @@ if page == "Board":
         "Player", "Pos", "Team", "Opp",
         "Best_Market",
         "Best_Conf","Tier_Tag", "iXG%", "iXA%",
-        "🔥", 
+        "🔥", "💰", 
         "Goalie_Weak", "Opp_DefWeak",
         "Opp_Goalie", "Opp_SV", "Opp_GAA",
         "Matrix_Points", "Conf_Points", "Reg_Heat_P", "Reg_Gap_P10",
@@ -898,6 +1088,7 @@ elif page == "Points":
     df_p = df_p.sort_values(["_cp"], ascending=[False]).drop(columns=["_cp"], errors="ignore")
 
     st.sidebar.subheader("Points Filters")
+    show_all = st.sidebar.checkbox("Show all players (ignore filters)", value=False, key="show_all_points")
     min_conf = st.sidebar.slider("Min Conf (Points)", 0, 100, 77, 1)
     color_pick = st.sidebar.multiselect(
         "Colors (Points)",
@@ -905,15 +1096,26 @@ elif page == "Points":
         default=["green", "yellow", "blue"]
     )
 
-    df_p = df_p[df_p["Conf_Points"].fillna(0) >= min_conf]
-    if "Color_Points" in df_p.columns and color_pick:
-        df_p = df_p[df_p["Color_Points"].isin(color_pick)]
+    if not show_all:
+        df_p = df_p[df_p["Conf_Points"].fillna(0) >= min_conf]
+        if "Color_Points" in df_p.columns and color_pick:
+            df_p = df_p[df_p["Color_Points"].isin(color_pick)]
 
     df_p["Green"] = df_p["Green_Points"].map(lambda x: "🟢" if bool(x) else "")
 
     points_cols = [
         "Game","Player","Pos","Team","Opp",
-        "Matrix_Points","Conf_Points","Green","GF_Gate_Badge","Tier_Tag",
+        "Matrix_Points","Conf_Points","Green","GF_Gate_Badge","Tier_Tag","💰",
+
+        # --- EV / Odds ---
+        "Points_Line",
+        "Points_Book",
+        "Points_Odds_Over",
+        "Points_Model%",
+        "Points_Imp%",
+        "Points_EV%",
+        "Plays_EV_Points",
+
         "Reg_Heat_P","Reg_Gap_P10","Exp_P_10","L10_P",
         "iXG%","iXA%",
         "Opp_Goalie","Opp_SV","Opp_GAA","Goalie_Weak","Opp_DefWeak",
@@ -938,6 +1140,7 @@ elif page == "Assists":
     df_a = df_a.sort_values(["_ca"], ascending=[False]).drop(columns=["_ca"], errors="ignore")
 
     st.sidebar.subheader("Assists Filters")
+    show_all = st.sidebar.checkbox("Show all players (ignore filters)", value=False, key="show_all_assists")
     min_conf = st.sidebar.slider("Min Conf (Assists)", 0, 100, 77, 1)
     color_pick = st.sidebar.multiselect(
         "Colors (Assists)",
@@ -945,9 +1148,10 @@ elif page == "Assists":
         default=["green", "yellow", "blue"]
     )
 
-    df_a = df_a[df_a["Conf_Assists"].fillna(0) >= min_conf]
-    if "Color_Assists" in df_a.columns and color_pick:
-        df_a = df_a[df_a["Color_Assists"].isin(color_pick)]
+    if not show_all:
+        df_a = df_a[df_a["Conf_Assists"].fillna(0) >= min_conf]
+        if "Color_Assists" in df_a.columns and color_pick:
+            df_a = df_a[df_a["Color_Assists"].isin(color_pick)]
 
     df_a["Green"] = df_a.get("Green_Assists", False).map(lambda x: "🟢" if bool(x) else "")
 
@@ -955,7 +1159,16 @@ elif page == "Assists":
         "Game",
         "Player", "Pos", "Team", "Opp", 
         "Matrix_Assists",
-        "Conf_Assists", "Green","GF_Gate_Badge", "Tier_Tag","Drought_A","Best_Drought",
+        "Conf_Assists", "Green","GF_Gate_Badge", "Tier_Tag","💰","Drought_A","Best_Drought",
+
+        # --- EV / Odds ---
+        "Assists_Line",
+        "Assists_Book",
+        "Assists_Odds_Over",
+        "Assists_Model%",
+        "Assists_Imp%",
+        "Assists_EV%",
+        "Plays_EV_Assists",
         "Assist_ProofCount", "Assist_Why",
         "Reg_Heat_A", "Reg_Gap_A10", "Exp_A_10", "L10_A",
         "iXA%","iXG%", "v2_player_stability", 
@@ -977,6 +1190,7 @@ elif page == "SOG":
     df_s = df_s.sort_values(["_cs"], ascending=[False]).drop(columns=["_cs"], errors="ignore")
 
     st.sidebar.subheader("SOG Filters")
+    show_all = st.sidebar.checkbox("Show all players (ignore filters)", value=False, key="show_all_sog")
     min_conf = st.sidebar.slider("Min Conf (SOG)", 0, 100, 77, 1)
     color_pick = st.sidebar.multiselect(
         "Colors (SOG)",
@@ -984,22 +1198,37 @@ elif page == "SOG":
         default=["green", "yellow", "blue"]
     )
 
-    df_s = df_s[df_s["Conf_SOG"].fillna(0) >= min_conf]
-    if "Color_SOG" in df_s.columns and color_pick:
-        df_s = df_s[df_s["Color_SOG"].isin(color_pick)]
+    if not show_all:
+        df_s = df_s[df_s["Conf_SOG"].fillna(0) >= min_conf]
+        if "Color_SOG" in df_s.columns and color_pick:
+            df_s = df_s[df_s["Color_SOG"].isin(color_pick)]
 
     df_s["Green"] = df_s["Green_SOG"].map(lambda x: "🟢" if bool(x) else "")
 
     sog_cols = [
-        "Game",
-        "Player", "Pos", "Team", "Opp", 
-        "Matrix_SOG",
-        "Conf_SOG", "Green","Tier_Tag","Drought_SOG","Best_Drought",
+       "Game",
+       "Player", "Pos", "Team", "Opp",
+       "Matrix_SOG",
+       "Conf_SOG", "Green", "Tier_Tag", "💰", "Drought_SOG", "Best_Drought",
+
+        # --- EV / Odds (NEW) ---
+        "SOG_Line",
+        "SOG_Book",
+        "SOG_Odds_Over",
+        "SOG_Model%",
+        "SOG_Imp%",
+        "SOG_EV%",
+        "Plays_EV_SOG",
+
         "Reg_Heat_S", "Reg_Gap_S10", "Exp_S_10", "L10_S",
-        "Med10_SOG", "Avg5_SOG", "ShotIntent", "ShotIntent_Pct", "Opp_Goalie", "Opp_SV",
+        "Med10_SOG", "Avg5_SOG", "ShotIntent", "ShotIntent_Pct",
+        "Opp_Goalie", "Opp_SV",
         "Goalie_Weak", "Opp_DefWeak",
+
+        # keep old generic if you still want it
         "Line", "Odds", "Result",
     ]
+
 
     show_table(df_s, sog_cols, "SOG View")
 
@@ -1013,6 +1242,7 @@ elif page == "Goal":
     df_g = df_g.sort_values(["_cg"], ascending=[False]).drop(columns=["_cg"], errors="ignore")
 
     st.sidebar.subheader("Goal Filters")
+    show_all = st.sidebar.checkbox("Show all players (ignore filters)", value=False)
     min_conf = st.sidebar.slider("Min Conf (Goal)", 0, 100, 77, 1)
     color_pick = st.sidebar.multiselect(
         "Colors (Goal)",
@@ -1020,9 +1250,10 @@ elif page == "Goal":
         default=["green", "yellow", "blue"]
     )
 
-    df_g = df_g[df_g["Conf_Goal"].fillna(0) >= min_conf]
-    if "Color_Goal" in df_g.columns and color_pick:
-        df_g = df_g[df_g["Color_Goal"].isin(color_pick)]
+    if not show_all:
+        df_g = df_g[df_g["Conf_Goal"].fillna(0) >= min_conf]
+        if "Color_Goal" in df_g.columns and color_pick:
+            df_g = df_g[df_g["Color_Goal"].isin(color_pick)]
 
     df_g["Green"] = df_g.get("Green_Goal", False).map(lambda x: "🟢" if bool(x) else "")
 
@@ -1030,7 +1261,25 @@ elif page == "Goal":
         "Game",
         "Player", "Pos", "Team", "Opp",
         "Matrix_Goal", 
-        "Conf_Goal", "Green","GF_Gate_Badge", "Tier_Tag","Drought_G","Best_Drought",
+        "Conf_Goal", "Green","GF_Gate_Badge", "Tier_Tag","💰","Drought_G","Best_Drought",
+
+        # --- EV / Odds ---
+        "Goal_Line",
+        "Goal_Book",
+        "Goal_Odds_Over",
+        "Goal_Model%",
+        "Goal_Imp%",
+        "Goal_EV%",
+        "Plays_EV_Goal",
+
+        # Anytime goal (if you want it)
+        "ATG_Line",
+        "ATG_Book",
+        "ATG_Odds_Over",
+        "ATG_Model%",
+        "ATG_Imp%",
+        "ATG_EV%",
+        "Plays_EV_ATG",
         "Reg_Heat_G", "Reg_Gap_G10", "Exp_G_10", "L10_G",
         "iXG%", "iXA%", "L5_G", "Opp_Goalie", "Opp_SV",
         "Goalie_Weak", "Opp_DefWeak",
@@ -1040,185 +1289,112 @@ elif page == "Goal":
     show_table(df_g, goal_cols, "Goal View")
 
 elif page == "Guide":
-    st.subheader("📘 Guide — How to use The Warlord’s NHL Prop Tool")
-
-    st.markdown("""
+    st.subheader("📘 Guide — How to use")
+    st.markdown(r"""
 ## The 60-second workflow
 1) **Start on Board**
-   - Sort is already best-first (Best_Conf, then Goalie_Weak, then Opp_DefWeak).
-   - Look for **Tier_Tag + HOT regression + weak matchup** stacking.
+   - Sorted best-first (**Best_Conf → Goalie_Weak → Opp_DefWeak**)
+   - Look for **Tier_Tag + HOT regression + weak matchup** stacking
 
-2) **Open the market view** (Points / SOG / Goal / Assists)
-   - Use **Min Conf** slider to tighten.
-   - Use **Colors** to hide red.
+2) **Open a market view** (Points / SOG / Goal / Assists)
+   - Use **Min Conf** slider to tighten
+   - Use **Colors** to hide red
+   - Use **Only 🔥** to isolate your shortlist
 
-3) **Only bet “earned greens”**
-   - Your “🟢” badge inside each market page is the *actual playable* signal.
-
----
-
-## Your key signals (what to trust most)
-### 1) Matrix_*  (Green/Yellow/Red)
-- **Green** = model conditions met (baseline signal)
-- **Yellow** = mixed / borderline
-- **Red** = failed conditions
-
-### 2) Conf_* (0–100)
-- Model confidence after adjustments (injury, environment gates, etc.)
-- You’re using color tiers via `_tier_color()`.
-
-### 3) Earned Green (🟢)
-This is your “final boss” gating.
-A player can look good in raw confidence, but **earned green is what you actually play**.
+3) **Use two gates (this is the secret sauce)**
+   - **🟢 Earned Green** = “model says playable”
+   - **💰 EV Play** = “market is mispriced vs us”
+   
+**Best bets are when 🟢 and 💰 agree.**
 
 ---
 
-## Earned Green rules (current app logic)
+## EV / Odds columns — what they mean
+**Line** → What must happen to win (threshold)  
+**Odds** → Payout price (American odds)  
+**Model%** → Our model probability the Over hits  
+**Imp%** → Sportsbook implied probability from odds  
+**EV%** → Expected value edge (positive = good)  
+**💰** → Approved +EV wager (EV% cleared our threshold)
 
-### ✅ SOG Earned Green
-Requires:
-- Matrix_SOG == **Green**
-- Conf_SOG >= threshold (slate-size gated)
+### Line vs Odds (common confusion)
+- `Points_Line = 3.0` means **Over 3.0 → 4+ points**
+- `Points_Odds_Over = +900` means **risk 1 to win 9**
+So “300/900” is **odds**, not the line.
 
-### ✅ Points Earned Green
-Requires:
-- Matrix_Points == **Green**
-- Conf_Points >= threshold
-- AND one of:
-  - Reg_Heat_P == **HOT**
-  - Play_Tag contains **HOT**
-  - 🔥 flagged
+### Milestone mapping (how Overs work)
+- 0.5 → **1+**
+- 1.0 → **1+**
+- 1.5 → **2+**
+- 2.0 → **2+**
+- 2.5 → **3+**
+- 3.0 → **4+**
+(Over X.0 = X+1)
 
-    # -------------------------
-    # 🥅 GOAL Earned Green (Streamlit boolean) + Drought lane
-    # Requires:
-    # - Matrix_Goal == Green
-    # - Conf_Goal >= threshold
-    # - AND one of:
-    #   - Reg_Heat_G == HOT
-    #   - Goalie_Weak >= 70
-    #   - Goal drought qualifies (tier-aware)
-    # -------------------------
-    GOAL_CONF_GREEN = 77
+### EV% interpretation
+- **< 0%** → bad price (-EV)
+- **0–4%** → thin edge
+- **5–9%** → decent edge
+- **10%+** → strong edge (this is where 💰 triggers)
 
-    # Ensure numeric safety
-    for c in ["Conf_Goal", "Goalie_Weak", "Drought_G"]:
-        if c in tracker.columns:
-            tracker[c] = pd.to_numeric(tracker[c], errors="coerce")
-
-    tier = tracker.get("Talent_Tier", "").astype(str).str.upper()
-
-    # Tier-aware drought trigger:
-    # ELITE: drought >= 2
-    # STAR:  drought >= 3
-    # NONE:  drought >= 4
-    goal_drought_ok = (
-        ((tier == "ELITE") & (tracker["Drought_G"].fillna(0) >= 2)) |
-        ((tier == "STAR")  & (tracker["Drought_G"].fillna(0) >= 3)) |
-        (~tier.isin(["ELITE", "STAR"]) & (tracker["Drought_G"].fillna(0) >= 4))
-    )
-
-    tracker["Plays_Goal"] = (
-        (tracker["Matrix_Goal"].astype(str) == "Green") &
-        (tracker["Conf_Goal"].fillna(0) >= GOAL_CONF_GREEN) &
-        (
-            tracker["Reg_Heat_G"].astype(str).str.upper().eq("HOT") |
-            (tracker["Goalie_Weak"].fillna(0) >= 70) |
-            goal_drought_ok
-        )
-    ).fillna(False)
-
-    # Optional: add a tag so it "pops" in Streamlit
-    mask = (
-        tracker["Plays_Goal"] &
-        ~tracker["Play_Tag"].fillna("").str.contains("GOAL EARNED", regex=False)
-    )
-
-    tracker.loc[mask, "Play_Tag"] = np.where(
-        tracker.loc[mask, "Play_Tag"].fillna("").astype(str).str.len() > 0,
-        tracker.loc[mask, "Play_Tag"].fillna("").astype(str) + " | 🥅 GOAL EARNED",
-        "🥅 GOAL EARNED"
-    )
-
-
-
-
-### ✅ Assists Earned Green (v1 FINAL)
-Requires:
-- Matrix_Assists == **Green**
-- Conf_Assists >= **77**
-- AND earned proof gate:
-  - ProofCount >= 2
-  - OR (STAR/ELITE AND ProofCount >= 1)
-
-**Assist proofs:**
-- iXA% >= 92  → `iXA`
-- v2_player_stability >= 65 → `v2`
-- team_5v5_xGF60_pct >= 65 → `xGF`
-- Assist_Volume >= 6 OR i5v5_primaryAssists60 >= 0.50 → `VOL`
-
-You’ll see: **Assist_ProofCount** and **Assist_Why**.
+### Why EV fields can be blank
+Usually means:
+- no odds posted for that player/market yet
+- market not offered for that player
+- early slate (books post props in waves)
 
 ---
 
-## The matchup columns (how to use them)
-- **Goalie_Weak**
-  - Higher = worse goalie environment (more attackable)
-  - Your styling only “screams red” when >= 75
+## Your key signals
+### Matrix_* (Green/Yellow/Red)
+- **Green** = baseline conditions met
+- **Yellow** = borderline
+- **Red** = failed
 
-- **Opp_DefWeak**
-  - Higher = softer defense environment / more chances allowed
+### Conf_* (0–100)
+Confidence after gates/adjustments.
 
-Best spots are when **Best_Conf is high** AND **Goalie_Weak / Opp_DefWeak are elevated**.
-
----
-
-## Regression columns (how to interpret)
-- **Reg_Heat_*:** HOT / WARM / COOL
-- **Reg_Gap_*:** expected minus actual (bigger gap = more “due”)
-- **Exp_*_10:** expected output over next 10 (or model window)
-
-In your model:
-- **HOT** is not “they’re on a heater”
-- **HOT means they’re due** (positive regression pressure)
+### Earned Green 🟢
+This is your strict “playable” rule.
 
 ---
 
-## Drought columns (what they mean in practice)
-- **Drought_*:** how long since last event in that market
-- **Best_Drought:** whichever drought is most relevant for the player
+## Earned Green rules (plain English)
+### 🟢 SOG
+Matrix green + confidence gate + volume/intent confirmation.
 
-Drought is useful when it aligns with:
-- Matrix Green
-- Conf high
-- Regression HOT
-- Matchup weakness
+### 🟢 Points
+Matrix green + confidence gate + involvement proofs pass.
 
----
+### 🟢 Goal
+Matrix green + confidence gate + due/env/drought proof hits.
 
-## Filters you should use daily
-- **Search player**: fast lookup
-- **Team / Matchup**: reduce noise
-- **Only 🔥 plays**: isolate your flagged list
+### 🟢 Assists
+Matrix green + Conf_Assists ≥ 77 + proof gate passes.
 
 ---
 
-## Recommended rules for real wagers
-**The safe “test phase” rule:**
+## Best daily betting rules
+**Safe test phase**
 - Only play **🟢 earned greens**
-- Prefer **Tier_Tag (STAR/ELITE)** when slate is big
-- Prefer **HOT regression** when choices are similar
-- Avoid plays with major injury tags unless you’re intentionally fading
+- Prefer ⭐/👑 on big slates
+- Prefer HOT regression when choices are close
+
+**A+ stack**
+✅ Earned Green 🟢  
+✅ HOT regression  
+✅ Weak goalie/defense  
+✅ Tier ⭐/👑  
+✅ 💰 EV% 10+
 
 ---
 
-## Troubleshooting quick hits
-- Missing columns expander = normal (older CSV)
-- If a market page looks blank:
-  - Your **Min Conf slider** may be too high
-  - Or **Color filters** are hiding everything
+## Troubleshooting
+If a market page looks blank:
+- Min Conf too high
+- Color filters hiding everything
+- Odds not posted yet
 """)
-
 
 elif page == "Ledger":
     st.subheader("📜 Ledger — What everything means")
