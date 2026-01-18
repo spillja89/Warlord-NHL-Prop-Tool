@@ -38,6 +38,51 @@ def snap_int(x):
     except Exception:
         return np.nan
 
+
+
+# -------------------------
+# UI helpers
+# -------------------------
+def _promote_call_cols(cols):
+    order=[
+        'SOG_Call','Points_Call','Assists_Call','ATG_Call',
+        'Player','Team','Opp','Game','Pos','Tier_Tag','🔥','💰',
+    ]
+    out=[]
+    for c in order:
+        if c in cols and c not in out:
+            out.append(c)
+    for c in cols:
+        if c not in out:
+            out.append(c)
+    return out
+
+
+def _pill(label: str, state) -> str:
+    """Return an emoji pill based on Matrix state."""
+    if state is None:
+        return ""
+    s = str(state).strip().lower()
+    if not s:
+        return ""
+    if "green" in s:
+        return f"🟢 {label}"
+    if "yellow" in s:
+        return f"🟡 {label}"
+    if "red" in s:
+        return f"🔴 {label}"
+    return f"⚪ {label}"
+
+
+def _markets_pills_row(r) -> str:
+    """Build a quick market pills string from Matrix_* columns."""
+    pills = []
+    pills.append(_pill("PTS", r.get("Matrix_Points")))
+    pills.append(_pill("SOG", r.get("Matrix_SOG")))
+    pills.append(_pill("G", r.get("Matrix_Goal")))
+    pills.append(_pill("A", r.get("Matrix_Assists")))
+    return "  ".join([p for p in pills if p])
+
 COLUMN_WIDTHS = {
     # identity
     "Game": "small",
@@ -45,6 +90,7 @@ COLUMN_WIDTHS = {
     "Team": "small",
     "Opp": "small",
     "Player": "medium",
+    "Markets": "large",
 
     # core decision columns
     "Matrix_Points": "small",
@@ -76,6 +122,7 @@ COLUMN_WIDTHS = {
     "SOG_Book": "small",
     "SOG_Odds_Over": "small",
     "SOG_EVpct_over": "small",
+    "SOG_Call": "medium",
     "SOG_p_model_over": "small",
     "SOG_p_imp_over": "small",
     "Plays_EV_SOG": "small",
@@ -87,6 +134,7 @@ COLUMN_WIDTHS = {
     "Points_p_model_over": "small",
     "Points_p_imp_over": "small",
     "Points_EVpct_over": "small",
+    "Points_Call": "medium",
     "Plays_EV_Points": "small",
 
     "Goal_Line": "small",
@@ -103,6 +151,7 @@ COLUMN_WIDTHS = {
     "ATG_p_model_over": "small",
     "ATG_p_imp_over": "small",
     "ATG_EVpct_over": "small",
+    "ATG_Call": "medium",
     "Plays_EV_ATG": "small",
 
     "Assists_Line": "small",
@@ -111,6 +160,7 @@ COLUMN_WIDTHS = {
     "Assists_p_model_over": "small",
     "Assists_p_imp_over": "small",
     "Assists_EVpct_over": "small",
+    "Assists_Call": "medium",
     "Plays_EV_Assists": "small",
 
 
@@ -528,7 +578,7 @@ def show_games_times(df: pd.DataFrame):
         g = g.sort_values("StartTimeLocal")
 
     st.subheader("Games & Start Times")
-    st.dataframe(g, use_container_width=True, hide_index=True)
+    st.dataframe(g, width="stretch", hide_index=True)
 
 
 def show_table(df: pd.DataFrame, cols: list[str], title: str):
@@ -555,7 +605,7 @@ def show_table(df: pd.DataFrame, cols: list[str], title: str):
     # ✅ Option A: keeps your Styler colors
     st.dataframe(
         styled,
-        use_container_width=True,
+        width="stretch",
         hide_index=True,
         column_config=build_column_config(df, existing),
     )
@@ -671,7 +721,7 @@ df = add_ui_columns(df)
 # ODDS / EV UI DERIVED COLS (readable)
 # =========================
 # Convert p_model / p_imp into human % columns and create a global 💰 marker.
-for m in ["Points","Goal","Assists","ATG","SOG"]:
+for m in ["Points","GOAL (1+)","Assists","ATG","SOG"]:
     pm = f"{m}_p_model_over"
     pi = f"{m}_p_imp_over"
     ev = f"{m}_EVpct_over"
@@ -731,12 +781,18 @@ def _tier_color(conf):
 
 
 def _green_conf_threshold(market: str, slate_games: int) -> int:
+    # Normalize market aliases
+    m = market.strip()
+
+    if m.upper() in ("GOAL (1+)", "GOAL 1+", "ATG", "ANYTIME GOAL"):
+        m = "Goal"
+
     if slate_games >= 8:
-        return {"SOG": 80, "Points": 77, "Goal": 85, "Assists": 77}[market]
+        return {"SOG": 77, "Points": 77, "Goal": 78, "Assists": 77}[m]
     elif slate_games >= 5:
-        return {"SOG": 80, "Points": 76, "Goal": 84, "Assists": 77}[market]
+        return {"SOG": 77, "Points": 77, "Goal": 80, "Assists": 77}[m]
     else:
-        return {"SOG": 80, "Points": 75, "Goal": 83, "Assists": 77}[market]
+        return {"SOG": 77, "Points": 77, "Goal": 83, "Assists": 77}[m]
 
 
 
@@ -749,7 +805,7 @@ thr_s = _green_conf_threshold("SOG", slate_games)
 # GOAL — earned green (v2 proof-count + tier-aware drought)
 # =========================
 
-thr_g = _green_conf_threshold("Goal", slate_games)
+thr_g = _green_conf_threshold("GOAL (1+)", slate_games)
 
 # numeric safety
 for c in ["Conf_Goal", "iXG%", "Med10_SOG", "Avg5_SOG", "Goalie_Weak", "Opp_DefWeak", "Reg_Gap_G10", "Drought_G"]:
@@ -1043,7 +1099,7 @@ with st.expander("Debug: loaded columns"):
 # Navigation
 page = st.sidebar.radio(
     "Page",
-    ["Board", "Points", "Assists", "SOG", "Goal","Guide", "Ledger", "Raw CSV"],
+    ["Board", "Points", "Assists", "SOG", "GOAL (1+)","Guide", "Ledger", "Raw CSV"],
     index=0
 )
 
@@ -1057,14 +1113,74 @@ show_games_times(df_f)
 # BOARD
 # =========================
 if page == "Board":
-    df_b = sort_board(df_f)
+    # ---- Board quick controls (visual-only) ----
+    st.subheader("Board")
+    c1, c2, c3, c4 = st.columns([1, 1, 1, 2])
+    with c1:
+        greens_only = st.toggle("🟢 Greens only", value=False)
+    with c2:
+        ev_only = st.toggle("💰 +EV only", value=False)
+    with c3:
+        hide_red_rows = st.toggle("Hide 🔴 rows", value=True)
+    with c4:
+        min_best_conf = st.slider("Min Best_Conf", 0, 100, 60, 1)
+
+    df_b = df_f.copy().reset_index(drop=True)
+
+    # Markets pills (PTS/SOG/G/A) from Matrix states
+    if "Markets" not in df_b.columns:
+        df_b["Markets"] = df_b.apply(_markets_pills_row, axis=1)
+
+    # Playable flags
+    if "Any_Green" not in df_b.columns:
+        df_b["Any_Green"] = (
+            df_b.get("Green_Points", False).fillna(False).astype(bool)
+            | df_b.get("Green_SOG", False).fillna(False).astype(bool)
+            | df_b.get("Green_Goal", False).fillna(False).astype(bool)
+            | df_b.get("Green_Assists", False).fillna(False).astype(bool)
+        )
+
+    # Respect min Best_Conf
+    df_b = df_b[safe_num(df_b, "Best_Conf", 0) >= float(min_best_conf)]
+
+    # Filters
+    if greens_only:
+        # Prefer the strict Any_Green gate, fall back to 🔥 if needed
+        if "Any_Green" in df_b.columns:
+            df_b = df_b[df_b["Any_Green"] == True]
+        elif "🔥" in df_b.columns:
+            df_b = df_b[df_b["🔥"] == "🔥"]
+
+    if ev_only and "💰" in df_b.columns:
+        df_b = df_b[df_b["💰"] == "💰"]
+
+    if hide_red_rows:
+        mcols = [c for c in ["Matrix_Points","Matrix_SOG","Matrix_Goal","Matrix_Assists"] if c in df_b.columns]
+        if mcols:
+            def _all_red(r):
+                vals = [str(r.get(c, "")).strip().lower() for c in mcols]
+                present = [v for v in vals if v]
+                return bool(present) and all("red" in v for v in present)
+            df_b = df_b[~df_b.apply(_all_red, axis=1)]
+
+    # Sort best-first
+    df_b = sort_board(df_b)
+
+    with st.expander("Legend / How to read"):
+        st.markdown("""
+- **Markets** shows each market's **Matrix** state at a glance.
+- **🟢 Earned green** = playable per market rules.
+- **💰** = the odds are mispriced vs our model (positive EV threshold passed).
+- Use **Min Best_Conf** + **Hide reds** to keep the board tight.
+""")
 
     board_cols = [
         "Game",
         "Player", "Pos", "Team", "Opp",
+        "Markets",
         "Best_Market",
-        "Best_Conf","Tier_Tag", "iXG%", "iXA%",
-        "🔥", "💰", 
+        "Best_Conf", "Tier_Tag", "iXG%", "iXA%",
+        "🔥", "💰",
         "Goalie_Weak", "Opp_DefWeak",
         "Opp_Goalie", "Opp_SV", "Opp_GAA",
         "Matrix_Points", "Conf_Points", "Reg_Heat_P", "Reg_Gap_P10",
@@ -1074,9 +1190,8 @@ if page == "Board":
         "Line", "Odds", "Result",
     ]
 
-    
+    show_table(df_b, board_cols, "Board (best-first)")
 
-    show_table(df_b, board_cols, "Board (sorted by Best_Conf)")
 
 
 # =========================
@@ -1105,7 +1220,7 @@ elif page == "Points":
 
     points_cols = [
         "Game","Player","Pos","Team","Opp",
-        "Matrix_Points","Conf_Points","Green","GF_Gate_Badge","Tier_Tag","💰",
+        "Matrix_Points","Conf_Points","Green","Points_Call","GF_Gate_Badge","Tier_Tag","💰",
 
         # --- EV / Odds ---
         "Points_Line",
@@ -1159,7 +1274,7 @@ elif page == "Assists":
         "Game",
         "Player", "Pos", "Team", "Opp", 
         "Matrix_Assists",
-        "Conf_Assists", "Green","GF_Gate_Badge", "Tier_Tag","💰","Drought_A","Best_Drought",
+        "Conf_Assists", "Green","Assists_Call","GF_Gate_Badge", "Tier_Tag","💰","Drought_A","Best_Drought",
 
         # --- EV / Odds ---
         "Assists_Line",
@@ -1209,7 +1324,7 @@ elif page == "SOG":
        "Game",
        "Player", "Pos", "Team", "Opp",
        "Matrix_SOG",
-       "Conf_SOG", "Green", "Tier_Tag", "💰", "Drought_SOG", "Best_Drought",
+       "Conf_SOG", "Green", "SOG_Call", "Tier_Tag", "💰", "Drought_SOG", "Best_Drought",
 
         # --- EV / Odds (NEW) ---
         "SOG_Line",
@@ -1236,7 +1351,7 @@ elif page == "SOG":
 # =========================
 # GOAL
 # =========================
-elif page == "Goal":
+elif page == "GOAL (1+)":
     df_g = df_f.copy()
     df_g["_cg"] = safe_num(df_g, "Conf_Goal", 0)
     df_g = df_g.sort_values(["_cg"], ascending=[False]).drop(columns=["_cg"], errors="ignore")
@@ -1260,33 +1375,17 @@ elif page == "Goal":
     goal_cols = [
         "Game",
         "Player", "Pos", "Team", "Opp",
-        "Matrix_Goal", 
-        "Conf_Goal", "Green","GF_Gate_Badge", "Tier_Tag","💰","Drought_G","Best_Drought",
-
-        # --- EV / Odds ---
-        "Goal_Line",
-        "Goal_Book",
-        "Goal_Odds_Over",
-        "Goal_Model%",
-        "Goal_Imp%",
-        "Goal_EV%",
-        "Plays_EV_Goal",
-
-        # Anytime goal (if you want it)
-        "ATG_Line",
-        "ATG_Book",
-        "ATG_Odds_Over",
-        "ATG_Model%",
-        "ATG_Imp%",
-        "ATG_EV%",
-        "Plays_EV_ATG",
+        "Matrix_Goal",
+        "Conf_Goal", "Green", "ATG_Call", "GF_Gate_Badge", "Tier_Tag", "💰",
+        "ATG_Line", "ATG_Book", "ATG_Odds_Over",
+        "ATG_Model%", "ATG_Imp%", "ATG_EV%", "Plays_EV_ATG",
         "Reg_Heat_G", "Reg_Gap_G10", "Exp_G_10", "L10_G",
-        "iXG%", "iXA%", "L5_G", "Opp_Goalie", "Opp_SV",
-        "Goalie_Weak", "Opp_DefWeak",
-        "Line", "Odds", "Result",
+        "iXG%", "iXA%",
+        "Opp_Goalie", "Opp_SV", "Opp_GAA", "Goalie_Weak", "Opp_DefWeak",
+        "Drought_G", "Best_Drought",
     ]
 
-    show_table(df_g, goal_cols, "Goal View")
+    show_table(df_g, goal_cols, "GOAL (1+) View")
 
 elif page == "Guide":
     st.subheader("📘 Guide — How to use")
@@ -1456,7 +1555,7 @@ elif page == "Ledger":
 # =========================
 else:
     st.subheader("Raw CSV (all columns)")
-    st.dataframe(df_f, use_container_width=True, hide_index=True)
+    st.dataframe(df_f, width="stretch", hide_index=True)
 
 
 
