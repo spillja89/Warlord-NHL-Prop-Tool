@@ -94,6 +94,29 @@ def lock_badge(green_bool, ev_icon) -> str:
     return "🔒" if (g and e) else ""
 
 
+def ev_signal(green_bool, ev_icon, ev_pct) -> str:
+    """Compact front-of-table signal combining 🟢 + 💰 + EV%."""
+    try:
+        g = bool(green_bool)
+    except Exception:
+        g = False
+    e = (str(ev_icon).strip() == "💰")
+    try:
+        if ev_pct is None or (isinstance(ev_pct, float) and np.isnan(ev_pct)):
+            pct = ""
+        else:
+            pct = f"{float(ev_pct):+.1f}%"
+    except Exception:
+        pct = ""
+    prefix = ("🟢" if g else "") + ("💰" if e else "")
+    if prefix and pct:
+        return f"{prefix} {pct}"
+    if prefix:
+        return prefix
+    return pct
+
+
+
 COLUMN_WIDTHS = {
     # identity
     "Game": "small",
@@ -1275,13 +1298,19 @@ if page == "Board":
 
     board_cols_signal = [
         "Game",
-        "Player", "Pos", "Team", "Opp",
-        "Markets",
+        "Player",
+        "Pos",
         "Tier_Tag",
-        "Best_Market",
+        "Markets",
+        "Green",
+        "EV_Signal",
+        "LOCK",
         "Best_Conf",
-        "LOCK", "💰", "EV_Best",
-        "Goalie_Weak", "Opp_DefWeak",
+        "Best_Market",
+        "💰",
+        "EV_Best",
+        "Goalie_Weak",
+        "Opp_DefWeak",
     ]
 
     show_table(df_b, board_cols_signal, "Board — Signals (scan first)")
@@ -1289,18 +1318,47 @@ if page == "Board":
     with st.expander("Details / Why (click to dig deeper)"):
         board_cols_detail = [
             "Game",
-            "Player", "Pos", "Team", "Opp",
-            "Markets",
+            "Player",
+            "Pos",
             "Tier_Tag",
-            "Best_Market",
+            "Markets",
+            "Green",
+            "EV_Signal",
+            "LOCK",
             "Best_Conf",
-            "LOCK", "💰", "EV_Best",
-            "Opp_Goalie", "Opp_SV", "Opp_GAA",
-            "Matrix_Points", "Conf_Points", "Reg_Heat_P", "Reg_Gap_P10", "Points_EV%", "Points_Line", "Points_Odds_Over",
-            "Matrix_SOG", "Conf_SOG", "Reg_Heat_S", "Reg_Gap_S10", "SOG_EV%", "SOG_Line", "SOG_Odds_Over",
-            "Matrix_Goal", "Conf_Goal", "Reg_Heat_G", "Reg_Gap_G10", "ATG_EV%", "ATG_Line", "ATG_Odds_Over",
-            "Matrix_Assists", "Conf_Assists", "Reg_Heat_A", "Reg_Gap_A10", "Assists_EV%", "Assists_Line", "Assists_Odds_Over",
-            "Line", "Odds", "Result",
+            "Best_Market",
+            "💰",
+            "EV_Best",
+            "Matrix_Points",
+            "Matrix_SOG",
+            "Matrix_Goal",
+            "Matrix_Assists",
+            "Conf_Points",
+            "Conf_SOG",
+            "Conf_Goal",
+            "Conf_Assists",
+            "Goalie_Weak",
+            "Opp_DefWeak",
+            "Opp_Goalie",
+            "Opp_SV%",
+            "Opp_GAA",
+            "L10_P",
+            "L10_SOG",
+            "L10_G",
+            "L10_A",
+            "Drought_P",
+            "Drought_SOG2",
+            "Drought_G",
+            "Drought_A",
+            "Reg_Heat_P",
+            "Reg_Heat_SOG",
+            "Reg_Heat_G",
+            "Reg_Heat_A",
+            "Reg_Gap_P10",
+            "Reg_Gap_S10",
+            "Reg_Gap_G10",
+            "Reg_Gap_A10",
+            "Tier_Tag",
         ]
         show_table(df_b, board_cols_detail, "Board — Details")
 
@@ -1370,28 +1428,73 @@ elif page == "Points":
     df_p["LOCK"] = df_p.apply(lambda r: lock_badge(r.get("Green_Points", False), r.get("Plays_EV_Points", "")), axis=1)
 
     points_cols_signal = [
-        "Game","Player","Pos","Team","Opp","Markets",
+        "Game",
+        "Player",
+        "Pos",
         "Tier_Tag",
-        "Matrix_Points","Conf_Points","Green",
-        "Plays_EV_Points","Points_EV%","LOCK",
-        "Points_Line","Points_Odds_Over","Points_Book",
+        "Markets",
+        "Green",
+        "EV_Signal",
+        "LOCK",
+        "Conf_Points",
+        "Matrix_Points",
+        "Points_Line",
+        "Points_Odds_Over",
+        "Points_Book",
+        "Points_EV%",
         "Points_Call",
+        "💰",
+        "L10_P",
+        "P10_total",
+        "Drought_P",
+        "Reg_Heat_P",
+        "Reg_Gap_P10",
+        "iXG%",
+        "iXA%",
+        "TOI%",
+        "Goalie_Weak",
+        "Opp_DefWeak",
     ]
 
     show_table(df_p, points_cols_signal, "Points — Signals (simple first)")
 
     with st.expander("Details / Why (Points)"):
         points_cols_detail = [
-            "Game","Player","Pos","Team","Opp","Markets",
+            "Game",
+            "Player",
+            "Pos",
             "Tier_Tag",
-            "Matrix_Points","Conf_Points","Green","Plays_EV_Points","Points_EV%","LOCK",
-            "Points_Line","Points_Book","Points_Odds_Over","Points_Model%","Points_Imp%","Points_EV%",
-            "Reg_Heat_P","Reg_Gap_P10","Exp_P_10","L10_P",
-            "Points_ProofCount","Points_Why",
-            "iXG%","iXA%","TOI_Pct","team_5v5_xGF60_pct",
-            "Opp_Goalie","Opp_SV","Opp_GAA","Goalie_Weak","Opp_DefWeak",
-            "Drought_P","Best_Drought",
-            "Line","Odds","Result",
+            "Markets",
+            "Green",
+            "EV_Signal",
+            "LOCK",
+            "Conf_Points",
+            "Matrix_Points",
+            "Points_Line",
+            "Points_Book",
+            "Points_Odds_Over",
+            "Points_Model%",
+            "Points_Imp%",
+            "Points_EV%",
+            "Points_Call",
+            "iXG%",
+            "iXA%",
+            "TOI%",
+            "PP1%",
+            "L10_P",
+            "P10_total",
+            "Drought_P",
+            "Reg_Heat_P",
+            "Reg_Gap_P10",
+            "Opp_Goalie",
+            "Opp_SV%",
+            "Opp_GAA",
+            "Goalie_Weak",
+            "Opp_DefWeak",
+            "P5_total",
+            "P10_total",
+            "S10_total",
+            "N_games_found",
         ]
         show_table(df_p, points_cols_detail, "Points — Details")
 
@@ -1458,28 +1561,73 @@ elif page == "Assists":
     df_a["Green"] = df_a.get("Green_Assists", False).map(lambda x: "🟢" if bool(x) else "")
 
     assists_cols_signal = [
-        "Game","Player","Pos","Team","Opp","Markets",
+        "Game",
+        "Player",
+        "Pos",
         "Tier_Tag",
-        "Matrix_Assists","Conf_Assists","Green",
-        "Plays_EV_Assists","Assists_EV%","LOCK",
-        "Assists_Line","Assists_Odds_Over","Assists_Book",
+        "Markets",
+        "Green",
+        "EV_Signal",
+        "LOCK",
+        "Conf_Assists",
+        "Matrix_Assists",
+        "Assists_Line",
+        "Assists_Odds_Over",
+        "Assists_Book",
+        "Assists_EV%",
         "Assists_Call",
+        "💰",
+        "L10_A",
+        "A10_total",
+        "Drought_A",
+        "Reg_Heat_A",
+        "Reg_Gap_A10",
+        "iXA%",
+        "iXG%",
+        "TOI%",
+        "Goalie_Weak",
+        "Opp_DefWeak",
     ]
 
     show_table(df_a, assists_cols_signal, "Assists — Signals (simple first)")
 
     with st.expander("Details / Why (Assists)"):
         assists_cols_detail = [
-            "Game","Player","Pos","Team","Opp","Markets",
+            "Game",
+            "Player",
+            "Pos",
             "Tier_Tag",
-            "Matrix_Assists","Conf_Assists","Green","Plays_EV_Assists","Assists_EV%","LOCK",
-            "Assists_Line","Assists_Book","Assists_Odds_Over","Assists_Model%","Assists_Imp%","Assists_EV%",
-            "Reg_Heat_A","Reg_Gap_A10","Exp_A_10","L10_A",
-            "Assists_ProofCount","Assists_Why",
-            "iXA%","iXG%","TOI_Pct","team_5v5_xGF60_pct",
-            "Opp_Goalie","Opp_SV","Opp_GAA","Goalie_Weak","Opp_DefWeak",
-            "Drought_A","Best_Drought",
-            "Line","Odds","Result",
+            "Markets",
+            "Green",
+            "EV_Signal",
+            "LOCK",
+            "Conf_Assists",
+            "Matrix_Assists",
+            "Assists_Line",
+            "Assists_Book",
+            "Assists_Odds_Over",
+            "Assists_Model%",
+            "Assists_Imp%",
+            "Assists_EV%",
+            "Assists_Call",
+            "iXA%",
+            "iXG%",
+            "TOI%",
+            "PP1%",
+            "L10_A",
+            "A10_total",
+            "Drought_A",
+            "Reg_Heat_A",
+            "Reg_Gap_A10",
+            "Opp_Goalie",
+            "Opp_SV%",
+            "Opp_GAA",
+            "Goalie_Weak",
+            "Opp_DefWeak",
+            "A5_total",
+            "A10_total",
+            "P10_total",
+            "N_games_found",
         ]
         show_table(df_a, assists_cols_detail, "Assists — Details")
 
@@ -1547,28 +1695,70 @@ elif page == "SOG":
     df_s["LOCK"] = df_s.apply(lambda r: lock_badge(r.get("Green_SOG", False), r.get("Plays_EV_SOG", "")), axis=1)
 
     sog_cols_signal = [
-        "Game","Player","Pos","Team","Opp","Markets",
+        "Game",
+        "Player",
+        "Pos",
         "Tier_Tag",
-        "Matrix_SOG","Conf_SOG","Green",
-        "Plays_EV_SOG","SOG_EV%","LOCK",
-        "SOG_Line","SOG_Odds_Over","SOG_Book",
+        "Markets",
+        "Green",
+        "EV_Signal",
+        "LOCK",
+        "Conf_SOG",
+        "Matrix_SOG",
+        "SOG_Line",
+        "SOG_Odds_Over",
+        "SOG_Book",
+        "SOG_EV%",
         "SOG_Call",
+        "💰",
+        "L10_SOG",
+        "S10_total",
+        "Drought_SOG2",
+        "Reg_Heat_SOG",
+        "Reg_Gap_S10",
+        "ShotIntent%",
+        "TOI%",
+        "Goalie_Weak",
+        "Opp_DefWeak",
     ]
 
     show_table(df_s, sog_cols_signal, "SOG — Signals (simple first)")
 
     with st.expander("Details / Why (SOG)"):
         sog_cols_detail = [
-            "Game","Player","Pos","Team","Opp","Markets",
+            "Game",
+            "Player",
+            "Pos",
             "Tier_Tag",
-            "Matrix_SOG","Conf_SOG","Green","Plays_EV_SOG","SOG_EV%","LOCK",
-            "SOG_Line","SOG_Book","SOG_Odds_Over","SOG_Model%","SOG_Imp%","SOG_EV%",
-            "Reg_Heat_S","Reg_Gap_S10","Exp_S_10","L10_S",
-            "SOG_ProofCount","SOG_Why",
-            "iXG%","TOI_Pct","shot_intent_5","shot_intent_10",
-            "Opp_Goalie","Opp_SV","Opp_GAA","Goalie_Weak","Opp_DefWeak",
-            "Drought_SOG3","Drought_SOG2","Best_Drought",
-            "Line","Odds","Result",
+            "Markets",
+            "Green",
+            "EV_Signal",
+            "LOCK",
+            "Conf_SOG",
+            "Matrix_SOG",
+            "SOG_Line",
+            "SOG_Book",
+            "SOG_Odds_Over",
+            "SOG_Model%",
+            "SOG_Imp%",
+            "SOG_EV%",
+            "SOG_Call",
+            "ShotIntent%",
+            "TOI%",
+            "PP1%",
+            "L10_SOG",
+            "S10_total",
+            "Drought_SOG2",
+            "Reg_Heat_SOG",
+            "Reg_Gap_S10",
+            "Opp_Goalie",
+            "Opp_SV%",
+            "Opp_GAA",
+            "Goalie_Weak",
+            "Opp_DefWeak",
+            "S5_total",
+            "S10_total",
+            "N_games_found",
         ]
         show_table(df_s, sog_cols_detail, "SOG — Details")
 
@@ -1635,28 +1825,73 @@ elif page == "GOAL (1+)":
     df_g["Green"] = df_g.get("Green_Goal", False).map(lambda x: "🟢" if bool(x) else "")
 
     goal_cols_signal = [
-        "Game","Player","Pos","Team","Opp","Markets",
+        "Game",
+        "Player",
+        "Pos",
         "Tier_Tag",
-        "Matrix_Goal","Conf_Goal","Green",
-        "Plays_EV_ATG","ATG_EV%","LOCK",
-        "ATG_Line","ATG_Odds_Over","ATG_Book",
-        "Goal_Call",
+        "Markets",
+        "Green",
+        "EV_Signal",
+        "LOCK",
+        "Conf_Goal",
+        "Matrix_Goal",
+        "ATG_Line",
+        "ATG_Odds_Over",
+        "ATG_Book",
+        "ATG_EV%",
+        "ATG_Call",
+        "💰",
+        "L10_G",
+        "G10_total",
+        "Drought_G",
+        "Reg_Heat_G",
+        "Reg_Gap_G10",
+        "iXG%",
+        "ShotIntent%",
+        "TOI%",
+        "Goalie_Weak",
+        "Opp_DefWeak",
     ]
 
     show_table(df_g, goal_cols_signal, "GOAL (1+) — Signals (simple first)")
 
     with st.expander("Details / Why (GOAL 1+)"):
         goal_cols_detail = [
-            "Game","Player","Pos","Team","Opp","Markets",
+            "Game",
+            "Player",
+            "Pos",
             "Tier_Tag",
-            "Matrix_Goal","Conf_Goal","Green","Plays_EV_ATG","ATG_EV%","LOCK",
-            "ATG_Line","ATG_Book","ATG_Odds_Over","ATG_Model%","ATG_Imp%","ATG_EV%",
-            "Reg_Heat_G","Reg_Gap_G10","Exp_G_10","L10_G",
-            "Goal_ProofCount","Goal_Why",
-            "iXG%","TOI_Pct","shot_intent_5","shot_intent_10",
-            "Opp_Goalie","Opp_SV","Opp_GAA","Goalie_Weak","Opp_DefWeak",
-            "Drought_G","Best_Drought",
-            "Line","Odds","Result",
+            "Markets",
+            "Green",
+            "EV_Signal",
+            "LOCK",
+            "Conf_Goal",
+            "Matrix_Goal",
+            "ATG_Line",
+            "ATG_Book",
+            "ATG_Odds_Over",
+            "ATG_Model%",
+            "ATG_Imp%",
+            "ATG_EV%",
+            "ATG_Call",
+            "iXG%",
+            "ShotIntent%",
+            "TOI%",
+            "PP1%",
+            "L10_G",
+            "G10_total",
+            "Drought_G",
+            "Reg_Heat_G",
+            "Reg_Gap_G10",
+            "Opp_Goalie",
+            "Opp_SV%",
+            "Opp_GAA",
+            "Goalie_Weak",
+            "Opp_DefWeak",
+            "G5_total",
+            "G10_total",
+            "S10_total",
+            "N_games_found",
         ]
         show_table(df_g, goal_cols_detail, "GOAL (1+) — Details")
 
