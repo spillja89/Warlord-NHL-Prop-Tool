@@ -1529,7 +1529,7 @@ elif page == "Points":
 
     df_p["LOCK"] = [build_lock_badge(gg, ee) for gg, ee in zip(g, e)]
     legend_signals()
-    _f = render_market_filter_bar(default_min_conf=60, key_prefix="goal")pts")
+    _f = render_market_filter_bar(default_min_conf=60, key_prefix="pts")
     try:
         df_p = apply_market_filters(
             df_p,
@@ -1621,7 +1621,7 @@ elif page == "Assists":
 
     df_a["LOCK"] = [build_lock_badge(gg, ee) for gg, ee in zip(g, e)]
     legend_signals()
-    _f = render_market_filter_bar(default_min_conf=60, key_prefix="goal")ast")
+    _f = render_market_filter_bar(default_min_conf=60, key_prefix="ast")
     try:
         df_a = apply_market_filters(
             df_a,
@@ -1714,7 +1714,7 @@ elif page == "SOG":
 
     df_s["LOCK"] = [build_lock_badge(gg, ee) for gg, ee in zip(g, e)]
     legend_signals()
-    _f = render_market_filter_bar(default_min_conf=60, key_prefix="goal")sog")
+    _f = render_market_filter_bar(default_min_conf=60, key_prefix="sog")
     try:
         df_s = apply_market_filters(
             df_s,
@@ -1796,7 +1796,7 @@ elif page == "GOAL (1+)":
 
     df_g["LOCK"] = [build_lock_badge(gg, ee) for gg, ee in zip(g, e)]
     legend_signals()
-    _f = render_market_filter_bar(default_min_conf=60, key_prefix="goal")gol")
+    _f = render_market_filter_bar(default_min_conf=60, key_prefix="gol")
     try:
         df_g = apply_market_filters(
             df_g,
