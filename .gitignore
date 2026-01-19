@@ -26,3 +26,8 @@ tatus
 # OS junk
 .DS_Store
 Thumbs.db
+
+output/
+output/ledger/
+*.csv
+
