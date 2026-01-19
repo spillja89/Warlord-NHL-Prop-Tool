@@ -1,0 +1,54 @@
+name: Build daily slate (tracker_latest)
+
+on:
+  workflow_dispatch:
+  schedule:
+    # 06:05 America/Chicago (winter) ~= 12:05 UTC
+    - cron: "5 12 * * *"
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      TZ: America/Chicago
+      # Add these in GitHub: Settings -> Secrets and variables -> Actions -> New repository secret
+      BALLDONTLIE_API_KEY: ${{ secrets.BALLDONTLIE_API_KEY }}
+      SPORTSDATAIO_KEY: ${{ secrets.SPORTSDATAIO_KEY }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install deps
+        run: |
+          python -m pip install --upgrade pip
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+
+      - name: Build tracker_latest
+        run: |
+          python nhl_edge.py --date "$(date -I)"
+
+      - name: Keep only tracker_latest
+        run: |
+          mkdir -p output
+          find output -maxdepth 1 -type f -name 'tracker_*.csv' ! -name 'tracker_latest.csv' -delete
+
+      - name: Commit updated tracker_latest
+        run: |
+          if git diff --quiet; then
+            echo "No changes to commit."
+            exit 0
+          fi
+          git config user.name "warlord-bot"
+          git config user.email "warlord-bot@users.noreply.github.com"
+          git add output/tracker_latest.csv
+          git commit -m "Daily slate: tracker_latest"
+          git push
