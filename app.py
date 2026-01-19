@@ -1,6 +1,7 @@
 import os
 import glob
 import math
+import re
 from datetime import datetime
 
 import numpy as np
@@ -8,16 +9,264 @@ import pandas as pd
 import streamlit as st
 
 
+# =========================
+# Ledger helpers (append-only bet tracking)
+# =========================
+UNIT_VALUE_USD = 50.0   # 1u = $50 (user-defined)
+MAX_STAKE_U = 3.0       # cap per play
+
+# CSV headers (append-only)
+BETSLIP_HEADERS = [
+    'bet_id','date','datetime_placed','game','player','market','line','odds_taken','book','stake_u',
+    'earned_green','ev_flag','lock_flag','conf','matrix','model_pct','imp_pct','ev_pct','tier','proof_count','why_tags',
+    'opp','opp_goalie','notes'
+]
+
+BET_EVENTS_HEADERS = [
+    'bet_id','event_type','event_datetime','event_period','event_game_minute','units_net','source','event_notes'
+]
+
+
+def _ledger_paths(output_dir: str) -> tuple[str, str, str]:
+    ledger_dir = os.path.join(output_dir, "ledger")
+    return ledger_dir, os.path.join(ledger_dir, "betslip.csv"), os.path.join(ledger_dir, "bet_events.csv")
+
+
+def _ensure_dir(path: str) -> None:
+    try:
+        os.makedirs(path, exist_ok=True)
+    except Exception:
+        pass
+
+
+def american_to_decimal(odds: float) -> float:
+    try:
+        o = float(odds)
+    except Exception:
+        return 1.0
+    if o == 0:
+        return 1.0
+    if o > 0:
+        return 1.0 + (o / 100.0)
+    return 1.0 + (100.0 / abs(o))
+
+
+def implied_prob_from_american(odds: float) -> float:
+    try:
+        o = float(odds)
+    except Exception:
+        return 0.5
+    if o == 0:
+        return 0.5
+    if o > 0:
+        return 100.0 / (o + 100.0)
+    return abs(o) / (abs(o) + 100.0)
+
+
+def calc_ev_pct_and_kelly(model_prob: float, odds: float) -> tuple[float, float, float, float]:
+    # returns: (imp_prob, ev_pct, kelly_full, dec_odds)
+    p = max(0.0001, min(0.9999, float(model_prob)))
+    dec = american_to_decimal(float(odds))
+    imp = implied_prob_from_american(float(odds))
+    b = dec - 1.0
+    q = 1.0 - p
+    ev_per_dollar = (p * b) - q
+    ev_pct = ev_per_dollar * 100.0
+    kelly = max(0.0, (b * p - q) / b) if b > 0 else 0.0
+    return imp, ev_pct, kelly, dec
+
+
+def _append_csv_row(path: str, row: dict, headers: list[str]) -> None:
+    _ensure_dir(os.path.dirname(path))
+    file_exists = os.path.exists(path)
+    # ensure all headers exist
+    safe_row = {h: row.get(h, "") for h in headers}
+    df1 = pd.DataFrame([safe_row], columns=headers)
+    if not file_exists:
+        df1.to_csv(path, index=False)
+    else:
+        df1.to_csv(path, mode='a', header=False, index=False)
+
+
+def _slug(s: str) -> str:
+    s = str(s or '').strip()
+    s = re.sub(r"\s+", "_", s)
+    s = re.sub(r"[^A-Za-z0-9_\-\.]", "", s)
+    return s
+
+
+def make_bet_id(date_str: str, player: str, market: str, line: float, odds_taken: float) -> str:
+    d = str(date_str or '').replace('-', '')
+    return f"{d}_{_slug(player)}_{_slug(market)}_{_slug(line)}_{_slug(int(odds_taken) if float(odds_taken).is_integer() else odds_taken)}"
+
+def render_market_filter_bar(default_min_conf: int = 60, key_prefix: str = "m"):
+        c1, c2, c3, c4, c5, c6 = st.columns([1.1,1.1,1.2,1.2,1.1,1.6])
+        with c1:
+            greens_only = st.toggle("🟢 Greens", value=False, key=f"{key_prefix}_greens")
+        with c2:
+            ev_only = st.toggle("💰 +EV", value=False, key=f"{key_prefix}_ev")
+        with c3:
+            locks_only = st.toggle("🔒 Locks", value=False, key=f"{key_prefix}_locks")
+        with c4:
+            plays_first = st.toggle("⭐ Plays first", value=True, key=f"{key_prefix}_playsfirst")
+        with c5:
+            hide_reds = st.toggle("Hide 🔴", value=True, key=f"{key_prefix}_hidered")
+        with c6:
+            min_conf = st.slider("Min Conf", 0, 100, int(default_min_conf), 1, key=f"{key_prefix}_minconf")
+        return {
+            "greens_only": greens_only,
+            "ev_only": ev_only,
+            "locks_only": locks_only,
+            "plays_first": plays_first,
+            "hide_reds": hide_reds,
+            "min_conf": min_conf,
+        }
+def legend_signals():
+    with st.expander("Legend (signals)", expanded=False):
+        st.markdown("""
+- **🟢** = Earned Green (playable)
+- **💰** = +EV approved (price edge)
+- **🔒** = LOCK (🟢 + 💰)
+- **EV_Signal** shows the combined signal + EV% up front
+""")
+
+def _calc_market_map(market: str) -> dict:
+    """
+    Maps calculator market -> relevant df columns.
+    Returns dict with keys: line_col, odds_col, p_model_col, ev_col, conf_col, matrix_col, green_col, ev_icon_col
+    """
+    m = (market or "").strip().lower()
+    if m.startswith("point"):
+        return dict(
+            line_col="Points_Line",
+            odds_col="Points_Odds_Over",
+            p_model_col="Points_p_model_over",
+            modelpct_col="Points_Model%",
+            evpct_col="Points_EV%",
+            conf_col="Conf_Points",
+            matrix_col="Matrix_Points",
+            green_col="Green_Points",
+            ev_icon_col="Plays_EV_Points",
+        )
+    if m.startswith("sog"):
+        return dict(
+            line_col="SOG_Line",
+            odds_col="SOG_Odds_Over",
+            p_model_col="SOG_p_model_over",
+            modelpct_col="SOG_Model%",
+            evpct_col="SOG_EV%",
+            conf_col="Conf_SOG",
+            matrix_col="Matrix_SOG",
+            green_col="Green_SOG",
+            ev_icon_col="Plays_EV_SOG",
+        )
+    if m.startswith("assist"):
+        return dict(
+            line_col="Assists_Line",
+            odds_col="Assists_Odds_Over",
+            p_model_col="Assists_p_model_over",
+            modelpct_col="Assists_Model%",
+            evpct_col="Assists_EV%",
+            conf_col="Conf_Assists",
+            matrix_col="Matrix_Assists",
+            green_col="Green_Assists",
+            ev_icon_col="Plays_EV_Assists",
+        )
+    # Goal / ATG
+    return dict(
+        line_col="ATG_Line",
+        odds_col="ATG_Odds_Over",
+        p_model_col="ATG_p_model_over",
+        modelpct_col="ATG_Model%",
+        evpct_col="ATG_EV%",
+        conf_col="Conf_Goal",
+        matrix_col="Matrix_Goal",
+        green_col="Green_Goal",
+        ev_icon_col="Plays_EV_ATG",
+    )
+
+def warlord_call(ev_pct: float, kelly: float) -> tuple[str, str, str]:
+    """
+    Returns (label, emoji, why) based on EV% and Kelly%.
+    Tune thresholds to taste.
+    """
+    k = max(0.0, float(kelly)) * 100.0
+    e = float(ev_pct)
+
+    if e >= 12 and k >= 6:
+        return ("PRESS THE ATTACK", "⚔️", "Big price edge + strong sizing support")
+    if e >= 8 and k >= 4:
+        return ("STRONG EDGE", "🔥", "Good EV + meaningful sizing support")
+    if e >= 5 and k >= 2:
+        return ("PLAYABLE", "✅", "Positive EV; size it responsibly")
+    if e >= 0:
+        return ("SMALL EDGE / PRICE CHECK", "🟡", "Edge is thin; consider smaller stake or pass")
+    return ("PASS", "🛑", "Negative EV at this price")
+
 # -------------------------
 # Number formatting helpers
 # -------------------------
+
+def _icon_is_money(v) -> bool:
+    return str(v).strip() == "💰"
+
+def _col_bool(df: pd.DataFrame, col: str) -> pd.Series:
+    if col not in df.columns:
+        return pd.Series(False, index=df.index)
+    if df[col].dtype == bool:
+        return df[col].fillna(False)
+    return df[col].astype(str).str.strip().str.lower().isin(["true","1","yes","y","t","🟢"])
+
+def apply_market_filters(
+    df_in: pd.DataFrame,
+    f: dict,
+    green_col: str,
+    ev_icon_col: str,
+    conf_col: str | None = None,
+    matrix_col: str | None = None,
+    lock_col: str = "LOCK",
+) -> pd.DataFrame:
+    df = df_in.copy()
+
+    if conf_col and conf_col in df.columns:
+        df = df[pd.to_numeric(df[conf_col], errors="coerce").fillna(0) >= float(f.get("min_conf", 0))]
+
+    if f.get("hide_reds") and matrix_col and matrix_col in df.columns:
+        df = df[~df[matrix_col].astype(str).str.lower().str.contains("red", na=False)]
+
+    if f.get("greens_only"):
+        df = df[_col_bool(df, green_col)]
+
+    if f.get("ev_only"):
+        if ev_icon_col in df.columns:
+            df = df[df[ev_icon_col].astype(str).apply(_icon_is_money)]
+
+    if f.get("locks_only"):
+        if lock_col in df.columns:
+            df = df[df[lock_col].astype(str).str.strip() == "🔒"]
+        else:
+            g = _col_bool(df, green_col)
+            e = df[ev_icon_col].astype(str).apply(_icon_is_money) if ev_icon_col in df.columns else False
+            df = df[g & e]
+
+    if f.get("plays_first"):
+        tmp = df.copy()
+        tmp["_lock_sort"] = (tmp[lock_col].astype(str).str.strip() == "🔒").astype(int) if lock_col in tmp.columns else 0
+        tmp["_ev_sort"] = tmp[ev_icon_col].astype(str).apply(_icon_is_money).astype(int) if ev_icon_col in tmp.columns else 0
+        sort_cols = ["_lock_sort", "_ev_sort"]
+        if conf_col and conf_col in tmp.columns:
+            sort_cols.append(conf_col)
+        tmp = tmp.sort_values(by=sort_cols, ascending=[False]*len(sort_cols), kind="mergesort")
+        tmp = tmp.drop(columns=[c for c in ["_lock_sort","_ev_sort"] if c in tmp.columns])
+        df = tmp
+
+    return df
+
 def _is_nan(x) -> bool:
     try:
         return x is None or (isinstance(x, float) and math.isnan(x))
     except Exception:
         return True
-
-
 def snap_half(x):
     """Snap a numeric value to the nearest 0.5 (prop lines should look like 2.5, 3.0, etc.)."""
     try:
@@ -27,8 +276,6 @@ def snap_half(x):
         return round(v * 2.0) / 2.0
     except Exception:
         return np.nan
-
-
 def snap_int(x):
     """Cast odds to int-ish (American odds should be -110, +120, etc.)."""
     try:
@@ -57,66 +304,6 @@ def _promote_call_cols(cols):
             out.append(c)
     return out
 
-
-def _pill(label: str, state) -> str:
-    """Return an emoji pill based on Matrix state."""
-    if state is None:
-        return ""
-    s = str(state).strip().lower()
-    if not s:
-        return ""
-    if "green" in s:
-        return f"🟢 {label}"
-    if "yellow" in s:
-        return f"🟡 {label}"
-    if "red" in s:
-        return f"🔴 {label}"
-    return f"⚪ {label}"
-
-
-def _markets_pills_row(r) -> str:
-    """Build a quick market pills string from Matrix_* columns."""
-    pills = []
-    pills.append(_pill("PTS", r.get("Matrix_Points")))
-    pills.append(_pill("SOG", r.get("Matrix_SOG")))
-    pills.append(_pill("G", r.get("Matrix_Goal")))
-    pills.append(_pill("A", r.get("Matrix_Assists")))
-    return "  ".join([p for p in pills if p])
-
-
-def lock_badge(green_bool, ev_icon) -> str:
-    """🔒 when earned green AND +EV (💰) for that market."""
-    try:
-        g = bool(green_bool)
-    except Exception:
-        g = False
-    e = (str(ev_icon).strip() == "💰")
-    return "🔒" if (g and e) else ""
-
-
-def ev_signal(green_bool, ev_icon, ev_pct) -> str:
-    """Compact front-of-table signal combining 🟢 + 💰 + EV%."""
-    try:
-        g = bool(green_bool)
-    except Exception:
-        g = False
-    e = (str(ev_icon).strip() == "💰")
-    try:
-        if ev_pct is None or (isinstance(ev_pct, float) and np.isnan(ev_pct)):
-            pct = ""
-        else:
-            pct = f"{float(ev_pct):+.1f}%"
-    except Exception:
-        pct = ""
-    prefix = ("🟢" if g else "") + ("💰" if e else "")
-    if prefix and pct:
-        return f"{prefix} {pct}"
-    if prefix:
-        return prefix
-    return pct
-
-
-
 COLUMN_WIDTHS = {
     # identity
     "Game": "small",
@@ -124,7 +311,6 @@ COLUMN_WIDTHS = {
     "Team": "small",
     "Opp": "small",
     "Player": "medium",
-    "Markets": "large",
 
     # core decision columns
     "Matrix_Points": "small",
@@ -209,8 +395,10 @@ COLUMN_WIDTHS = {
     "Line": "small",
     "Odds": "small",
     "Result": "small",
+    "Markets": "medium",
+    "EV_Signal": "medium",
+    "LOCK": "small",
 }
-
 def build_column_config(df: pd.DataFrame, cols: list[str]) -> dict:
     cfg = {}
 
@@ -248,8 +436,6 @@ def _get(row, key, default=0):
     except Exception:
         v = default
     return default if v is None else v
-
-
 def _is_hot(reg_scored: str) -> bool:
     """Treat these as Hot regression tiers."""
     if not reg_scored:
@@ -295,62 +481,6 @@ st.markdown(
 )
 
 
-# =========================
-# VENGEANCE CLOCK (Board)
-# =========================
-def render_vengeance_clock():
-    """Analog ticking clock widget (pure HTML/CSS/JS)."""
-    st.markdown(
-        """
-        <div style="display:flex;align-items:center;gap:14px;justify-content:flex-end;margin-top:-8px;margin-bottom:6px;">
-          <div style="font-weight:900;letter-spacing:0.4px;font-size:14px;opacity:0.95;">
-            🕰️ <span style="text-transform:uppercase;">The clock strikes vengeance</span>
-          </div>
-          <div id="vengeanceClock" style="position:relative;width:54px;height:54px;border-radius:50%;
-               border:2px solid rgba(255,255,255,0.75); box-shadow:0 6px 18px rgba(0,0,0,0.25);
-               background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.18), rgba(0,0,0,0.15));">
-            <div style="position:absolute;inset:5px;border-radius:50%;border:1px solid rgba(255,255,255,0.18);"></div>
-            <div id="vcHour" style="position:absolute;left:50%;top:50%;width:3px;height:16px;background:rgba(255,255,255,0.85);
-                 transform-origin:50% 90%;border-radius:2px;transform:translate(-50%,-90%) rotate(0deg);"></div>
-            <div id="vcMin" style="position:absolute;left:50%;top:50%;width:2px;height:21px;background:rgba(255,255,255,0.85);
-                 transform-origin:50% 92%;border-radius:2px;transform:translate(-50%,-92%) rotate(0deg);"></div>
-            <div id="vcSec" style="position:absolute;left:50%;top:50%;width:1px;height:23px;background:rgba(255,0,0,0.85);
-                 transform-origin:50% 92%;border-radius:2px;transform:translate(-50%,-92%) rotate(0deg);"></div>
-            <div style="position:absolute;left:50%;top:50%;width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,0.9);
-                 transform:translate(-50%,-50%);"></div>
-          </div>
-        </div>
-
-        <script>
-          (function() {
-            function tickVengeanceClock(){
-              const d = new Date();
-              const s = d.getSeconds();
-              const m = d.getMinutes();
-              const h = d.getHours() % 12;
-
-              const secDeg = s * 6;                 // 360/60
-              const minDeg = (m + s/60) * 6;
-              const hourDeg = (h + m/60) * 30;      // 360/12
-
-              const sec = document.getElementById('vcSec');
-              const min = document.getElementById('vcMin');
-              const hour = document.getElementById('vcHour');
-              if (!sec || !min || !hour) return;
-
-              sec.style.transform = `translate(-50%,-92%) rotate(${secDeg}deg)`;
-              min.style.transform = `translate(-50%,-92%) rotate(${minDeg}deg)`;
-              hour.style.transform = `translate(-50%,-90%) rotate(${hourDeg}deg)`;
-            }
-            tickVengeanceClock();
-            window.__vcInterval = window.__vcInterval || setInterval(tickVengeanceClock, 1000);
-          })();
-        </script>
-        """,
-        unsafe_allow_html=True,
-    )
-
-
 
 # =========================
 # HELPERS
@@ -362,8 +492,6 @@ def find_latest_tracker_csv(output_dir: str) -> str | None:
         return None
     files.sort(key=lambda x: os.path.getmtime(x), reverse=True)
     return files[0]
-
-
 def to_bool_series(s: pd.Series) -> pd.Series:
     # Handles True/False, 1/0, "true"/"false", etc.
     if s is None:
@@ -374,34 +502,88 @@ def to_bool_series(s: pd.Series) -> pd.Series:
         .str.lower()
         .isin(["true", "1", "yes", "y", "t"])
     )
-
-
-
 def safe_num(df: pd.DataFrame, col: str, default=0.0) -> pd.Series:
     if col not in df.columns:
         return pd.Series([default] * len(df), index=df.index)
     return pd.to_numeric(df[col], errors="coerce").fillna(default)
 
 
+
+# -------------------------
+# Signals-first helpers
+# -------------------------
+def _is_money(x) -> bool:
+    return str(x).strip() == "💰"
+def _fmt_ev_pct(x) -> str:
+    try:
+        if x is None or (isinstance(x, float) and math.isnan(x)):
+            return ""
+        v = float(x)
+        return f"{v:+.1f}%"
+    except Exception:
+        return ""
+def build_markets_pills(row) -> str:
+    pills = []
+    for key, label in [
+        ("Matrix_Points", "PTS"),
+        ("Matrix_SOG", "SOG"),
+        ("Matrix_Goal", "G"),
+        ("Matrix_Assists", "A"),
+    ]:
+        v = str(row.get(key, "")).lower()
+        if not v:
+            continue
+        if "green" in v:
+            pills.append(f"🟢{label}")
+        elif "yellow" in v:
+            pills.append(f"🟡{label}")
+        elif "red" in v:
+            pills.append(f"🔴{label}")
+        else:
+            pills.append(f"⚪{label}")
+    return " ".join(pills)
+def build_ev_signal(green_bool, money_icon, ev_pct) -> str:
+    g = bool(green_bool) if green_bool is not None else False
+    m = _is_money(money_icon)
+    icons = ("🟢" if g else "") + ("💰" if m else "")
+    evs = _fmt_ev_pct(ev_pct)
+    if icons and evs:
+        return f"{icons} {evs}"
+    if icons:
+        return icons
+    return evs
+def build_lock_badge(green_bool, money_icon) -> str:
+    g = bool(green_bool) if green_bool is not None else False
+    m = _is_money(money_icon)
+    return "🔒" if (g and m) else ""
+def board_best_market_ev(row) -> tuple[str, str]:
+    bm = str(row.get("Best_Market", "")).strip().lower()
+    mapping = [
+        ("point", "Green_Points", "Plays_EV_Points", "Points_EV%"),
+        ("sog", "Green_SOG", "Plays_EV_SOG", "SOG_EV%"),
+        ("goal", "Green_Goal", "Plays_EV_ATG", "ATG_EV%"),
+        ("assist", "Green_Assists", "Plays_EV_Assists", "Assists_EV%"),
+    ]
+    for token, gcol, ecol, pcol in mapping:
+        if token and token in bm:
+            g = row.get(gcol, False)
+            e = row.get(ecol, "")
+            p = row.get(pcol, None)
+            return build_ev_signal(g, e, p), build_lock_badge(g, e)
+    return "", ""
 def safe_str(df: pd.DataFrame, col: str, default="") -> pd.Series:
     if col not in df.columns:
         return pd.Series([default] * len(df), index=df.index)
     return df[col].astype(str).fillna(default)
-
-
 def style_df(df: pd.DataFrame, cols: list[str]) -> "pd.io.formats.style.Styler":
     # --- Pandas Styler REQUIRES unique index + unique columns ---
-    # de-dupe requested columns while preserving order
     cols = [c for c in dict.fromkeys(cols) if c in df.columns]
 
-    # safe view with unique index
     view = df.loc[:, cols].copy().reset_index(drop=True)
 
-    # if anything upstream produced duplicate column names, drop them
     if view.columns.duplicated().any():
         view = view.loc[:, ~view.columns.duplicated()].copy()
 
-    # --- Matrix: Green/Yellow/Red ---
     def matrix_style(v):
         s = str(v).strip().lower()
         if s == "green":
@@ -412,7 +594,6 @@ def style_df(df: pd.DataFrame, cols: list[str]) -> "pd.io.formats.style.Styler":
             return "background-color:#8b1a1a;color:white;font-weight:700;"
         return ""
 
-    # --- Heat: HOT red, WARM orange, COOL blue ---
     def heat_style(v):
         s = str(v).strip().upper()
         if s == "HOT":
@@ -423,7 +604,6 @@ def style_df(df: pd.DataFrame, cols: list[str]) -> "pd.io.formats.style.Styler":
             return "background-color:#1f5aa6;color:white;font-weight:700;"
         return ""
 
-    # --- Confidence: Green >=80, Yellow 70-79, Red <70 ---
     def conf_style(v):
         try:
             x = float(v)
@@ -435,9 +615,6 @@ def style_df(df: pd.DataFrame, cols: list[str]) -> "pd.io.formats.style.Styler":
             return "background-color:#b38f00;color:white;font-weight:700;"
         return "background-color:#8b1a1a;color:white;font-weight:700;"
 
-
-
-    # --- EV%: Green >= +10, Yellow +5..+10, Red <0 ---
     def ev_style(v):
         try:
             x = float(v)
@@ -450,7 +627,18 @@ def style_df(df: pd.DataFrame, cols: list[str]) -> "pd.io.formats.style.Styler":
         if x < 0:
             return "background-color:#8b1a1a;color:white;font-weight:700;"
         return ""
-    # --- Weakness: only flag extreme weakness (red) ---
+
+    def ev_signal_style(v):
+        s = str(v)
+        if not s or s.strip() == "":
+            return ""
+        if "%" in s:
+            return "background-color: rgba(0, 180, 0, 0.20);color: #0b4f0b;font-weight: 700;"
+        return ""
+
+    def play_ev_style(v):
+        return "background-color:#1f7a1f;color:white;font-weight:700;" if str(v).strip() == "💰" else ""
+
     def weak_style(v):
         try:
             x = float(v)
@@ -462,43 +650,31 @@ def style_df(df: pd.DataFrame, cols: list[str]) -> "pd.io.formats.style.Styler":
 
     sty = view.style
 
-    # Matrix columns
+    if "EV_Signal" in view.columns:
+        sty = sty.applymap(ev_signal_style, subset=["EV_Signal"])
+
     for c in ["Matrix_Points", "Matrix_SOG", "Matrix_Assists", "Matrix_Goal"]:
         if c in view.columns:
             sty = sty.applymap(matrix_style, subset=[c])
 
-    # Heat columns
     for c in ["Reg_Heat_P", "Reg_Heat_S", "Reg_Heat_G", "Reg_Heat_A"]:
         if c in view.columns:
             sty = sty.applymap(heat_style, subset=[c])
 
-    # Confidence columns
     for c in ["Best_Conf", "Conf_Points", "Conf_SOG", "Conf_Goal", "Conf_Assists"]:
         if c in view.columns:
             sty = sty.applymap(conf_style, subset=[c])
 
-
-    # EV columns
     for c in [c for c in view.columns if c.endswith("EVpct_over")]:
         sty = sty.applymap(ev_style, subset=[c])
-
-    # Plays_EV_* booleans (highlight when true)
-    def play_ev_style(v):
-        try:
-            return "background-color:#1f7a1f;color:white;font-weight:700;" if bool(v) else ""
-        except Exception:
-            return ""
 
     for c in [c for c in view.columns if c.startswith("Plays_EV_")]:
         sty = sty.applymap(play_ev_style, subset=[c])
 
-    # Weakness columns (only extreme)
     for c in ["Goalie_Weak", "Opp_DefWeak"]:
         if c in view.columns:
             sty = sty.applymap(weak_style, subset=[c])
-    # -------------------------
-    # FORCE DECIMALS (Styler tables)
-    # -------------------------
+
     fmt2_cols = [
         "Exp_A_10", "Reg_Gap_A10",
         "Exp_P_10", "Reg_Gap_P10",
@@ -526,18 +702,14 @@ def style_df(df: pd.DataFrame, cols: list[str]) -> "pd.io.formats.style.Styler":
         if c in view.columns:
             format_dict[c] = "{:.1f}"
 
-    # --- Betting UI: lines + odds ---
-    # Lines: show 1 decimal, and they're already snapped to .0/.5 upstream (or we snap later)
     for c in view.columns:
         if c.endswith("_Line") or c in ("Line",):
             format_dict.setdefault(c, "{:.1f}")
 
-    # American odds: show no decimals
     for c in view.columns:
         if c.endswith("_Odds_Over") or c in ("Odds",):
             format_dict.setdefault(c, "{:.0f}")
 
-    # Probabilities (0-1): show as clean percent (e.g., 53.4%)
     for c in view.columns:
         if c.endswith("_p_model_over") or c.endswith("_p_imp_over"):
             format_dict.setdefault(c, "{:.1%}")
@@ -545,11 +717,7 @@ def style_df(df: pd.DataFrame, cols: list[str]) -> "pd.io.formats.style.Styler":
     if format_dict:
         sty = sty.format(format_dict, na_rep="")
 
-  
-
-
     return sty
-
 
 def add_ui_columns(df: pd.DataFrame) -> pd.DataFrame:
     out = df.copy()
@@ -576,14 +744,10 @@ def add_ui_columns(df: pd.DataFrame) -> pd.DataFrame:
     out["💰"] = ev_any.map(lambda x: "💰" if bool(x) else "")
 
     return out
-
-
 def load_csv(path: str) -> pd.DataFrame:
     df = pd.read_csv(path)
     df.columns = [c.strip() for c in df.columns]
     return df
-
-
 def filter_common(df: pd.DataFrame) -> pd.DataFrame:
     out = df.copy()
 
@@ -618,8 +782,6 @@ def filter_common(df: pd.DataFrame) -> pd.DataFrame:
         out = out[out["💰"] == "💰"]
 
     return out
-
-
 def sort_board(df: pd.DataFrame) -> pd.DataFrame:
     out = df.copy()
     out["_bc"] = safe_num(out, "Best_Conf", 0)
@@ -627,8 +789,6 @@ def sort_board(df: pd.DataFrame) -> pd.DataFrame:
     out["_dw"] = safe_num(out, "Opp_DefWeak", 50)
     out = out.sort_values(["_bc", "_gw", "_dw"], ascending=[False, False, False]).drop(columns=["_bc", "_gw", "_dw"], errors="ignore")
     return out
-
-
 def show_games_times(df: pd.DataFrame):
     if "Game" not in df.columns:
         return
@@ -647,8 +807,8 @@ def show_games_times(df: pd.DataFrame):
     if have_utc:
         tmp["StartTimeUTC"] = tmp["StartTimeUTC"].astype(str).fillna("").str.strip()
 
-    def first_nonempty(s: pd.Series) -> str:
-        for v in s.tolist():
+    def first_nonempty(series: pd.Series) -> str:
+        for v in series.tolist():
             if isinstance(v, str) and v.strip():
                 return v.strip()
         return ""
@@ -661,7 +821,6 @@ def show_games_times(df: pd.DataFrame):
 
     g = tmp.groupby("Game", as_index=False).agg(agg)
 
-    # Sort (UTC is best if present)
     if have_utc:
         g = g.sort_values("StartTimeUTC")
     elif have_local:
@@ -836,32 +995,6 @@ else:
 
 
 # =========================
-# LOCK + EV summary columns (signals first)
-# =========================
-# Per-market LOCK badge (earned green + EV)
-if "Green_Points" in df.columns and "Plays_EV_Points" in df.columns:
-    df["LOCK_Points"] = np.where(df["Green_Points"].fillna(False).astype(bool) & (df["Plays_EV_Points"].astype(str)=="💰"), "🔒", "")
-if "Green_SOG" in df.columns and "Plays_EV_SOG" in df.columns:
-    df["LOCK_SOG"] = np.where(df["Green_SOG"].fillna(False).astype(bool) & (df["Plays_EV_SOG"].astype(str)=="💰"), "🔒", "")
-if "Green_Goal" in df.columns and "Plays_EV_ATG" in df.columns:
-    df["LOCK_Goal"] = np.where(df["Green_Goal"].fillna(False).astype(bool) & (df["Plays_EV_ATG"].astype(str)=="💰"), "🔒", "")
-if "Green_Assists" in df.columns and "Plays_EV_Assists" in df.columns:
-    df["LOCK_Assists"] = np.where(df["Green_Assists"].fillna(False).astype(bool) & (df["Plays_EV_Assists"].astype(str)=="💰"), "🔒", "")
-
-# Any LOCK on the slate
-lock_cols = [c for c in ["LOCK_Points","LOCK_SOG","LOCK_Goal","LOCK_Assists"] if c in df.columns]
-df["LOCK"] = np.where(df[lock_cols].astype(str).apply(lambda r: any(v=="🔒" for v in r), axis=1), "🔒", "") if lock_cols else ""
-
-# Best EV% across markets (shown up front on Board)
-ev_pct_cols = [c for c in ["Points_EV%","SOG_EV%","ATG_EV%","Assists_EV%","Goal_EV%"] if c in df.columns]
-if ev_pct_cols:
-    tmp_ev = df[ev_pct_cols].apply(pd.to_numeric, errors="coerce")
-    df["EV_Best"] = tmp_ev.max(axis=1).round(1)
-else:
-    df["EV_Best"] = np.nan
-
-
-# =========================
 # BETTING DISPLAY CLEANUP
 # =========================
 # Snap all *_Line columns to .0/.5 so you never see ugly 2.49999997 style floats.
@@ -880,8 +1013,6 @@ try:
     slate_games = int(df["Game"].nunique())
 except Exception:
     slate_games = 8
-
-
 def _tier_color(conf):
     try:
         x = float(conf)
@@ -894,8 +1025,6 @@ def _tier_color(conf):
     if x >= 55:
         return "blue"
     return "red"
-
-
 def _green_conf_threshold(market: str, slate_games: int) -> int:
     # Normalize market aliases
     m = market.strip()
@@ -1092,16 +1221,6 @@ df["Points_Why"] = ""
 mask = df["Green_Points"].fillna(False)
 df.loc[mask, "Points_Why"] = df.loc[mask].apply(_points_why, axis=1)
 
-df["Green_Goal"] = (
-    (safe_num(df, "Conf_Goal", 0) >= thr_g)
-    & (safe_str(df, "Matrix_Goal", "").str.strip().str.lower() == "green")
-    & (
-        (safe_str(df, "Reg_Heat_G", "").str.strip().str.upper() == "HOT")
-        | (safe_num(df, "Goalie_Weak", 0) >= 70)
-        | (safe_num(df, "Drought_G", 0) >= 2)
-    )
-)
-
 df["Color_SOG"] = safe_num(df, "Conf_SOG", 0).apply(_tier_color) if "Conf_SOG" in df.columns else "red"
 df["Color_Points"] = safe_num(df, "Conf_Points", 0).apply(_tier_color) if "Conf_Points" in df.columns else "red"
 df["Color_Goal"] = safe_num(df, "Conf_Goal", 0).apply(_tier_color) if "Conf_Goal" in df.columns else "red"
@@ -1162,7 +1281,6 @@ assists_green_earned = (
 )
 
 df["Plays_Assists"] = assists_green_earned.fillna(False)
-
 def _assist_why(r):
     reasons = []
     if _get(r, "iXA%", 0) >= 92:
@@ -1215,7 +1333,7 @@ with st.expander("Debug: loaded columns"):
 # Navigation
 page = st.sidebar.radio(
     "Page",
-    ["Board", "Points", "Assists", "SOG", "GOAL (1+)","Guide", "Ledger", "Raw CSV"],
+    ["Board", "Points", "Assists", "SOG", "GOAL (1+)","Guide", "Ledger", "Raw CSV", "📟 Calculator", "🧾 Log Bet"],
     index=0
 )
 
@@ -1229,140 +1347,52 @@ show_games_times(df_f)
 # BOARD
 # =========================
 if page == "Board":
-    # ---- Board quick controls (visual-only) ----
-    # Header + clock
-    h1, h2 = st.columns([3, 1])
-    with h1:
-        st.subheader("Board")
-    with h2:
-        render_vengeance_clock()
+    df_b = sort_board(df_f)
 
-    c1, c2, c3, c4 = st.columns([1, 1, 1, 2])
-    with c1:
-        greens_only = st.toggle("🟢 Greens only", value=False)
-    with c2:
-        ev_only = st.toggle("💰 +EV only", value=False)
-    with c3:
-        hide_red_rows = st.toggle("Hide 🔴 rows", value=True)
-    with c4:
-        min_best_conf = st.slider("Min Best_Conf", 0, 100, 60, 1)
-
-    df_b = df_f.copy().reset_index(drop=True)
-
-    # Markets pills (PTS/SOG/G/A) from Matrix states
-    if "Markets" not in df_b.columns:
-        df_b["Markets"] = df_b.apply(_markets_pills_row, axis=1)
-
-    # Playable flags
-    if "Any_Green" not in df_b.columns:
-        df_b["Any_Green"] = (
-            df_b.get("Green_Points", False).fillna(False).astype(bool)
-            | df_b.get("Green_SOG", False).fillna(False).astype(bool)
-            | df_b.get("Green_Goal", False).fillna(False).astype(bool)
-            | df_b.get("Green_Assists", False).fillna(False).astype(bool)
-        )
-
-    # Respect min Best_Conf
-    df_b = df_b[safe_num(df_b, "Best_Conf", 0) >= float(min_best_conf)]
-
-    # Filters
-    if greens_only:
-        # Prefer the strict Any_Green gate, fall back to 🔥 if needed
-        if "Any_Green" in df_b.columns:
-            df_b = df_b[df_b["Any_Green"] == True]
-        elif "🔥" in df_b.columns:
-            df_b = df_b[df_b["🔥"] == "🔥"]
-
-    if ev_only and "💰" in df_b.columns:
-        df_b = df_b[df_b["💰"] == "💰"]
-
-    if hide_red_rows:
-        mcols = [c for c in ["Matrix_Points","Matrix_SOG","Matrix_Goal","Matrix_Assists"] if c in df_b.columns]
-        if mcols:
-            def _all_red(r):
-                vals = [str(r.get(c, "")).strip().lower() for c in mcols]
-                present = [v for v in vals if v]
-                return bool(present) and all("red" in v for v in present)
-            df_b = df_b[~df_b.apply(_all_red, axis=1)]
-
-    # Sort best-first
-    df_b = sort_board(df_b)
-
-    with st.expander("Legend / How to read"):
-        st.markdown("""
-- **Markets** shows each market's **Matrix** state at a glance.
-- **🟢 Earned green** = playable per market rules.
-- **💰** = the odds are mispriced vs our model (positive EV threshold passed).
-- Use **Min Best_Conf** + **Hide reds** to keep the board tight.
-""")
-
-    board_cols_signal = [
+    board_cols = [
         "Game",
-        "Player",
-        "Pos",
+        "Player", "Pos",
         "Tier_Tag",
         "Markets",
-        "Green",
         "EV_Signal",
         "LOCK",
-        "Best_Conf",
         "Best_Market",
-        "💰",
-        "EV_Best",
-        "Goalie_Weak",
-        "Opp_DefWeak",
+        "Best_Conf",
+        "🔥",
+        "iXG%", "iXA%",
+        "Goalie_Weak", "Opp_DefWeak",
+        "Opp_Goalie", "Opp_SV", "Opp_GAA",
+        "Matrix_Points", "Conf_Points", "Reg_Heat_P", "Reg_Gap_P10",
+        "Matrix_SOG", "Conf_SOG", "Reg_Heat_S", "Reg_Gap_S10",
+        "Matrix_Goal", "Conf_Goal", "Reg_Heat_G", "Reg_Gap_G10",
+        "Matrix_Assists", "Conf_Assists", "Reg_Heat_A", "Reg_Gap_A10",
+        "Line", "Odds", "Result",
     ]
 
-    show_table(df_b, board_cols_signal, "Board — Signals (scan first)")
+    
 
-    with st.expander("Details / Why (click to dig deeper)"):
-        board_cols_detail = [
-            "Game",
-            "Player",
-            "Pos",
-            "Tier_Tag",
-            "Markets",
-            "Green",
-            "EV_Signal",
-            "LOCK",
-            "Best_Conf",
-            "Best_Market",
-            "💰",
-            "EV_Best",
-            "Matrix_Points",
-            "Matrix_SOG",
-            "Matrix_Goal",
-            "Matrix_Assists",
-            "Conf_Points",
-            "Conf_SOG",
-            "Conf_Goal",
-            "Conf_Assists",
-            "Goalie_Weak",
-            "Opp_DefWeak",
-            "Opp_Goalie",
-            "Opp_SV%",
-            "Opp_GAA",
-            "L10_P",
-            "L10_SOG",
-            "L10_G",
-            "L10_A",
-            "Drought_P",
-            "Drought_SOG2",
-            "Drought_G",
-            "Drought_A",
-            "Reg_Heat_P",
-            "Reg_Heat_SOG",
-            "Reg_Heat_G",
-            "Reg_Heat_A",
-            "Reg_Gap_P10",
-            "Reg_Gap_S10",
-            "Reg_Gap_G10",
-            "Reg_Gap_A10",
-            "Tier_Tag",
-        ]
-        show_table(df_b, board_cols_detail, "Board — Details")
+    # Build Markets pills + best-market EV signal for Board
+
+    
+
+    df_b["Markets"] = df_b.apply(build_markets_pills, axis=1)
+
+    
+
+    _ev_lock = df_b.apply(board_best_market_ev, axis=1, result_type="expand")
+
+    
+
+    df_b["EV_Signal"] = _ev_lock[0]
+
+    
+
+    df_b["LOCK"] = _ev_lock[1]
 
 
+    
+
+    show_table(df_b, board_cols, "Board (sorted by Best_Conf)")
 
 
 # =========================
@@ -1373,131 +1403,120 @@ elif page == "Points":
     df_p["_cp"] = safe_num(df_p, "Conf_Points", 0)
     df_p = df_p.sort_values(["_cp"], ascending=[False]).drop(columns=["_cp"], errors="ignore")
 
-    st.subheader("Points")
-    c1, c2, c3, c4, c5, c6 = st.columns([1, 1, 1, 1, 1, 2])
-    with c1:
-        greens_only = st.toggle("🟢 Greens only", value=False, key="pts_greens_only")
-    with c2:
-        ev_only = st.toggle("💰 +EV only", value=False, key="pts_ev_only")
-    with c3:
-        hide_red_rows = st.toggle("Hide 🔴 rows", value=True, key="pts_hide_reds")
-    with c4:
-        plays_first = st.toggle("Plays first", value=True, key="pts_plays_first")
-    with c5:
-        show_all = st.toggle("Show all", value=False, key="pts_show_all")
-    with c6:
-        min_conf = st.slider("Min Conf (Points)", 0, 100, 77, 1, key="pts_min_conf")
-
-    color_pick = st.multiselect(
+    st.sidebar.subheader("Points Filters")
+    show_all = st.sidebar.checkbox("Show all players (ignore filters)", value=False, key="show_all_points")
+    min_conf = st.sidebar.slider("Min Conf (Points)", 0, 100, 77, 1)
+    color_pick = st.sidebar.multiselect(
         "Colors (Points)",
         ["green", "yellow", "blue", "red"],
-        default=["green", "yellow", "blue"],
-        key="pts_colors",
+        default=["green", "yellow", "blue"]
     )
-
 
     if not show_all:
         df_p = df_p[df_p["Conf_Points"].fillna(0) >= min_conf]
         if "Color_Points" in df_p.columns and color_pick:
             df_p = df_p[df_p["Color_Points"].isin(color_pick)]
-    # ---- Visual-style filters (Board-like) ----
-    if hide_red_rows and "Matrix_Points" in df_p.columns:
-        df_p = df_p[safe_str(df_p, "Matrix_Points", "").str.strip().str.lower() != "red"]
-
-    if greens_only and "Green_Points" in df_p.columns:
-        df_p = df_p[df_p["Green_Points"].fillna(False).astype(bool)]
-
-    if ev_only:
-        if "Plays_EV_Points" in df_p.columns:
-            df_p = df_p[df_p["Plays_EV_Points"].astype(str) == "💰"]
-        elif "💰" in df_p.columns:
-            df_p = df_p[df_p["💰"] == "💰"]
-
-    # Markets pills for quick scan
-    if "Markets" not in df_p.columns:
-        df_p["Markets"] = df_p.apply(_markets_pills_row, axis=1)
-
-    if plays_first:
-        df_p["_g"] = df_p.get("Green_Points", False).fillna(False).astype(bool)
-        df_p["_ev"] = (df_p.get("Plays_EV_Points", "").astype(str) == "💰")
-        df_p["_c"] = safe_num(df_p, "Conf_Points", 0)
-        df_p = df_p.sort_values(["_g", "_ev", "_c"], ascending=[False, False, False]).drop(columns=["_g","_ev","_c"], errors="ignore")
-
 
     df_p["Green"] = df_p["Green_Points"].map(lambda x: "🟢" if bool(x) else "")
-    df_p["LOCK"] = df_p.apply(lambda r: lock_badge(r.get("Green_Points", False), r.get("Plays_EV_Points", "")), axis=1)
 
-    points_cols_signal = [
-        "Game",
-        "Player",
-        "Pos",
+    points_cols = [
+        "Game","Player","Pos",
         "Tier_Tag",
         "Markets",
         "Green",
         "EV_Signal",
         "LOCK",
-        "Conf_Points",
-        "Matrix_Points",
+        "Conf_Points","Matrix_Points",
         "Points_Line",
         "Points_Odds_Over",
+
+        # --- EV / Odds ---
         "Points_Book",
+        "Points_Model%",
+        "Points_Imp%",
         "Points_EV%",
+        "Plays_EV_Points",
+
         "Points_Call",
-        "💰",
-        "L10_P",
-        "P10_total",
-        "Drought_P",
-        "Reg_Heat_P",
-        "Reg_Gap_P10",
-        "iXG%",
-        "iXA%",
-        "TOI%",
-        "Goalie_Weak",
-        "Opp_DefWeak",
-    ]
+        "Reg_Heat_P","Reg_Gap_P10","Exp_P_10","L10_P",
+        "iXG%","iXA%",
+        "Opp_Goalie","Opp_SV","Opp_GAA","Goalie_Weak","Opp_DefWeak",
+        "Drought_P","Best_Drought",
+        "Line","Odds","Result",
+]
 
-    show_table(df_p, points_cols_signal, "Points — Signals (simple first)")
 
-    with st.expander("Details / Why (Points)"):
-        points_cols_detail = [
-            "Game",
-            "Player",
-            "Pos",
-            "Tier_Tag",
-            "Markets",
-            "Green",
-            "EV_Signal",
-            "LOCK",
-            "Conf_Points",
-            "Matrix_Points",
-            "Points_Line",
-            "Points_Book",
-            "Points_Odds_Over",
-            "Points_Model%",
-            "Points_Imp%",
-            "Points_EV%",
-            "Points_Call",
-            "iXG%",
-            "iXA%",
-            "TOI%",
-            "PP1%",
-            "L10_P",
-            "P10_total",
-            "Drought_P",
-            "Reg_Heat_P",
-            "Reg_Gap_P10",
-            "Opp_Goalie",
-            "Opp_SV%",
-            "Opp_GAA",
-            "Goalie_Weak",
-            "Opp_DefWeak",
-            "P5_total",
-            "P10_total",
-            "S10_total",
-            "N_games_found",
-        ]
-        show_table(df_p, points_cols_detail, "Points — Details")
 
+
+
+
+    # Signals-first extras
+
+
+
+
+
+
+    df_p["Markets"] = df_p.apply(build_markets_pills, axis=1)
+
+
+
+
+
+
+    g = df_p.get("Green_Points", (df_p.get("Green","") == "🟢"))
+
+
+
+
+
+
+    e = df_p.get("Plays_EV_Points", "")
+
+
+
+
+
+
+    p = df_p.get("Points_EV%", None)
+
+
+
+
+
+
+    df_p["EV_Signal"] = [build_ev_signal(gg, ee, pp) for gg, ee, pp in zip(g, e, p if hasattr(p, "__iter__") else [p]*len(df_p))]
+
+
+
+
+
+
+    df_p["LOCK"] = [build_lock_badge(gg, ee) for gg, ee in zip(g, e)]
+    legend_signals()
+    _f = render_market_filter_bar(default_min_conf=60, key_prefix="pts")
+    try:
+        df_p = apply_market_filters(
+            df_p,
+            _f,
+            green_col="Green_Points",
+            ev_icon_col="Plays_EV_Points",
+            conf_col="Conf_Points",
+            matrix_col="Matrix_Points",
+            lock_col="LOCK",
+        )
+    except Exception:
+        pass
+
+
+
+
+
+
+
+
+
+    show_table(df_p, points_cols, "Points View")
 
 
 # =========================
@@ -1508,129 +1527,83 @@ elif page == "Assists":
     df_a["_ca"] = safe_num(df_a, "Conf_Assists", 0)
     df_a = df_a.sort_values(["_ca"], ascending=[False]).drop(columns=["_ca"], errors="ignore")
 
-    st.subheader("Assists")
-    c1, c2, c3, c4, c5, c6 = st.columns([1, 1, 1, 1, 1, 2])
-    with c1:
-        greens_only = st.toggle("🟢 Greens only", value=False, key="ast_greens_only")
-    with c2:
-        ev_only = st.toggle("💰 +EV only", value=False, key="ast_ev_only")
-    with c3:
-        hide_red_rows = st.toggle("Hide 🔴 rows", value=True, key="ast_hide_reds")
-    with c4:
-        plays_first = st.toggle("Plays first", value=True, key="ast_plays_first")
-    with c5:
-        show_all = st.toggle("Show all", value=False, key="ast_show_all")
-    with c6:
-        min_conf = st.slider("Min Conf (Assists)", 0, 100, 77, 1, key="ast_min_conf")
-
-    color_pick = st.multiselect(
+    st.sidebar.subheader("Assists Filters")
+    show_all = st.sidebar.checkbox("Show all players (ignore filters)", value=False, key="show_all_assists")
+    min_conf = st.sidebar.slider("Min Conf (Assists)", 0, 100, 77, 1)
+    color_pick = st.sidebar.multiselect(
         "Colors (Assists)",
         ["green", "yellow", "blue", "red"],
-        default=["green", "yellow", "blue"],
-        key="ast_colors",
+        default=["green", "yellow", "blue"]
     )
-
 
     if not show_all:
         df_a = df_a[df_a["Conf_Assists"].fillna(0) >= min_conf]
         if "Color_Assists" in df_a.columns and color_pick:
             df_a = df_a[df_a["Color_Assists"].isin(color_pick)]
-    # ---- Visual-style filters (Board-like) ----
-    if hide_red_rows and "Matrix_Assists" in df_a.columns:
-        df_a = df_a[safe_str(df_a, "Matrix_Assists", "").str.strip().str.lower() != "red"]
-
-    if greens_only and "Green_Assists" in df_a.columns:
-        df_a = df_a[df_a["Green_Assists"].fillna(False).astype(bool)]
-
-    if ev_only:
-        if "Plays_EV_Assists" in df_a.columns:
-            df_a = df_a[df_a["Plays_EV_Assists"].astype(str) == "💰"]
-        elif "💰" in df_a.columns:
-            df_a = df_a[df_a["💰"] == "💰"]
-
-    if "Markets" not in df_a.columns:
-        df_a["Markets"] = df_a.apply(_markets_pills_row, axis=1)
-
-    if plays_first:
-        df_a["_g"] = df_a.get("Green_Assists", False).fillna(False).astype(bool)
-        df_a["_ev"] = (df_a.get("Plays_EV_Assists", "").astype(str) == "💰")
-        df_a["_c"] = safe_num(df_a, "Conf_Assists", 0)
-        df_a = df_a.sort_values(["_g", "_ev", "_c"], ascending=[False, False, False]).drop(columns=["_g","_ev","_c"], errors="ignore")
-
 
     df_a["Green"] = df_a.get("Green_Assists", False).map(lambda x: "🟢" if bool(x) else "")
 
-    assists_cols_signal = [
+    assists_cols = [
         "Game",
-        "Player",
-        "Pos",
+        "Player", "Pos",
         "Tier_Tag",
         "Markets",
         "Green",
         "EV_Signal",
         "LOCK",
-        "Conf_Assists",
-        "Matrix_Assists",
+        "Conf_Assists", "Matrix_Assists",
+
+        # --- EV / Odds ---
         "Assists_Line",
         "Assists_Odds_Over",
         "Assists_Book",
+        "Assists_Model%",
+        "Assists_Imp%",
         "Assists_EV%",
+        "Plays_EV_Assists",
+
         "Assists_Call",
-        "💰",
-        "L10_A",
-        "A10_total",
-        "Drought_A",
-        "Reg_Heat_A",
-        "Reg_Gap_A10",
-        "iXA%",
-        "iXG%",
-        "TOI%",
-        "Goalie_Weak",
-        "Opp_DefWeak",
+        "Drought_A","Best_Drought",
+        "Assist_ProofCount", "Assist_Why",
+        "Reg_Heat_A", "Reg_Gap_A10", "Exp_A_10", "L10_A",
+        "iXA%","iXG%", "v2_player_stability",
+        "Opp_Goalie", "Opp_SV",
+        "Goalie_Weak", "Opp_DefWeak",
+        "Line", "Odds", "Result",
     ]
 
-    show_table(df_a, assists_cols_signal, "Assists — Signals (simple first)")
+    # Signals-first extras
 
-    with st.expander("Details / Why (Assists)"):
-        assists_cols_detail = [
-            "Game",
-            "Player",
-            "Pos",
-            "Tier_Tag",
-            "Markets",
-            "Green",
-            "EV_Signal",
-            "LOCK",
-            "Conf_Assists",
-            "Matrix_Assists",
-            "Assists_Line",
-            "Assists_Book",
-            "Assists_Odds_Over",
-            "Assists_Model%",
-            "Assists_Imp%",
-            "Assists_EV%",
-            "Assists_Call",
-            "iXA%",
-            "iXG%",
-            "TOI%",
-            "PP1%",
-            "L10_A",
-            "A10_total",
-            "Drought_A",
-            "Reg_Heat_A",
-            "Reg_Gap_A10",
-            "Opp_Goalie",
-            "Opp_SV%",
-            "Opp_GAA",
-            "Goalie_Weak",
-            "Opp_DefWeak",
-            "A5_total",
-            "A10_total",
-            "P10_total",
-            "N_games_found",
-        ]
-        show_table(df_a, assists_cols_detail, "Assists — Details")
+    df_a["Markets"] = df_a.apply(build_markets_pills, axis=1)
 
+    g = df_a.get("Green_Assists", (df_a.get("Green","") == "🟢"))
+
+    e = df_a.get("Plays_EV_Assists", "")
+
+    p = df_a.get("Assists_EV%", None)
+
+    df_a["EV_Signal"] = [build_ev_signal(gg, ee, pp) for gg, ee, pp in zip(g, e, p if hasattr(p, "__iter__") else [p]*len(df_a))]
+
+    df_a["LOCK"] = [build_lock_badge(gg, ee) for gg, ee in zip(g, e)]
+    legend_signals()
+    _f = render_market_filter_bar(default_min_conf=60, key_prefix="ast")
+    try:
+        df_a = apply_market_filters(
+            df_a,
+            _f,
+            green_col="Green_Assists",
+            ev_icon_col="Plays_EV_Assists",
+            conf_col="Conf_Assists",
+            matrix_col="Matrix_Assists",
+            lock_col="LOCK",
+        )
+    except Exception:
+        pass
+
+
+
+
+    show_table(df_a, assists_cols, "Assists View")
 
 
 # =========================
@@ -1641,127 +1614,90 @@ elif page == "SOG":
     df_s["_cs"] = safe_num(df_s, "Conf_SOG", 0)
     df_s = df_s.sort_values(["_cs"], ascending=[False]).drop(columns=["_cs"], errors="ignore")
 
-    st.subheader("SOG")
-    c1, c2, c3, c4, c5, c6 = st.columns([1, 1, 1, 1, 1, 2])
-    with c1:
-        greens_only = st.toggle("🟢 Greens only", value=False, key="sog_greens_only")
-    with c2:
-        ev_only = st.toggle("💰 +EV only", value=False, key="sog_ev_only")
-    with c3:
-        hide_red_rows = st.toggle("Hide 🔴 rows", value=True, key="sog_hide_reds")
-    with c4:
-        plays_first = st.toggle("Plays first", value=True, key="sog_plays_first")
-    with c5:
-        show_all = st.toggle("Show all", value=False, key="sog_show_all")
-    with c6:
-        min_conf = st.slider("Min Conf (SOG)", 0, 100, 77, 1, key="sog_min_conf")
-
-    color_pick = st.multiselect(
+    st.sidebar.subheader("SOG Filters")
+    show_all = st.sidebar.checkbox("Show all players (ignore filters)", value=False, key="show_all_sog")
+    min_conf = st.sidebar.slider("Min Conf (SOG)", 0, 100, 77, 1)
+    color_pick = st.sidebar.multiselect(
         "Colors (SOG)",
         ["green", "yellow", "blue", "red"],
-        default=["green", "yellow", "blue"],
-        key="sog_colors",
+        default=["green", "yellow", "blue"]
     )
-
 
     if not show_all:
         df_s = df_s[df_s["Conf_SOG"].fillna(0) >= min_conf]
         if "Color_SOG" in df_s.columns and color_pick:
             df_s = df_s[df_s["Color_SOG"].isin(color_pick)]
-    # ---- Visual-style filters (Board-like) ----
-    if hide_red_rows and "Matrix_SOG" in df_s.columns:
-        df_s = df_s[safe_str(df_s, "Matrix_SOG", "").str.strip().str.lower() != "red"]
-
-    if greens_only and "Green_SOG" in df_s.columns:
-        df_s = df_s[df_s["Green_SOG"].fillna(False).astype(bool)]
-
-    if ev_only:
-        if "Plays_EV_SOG" in df_s.columns:
-            df_s = df_s[df_s["Plays_EV_SOG"].astype(str) == "💰"]
-        elif "💰" in df_s.columns:
-            df_s = df_s[df_s["💰"] == "💰"]
-
-    if "Markets" not in df_s.columns:
-        df_s["Markets"] = df_s.apply(_markets_pills_row, axis=1)
-
-    if plays_first:
-        df_s["_g"] = df_s.get("Green_SOG", False).fillna(False).astype(bool)
-        df_s["_ev"] = (df_s.get("Plays_EV_SOG", "").astype(str) == "💰")
-        df_s["_c"] = safe_num(df_s, "Conf_SOG", 0)
-        df_s = df_s.sort_values(["_g", "_ev", "_c"], ascending=[False, False, False]).drop(columns=["_g","_ev","_c"], errors="ignore")
-
 
     df_s["Green"] = df_s["Green_SOG"].map(lambda x: "🟢" if bool(x) else "")
-    df_s["LOCK"] = df_s.apply(lambda r: lock_badge(r.get("Green_SOG", False), r.get("Plays_EV_SOG", "")), axis=1)
 
-    sog_cols_signal = [
-        "Game",
-        "Player",
-        "Pos",
-        "Tier_Tag",
-        "Markets",
-        "Green",
-        "EV_Signal",
-        "LOCK",
-        "Conf_SOG",
-        "Matrix_SOG",
+    sog_cols = [
+       "Game",
+       "Player", "Pos",
+       "Tier_Tag",
+       "Markets",
+       "Green",
+       "EV_Signal",
+       "LOCK",
+       "Conf_SOG", "Matrix_SOG",
+
+        # --- EV / Odds ---
         "SOG_Line",
         "SOG_Odds_Over",
         "SOG_Book",
+        "SOG_Model%",
+        "SOG_Imp%",
         "SOG_EV%",
+        "Plays_EV_SOG",
+
         "SOG_Call",
-        "💰",
-        "L10_SOG",
-        "S10_total",
-        "Drought_SOG2",
-        "Reg_Heat_SOG",
-        "Reg_Gap_S10",
-        "ShotIntent%",
-        "TOI%",
-        "Goalie_Weak",
-        "Opp_DefWeak",
+        "Drought_SOG", "Best_Drought",
+        "Reg_Heat_S", "Reg_Gap_S10", "Exp_S_10", "L10_S",
+        "Med10_SOG", "Avg5_SOG", "ShotIntent", "ShotIntent_Pct",
+        "Opp_Goalie", "Opp_SV",
+        "Goalie_Weak", "Opp_DefWeak",
+        "Line", "Odds", "Result",
     ]
 
-    show_table(df_s, sog_cols_signal, "SOG — Signals (simple first)")
 
-    with st.expander("Details / Why (SOG)"):
-        sog_cols_detail = [
-            "Game",
-            "Player",
-            "Pos",
-            "Tier_Tag",
-            "Markets",
-            "Green",
-            "EV_Signal",
-            "LOCK",
-            "Conf_SOG",
-            "Matrix_SOG",
-            "SOG_Line",
-            "SOG_Book",
-            "SOG_Odds_Over",
-            "SOG_Model%",
-            "SOG_Imp%",
-            "SOG_EV%",
-            "SOG_Call",
-            "ShotIntent%",
-            "TOI%",
-            "PP1%",
-            "L10_SOG",
-            "S10_total",
-            "Drought_SOG2",
-            "Reg_Heat_SOG",
-            "Reg_Gap_S10",
-            "Opp_Goalie",
-            "Opp_SV%",
-            "Opp_GAA",
-            "Goalie_Weak",
-            "Opp_DefWeak",
-            "S5_total",
-            "S10_total",
-            "N_games_found",
-        ]
-        show_table(df_s, sog_cols_detail, "SOG — Details")
+    # Signals-first extras
 
+
+    df_s["Markets"] = df_s.apply(build_markets_pills, axis=1)
+
+
+    g = df_s.get("Green_SOG", (df_s.get("Green","") == "🟢"))
+
+
+    e = df_s.get("Plays_EV_SOG", "")
+
+
+    p = df_s.get("SOG_EV%", None)
+
+
+    df_s["EV_Signal"] = [build_ev_signal(gg, ee, pp) for gg, ee, pp in zip(g, e, p if hasattr(p, "__iter__") else [p]*len(df_s))]
+
+
+    df_s["LOCK"] = [build_lock_badge(gg, ee) for gg, ee in zip(g, e)]
+    legend_signals()
+    _f = render_market_filter_bar(default_min_conf=60, key_prefix="sog")
+    try:
+        df_s = apply_market_filters(
+            df_s,
+            _f,
+            green_col="Green_SOG",
+            ev_icon_col="Plays_EV_SOG",
+            conf_col="Conf_SOG",
+            matrix_col="Matrix_SOG",
+            lock_col="LOCK",
+        )
+    except Exception:
+        pass
+
+
+
+
+
+    show_table(df_s, sog_cols, "SOG View")
 
 
 # =========================
@@ -1772,129 +1708,416 @@ elif page == "GOAL (1+)":
     df_g["_cg"] = safe_num(df_g, "Conf_Goal", 0)
     df_g = df_g.sort_values(["_cg"], ascending=[False]).drop(columns=["_cg"], errors="ignore")
 
-    st.subheader("GOAL (1+)")
-    c1, c2, c3, c4, c5, c6 = st.columns([1, 1, 1, 1, 1, 2])
-    with c1:
-        greens_only = st.toggle("🟢 Greens only", value=False, key="g_greens_only")
-    with c2:
-        ev_only = st.toggle("💰 +EV only", value=False, key="g_ev_only")
-    with c3:
-        hide_red_rows = st.toggle("Hide 🔴 rows", value=True, key="g_hide_reds")
-    with c4:
-        plays_first = st.toggle("Plays first", value=True, key="g_plays_first")
-    with c5:
-        show_all = st.toggle("Show all", value=False, key="g_show_all")
-    with c6:
-        min_conf = st.slider("Min Conf (Goal)", 0, 100, 77, 1, key="g_min_conf")
-
-    color_pick = st.multiselect(
+    st.sidebar.subheader("Goal Filters")
+    show_all = st.sidebar.checkbox("Show all players (ignore filters)", value=False)
+    min_conf = st.sidebar.slider("Min Conf (Goal)", 0, 100, 77, 1)
+    color_pick = st.sidebar.multiselect(
         "Colors (Goal)",
         ["green", "yellow", "blue", "red"],
-        default=["green", "yellow", "blue"],
-        key="g_colors",
+        default=["green", "yellow", "blue"]
     )
-
 
     if not show_all:
         df_g = df_g[df_g["Conf_Goal"].fillna(0) >= min_conf]
         if "Color_Goal" in df_g.columns and color_pick:
             df_g = df_g[df_g["Color_Goal"].isin(color_pick)]
-    # ---- Visual-style filters (Board-like) ----
-    if hide_red_rows and "Matrix_Goal" in df_g.columns:
-        df_g = df_g[safe_str(df_g, "Matrix_Goal", "").str.strip().str.lower() != "red"]
-
-    if greens_only and "Green_Goal" in df_g.columns:
-        df_g = df_g[df_g["Green_Goal"].fillna(False).astype(bool)]
-
-    if ev_only:
-        if "Plays_EV_ATG" in df_g.columns:
-            df_g = df_g[df_g["Plays_EV_ATG"].astype(str) == "💰"]
-        elif "💰" in df_g.columns:
-            df_g = df_g[df_g["💰"] == "💰"]
-
-    if "Markets" not in df_g.columns:
-        df_g["Markets"] = df_g.apply(_markets_pills_row, axis=1)
-
-    if plays_first:
-        df_g["_g"] = df_g.get("Green_Goal", False).fillna(False).astype(bool)
-        df_g["_ev"] = (df_g.get("Plays_EV_ATG", "").astype(str) == "💰")
-        df_g["_c"] = safe_num(df_g, "Conf_Goal", 0)
-        df_g = df_g.sort_values(["_g", "_ev", "_c"], ascending=[False, False, False]).drop(columns=["_g","_ev","_c"], errors="ignore")
-
 
     df_g["Green"] = df_g.get("Green_Goal", False).map(lambda x: "🟢" if bool(x) else "")
 
-    goal_cols_signal = [
+    goal_cols = [
         "Game",
-        "Player",
-        "Pos",
+        "Player", "Pos",
         "Tier_Tag",
         "Markets",
         "Green",
         "EV_Signal",
         "LOCK",
-        "Conf_Goal",
-        "Matrix_Goal",
+        "Conf_Goal", "Matrix_Goal",
+
+        # --- EV / Odds ---
         "ATG_Line",
         "ATG_Odds_Over",
         "ATG_Book",
-        "ATG_EV%",
+        "ATG_Model%", "ATG_Imp%", "ATG_EV%", "Plays_EV_ATG",
+
         "ATG_Call",
-        "💰",
-        "L10_G",
-        "G10_total",
-        "Drought_G",
-        "Reg_Heat_G",
-        "Reg_Gap_G10",
-        "iXG%",
-        "ShotIntent%",
-        "TOI%",
-        "Goalie_Weak",
-        "Opp_DefWeak",
+        "Reg_Heat_G", "Reg_Gap_G10", "Exp_G_10", "L10_G",
+        "iXG%", "iXA%",
+        "Opp_Goalie", "Opp_SV", "Opp_GAA", "Goalie_Weak", "Opp_DefWeak",
+        "Drought_G", "Best_Drought",
     ]
 
-    show_table(df_g, goal_cols_signal, "GOAL (1+) — Signals (simple first)")
+    # Signals-first extras
 
-    with st.expander("Details / Why (GOAL 1+)"):
-        goal_cols_detail = [
-            "Game",
-            "Player",
-            "Pos",
-            "Tier_Tag",
-            "Markets",
-            "Green",
-            "EV_Signal",
-            "LOCK",
-            "Conf_Goal",
-            "Matrix_Goal",
-            "ATG_Line",
-            "ATG_Book",
-            "ATG_Odds_Over",
-            "ATG_Model%",
-            "ATG_Imp%",
-            "ATG_EV%",
-            "ATG_Call",
-            "iXG%",
-            "ShotIntent%",
-            "TOI%",
-            "PP1%",
-            "L10_G",
-            "G10_total",
-            "Drought_G",
-            "Reg_Heat_G",
-            "Reg_Gap_G10",
-            "Opp_Goalie",
-            "Opp_SV%",
-            "Opp_GAA",
-            "Goalie_Weak",
-            "Opp_DefWeak",
-            "G5_total",
-            "G10_total",
-            "S10_total",
-            "N_games_found",
-        ]
-        show_table(df_g, goal_cols_detail, "GOAL (1+) — Details")
+    df_g["Markets"] = df_g.apply(build_markets_pills, axis=1)
 
+    g = df_g.get("Green_Goal", (df_g.get("Green","") == "🟢"))
+
+    e = df_g.get("Plays_EV_ATG", "")
+
+    p = df_g.get("ATG_EV%", None)
+
+    df_g["EV_Signal"] = [build_ev_signal(gg, ee, pp) for gg, ee, pp in zip(g, e, p if hasattr(p, "__iter__") else [p]*len(df_g))]
+
+    df_g["LOCK"] = [build_lock_badge(gg, ee) for gg, ee in zip(g, e)]
+    legend_signals()
+    _f = render_market_filter_bar(default_min_conf=60, key_prefix="gol")
+    try:
+        df_g = apply_market_filters(
+            df_g,
+            _f,
+            green_col="Green_Goal",
+            ev_icon_col="Plays_EV_ATG",
+            conf_col="Conf_Goal",
+            matrix_col="Matrix_Goal",
+            lock_col="LOCK",
+        )
+    except Exception:
+        pass
+
+
+
+
+    show_table(df_g, goal_cols, "GOAL (1+) View")
+
+
+elif page == "📟 Calculator":
+    st.subheader("📟 EV + Stake Calculator")
+    st.caption("Pick a player from today’s CSV and the calculator will auto-load their line/odds/model%. Override anything if you want.")
+    legend_signals()
+
+    # Base dataset (use filtered df so user can narrow by sidebar search/team/game)
+    df_calc = df_f.copy()
+
+    # Player dropdown
+    players = []
+    if "Player" in df_calc.columns:
+        players = sorted([p for p in df_calc["Player"].dropna().astype(str).unique().tolist() if p.strip()])
+
+    c1, c2, c3 = st.columns([1.4, 1.0, 1.0])
+    with c1:
+        player_sel = st.selectbox("Player", options=["(Manual)"] + players, index=0, key="calc_player")
+    with c2:
+        market = st.selectbox("Market", ["Points", "SOG", "Goal", "Assists"], index=0, key="calc_market")
+    with c3:
+        bankroll = st.number_input("Bankroll ($)", min_value=0.0, value=1000.0, step=50.0, key="calc_bankroll")
+
+    mcfg = _calc_market_map(market)
+
+    # Pull row for the selected player (first match)
+    row = None
+    if player_sel != "(Manual)" and "Player" in df_calc.columns:
+        hit = df_calc[df_calc["Player"].astype(str) == str(player_sel)]
+        if len(hit) > 0:
+            row = hit.iloc[0]
+
+    # Resolve auto values
+    auto_line = None
+    auto_odds = None
+    auto_p = None
+    auto_ev = None
+    auto_conf = None
+    auto_matrix = None
+    auto_green = None
+    auto_ev_icon = None
+
+    def _get_num_from_row(r, col):
+        try:
+            if r is None or col not in df_calc.columns:
+                return None
+            v = r.get(col, None)
+            if v is None or (isinstance(v, float) and math.isnan(v)):
+                return None
+            return float(v)
+        except Exception:
+            return None
+
+    if row is not None:
+        auto_line = _get_num_from_row(row, mcfg["line_col"])
+        auto_odds = _get_num_from_row(row, mcfg["odds_col"])
+        # model prob: prefer p_model_over (0-1), else Model% (0-100)
+        auto_p = _get_num_from_row(row, mcfg.get("p_model_col", ""))
+        if auto_p is None:
+            mp = _get_num_from_row(row, mcfg.get("modelpct_col", ""))
+            if mp is not None:
+                auto_p = float(mp) / 100.0
+        auto_ev = _get_num_from_row(row, mcfg.get("evpct_col", ""))
+        auto_conf = _get_num_from_row(row, mcfg.get("conf_col", ""))
+        try:
+            auto_matrix = str(row.get(mcfg.get("matrix_col",""), "")).strip()
+        except Exception:
+            auto_matrix = ""
+        try:
+            auto_green = bool(row.get(mcfg.get("green_col",""), False))
+        except Exception:
+            auto_green = False
+        try:
+            auto_ev_icon = str(row.get(mcfg.get("ev_icon_col",""), "")).strip()
+        except Exception:
+            auto_ev_icon = ""
+
+    # Unique keys per (player, market) so switching doesn't "carry" stale values
+    key_prefix = f"calc_{str(player_sel)}_{market}".replace(" ", "_")[:90]
+
+    st.markdown("### Inputs (auto-filled when player selected)")
+    i1, i2, i3, i4 = st.columns([1.0, 1.0, 1.0, 1.2])
+    with i1:
+        line = st.number_input("Line", value=float(auto_line) if auto_line is not None else 0.5, step=0.5, key=f"{key_prefix}_line")
+    with i2:
+        odds = st.number_input("Odds (American)", value=int(auto_odds) if auto_odds is not None else -110, step=5, key=f"{key_prefix}_odds")
+    with i3:
+        model_prob = st.slider(
+            "Model win probability (%)",
+            1.0, 99.0,
+            float(auto_p * 100.0) if auto_p is not None else 55.0,
+            0.5,
+            key=f"{key_prefix}_p"
+        ) / 100.0
+    with i4:
+        use_manual_ev = st.checkbox("Override EV% manually", value=False, key=f"{key_prefix}_usem")
+        manual_ev = st.number_input("Manual EV% (if overriding)", value=float(auto_ev) if auto_ev is not None else 0.0, step=0.5, key=f"{key_prefix}_mev")
+
+    s1, s2, s3 = st.columns([1.0, 1.0, 1.0])
+    with s1:
+        kelly_frac = st.slider("Kelly Fraction", 0.0, 1.0, 0.25, 0.05, key=f"{key_prefix}_kf")
+    with s2:
+        max_pct = st.slider("Max Stake cap (% bankroll)", 0.0, 0.20, 0.05, 0.01, key=f"{key_prefix}_cap")
+    with s3:
+        st.caption("Tip: Best bets are **🟢 + 💰**. Calculator helps size the bet.")
+
+    def american_to_decimal(odds: float) -> float:
+        if odds == 0:
+            return 1.0
+        if odds > 0:
+            return 1.0 + (odds / 100.0)
+        return 1.0 + (100.0 / abs(odds))
+
+    def implied_prob(odds: float) -> float:
+        if odds == 0:
+            return 0.5
+        if odds > 0:
+            return 100.0 / (odds + 100.0)
+        return abs(odds) / (abs(odds) + 100.0)
+
+    dec = american_to_decimal(float(odds))
+    imp = implied_prob(float(odds))
+
+    p = float(model_prob)
+    b = dec - 1.0
+    q = 1.0 - p
+
+    ev_per_dollar = (p * b) - q
+    ev_pct = ev_per_dollar * 100.0
+    if use_manual_ev:
+        ev_pct = float(manual_ev)
+
+    fair_dec = (1.0 / p) if p > 0 else 999.0
+    kelly = max(0.0, (b * p - q) / b) if b > 0 else 0.0
+
+    stake = bankroll * kelly * float(kelly_frac)
+    stake = min(stake, bankroll * float(max_pct))
+
+    st.markdown("### Results")
+    r1, r2, r3, r4 = st.columns(4)
+    r1.metric("Decimal Odds", f"{dec:.3f}")
+    r2.metric("Implied Prob", f"{imp*100:.1f}%")
+    r3.metric("Model Prob", f"{p*100:.1f}%")
+    r4.metric("EV%", f"{ev_pct:+.1f}%")
+
+    r1, r2, r3 = st.columns(3)
+    r1.metric("Fair Decimal", f"{fair_dec:.3f}")
+    r2.metric("Edge (Model-Imp)", f"{(p-imp)*100:.1f}%")
+    r3.metric("Kelly % (full)", f"{kelly*100:.2f}%")
+
+    r1, r2 = st.columns(2)
+    r1.metric("Recommended Stake ($)", f"{stake:.2f}")
+    r2.metric("Stake % bankroll", f"{(stake/bankroll*100.0) if bankroll>0 else 0.0:.2f}%")
+
+    # Signal callout
+    label, emoji, why = warlord_call(ev_pct, kelly)
+    if ev_pct >= 5:
+        st.success(f"{emoji} **{label}** — {why}")
+    elif ev_pct >= 0:
+        st.warning(f"{emoji} **{label}** — {why}")
+    else:
+        st.error(f"{emoji} **{label}** — {why}")
+
+    # Player context panel (when selected)
+    if row is not None:
+        st.markdown("### Player context (from today’s CSV)")
+        c1, c2, c3, c4 = st.columns([1,1,1,1])
+        c1.metric("Conf", f"{auto_conf:.0f}" if auto_conf is not None else "—")
+        c2.metric("Matrix", auto_matrix if auto_matrix else "—")
+        c3.metric("Earned Green", "🟢" if auto_green else "—")
+        c4.metric("+EV", "💰" if str(auto_ev_icon).strip() == "💰" else "—")
+
+        if auto_ev is not None and not use_manual_ev:
+            st.caption(f"EV% from CSV: **{auto_ev:+.1f}%** (you can override if shopping a different book/price).")
+        st.caption("Remember: **Calculator is sizing + price check**. Your model signals are still king.")
+
+
+
+elif page == "🧾 Log Bet":
+    st.subheader("🧾 Log Bet — append-only Warlord Ledger")
+    st.caption("Enter only what you actually bet. Everything else auto-fills from today’s model CSV.")
+    legend_signals()
+
+    df_log = df_f.copy()
+
+    # Paths
+    ledger_dir, betslip_path, events_path = _ledger_paths(OUTPUT_DIR)
+    st.caption(f"Ledger folder: `{ledger_dir}`")
+
+    # Player dropdown
+    players = []
+    if "Player" in df_log.columns:
+        players = sorted([p for p in df_log["Player"].dropna().astype(str).unique().tolist() if p.strip()])
+
+    c1, c2, c3 = st.columns([1.6, 1.0, 1.0])
+    with c1:
+        player_sel = st.selectbox("Player", options=players, index=0 if players else None, key="log_player")
+    with c2:
+        market = st.selectbox("Market", ["Points", "SOG", "Goal", "Assists"], index=0, key="log_market")
+    with c3:
+        book = st.text_input("Book", value="", placeholder="DK / FD / MGM / CZR...", key="log_book")
+
+    # Find player row
+    row = None
+    if player_sel and "Player" in df_log.columns:
+        hit = df_log[df_log["Player"].astype(str) == str(player_sel)]
+        if len(hit) > 0:
+            row = hit.iloc[0]
+
+    mcfg = _calc_market_map(market)
+
+    def _get_num_from_row(r, col):
+        try:
+            if r is None or col not in df_log.columns:
+                return None
+            v = r.get(col, None)
+            if v is None or (isinstance(v, float) and math.isnan(v)):
+                return None
+            return float(v)
+        except Exception:
+            return None
+
+    # Auto values
+    auto_date = str(row.get("Date", "")) if row is not None and "Date" in df_log.columns else ""
+    auto_game = str(row.get("Game", "")) if row is not None and "Game" in df_log.columns else ""
+    auto_opp = str(row.get("Opp", "")) if row is not None and "Opp" in df_log.columns else ""
+    auto_goalie = str(row.get("Opp_Goalie", "")) if row is not None and "Opp_Goalie" in df_log.columns else ""
+
+    auto_line = _get_num_from_row(row, mcfg.get("line_col", "")) if row is not None else None
+    auto_odds = _get_num_from_row(row, mcfg.get("odds_col", "")) if row is not None else None
+
+    # model prob: prefer p_model_over (0-1), else Model% (0-100)
+    auto_p = _get_num_from_row(row, mcfg.get("p_model_col", "")) if row is not None else None
+    if auto_p is None and row is not None:
+        mp = _get_num_from_row(row, mcfg.get("modelpct_col", ""))
+        if mp is not None:
+            auto_p = float(mp) / 100.0
+
+    auto_conf = _get_num_from_row(row, mcfg.get("conf_col", "")) if row is not None else None
+    auto_matrix = str(row.get(mcfg.get("matrix_col", ""), "")).strip() if row is not None else ""
+    auto_green = bool(row.get(mcfg.get("green_col", ""), False)) if row is not None else False
+    auto_ev_icon = str(row.get(mcfg.get("ev_icon_col", ""), "")).strip() if row is not None else ""
+
+    # Extra model context
+    auto_tier = str(row.get("Talent_Tier", "")) if row is not None and "Talent_Tier" in df_log.columns else ""
+    proof_col = mcfg.get("proof_col", "")
+    why_col = mcfg.get("why_col", "")
+    auto_proof = int(row.get(proof_col, 0)) if row is not None and proof_col and proof_col in df_log.columns else 0
+    auto_why = str(row.get(why_col, "")) if row is not None and why_col and why_col in df_log.columns else ""
+
+    # Inputs you control
+    kpref = f"log_{player_sel}_{market}".replace(" ", "_")[:90]
+    i1, i2, i3, i4 = st.columns([1.0, 1.0, 1.0, 1.0])
+    with i1:
+        line = st.number_input("Line", value=float(auto_line) if auto_line is not None else 0.5, step=0.5, key=f"{kpref}_line")
+    with i2:
+        odds_taken = st.number_input("Odds taken (American)", value=int(auto_odds) if auto_odds is not None else -110, step=5, key=f"{kpref}_odds")
+    with i3:
+        model_prob = st.slider(
+            "Model win probability (%)",
+            1.0, 99.0,
+            float(auto_p * 100.0) if auto_p is not None else 55.0,
+            0.5,
+            key=f"{kpref}_p"
+        ) / 100.0
+    with i4:
+        stake_u = st.number_input("Stake (u)", min_value=0.0, max_value=float(MAX_STAKE_U), value=1.0, step=0.25, key=f"{kpref}_u")
+
+    notes = st.text_input("Notes (optional)", value="", key=f"{kpref}_notes")
+
+    # Derived
+    imp, ev_pct, kelly, dec = calc_ev_pct_and_kelly(model_prob, odds_taken)
+    ev_flag = bool(ev_pct >= 5.0)
+    lock_flag = bool(auto_green and ev_flag)
+
+    st.markdown("### Snapshot")
+    s1, s2, s3, s4 = st.columns(4)
+    s1.metric("Earned Green", "🟢" if auto_green else "—")
+    s2.metric("+EV", "💰" if ev_flag else "—")
+    s3.metric("LOCK", "🔒" if lock_flag else "—")
+    s4.metric("Stake", f"{stake_u:.2f}u  (${'{:.0f}'.format(stake_u*UNIT_VALUE_USD)})")
+
+    s1, s2, s3, s4 = st.columns(4)
+    s1.metric("Implied %", f"{imp*100:.1f}%")
+    s2.metric("Model %", f"{model_prob*100:.1f}%")
+    s3.metric("EV% (recalc)", f"{ev_pct:+.1f}%")
+    s4.metric("Kelly (full)", f"{kelly*100:.2f}%")
+
+    if row is not None:
+        st.caption(f"Model context: Conf={auto_conf:.0f} | Matrix={auto_matrix or '—'} | Tier={auto_tier or '—'} | Proofs={auto_proof} | Why={auto_why or '—'}")
+        if auto_ev_icon == '💰':
+            st.caption("Note: CSV already flagged this as 💰 at its listed odds — ledger uses the odds you took.")
+
+    # Log button
+    if st.button("🧾 Log Bet (append)", use_container_width=True):
+        dt_now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        date_str = auto_date or datetime.now().strftime('%Y-%m-%d')
+        bet_id = make_bet_id(date_str, player_sel, market, line, odds_taken)
+
+        row_out = {
+            'bet_id': bet_id,
+            'date': date_str,
+            'datetime_placed': dt_now,
+            'game': auto_game,
+            'player': str(player_sel),
+            'market': market.upper(),
+            'line': float(line),
+            'odds_taken': int(odds_taken),
+            'book': book.strip() if book.strip() else '',
+            'stake_u': float(stake_u),
+            'earned_green': int(bool(auto_green)),
+            'ev_flag': int(bool(ev_flag)),
+            'lock_flag': int(bool(lock_flag)),
+            'conf': float(auto_conf) if auto_conf is not None else '',
+            'matrix': auto_matrix,
+            'model_pct': round(model_prob*100.0, 2),
+            'imp_pct': round(imp*100.0, 2),
+            'ev_pct': round(ev_pct, 2),
+            'tier': auto_tier,
+            'proof_count': int(auto_proof),
+            'why_tags': auto_why,
+            'opp': auto_opp,
+            'opp_goalie': auto_goalie,
+            'notes': notes,
+        }
+
+        _append_csv_row(betslip_path, row_out, BETSLIP_HEADERS)
+        st.success(f"Logged: **{bet_id}** → {stake_u:.2f}u")
+
+    # Show recent bets
+    try:
+        if os.path.exists(betslip_path):
+            st.markdown("### Recent logs")
+            tail = pd.read_csv(betslip_path).tail(10)
+            st.dataframe(tail, use_container_width=True, hide_index=True)
+        else:
+            st.info("No betslip.csv yet — first log will create it.")
+    except Exception as e:
+        st.warning(f"Could not read ledger yet: {e}")
 
 elif page == "Guide":
     st.subheader("📘 Guide — How to use")
