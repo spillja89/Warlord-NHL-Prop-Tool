@@ -1811,7 +1811,7 @@ elif page == "📟 Calculator":
         if len(hit) > 0:
             row = hit.iloc[0]
 
-    # Resolve auto values
+    # Resolve auto values (mainline by default)
     auto_line = None
     auto_odds = None
     auto_p = None
@@ -1831,6 +1831,24 @@ elif page == "📟 Calculator":
             return float(v)
         except Exception:
             return None
+
+    # Helper: pick from Alt-line columns if present
+    def _resolve_alt_cols(prefix: str, idx: int) -> tuple[float | None, float | None, float | None]:
+        """Return (line, odds, p_model) for alt index idx (1..K) if present."""
+        if row is None:
+            return (None, None, None)
+        lc = f"{prefix}_Line_{idx}"
+        oc = f"{prefix}_Odds_Over_{idx}"
+        pc = f"{prefix}_p_model_over_{idx}"
+        mp = f"{prefix}_Model%_{idx}"
+        l = _get_num_from_row(row, lc)
+        o = _get_num_from_row(row, oc)
+        p = _get_num_from_row(row, pc)
+        if p is None:
+            mpp = _get_num_from_row(row, mp)
+            if mpp is not None:
+                p = float(mpp) / 100.0
+        return (l, o, p)
 
     if row is not None:
         auto_line = _get_num_from_row(row, mcfg["line_col"])
@@ -1857,7 +1875,36 @@ elif page == "📟 Calculator":
             auto_ev_icon = ""
 
     # Unique keys per (player, market) so switching doesn't "carry" stale values
-    key_prefix = f"calc_{str(player_sel)}_{market}".replace(" ", "_")[:90]
+    # (avoid truncation collisions by hashing)
+    import hashlib
+    key_prefix = "calc_" + hashlib.md5(f"{str(player_sel)}|{market}".encode()).hexdigest()
+
+    # If alt lines exist for this market, allow selecting which line to cash-check
+    prefix = str(mcfg.get("line_col", "")).split("_Line")[0]
+    alt_labels = ["Mainline"]
+    if row is not None and prefix:
+        for i in range(1, 7):
+            lc = f"{prefix}_Line_{i}"
+            if lc in df_calc.columns:
+                lv = _get_num_from_row(row, lc)
+                if lv is not None:
+                    alt_labels.append(f"Alt {i} ({lv:.1f})")
+
+    if len(alt_labels) > 1:
+        pick = st.selectbox("Line source", alt_labels, index=0, key=f"{key_prefix}_pick")
+        if pick.startswith("Alt"):
+            try:
+                idx = int(pick.split()[1])
+            except Exception:
+                idx = None
+            if idx:
+                l2, o2, p2 = _resolve_alt_cols(prefix, idx)
+                if l2 is not None:
+                    auto_line = l2
+                if o2 is not None:
+                    auto_odds = o2
+                if p2 is not None:
+                    auto_p = p2
 
     def _parse_american_odds_text(s: str) -> float | None:
         """Parse American odds from user text. Accepts +120, -110, unicode minus."""
@@ -1890,13 +1937,18 @@ elif page == "📟 Calculator":
             st.warning("Invalid odds format. Use -110 or +120.")
             odds = float(int(auto_odds)) if auto_odds is not None else -110.0
     with i3:
-        model_prob = st.slider(
-            "Model win probability (%)",
-            1.0, 99.0,
-            float(auto_p * 100.0) if auto_p is not None else 55.0,
-            0.5,
-            key=f"{key_prefix}_p"
-        ) / 100.0
+        override_model = st.checkbox("Override Model%", value=False, key=f"{key_prefix}_ovp")
+        if (auto_p is not None) and (not override_model):
+            model_prob = float(auto_p)
+            st.metric("Model win probability", f"{model_prob*100.0:.1f}%")
+        else:
+            model_prob = st.slider(
+                "Model win probability (%)",
+                1.0, 99.0,
+                float(auto_p * 100.0) if auto_p is not None else 55.0,
+                0.5,
+                key=f"{key_prefix}_p"
+            ) / 100.0
     with i4:
         use_manual_ev = st.checkbox("Override EV% manually", value=False, key=f"{key_prefix}_usem")
         manual_ev = st.number_input("Manual EV% (if overriding)", value=float(auto_ev) if auto_ev is not None else 0.0, step=0.5, key=f"{key_prefix}_mev")
@@ -2046,13 +2098,18 @@ elif page == "🧾 Log Bet":
     with i2:
         odds_taken = st.number_input("Odds taken (American)", value=int(auto_odds) if auto_odds is not None else -110, step=5, key=f"{kpref}_odds")
     with i3:
-        model_prob = st.slider(
-            "Model win probability (%)",
-            1.0, 99.0,
-            float(auto_p * 100.0) if auto_p is not None else 55.0,
-            0.5,
-            key=f"{kpref}_p"
-        ) / 100.0
+        override_model = st.checkbox("Override Model%", value=False, key=f"{kpref}_ovp")
+        if (auto_p is not None) and (not override_model):
+            model_prob = float(auto_p)
+            st.metric("Model win probability", f"{model_prob*100.0:.1f}%")
+        else:
+            model_prob = st.slider(
+                "Model win probability (%)",
+                1.0, 99.0,
+                float(auto_p * 100.0) if auto_p is not None else 55.0,
+                0.5,
+                key=f"{kpref}_p"
+            ) / 100.0
     with i4:
         stake_u = st.number_input("Stake (u)", min_value=0.0, max_value=float(MAX_STAKE_U), value=1.0, step=0.25, key=f"{kpref}_u")
 

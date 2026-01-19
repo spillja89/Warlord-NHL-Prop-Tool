@@ -67,7 +67,7 @@ REG_WARM_GAP = 1.5
 # TEAM RECENT GOALS FOR HARD GATE (applies to GOAL / POINTS / ASSISTS)
 # -------------------------
 TEAM_GF_WINDOW = 5
-TEAM_GF_MIN_AVG = 2.7   # HARD FAIL threshold
+TEAM_GF_MIN_AVG = 2.0   # HARD FAIL threshold
 
 
 # Goalie weakness thresholds
@@ -1803,7 +1803,7 @@ def matrix_sog(ixg_pct: float, med10: Optional[float], pos: str,
     if ixg_pct >= 95 and med10 >= green_line and sip >= 90:
         return "Green"
 
-    if ixg_pct >= 85 and med10 >= (green_line - 0.30) and sip >= 92 and toi >= 60 and tsf >= 60:
+    if ixg_pct >= 85 and med10 >= (green_line - 0.30) and sip >= 90 and toi >= 60 and tsf >= 60:
         return "Green"
 
     if ixg_pct >= 80 and med10 >= 3.5 and sip >= 95 and odw >= 60:
@@ -1828,7 +1828,7 @@ def matrix_goal_v2(ixg_pct: float, med10: Optional[float], pos: str,
         return "Red"
     if med10 is None:
         return "Yellow"
-    need = 3.3 if not is_defense(pos) else 2.8
+    need = 3.0 if not is_defense(pos) else 2.8
     if med10 < (need - 0.5):
         return "Red"
     if med10 >= need and (g5_total or 0) >= 2:
@@ -3353,9 +3353,11 @@ def build_tracker(today_local: date, debug: bool = False) -> str:
     # BallDontLie odds + EV merge (saved into tracker CSV)
     # ============================
     try:
-        from odds_ev_bdl import merge_bdl_props_mainlines, add_bdl_ev_all
+        # Market-aware alt-line odds merge + EV engine
+        # (supports natural star lines like 1.5 Points when offered)
+        from odds_ev_bdl import merge_bdl_props_altlines, add_bdl_ev_all
 
-        tracker = merge_bdl_props_mainlines(
+        tracker = merge_bdl_props_altlines(
             tracker,
             game_date=today_local.isoformat(),
             api_key=(os.getenv("BALLDONTLIE_API_KEY") or os.getenv("BDL_API_KEY") or ""),
@@ -3379,8 +3381,18 @@ def build_tracker(today_local: date, debug: bool = False) -> str:
                     cov = max(cov, int(pd.to_numeric(tracker[c], errors="coerce").notna().sum()))
             if bool(debug):
                 print(f"[odds/ev] max odds coverage across markets: {cov}")
-            if cov < 50:
-                raise RuntimeError(f"BDL odds coverage too low: {cov} players (<50)")
+
+            # Coverage guard: scale with slate size.
+            # Small slates (few games) will naturally have fewer priced players.
+            # We only want to fail hard when coverage is effectively zero.
+            try:
+                slate_n = int(len(tracker))
+            except Exception:
+                slate_n = 0
+
+            required = min(50, max(10, int(round(0.20 * slate_n)))) if slate_n > 0 else 10
+            if cov < required:
+                raise RuntimeError(f"BDL odds coverage too low: {cov} players (<{required})")
 
         # $EV play flags (so every $EV column has a companion Plays_EV_* column)
         def _mk_play(col_ev: str) -> pd.Series:
