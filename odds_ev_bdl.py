@@ -490,6 +490,9 @@ def merge_bdl_props_altlines(
             continue
 
         lv = _round_to_half(lv)
+                # Skip integer push-lines (3.0 etc) — we prefer half-lines
+                if abs(float(lv) - round(float(lv))) < 1e-9:
+                    continue
         if baseline_min is not None and lv < float(baseline_min):
             continue
         if lv < lo or lv > hi:
@@ -578,14 +581,25 @@ def merge_bdl_props_altlines(
                 mu = float(cfgs[market]["league_mu"])
             tgt = _target_line(market, mu)
 
-            # pick nearest available line; tie-break: prefer the higher line for stars (more "natural")
-            arr_sorted = sorted(arr)
-            best_lv = min(arr_sorted, key=lambda x: (abs(float(x) - float(tgt)), -float(x)))
-            chosen_line.append(float(best_lv))
-            chosen_odds.append(_get_odds(kp, best_lv))
-            chosen_book.append(_get_vendor(kp, best_lv))
+            
+# Prefer half-lines; avoid overriding mainline with extreme alt-lines (e.g. Points 3.0+)
+arr_sorted = sorted(arr)
+arr_half = [x for x in arr_sorted if abs(float(x) - round(float(x))) > 1e-9]
+if arr_half:
+    arr_sorted = arr_half
 
-        df[f"BDL_{market}_Line"] = chosen_line
+best_lv = min(arr_sorted, key=lambda x: (abs(float(x) - float(tgt)), -float(x)))
+
+# If the closest available line is *way* off from target, do NOT override mainline.
+max_gap = 2.0 if market == "SOG" else 1.0
+if abs(float(best_lv) - float(tgt)) > max_gap:
+    chosen_line.append(None)
+    chosen_odds.append(None)
+    chosen_book.append("")
+else:
+    chosen_line.append(float(best_lv))
+    chosen_odds.append(_get_odds(kp, best_lv))
+    chosen_book.append(_get_vendor(kp, best_lv))df[f"BDL_{market}_Line"] = chosen_line
         df[f"BDL_{market}_Odds"] = chosen_odds
         df[f"BDL_{market}_Book"] = chosen_book
 
