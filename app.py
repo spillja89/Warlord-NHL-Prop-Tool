@@ -1859,12 +1859,36 @@ elif page == "📟 Calculator":
     # Unique keys per (player, market) so switching doesn't "carry" stale values
     key_prefix = f"calc_{str(player_sel)}_{market}".replace(" ", "_")[:90]
 
+    def _parse_american_odds_text(s: str) -> float | None:
+        """Parse American odds from user text. Accepts +120, -110, unicode minus."""
+        try:
+            if s is None:
+                return None
+            t = str(s).strip()
+            if not t:
+                return None
+            t = t.replace("−", "-")
+            if t.startswith("+"):
+                t = t[1:]
+            return float(int(t))
+        except Exception:
+            return None
+
     st.markdown("### Inputs (auto-filled when player selected)")
     i1, i2, i3, i4 = st.columns([1.0, 1.0, 1.0, 1.2])
     with i1:
         line = st.number_input("Line", value=float(auto_line) if auto_line is not None else 0.5, step=0.5, key=f"{key_prefix}_line")
     with i2:
-        odds = st.number_input("Odds (American)", value=int(auto_odds) if auto_odds is not None else -110, step=5, key=f"{key_prefix}_odds")
+        odds_str = st.text_input(
+            "Odds (American)",
+            value=str(int(auto_odds)) if auto_odds is not None else "-110",
+            help="Examples: -110, +120",
+            key=f"{key_prefix}_odds_str",
+        )
+        odds = _parse_american_odds_text(odds_str)
+        if odds is None:
+            st.warning("Invalid odds format. Use -110 or +120.")
+            odds = float(int(auto_odds)) if auto_odds is not None else -110.0
     with i3:
         model_prob = st.slider(
             "Model win probability (%)",
@@ -1885,37 +1909,22 @@ elif page == "📟 Calculator":
     with s3:
         st.caption("Tip: Best bets are **🟢 + 💰**. Calculator helps size the bet.")
 
-    def american_to_decimal(odds: float) -> float:
-        if odds == 0:
-            return 1.0
-        if odds > 0:
-            return 1.0 + (odds / 100.0)
-        return 1.0 + (100.0 / abs(odds))
+    # Use shared odds math (single source of truth)
+    imp, ev_pct_calc, kelly, dec = calc_ev_pct_and_kelly(float(model_prob), float(odds))
 
-    def implied_prob(odds: float) -> float:
-        if odds == 0:
-            return 0.5
-        if odds > 0:
-            return 100.0 / (odds + 100.0)
-        return abs(odds) / (abs(odds) + 100.0)
-
-    dec = american_to_decimal(float(odds))
-    imp = implied_prob(float(odds))
 
     p = float(model_prob)
-    b = dec - 1.0
-    q = 1.0 - p
 
-    ev_per_dollar = (p * b) - q
-    ev_pct = ev_per_dollar * 100.0
+    # EV% is calculated from (model_prob, odds) via calc_ev_pct_and_kelly above.
+    ev_pct = float(ev_pct_calc)
     if use_manual_ev:
         ev_pct = float(manual_ev)
 
     fair_dec = (1.0 / p) if p > 0 else 999.0
-    kelly = max(0.0, (b * p - q) / b) if b > 0 else 0.0
 
-    stake = bankroll * kelly * float(kelly_frac)
+    stake = bankroll * float(kelly) * float(kelly_frac)
     stake = min(stake, bankroll * float(max_pct))
+
 
     st.markdown("### Results")
     r1, r2, r3, r4 = st.columns(4)
