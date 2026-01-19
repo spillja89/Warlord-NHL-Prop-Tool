@@ -2,7 +2,7 @@ import os
 import glob
 import math
 import re
-from datetime import datetime
+from datetime import datetime, date
 
 import numpy as np
 import pandas as pd
@@ -885,19 +885,49 @@ st.markdown(
     unsafe_allow_html=True
 )
 
+# -------------------------
+# Data source (no more forced uploads)
+# -------------------------
+# Optional manual upload (still supported)
 uploaded = st.sidebar.file_uploader("Upload tracker CSV (optional)", type=["csv"])
-latest_path = find_latest_tracker_csv(OUTPUT_DIR)
+
+# Preferred stable path written by nhl_edge.py
+latest_stable = os.path.join(OUTPUT_DIR, "tracker_latest.csv")
+latest_path = latest_stable if os.path.exists(latest_stable) else find_latest_tracker_csv(OUTPUT_DIR)
+
+# Quick-run inside Streamlit (works on Streamlit Cloud)
+st.sidebar.markdown("---")
+slate_date = st.sidebar.date_input("Slate date", value=datetime.now().date())
+run_now = st.sidebar.button("Run / Refresh slate", help="Runs nhl_edge.py for the selected date and loads the fresh tracker.")
+
+@st.cache_data(show_spinner=False)
+def _run_model_cached(d: date) -> str:
+    # Import inside to keep Streamlit startup fast
+    import nhl_edge
+    return str(nhl_edge.build_tracker(d, debug=False))
 
 source = None
 if uploaded is not None:
     source = "upload"
     df = pd.read_csv(uploaded)
 else:
+    # If user presses run, generate fresh tracker.
+    if run_now:
+        with st.spinner("Running model…"):
+            try:
+                latest_path = _run_model_cached(slate_date)
+            except Exception as e:
+                st.error(f"Model run failed: {e}")
+                st.stop()
+
     source = "latest"
-    if latest_path is None:
-        st.warning(f"No CSV found in `{OUTPUT_DIR}/`. Run `python nhl_edge.py` first (it writes to output/).")
+    if latest_path is None or not os.path.exists(str(latest_path)):
+        st.warning(
+            "No tracker CSV found yet. Click **Run / Refresh slate** in the sidebar (or run `python nhl_edge.py` locally)."
+        )
         st.stop()
-    df = load_csv(latest_path)
+
+    df = load_csv(str(latest_path))
 
 # -------------------------
 # FIX: Styler requires unique index + columns

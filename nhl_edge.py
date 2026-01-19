@@ -22,6 +22,7 @@ import json
 import math
 import argparse
 import re
+import shutil
 from datetime import date, datetime, timedelta, timezone
 from io import StringIO
 from typing import Optional, Dict, List, Any, Tuple
@@ -3421,6 +3422,13 @@ def build_tracker(today_local: date, debug: bool = False) -> str:
     stamp = datetime.now().strftime("%H%M%S")
     out_path = os.path.join(OUTPUT_DIR, f"tracker_{today_local.isoformat()}_{stamp}.csv")
     tracker.to_csv(out_path, index=False)
+
+    # Also write a stable path for Streamlit Cloud (no more manual uploads)
+    latest_out_path = os.path.join(OUTPUT_DIR, 'tracker_latest.csv')
+    try:
+        tracker.to_csv(latest_out_path, index=False)
+    except Exception:
+        pass
 
     print(f"CSV saved to: {out_path}")
     print(f"Cache saved to: {cache_path_today(today_local)}\n")
