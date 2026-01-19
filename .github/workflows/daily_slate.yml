@@ -1,10 +1,11 @@
 name: Build daily slate (tracker_latest)
 
 on:
-  workflow_dispatch:
   schedule:
-    # 06:05 America/Chicago (winter) ~= 12:05 UTC
-    - cron: "5 12 * * *"
+    - cron: "5 11 * * *"     # morning run
+    - cron: "30 21 * * *"    # afternoon goalie refresh
+  workflow_dispatch:
+
 
 permissions:
   contents: write
