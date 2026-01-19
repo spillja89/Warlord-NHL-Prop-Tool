@@ -3,6 +3,7 @@ import glob
 import math
 import re
 from datetime import datetime, date
+from typing import Optional, Tuple
 
 import numpy as np
 import pandas as pd
@@ -100,27 +101,27 @@ def make_bet_id(date_str: str, player: str, market: str, line: float, odds_taken
     return f"{d}_{_slug(player)}_{_slug(market)}_{_slug(line)}_{_slug(int(odds_taken) if float(odds_taken).is_integer() else odds_taken)}"
 
 def render_market_filter_bar(default_min_conf: int = 60, key_prefix: str = "m"):
-        c1, c2, c3, c4, c5, c6 = st.columns([1.1,1.1,1.2,1.2,1.1,1.6])
-        with c1:
-            greens_only = st.toggle("🟢 Greens", value=False, key=f"{key_prefix}_greens")
-        with c2:
-            ev_only = st.toggle("💰 +EV", value=False, key=f"{key_prefix}_ev")
-        with c3:
-            locks_only = st.toggle("🔒 Locks", value=False, key=f"{key_prefix}_locks")
-        with c4:
-            plays_first = st.toggle("⭐ Plays first", value=True, key=f"{key_prefix}_playsfirst")
-        with c5:
-            hide_reds = st.toggle("Hide 🔴", value=True, key=f"{key_prefix}_hidered")
-        with c6:
-            min_conf = st.slider("Min Conf", 0, 100, int(default_min_conf), 1, key=f"{key_prefix}_minconf")
-        return {
-            "greens_only": greens_only,
-            "ev_only": ev_only,
-            "locks_only": locks_only,
-            "plays_first": plays_first,
-            "hide_reds": hide_reds,
-            "min_conf": min_conf,
-        }
+    c1, c2, c3, c4, c5, c6 = st.columns([1.1,1.1,1.2,1.2,1.1,1.6])
+    with c1:
+        greens_only = st.toggle("🟢 Greens", value=False, key=f"{key_prefix}_greens")
+    with c2:
+        ev_only = st.toggle("💰 +EV", value=False, key=f"{key_prefix}_ev")
+    with c3:
+        locks_only = st.toggle("🔒 Locks", value=False, key=f"{key_prefix}_locks")
+    with c4:
+        plays_first = st.toggle("⭐ Plays first", value=True, key=f"{key_prefix}_playsfirst")
+    with c5:
+        hide_reds = st.toggle("Hide 🔴", value=True, key=f"{key_prefix}_hidered")
+    with c6:
+        min_conf = st.slider("Min Conf", 0, 100, int(default_min_conf), 1, key=f"{key_prefix}_minconf")
+    return {
+        "greens_only": greens_only,
+        "ev_only": ev_only,
+        "locks_only": locks_only,
+        "plays_first": plays_first,
+        "hide_reds": hide_reds,
+        "min_conf": min_conf,
+    }
 def legend_signals():
     with st.expander("Legend (signals)", expanded=False):
         st.markdown("""
@@ -222,8 +223,8 @@ def apply_market_filters(
     f: dict,
     green_col: str,
     ev_icon_col: str,
-    conf_col: str | None = None,
-    matrix_col: str | None = None,
+    conf_col: Optional[str] = None,
+    matrix_col: Optional[str] = None,
     lock_col: str = "LOCK",
 ) -> pd.DataFrame:
     df = df_in.copy()
@@ -485,7 +486,7 @@ st.markdown(
 # =========================
 # HELPERS
 # =========================
-def find_latest_tracker_csv(output_dir: str) -> str | None:
+def find_latest_tracker_csv(output_dir: str) -> Optional[str]:
     files = glob.glob(os.path.join(output_dir, "tracker_*.csv"))
     files = [f for f in files if os.path.isfile(f)]
     if not files:
@@ -900,12 +901,7 @@ st.sidebar.markdown("---")
 slate_date = st.sidebar.date_input("Slate date", value=datetime.now().date())
 run_now = st.sidebar.button("Run / Refresh slate", help="Runs nhl_edge.py for the selected date and loads the fresh tracker.")
 
-
-# Bust Streamlit data cache when user forces a refresh
-if run_now:
-    st.cache_data.clear()
-@st.cache_data(show_spinner=False, ttl=120)
-
+@st.cache_data(show_spinner=False)
 def _run_model_cached(d: date) -> str:
     # Import inside to keep Streamlit startup fast
     import nhl_edge
@@ -1506,14 +1502,14 @@ elif page == "Points":
 
 
 
-    e = df_p.get("Plays_EV_Points", "")
+    e = df_p["Plays_EV_Points"] if "Plays_EV_Points" in df_p.columns else pd.Series([""]*len(df_p), index=df_p.index)
 
 
 
 
 
 
-    p = df_p.get("Points_EV%", None)
+    p = df_p["Points_EV%"] if "Points_EV%" in df_p.columns else pd.Series([None]*len(df_p), index=df_p.index)
 
 
 
@@ -1526,10 +1522,10 @@ elif page == "Points":
 
 
 
-
     df_p["LOCK"] = [build_lock_badge(gg, ee) for gg, ee in zip(g, e)]
     legend_signals()
     _f = render_market_filter_bar(default_min_conf=60, key_prefix="pts")
+
     try:
         df_p = apply_market_filters(
             df_p,
@@ -1542,7 +1538,6 @@ elif page == "Points":
         )
     except Exception:
         pass
-
 
 
 
@@ -1613,15 +1608,16 @@ elif page == "Assists":
 
     g = df_a.get("Green_Assists", (df_a.get("Green","") == "🟢"))
 
-    e = df_a.get("Plays_EV_Assists", "")
+    e = df_a["Plays_EV_Assists"] if "Plays_EV_Assists" in df_a.columns else pd.Series([""]*len(df_a), index=df_a.index)
 
-    p = df_a.get("Assists_EV%", None)
+    p = df_a["Assists_EV%"] if "Assists_EV%" in df_a.columns else pd.Series([None]*len(df_a), index=df_a.index)
 
     df_a["EV_Signal"] = [build_ev_signal(gg, ee, pp) for gg, ee, pp in zip(g, e, p if hasattr(p, "__iter__") else [p]*len(df_a))]
 
     df_a["LOCK"] = [build_lock_badge(gg, ee) for gg, ee in zip(g, e)]
     legend_signals()
     _f = render_market_filter_bar(default_min_conf=60, key_prefix="ast")
+
     try:
         df_a = apply_market_filters(
             df_a,
@@ -1634,7 +1630,6 @@ elif page == "Assists":
         )
     except Exception:
         pass
-
 
 
 
@@ -1703,18 +1698,18 @@ elif page == "SOG":
     g = df_s.get("Green_SOG", (df_s.get("Green","") == "🟢"))
 
 
-    e = df_s.get("Plays_EV_SOG", "")
+    e = df_s["Plays_EV_SOG"] if "Plays_EV_SOG" in df_s.columns else pd.Series([""]*len(df_s), index=df_s.index)
 
 
-    p = df_s.get("SOG_EV%", None)
+    p = df_s["SOG_EV%"] if "SOG_EV%" in df_s.columns else pd.Series([None]*len(df_s), index=df_s.index)
 
 
     df_s["EV_Signal"] = [build_ev_signal(gg, ee, pp) for gg, ee, pp in zip(g, e, p if hasattr(p, "__iter__") else [p]*len(df_s))]
 
-
     df_s["LOCK"] = [build_lock_badge(gg, ee) for gg, ee in zip(g, e)]
     legend_signals()
     _f = render_market_filter_bar(default_min_conf=60, key_prefix="sog")
+
     try:
         df_s = apply_market_filters(
             df_s,
@@ -1788,15 +1783,16 @@ elif page == "GOAL (1+)":
 
     g = df_g.get("Green_Goal", (df_g.get("Green","") == "🟢"))
 
-    e = df_g.get("Plays_EV_ATG", "")
+    e = df_g["Plays_EV_ATG"] if "Plays_EV_ATG" in df_g.columns else pd.Series([""]*len(df_g), index=df_g.index)
 
-    p = df_g.get("ATG_EV%", None)
+    p = df_g["ATG_EV%"] if "ATG_EV%" in df_g.columns else pd.Series([None]*len(df_g), index=df_g.index)
 
     df_g["EV_Signal"] = [build_ev_signal(gg, ee, pp) for gg, ee, pp in zip(g, e, p if hasattr(p, "__iter__") else [p]*len(df_g))]
 
     df_g["LOCK"] = [build_lock_badge(gg, ee) for gg, ee in zip(g, e)]
     legend_signals()
-    _f = render_market_filter_bar(default_min_conf=60, key_prefix="gol")
+    _f = render_market_filter_bar(default_min_conf=60, key_prefix="goal")
+
     try:
         df_g = apply_market_filters(
             df_g,
@@ -1868,14 +1864,36 @@ elif page == "📟 Calculator":
             return None
 
     # Helper: pick from Alt-line columns if present
-    def _resolve_alt_cols(prefix: str, idx: int) -> tuple[float | None, float | None, float | None]:
-        """Return (line, odds, p_model) for alt index idx (1..K) if present."""
+    def _resolve_alt_cols(prefix: str, idx: int) -> Tuple[Optional[float], Optional[float], Optional[float]]:
+        """Return (line, odds, p_model) for alt index idx (1..K) if present.
+
+        Supports BOTH schemas:
+          - Legacy: {M}_Line_i / {M}_Odds_Over_i / {M}_p_model_over_i
+          - BDL alt-lines: BDL_{M}_Line_i / BDL_{M}_Odds_i  (+ model columns remain {M}_p_model_over_i)
+        """
         if row is None:
             return (None, None, None)
-        lc = f"{prefix}_Line_{idx}"
-        oc = f"{prefix}_Odds_Over_{idx}"
+
+        # Lines: prefer BDL schema if present
+        lc_bdl = f"BDL_{prefix}_Line_{idx}"
+        lc_legacy = f"{prefix}_Line_{idx}"
+        lc = lc_bdl if lc_bdl in df_calc.columns else lc_legacy
+
+        # Odds: prefer BDL schema if present, else legacy
+        oc_bdl = f"BDL_{prefix}_Odds_{idx}"
+        oc_legacy1 = f"{prefix}_Odds_Over_{idx}"
+        oc_legacy2 = f"{prefix}_Odds_{idx}"
+        if oc_bdl in df_calc.columns:
+            oc = oc_bdl
+        elif oc_legacy1 in df_calc.columns:
+            oc = oc_legacy1
+        else:
+            oc = oc_legacy2
+
+        # Model prob columns (engine writes these without BDL_ prefix)
         pc = f"{prefix}_p_model_over_{idx}"
         mp = f"{prefix}_Model%_{idx}"
+
         l = _get_num_from_row(row, lc)
         o = _get_num_from_row(row, oc)
         p = _get_num_from_row(row, pc)
@@ -1884,6 +1902,76 @@ elif page == "📟 Calculator":
             if mpp is not None:
                 p = float(mpp) / 100.0
         return (l, o, p)
+
+    # --- Calculator: dynamic model% from mu + line (when available) ---
+    def _k_for_over_calc(line_value: float) -> int:
+        try:
+            lv = float(line_value)
+            if math.isnan(lv) or lv <= 0:
+                return 1
+            return max(1, int(math.floor(lv)) + 1)
+        except Exception:
+            return 1
+
+    def _poisson_tail_ge_k_calc(lam: float, k: int) -> float:
+        if lam is None or lam <= 0 or k <= 0:
+            return 0.0
+        cdf = 0.0
+        term = math.exp(-lam)
+        cdf += term
+        for i in range(1, k):
+            term *= lam / float(i)
+            cdf += term
+        return max(0.0, min(0.999, 1.0 - cdf))
+
+    def _nb_tail_ge_k_calc(mu: float, alpha: float, k: int) -> float:
+        if mu is None or mu <= 0 or k <= 0:
+            return 0.0
+        var = mu + max(0.0, alpha) * (mu ** 2)
+        if var <= mu + 1e-12:
+            return _poisson_tail_ge_k_calc(mu, k)
+        r = (mu ** 2) / max(1e-12, (var - mu))
+        if r <= 0:
+            return _poisson_tail_ge_k_calc(mu, k)
+        p = r / (r + mu)
+        p = max(1e-9, min(1.0 - 1e-9, p))
+        try:
+            pmf = math.exp(r * math.log(p))
+        except Exception:
+            pmf = p ** r
+        cdf = pmf
+        for i in range(0, k - 1):
+            pmf = pmf * ((i + r) / (i + 1.0)) * (1.0 - p)
+            cdf += pmf
+            if cdf >= 0.999999:
+                cdf = 0.999999
+                break
+        return max(0.0, min(0.999, 1.0 - cdf))
+
+    def _alpha_for_market_calc(mkt: str) -> float:
+        # Keep in sync with odds_ev_bdl.py market_cfgs (calculator only needs alpha)
+        return {
+            "SOG": 0.25,
+            "Points": 0.35,
+            "Assists": 0.50,
+            "Goal": 0.40,
+            "ATG": 0.65,
+        }.get(str(mkt), 0.35)
+
+    def _model_prob_from_mu_line(mkt: str, mu: float, line: float) -> Optional[float]:
+        try:
+            mu = float(mu)
+            line = float(line)
+        except Exception:
+            return None
+        if mu <= 0 or line <= 0:
+            return None
+        # Treat ATG 1.0 as "score 1+" in books (same as 0.5 threshold in our k-mapping)
+        if str(mkt) == "ATG" and line >= 1.0:
+            line = 0.5
+        k = _k_for_over_calc(line)
+        a = _alpha_for_market_calc(str(mkt))
+        return float(_nb_tail_ge_k_calc(mu, a, k))
 
     if row is not None:
         auto_line = _get_num_from_row(row, mcfg["line_col"])
@@ -1941,7 +2029,7 @@ elif page == "📟 Calculator":
                 if p2 is not None:
                     auto_p = p2
 
-    def _parse_american_odds_text(s: str) -> float | None:
+    def _parse_american_odds_text(s: str) -> Optional[float]:
         """Parse American odds from user text. Accepts +120, -110, unicode minus."""
         try:
             if s is None:
@@ -1973,63 +2061,45 @@ elif page == "📟 Calculator":
             odds = float(int(auto_odds)) if auto_odds is not None else -110.0
     with i3:
         override_model = st.checkbox("Override Model%", value=False, key=f"{key_prefix}_ovp")
-if (auto_p is not None) and (not override_model):
-    # If user changed the line, try to pull the matching alt-line model% (or compute from mu)
-    model_prob = float(auto_p)
+        if not override_model:
+            # Dynamic model prob from (mu, line) when available.
+            # This updates instantly as the user changes the Line input.
+            dyn_p = None
+            if row is not None:
+                # The mu column is written by odds_ev_bdl.py as {Market}_mu.
+                # Note: calculator's "Goal" market maps to ATG (score 1+).
+                dist_market = str(prefix or market or "").strip()
+                mu_col = f"{dist_market}_mu"
+                mu_val = _get_num_from_row(row, mu_col)
+                if mu_val is not None:
+                    dyn_p = _model_prob_from_mu_line(dist_market, float(mu_val), float(line))
 
-    try:
-        line_f = float(line)
-    except Exception:
-        line_f = None
-
-    try:
-        auto_line_f = float(auto_line) if auto_line is not None else None
-    except Exception:
-        auto_line_f = None
-
-    # Only adjust when the user line differs from the auto-loaded line
-    if (line_f is not None) and (auto_line_f is not None) and (abs(line_f - auto_line_f) > 1e-6) and (row is not None):
-        prefix = str(mcfg.get("line_col", "")).split("_Line")[0]
-        picked = None
-
-        # Scan Top-K alt lines already embedded in the tracker row
-        if prefix:
-            for i in range(1, 7):
-                lc = f"{prefix}_Line_{i}"
-                pc = f"{prefix}_p_model_over_{i}"
-                if lc in df_calc.columns and pc in df_calc.columns:
-                    lv = _get_num_from_row(row, lc)
-                    pv = _get_num_from_row(row, pc)
-                    if lv is None or pv is None:
-                        continue
-                    if abs(float(lv) - float(line_f)) < 1e-6:
-                        picked = float(pv)
-                        break
-
-        # If no embedded alt match, compute from mu (market-aware NB tail)
-        if picked is None:
-            try:
-                import odds_ev_bdl
-                mkt = "ATG" if str(market).lower().startswith("goal") else str(market).strip()
-                mu_col = f"{mkt}_mu"
-                mu = _get_num_from_row(row, mu_col)
-                if mu is not None:
-                    picked = float(odds_ev_bdl._model_prob_over(mkt, float(mu), float(line_f)))
-            except Exception:
-                picked = None
-
-        if picked is not None and (not (isinstance(picked, float) and math.isnan(picked))):
-            model_prob = float(picked)
-
-    st.metric("Model win probability", f"{model_prob*100.0:.1f}%")
-else:
-    model_prob = st.slider(
-        "Model win probability (%)",
-        1.0, 99.0,
-        float(auto_p * 100.0) if auto_p is not None else 55.0,
-        0.5,
-        key=f"{key_prefix}_p"
-    ) / 100.0
+            if dyn_p is not None:
+                model_prob = float(dyn_p)
+                st.metric("Model win probability (dynamic)", f"{model_prob*100.0:.1f}%")
+                if auto_p is not None:
+                    st.caption(f"CSV mainline Model%: {float(auto_p)*100.0:.1f}%")
+            elif auto_p is not None:
+                # Fallback to whatever the CSV had (static)
+                model_prob = float(auto_p)
+                st.metric("Model win probability", f"{model_prob*100.0:.1f}%")
+            else:
+                model_prob = st.slider(
+                    "Model win probability (%)",
+                    1.0, 99.0,
+                    55.0,
+                    0.5,
+                    key=f"{key_prefix}_p"
+                ) / 100.0
+        else:
+            # Manual override
+            model_prob = st.slider(
+                "Model win probability (%)",
+                1.0, 99.0,
+                float(auto_p * 100.0) if auto_p is not None else 55.0,
+                0.5,
+                key=f"{key_prefix}_p"
+            ) / 100.0
     with i4:
         use_manual_ev = st.checkbox("Override EV% manually", value=False, key=f"{key_prefix}_usem")
         manual_ev = st.number_input("Manual EV% (if overriding)", value=float(auto_ev) if auto_ev is not None else 0.0, step=0.5, key=f"{key_prefix}_mev")
@@ -2180,63 +2250,17 @@ elif page == "🧾 Log Bet":
         odds_taken = st.number_input("Odds taken (American)", value=int(auto_odds) if auto_odds is not None else -110, step=5, key=f"{kpref}_odds")
     with i3:
         override_model = st.checkbox("Override Model%", value=False, key=f"{kpref}_ovp")
-if (auto_p is not None) and (not override_model):
-    # If user changed the line, try to pull the matching alt-line model% (or compute from mu)
-    model_prob = float(auto_p)
-
-    try:
-        line_f = float(line)
-    except Exception:
-        line_f = None
-
-    try:
-        auto_line_f = float(auto_line) if auto_line is not None else None
-    except Exception:
-        auto_line_f = None
-
-    # Only adjust when the user line differs from the auto-loaded line
-    if (line_f is not None) and (auto_line_f is not None) and (abs(line_f - auto_line_f) > 1e-6) and (row is not None):
-        prefix = str(mcfg.get("line_col", "")).split("_Line")[0]
-        picked = None
-
-        # Scan Top-K alt lines already embedded in the tracker row
-        if prefix:
-            for i in range(1, 7):
-                lc = f"{prefix}_Line_{i}"
-                pc = f"{prefix}_p_model_over_{i}"
-                if lc in df_calc.columns and pc in df_calc.columns:
-                    lv = _get_num_from_row(row, lc)
-                    pv = _get_num_from_row(row, pc)
-                    if lv is None or pv is None:
-                        continue
-                    if abs(float(lv) - float(line_f)) < 1e-6:
-                        picked = float(pv)
-                        break
-
-        # If no embedded alt match, compute from mu (market-aware NB tail)
-        if picked is None:
-            try:
-                import odds_ev_bdl
-                mkt = "ATG" if str(market).lower().startswith("goal") else str(market).strip()
-                mu_col = f"{mkt}_mu"
-                mu = _get_num_from_row(row, mu_col)
-                if mu is not None:
-                    picked = float(odds_ev_bdl._model_prob_over(mkt, float(mu), float(line_f)))
-            except Exception:
-                picked = None
-
-        if picked is not None and (not (isinstance(picked, float) and math.isnan(picked))):
-            model_prob = float(picked)
-
-    st.metric("Model win probability", f"{model_prob*100.0:.1f}%")
-else:
-    model_prob = st.slider(
-        "Model win probability (%)",
-        1.0, 99.0,
-        float(auto_p * 100.0) if auto_p is not None else 55.0,
-        0.5,
-        key=f"{kpref}_p"
-    ) / 100.0
+        if (auto_p is not None) and (not override_model):
+            model_prob = float(auto_p)
+            st.metric("Model win probability", f"{model_prob*100.0:.1f}%")
+        else:
+            model_prob = st.slider(
+                "Model win probability (%)",
+                1.0, 99.0,
+                float(auto_p * 100.0) if auto_p is not None else 55.0,
+                0.5,
+                key=f"{kpref}_p"
+            ) / 100.0
     with i4:
         stake_u = st.number_input("Stake (u)", min_value=0.0, max_value=float(MAX_STAKE_U), value=1.0, step=0.25, key=f"{kpref}_u")
 

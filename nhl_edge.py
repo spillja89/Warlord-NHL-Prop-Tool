@@ -1951,11 +1951,11 @@ def conf_assists(
     # 1) Baseline (cannot be penalized by optional signals)
     # ----------------------------
     base = (
-        0.42 * ixa_pct +
-        0.14 * ixg_pct +
-        0.14 * stab +
+        0.45 * ixa_pct +
+        0.10 * ixg_pct +
+        0.17 * stab +
         0.12 * defweak +
-        0.08 * goalieweak
+        0.06 * goalieweak
     )
     base += 0.10 * (toi_pct - 50.0)  # light usage tilt
 

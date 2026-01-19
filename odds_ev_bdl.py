@@ -220,7 +220,65 @@ def _lambda_from_exp10_row(
     return 0.0
 
 
+def _blend_mu_row(market: str, row: pd.Series, mu_recent: float) -> float:
+    """Blend mu ONLY for Goal / ATG.
+
+    IMPORTANT (baseline protection):
+    - Points / Assists / SOG mu should come straight from nhl_edge.py (or Exp_* / fallbacks),
+      and must NOT be re-blended here. Re-blending those markets causes drift vs your
+      locked baseline behavior.
+    - Goal / ATG are special: higher variance + ATG semantics. Here we allow a light
+      season-prior / league anchor blend and a low-shot dampener.
+
+    Returns a per-game mean (mu).
+    """
+
+    mu_recent = float(mu_recent or 0.0)
+    if mu_recent < 0:
+        mu_recent = 0.0
+
+    # 🔒 Preserve baseline behavior for non-goal markets
+    if market not in ("Goal", "ATG"):
+        return mu_recent
+
+    cfgs = _market_cfgs()
+    cfg = cfgs.get(market) or {}
+    league_mu = float(cfg.get("league_mu", 0.0))
+    alpha = float(cfg.get("alpha", 0.0))
+
+    # Season prior for goals (if present)
+    season_mu = 0.0
+    for c in ("GPG", "GoalsPerGame"):
+        if c in row.index:
+            v = _safe_float(row.get(c))
+            if v is not None and v > 0:
+                season_mu = float(v)
+                break
+
+    # If we have season_mu, use a conservative blend; else fall back to alpha shrinkage
+    if season_mu > 0:
+        # Goal is noisier than ATG: lean more on season + league
+        if market == "Goal":
+            w_recent, w_season, w_league = 0.25, 0.50, 0.25
+        else:  # ATG
+            w_recent, w_season, w_league = 0.35, 0.45, 0.20
+        mu = (w_recent * mu_recent) + (w_season * season_mu) + (w_league * league_mu)
+    else:
+        mu = alpha * mu_recent + (1.0 - alpha) * league_mu
+
+    # Low-shot dampener (prevents "sniper noise")
+    sog_mu = _safe_float(row.get("SOG_mu"))
+    if sog_mu is not None and sog_mu > 0:
+        if sog_mu < 1.5:
+            mu *= 0.75
+        elif sog_mu < 2.0:
+            mu *= 0.85
+
+    return max(0.0, float(mu))
+
+
 # -----------------------------
+
 # BallDontLie API helpers
 # -----------------------------
 
@@ -343,15 +401,17 @@ def _market_cfgs() -> Dict[str, dict]:
         },
         "Goal": {
             "exp": ["Exp_G_10", "Exp_Goals_10", "Exp_G10"],
-            "fallback": [("L10_G", 1 / 10), ("G10_total", 1 / 10), ("GPG", 1.0)],
+            # Goals are high-variance: trust recent totals lightly, lean on season talent.
+            "fallback": [("GPG", 1.0), ("L10_G", 1 / 10)],
             "league_mu": 0.30,
-            "alpha": 0.70,
+            "alpha": 0.40,
         },
         "ATG": {
             "exp": ["Exp_G_10", "Exp_Goals_10", "Exp_G10"],
-            "fallback": [("L10_G", 1 / 10), ("G10_total", 1 / 10), ("GPG", 1.0)],
+            # ATG uses xG/goal-expectation signal (lower variance than raw goals).
+            "fallback": [("GPG", 1.0), ("L10_G", 1 / 10)],
             "league_mu": 0.30,
-            "alpha": 0.70,
+            "alpha": 0.65,
         },
     }
 
@@ -466,6 +526,56 @@ def merge_bdl_props_altlines(
             return _safe_float(mkt.get("over_odds"))
         return _safe_float(mkt.get("odds"))
 
+    def _american_to_imp(odds: float | None) -> float | None:
+        if odds is None:
+            return None
+        try:
+            o = float(odds)
+        except Exception:
+            return None
+        if o == 0:
+            return None
+        if o < 0:
+            return (-o) / ((-o) + 100.0)
+        return 100.0 / (o + 100.0)
+
+    def _pick_conservative_mainline(
+        kp: Tuple[str, str, str],
+        market: str,
+        arr: List[float],
+        tgt: float | None,
+    ) -> float:
+        """Pick a sportsbook-like mainline:
+        - For Points/Assists/Goal/ATG: skip integer (push) lines.
+        - Prefer odds closest to even (implied ~50%).
+        - Tie-break: prefer LOWER line (more conservative/mainline-like).
+        - If odds missing for all lines: fallback to nearest-to-target then lower line.
+        """
+        candidates = [float(x) for x in arr]
+        if market in ("Points", "Assists", "Goal", "ATG"):
+            candidates = [x for x in candidates if not float(x).is_integer()]
+        if not candidates:
+            candidates = [float(x) for x in arr]
+
+        scored = []
+        for lv in candidates:
+            o = _get_odds(kp, lv)
+            imp = _american_to_imp(o)
+            if imp is None:
+                continue
+            scored.append((abs(imp - 0.5), lv))
+
+        if scored:
+            scored.sort(key=lambda t: (t[0], t[1]))
+            return float(scored[0][1])
+
+        # odds unavailable -> use target distance
+        if tgt is None:
+            srt = sorted(candidates)
+            mid = len(srt) // 2
+            tgt = float(srt[mid]) if srt else 0.0
+        return float(min(sorted(candidates), key=lambda x: (abs(float(x) - float(tgt)), float(x))))
+
     # bucket best odds per (player, team, market, line)
     best_per_line: Dict[Tuple[str, str, str, float], Tuple[float, str]] = {}
 
@@ -490,9 +600,10 @@ def merge_bdl_props_altlines(
             continue
 
         lv = _round_to_half(lv)
-                # Skip integer push-lines (3.0 etc) — we prefer half-lines
-                if abs(float(lv) - round(float(lv))) < 1e-9:
-                    continue
+        # BDL "anytime_goal_scorer" sometimes reports line_value=1.0; treat as 0.5 (score 1+).
+        if mkt_name == "ATG" and lv >= 1.0:
+            lv = 0.5
+
         if baseline_min is not None and lv < float(baseline_min):
             continue
         if lv < lo or lv > hi:
@@ -581,25 +692,14 @@ def merge_bdl_props_altlines(
                 mu = float(cfgs[market]["league_mu"])
             tgt = _target_line(market, mu)
 
-            
-# Prefer half-lines; avoid overriding mainline with extreme alt-lines (e.g. Points 3.0+)
-arr_sorted = sorted(arr)
-arr_half = [x for x in arr_sorted if abs(float(x) - round(float(x))) > 1e-9]
-if arr_half:
-    arr_sorted = arr_half
+            # pick a sportsbook-like mainline (conservative; avoids big alt lines)
+            arr_sorted = sorted(arr)
+            best_lv = _pick_conservative_mainline(kp, market, arr_sorted, tgt)
+            chosen_line.append(float(best_lv))
+            chosen_odds.append(_get_odds(kp, best_lv))
+            chosen_book.append(_get_vendor(kp, best_lv))
 
-best_lv = min(arr_sorted, key=lambda x: (abs(float(x) - float(tgt)), -float(x)))
-
-# If the closest available line is *way* off from target, do NOT override mainline.
-max_gap = 2.0 if market == "SOG" else 1.0
-if abs(float(best_lv) - float(tgt)) > max_gap:
-    chosen_line.append(None)
-    chosen_odds.append(None)
-    chosen_book.append("")
-else:
-    chosen_line.append(float(best_lv))
-    chosen_odds.append(_get_odds(kp, best_lv))
-    chosen_book.append(_get_vendor(kp, best_lv))df[f"BDL_{market}_Line"] = chosen_line
+        df[f"BDL_{market}_Line"] = chosen_line
         df[f"BDL_{market}_Odds"] = chosen_odds
         df[f"BDL_{market}_Book"] = chosen_book
 
@@ -702,6 +802,8 @@ def add_bdl_ev_all(tracker: pd.DataFrame, top_k: int = 4) -> pd.DataFrame:
         mu_src: List[str] = []
         for _, row in df.iterrows():
             mu = _lambda_from_exp10_row(row, cfg["exp"], cfg["fallback"])
+            if mu > 0:
+                mu = _blend_mu_row(market, row, mu)
             if mu <= 0:
                 mu = float(cfg["league_mu"])
                 mu_src.append("league_avg")
