@@ -3,7 +3,6 @@ import glob
 import math
 import re
 from datetime import datetime, date
-from typing import Optional, Tuple
 
 import numpy as np
 import pandas as pd
@@ -223,8 +222,8 @@ def apply_market_filters(
     f: dict,
     green_col: str,
     ev_icon_col: str,
-    conf_col: Optional[str] = None,
-    matrix_col: Optional[str] = None,
+    conf_col: str | None = None,
+    matrix_col: str | None = None,
     lock_col: str = "LOCK",
 ) -> pd.DataFrame:
     df = df_in.copy()
@@ -486,7 +485,7 @@ st.markdown(
 # =========================
 # HELPERS
 # =========================
-def find_latest_tracker_csv(output_dir: str) -> Optional[str]:
+def find_latest_tracker_csv(output_dir: str) -> str | None:
     files = glob.glob(os.path.join(output_dir, "tracker_*.csv"))
     files = [f for f in files if os.path.isfile(f)]
     if not files:
@@ -668,6 +667,26 @@ def style_df(df: pd.DataFrame, cols: list[str]) -> "pd.io.formats.style.Styler":
 
     for c in [c for c in view.columns if c.endswith("EVpct_over")]:
         sty = sty.applymap(ev_style, subset=[c])
+
+    # 🗡️ Dagger highlight
+    def dagger_tag_style(v):
+        return "background-color:#5a00b3;color:white;font-weight:800;" if str(v).strip() == "🗡️" else ""
+
+    def dagger_score_style(v):
+        try:
+            x = float(v)
+        except Exception:
+            return ""
+        if x >= 65:
+            return "background-color:#1f7a1f;color:white;font-weight:800;"
+        if x >= 55:
+            return "background-color:#b38f00;color:white;font-weight:800;"
+        return ""
+
+    if "🗡️" in view.columns:
+        sty = sty.applymap(dagger_tag_style, subset=["🗡️"])
+    if "Assist_Dagger" in view.columns:
+        sty = sty.applymap(dagger_score_style, subset=["Assist_Dagger"])
 
     for c in [c for c in view.columns if c.startswith("Plays_EV_")]:
         sty = sty.applymap(play_ev_style, subset=[c])
@@ -902,9 +921,11 @@ slate_date = st.sidebar.date_input("Slate date", value=datetime.now().date())
 run_now = st.sidebar.button("Run / Refresh slate", help="Runs nhl_edge.py for the selected date and loads the fresh tracker.")
 
 @st.cache_data(show_spinner=False)
-def _run_model_cached(d: date) -> str:
-    # Import inside to keep Streamlit startup fast
+def _run_model_cached(d: date, code_stamp: float) -> str:
+    # Import + reload so Streamlit Cloud picks up new engine code
+    import importlib
     import nhl_edge
+    importlib.reload(nhl_edge)
     return str(nhl_edge.build_tracker(d, debug=False))
 
 source = None
@@ -916,7 +937,13 @@ else:
     if run_now:
         with st.spinner("Running model…"):
             try:
-                latest_path = _run_model_cached(slate_date)
+                # Cache-buster: if nhl_edge.py changed, re-run the model
+                try:
+                    engine_path = os.path.join(os.path.dirname(__file__), 'nhl_edge.py') if '__file__' in globals() else 'nhl_edge.py'
+                    code_stamp = os.path.getmtime(engine_path) if os.path.exists(engine_path) else 0.0
+                except Exception:
+                    code_stamp = 0.0
+                latest_path = _run_model_cached(slate_date, code_stamp)
             except Exception as e:
                 st.error(f"Model run failed: {e}")
                 st.stop()
@@ -1364,7 +1391,7 @@ with st.expander("Debug: loaded columns"):
 # Navigation
 page = st.sidebar.radio(
     "Page",
-    ["Board", "Points", "Assists", "SOG", "GOAL (1+)","Guide", "Ledger", "Raw CSV", "📟 Calculator", "🧾 Log Bet"],
+    ["Board", "Points", "Assists", "SOG", "GOAL (1+)", "Power Play", "Guide", "Ledger", "Raw CSV", "📟 Calculator", "🧾 Log Bet"],
     index=0
 )
 
@@ -1573,6 +1600,13 @@ elif page == "Assists":
 
     df_a["Green"] = df_a.get("Green_Assists", False).map(lambda x: "🟢" if bool(x) else "")
 
+    # 🗡️ Dagger indicator (PP assist edge)
+    if "🗡️" not in df_a.columns:
+        if "Assist_PP_Proof" in df_a.columns:
+            df_a["🗡️"] = df_a["Assist_PP_Proof"].map(lambda x: "🗡️" if bool(x) else "")
+        else:
+            df_a["🗡️"] = ""
+
     assists_cols = [
         "Game",
         "Player", "Pos",
@@ -1594,7 +1628,7 @@ elif page == "Assists":
 
         "Assists_Call",
         "Drought_A","Best_Drought",
-        "Assist_ProofCount", "Assist_Why",
+        "Assist_ProofCount", "Assist_Why", "🗡️", "Assist_Dagger", "PP_TOI_Pct_Game", "PP_iXA60", "PP_Matchup",
         "Reg_Heat_A", "Reg_Gap_A10", "Exp_A_10", "L10_A",
         "iXA%","iXG%", "v2_player_stability",
         "Opp_Goalie", "Opp_SV",
@@ -1812,6 +1846,77 @@ elif page == "GOAL (1+)":
     show_table(df_g, goal_cols, "GOAL (1+) View")
 
 
+
+
+# =========================
+# POWER PLAY
+# =========================
+elif page == "Power Play":
+    st.subheader("⚡ Power Play (PPP / 5v4)")
+    st.caption("Read-only view: PP usage + PP creation + team PP vs opponent PK + PPP drought. Does not change model probabilities yet.")
+
+    # Aliases (engine naming -> app naming)
+    alias_map = {
+        "PP_TOI_min": "PP_TOI",
+        "PP_TOI_per_game": "PP_TOI_PG",
+        "PP_iP60": "PP_Points60",
+    }
+    for src, dst in alias_map.items():
+        if dst not in df_f.columns and src in df_f.columns:
+            df_f[dst] = df_f[src]
+
+    # PP unit tag/icon
+    if "PP_Role" in df_f.columns:
+        def _pp_role_tag(x):
+            try:
+                v = int(float(x))
+            except Exception:
+                return "PP0"
+            return "PP1" if v >= 2 else ("PP2" if v == 1 else "PP0")
+        df_f["PP_UnitTag"] = df_f["PP_Role"].apply(_pp_role_tag)
+        df_f["PP_Unit"] = df_f["PP_UnitTag"].map({"PP1": "🔌 PP1", "PP2": "🔋 PP2"}).fillna("")
+    else:
+        df_f["PP_Unit"] = ""
+
+    st.sidebar.subheader("Power Play Filters")
+    unit_sel = st.sidebar.multiselect("PP Unit", ["PP1", "PP2"], default=["PP1", "PP2"], key="pp_unit_sel")
+    min_pp_toi = st.sidebar.slider("Min PP TOI / game", 0.0, 10.0, 1.0, 0.25, key="pp_min_toi")
+    min_ppp_drought = st.sidebar.slider("Min PPP Drought (games)", 0, 12, 0, 1, key="pp_min_ppp_drought")
+
+    df_pp = df_f.copy()
+    if "PP_UnitTag" in df_pp.columns:
+        df_pp = df_pp[df_pp["PP_UnitTag"].isin(unit_sel)]
+
+    if "PP_TOI_PG" in df_pp.columns:
+        df_pp = df_pp[pd.to_numeric(df_pp["PP_TOI_PG"], errors="coerce").fillna(0.0) >= float(min_pp_toi)]
+
+    if "Drought_PPP" in df_pp.columns:
+        df_pp = df_pp[pd.to_numeric(df_pp["Drought_PPP"], errors="coerce").fillna(0).astype(int) >= int(min_ppp_drought)]
+
+    # Sort best-first (only by columns that exist)
+    sort_cols = [c for c in ["PP_Matchup", "PP_Points60", "PP_TOI_PG", "Drought_PPP"] if c in df_pp.columns]
+    if sort_cols:
+        df_pp = df_pp.sort_values(sort_cols, ascending=[False] * len(sort_cols))
+
+    pp_cols = [
+        "Game",
+        "Player", "Pos", "Team", "Opp",
+        "Tier_Tag",
+        "PP_Unit",
+        "PP_TOI_PG",
+        "PP_TOI_Pct",
+        "PP_Points60",
+        "PP_iXG60",
+        "PP_iXA60",
+        "Team_PP_xGF60",
+        "Opp_PK_xGA60",
+        "PP_Matchup",
+        "PPP10_total",
+        "Drought_PPP",
+    ]
+
+    show_table(df_pp, pp_cols, "Power Play (5v4) — Usage, creation, matchup, PPP drought")
+
 elif page == "📟 Calculator":
     st.subheader("📟 EV + Stake Calculator")
     st.caption("Pick a player from today’s CSV and the calculator will auto-load their line/odds/model%. Override anything if you want.")
@@ -1864,36 +1969,14 @@ elif page == "📟 Calculator":
             return None
 
     # Helper: pick from Alt-line columns if present
-    def _resolve_alt_cols(prefix: str, idx: int) -> Tuple[Optional[float], Optional[float], Optional[float]]:
-        """Return (line, odds, p_model) for alt index idx (1..K) if present.
-
-        Supports BOTH schemas:
-          - Legacy: {M}_Line_i / {M}_Odds_Over_i / {M}_p_model_over_i
-          - BDL alt-lines: BDL_{M}_Line_i / BDL_{M}_Odds_i  (+ model columns remain {M}_p_model_over_i)
-        """
+    def _resolve_alt_cols(prefix: str, idx: int) -> tuple[float | None, float | None, float | None]:
+        """Return (line, odds, p_model) for alt index idx (1..K) if present."""
         if row is None:
             return (None, None, None)
-
-        # Lines: prefer BDL schema if present
-        lc_bdl = f"BDL_{prefix}_Line_{idx}"
-        lc_legacy = f"{prefix}_Line_{idx}"
-        lc = lc_bdl if lc_bdl in df_calc.columns else lc_legacy
-
-        # Odds: prefer BDL schema if present, else legacy
-        oc_bdl = f"BDL_{prefix}_Odds_{idx}"
-        oc_legacy1 = f"{prefix}_Odds_Over_{idx}"
-        oc_legacy2 = f"{prefix}_Odds_{idx}"
-        if oc_bdl in df_calc.columns:
-            oc = oc_bdl
-        elif oc_legacy1 in df_calc.columns:
-            oc = oc_legacy1
-        else:
-            oc = oc_legacy2
-
-        # Model prob columns (engine writes these without BDL_ prefix)
+        lc = f"{prefix}_Line_{idx}"
+        oc = f"{prefix}_Odds_Over_{idx}"
         pc = f"{prefix}_p_model_over_{idx}"
         mp = f"{prefix}_Model%_{idx}"
-
         l = _get_num_from_row(row, lc)
         o = _get_num_from_row(row, oc)
         p = _get_num_from_row(row, pc)
@@ -1902,76 +1985,6 @@ elif page == "📟 Calculator":
             if mpp is not None:
                 p = float(mpp) / 100.0
         return (l, o, p)
-
-    # --- Calculator: dynamic model% from mu + line (when available) ---
-    def _k_for_over_calc(line_value: float) -> int:
-        try:
-            lv = float(line_value)
-            if math.isnan(lv) or lv <= 0:
-                return 1
-            return max(1, int(math.floor(lv)) + 1)
-        except Exception:
-            return 1
-
-    def _poisson_tail_ge_k_calc(lam: float, k: int) -> float:
-        if lam is None or lam <= 0 or k <= 0:
-            return 0.0
-        cdf = 0.0
-        term = math.exp(-lam)
-        cdf += term
-        for i in range(1, k):
-            term *= lam / float(i)
-            cdf += term
-        return max(0.0, min(0.999, 1.0 - cdf))
-
-    def _nb_tail_ge_k_calc(mu: float, alpha: float, k: int) -> float:
-        if mu is None or mu <= 0 or k <= 0:
-            return 0.0
-        var = mu + max(0.0, alpha) * (mu ** 2)
-        if var <= mu + 1e-12:
-            return _poisson_tail_ge_k_calc(mu, k)
-        r = (mu ** 2) / max(1e-12, (var - mu))
-        if r <= 0:
-            return _poisson_tail_ge_k_calc(mu, k)
-        p = r / (r + mu)
-        p = max(1e-9, min(1.0 - 1e-9, p))
-        try:
-            pmf = math.exp(r * math.log(p))
-        except Exception:
-            pmf = p ** r
-        cdf = pmf
-        for i in range(0, k - 1):
-            pmf = pmf * ((i + r) / (i + 1.0)) * (1.0 - p)
-            cdf += pmf
-            if cdf >= 0.999999:
-                cdf = 0.999999
-                break
-        return max(0.0, min(0.999, 1.0 - cdf))
-
-    def _alpha_for_market_calc(mkt: str) -> float:
-        # Keep in sync with odds_ev_bdl.py market_cfgs (calculator only needs alpha)
-        return {
-            "SOG": 0.25,
-            "Points": 0.35,
-            "Assists": 0.50,
-            "Goal": 0.40,
-            "ATG": 0.65,
-        }.get(str(mkt), 0.35)
-
-    def _model_prob_from_mu_line(mkt: str, mu: float, line: float) -> Optional[float]:
-        try:
-            mu = float(mu)
-            line = float(line)
-        except Exception:
-            return None
-        if mu <= 0 or line <= 0:
-            return None
-        # Treat ATG 1.0 as "score 1+" in books (same as 0.5 threshold in our k-mapping)
-        if str(mkt) == "ATG" and line >= 1.0:
-            line = 0.5
-        k = _k_for_over_calc(line)
-        a = _alpha_for_market_calc(str(mkt))
-        return float(_nb_tail_ge_k_calc(mu, a, k))
 
     if row is not None:
         auto_line = _get_num_from_row(row, mcfg["line_col"])
@@ -2029,7 +2042,7 @@ elif page == "📟 Calculator":
                 if p2 is not None:
                     auto_p = p2
 
-    def _parse_american_odds_text(s: str) -> Optional[float]:
+    def _parse_american_odds_text(s: str) -> float | None:
         """Parse American odds from user text. Accepts +120, -110, unicode minus."""
         try:
             if s is None:
@@ -2061,38 +2074,10 @@ elif page == "📟 Calculator":
             odds = float(int(auto_odds)) if auto_odds is not None else -110.0
     with i3:
         override_model = st.checkbox("Override Model%", value=False, key=f"{key_prefix}_ovp")
-        if not override_model:
-            # Dynamic model prob from (mu, line) when available.
-            # This updates instantly as the user changes the Line input.
-            dyn_p = None
-            if row is not None:
-                # The mu column is written by odds_ev_bdl.py as {Market}_mu.
-                # Note: calculator's "Goal" market maps to ATG (score 1+).
-                dist_market = str(prefix or market or "").strip()
-                mu_col = f"{dist_market}_mu"
-                mu_val = _get_num_from_row(row, mu_col)
-                if mu_val is not None:
-                    dyn_p = _model_prob_from_mu_line(dist_market, float(mu_val), float(line))
-
-            if dyn_p is not None:
-                model_prob = float(dyn_p)
-                st.metric("Model win probability (dynamic)", f"{model_prob*100.0:.1f}%")
-                if auto_p is not None:
-                    st.caption(f"CSV mainline Model%: {float(auto_p)*100.0:.1f}%")
-            elif auto_p is not None:
-                # Fallback to whatever the CSV had (static)
-                model_prob = float(auto_p)
-                st.metric("Model win probability", f"{model_prob*100.0:.1f}%")
-            else:
-                model_prob = st.slider(
-                    "Model win probability (%)",
-                    1.0, 99.0,
-                    55.0,
-                    0.5,
-                    key=f"{key_prefix}_p"
-                ) / 100.0
+        if (auto_p is not None) and (not override_model):
+            model_prob = float(auto_p)
+            st.metric("Model win probability", f"{model_prob*100.0:.1f}%")
         else:
-            # Manual override
             model_prob = st.slider(
                 "Model win probability (%)",
                 1.0, 99.0,
