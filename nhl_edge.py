@@ -2039,8 +2039,49 @@ def pick_sog_from_row(r: dict) -> Optional[int]:
         return None
     return None
 
+def _parse_game_dt(row: Dict[str, Any]) -> Optional[datetime]:
+    """Best-effort parse of a game date/time from common game-log row shapes."""
+    # Common keys across feeds
+    for k in ("gameDate", "date", "game_date", "startTimeUTC", "start_time_utc", "startTime", "gameTimeUTC"):
+        v = row.get(k)
+        if isinstance(v, str) and v.strip():
+            s = v.strip()
+            # Normalize trailing Z to ISO offset
+            if s.endswith("Z"):
+                s = s[:-1] + "+00:00"
+            # Try ISO datetime
+            try:
+                return datetime.fromisoformat(s)
+            except Exception:
+                pass
+            # Try ISO date only
+            try:
+                return datetime.fromisoformat(s[:10])
+            except Exception:
+                pass
+
+    # Nested shapes sometimes have the date under a sub-dict
+    for nk in ("game", "event", "matchup"):
+        v = row.get(nk)
+        if isinstance(v, dict):
+            dt = _parse_game_dt(v)
+            if dt:
+                return dt
+
+    return None
+
 def compute_lastN_features(payload: Dict[str, Any], n10: int = 10, n5: int = 5) -> Dict[str, Any]:
     rows = _extract_game_rows(payload)
+
+    # Ensure most-recent-first ordering. Some feeds return oldest->newest, which breaks drought counters.
+    try:
+        keyed = [(_parse_game_dt(r), i, r) for i, r in enumerate(rows)]
+        if any(dt is not None for dt, _, _ in keyed):
+            keyed.sort(key=lambda t: (t[0] is None, t[0] if t[0] is not None else datetime.min, t[1]), reverse=True)
+            rows = [r for _, _, r in keyed]
+    except Exception:
+        pass
+
 
     shots: List[int] = []
     goals: List[int] = []
@@ -2100,11 +2141,30 @@ def compute_lastN_features(payload: Dict[str, Any], n10: int = 10, n5: int = 5) 
     s10_total = sum(v10_shots) if v10_shots else None
 
     p10 = [(g + a) for g, a in zip(v10_goals, v10_assists)]
+
+    newest_dt = _parse_game_dt(rows[0]) if rows else None
+    newest_sog = v10_shots[0] if v10_shots else None
+    # If logs appear stale/missing the most recent game, avoid reporting misleading drought counts.
+    drought_verified = True
+    try:
+        if newest_dt is None:
+            drought_verified = False
+        else:
+            if newest_dt.date() < (date.today() - timedelta(days=2)):
+                drought_verified = False
+    except Exception:
+        drought_verified = False
+
     drought_p = drought_since(p10, 1)
     drought_a = drought_since(v10_assists, 1)
     drought_g = drought_since(v10_goals, 1)
     drought_sog2 = drought_since(v10_shots, 2)
     drought_sog3 = drought_since(v10_shots, 3)
+
+    if not drought_verified:
+        drought_sog2 = None
+        drought_sog3 = None
+
     drought_ppp = drought_since(v10_ppp, 1)
 
     return {
@@ -2117,6 +2177,9 @@ def compute_lastN_features(payload: Dict[str, Any], n10: int = 10, n5: int = 5) 
         "G10_total": g10_total,
         "S10_total": s10_total,
         "N_games_found": len(shots),
+        "LastGameDate": (newest_dt.date().isoformat() if newest_dt else None),
+        "LastGameSOG": newest_sog,
+        "SOG_Drought_Verified": drought_verified,
         "A10_total": a10_total,
         "PPP10_total": ppp10_total,
         "Drought_P": drought_p,
