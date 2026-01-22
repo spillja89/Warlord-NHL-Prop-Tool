@@ -21,15 +21,6 @@ from typing import Any, Dict, List, Optional, Tuple
 import pandas as pd
 import requests
 
-
-import re as _re_vendor
-
-def _norm_vendor(v: str) -> str:
-    """Normalize vendor/book strings to stable tokens (handles dk/DraftKings/DRAFT_KINGS/etc)."""
-    s = str(v or "").strip().lower()
-    s = _re_vendor.sub(r"[^a-z0-9]+", "", s)
-    return s
-
 _MARKET_CANON = {
     "shots_on_goal": "SOG",
     "sog": "SOG",
@@ -174,7 +165,7 @@ def merge_bdl_props_altlines(
         return df
 
     api_key = api_key if api_key is not None else (os.getenv("BALLDONTLIE_API_KEY") or os.getenv("BDL_API_KEY") or None)
-    vendors_set = {_norm_vendor(v) for v in (vendors or []) if str(v).strip()}
+    vendors_set = {v.strip().lower() for v in (vendors or []) if str(v).strip()}
 
     # Fetch
     try:
@@ -194,13 +185,6 @@ def merge_bdl_props_altlines(
         except Exception as e:
             if debug:
                 print(f"[bdl] props fetch failed game_id={gid}:", e)
-
-    # Diagnostics counters
-    df["BDL_Games"] = len(games) if isinstance(games, list) else 0
-    df["BDL_Props"] = len(props)
-    df["BDL_Kept"] = 0
-    df["BDL_Vendors_Seen"] = ""
-    df["BDL_Markets_Seen"] = ""
 
     # Initialize columns so downstream never breaks
     markets = ["SOG", "Points", "Assists", "Goal"]
@@ -227,11 +211,6 @@ def merge_bdl_props_altlines(
     best: Dict[Tuple[str, str, float], Tuple[float, str]] = {}
     lines_map: Dict[Tuple[str, str], List[float]] = {}
 
-    vendors_seen = set()
-    markets_seen = set()
-    kept = 0
- Dict[Tuple[str, str], List[float]] = {}
-
     for p in props:
         # Only use traditional O/U markets for baseline + alts.
         mk = p.get("market") or {}
@@ -248,18 +227,14 @@ def merge_bdl_props_altlines(
         if abs(line * 2 - round(line * 2)) > 1e-6:
             continue
 
-        vendor_raw = _extract_vendor(p)
-        vendor = _norm_vendor(vendor_raw)
-        if vendor:
-            vendors_seen.add(vendor)
-        if vendors_set and (vendor not in vendors_set) and (not any(tok in vendor for tok in vendors_set)):
+        vendor = _extract_vendor(p)
+        if vendors_set and vendor not in vendors_set:
             continue
 
         player = _norm_name(_extract_player_name(p))
         if not player:
             continue
 
-        kept += 1
         key = (player, mkt, float(line))
         cur = best.get(key)
         if cur is None or float(odds) > float(cur[0]):
@@ -267,10 +242,6 @@ def merge_bdl_props_altlines(
 
     if not best:
         df["BDL_Status"] = "NO_MATCHING_PROPS"
-        df["BDL_Kept"] = kept
-        df["BDL_Vendors_Seen"] = ",".join(sorted(vendors_seen))
-        df["BDL_Markets_Seen"] = ",".join(sorted(markets_seen))
-        df["BDL_Error"] = "filtered_out: vendor/line_grid/name_match"
         return df
 
     for (pn, mkt, line) in best.keys():
@@ -317,13 +288,105 @@ def merge_bdl_props_altlines(
 
     return df
 
+
 def add_bdl_ev_all(df: pd.DataFrame, top_k: int = 4) -> pd.DataFrame:
-    """
-    Surface BDL mainline fields into standard columns the app expects.
-    Focused on LINE/ODDS/BOOK/IMPLIED% being correct and present.
-    """
+    '''
+    Surface BDL mainline fields into standard columns the app expects AND compute Model% + EV%.
+
+    Outputs (per market):
+      - {M}_Line, {M}_Odds_Over, {M}_Book
+      - {M}_Imp%_Over
+      - {M}_p_model_over (0-1)
+      - {M}_Model% (0-100)
+      - {M}_EV% (expected value per $1 stake * 100)
+
+    Also computes alt-line model/EV fields for indices 1..top_k:
+      - {M}_p_model_over_{i}, {M}_Model%_{i}, {M}_EV%_{i}
+    '''
     if df is None or df.empty:
         return df
+
+    def ensure(prefix: str):
+        for c in (
+            f"{prefix}_Line",
+            f"{prefix}_Odds_Over",
+            f"{prefix}_Book",
+            f"{prefix}_Imp%_Over",
+            f"{prefix}_p_model_over",
+            f"{prefix}_Model%",
+            f"{prefix}_EV%",
+        ):
+            if c not in df.columns:
+                df[c] = pd.NA
+        for i in range(1, int(top_k) + 1):
+            for c in (
+                f"{prefix}_p_model_over_{i}",
+                f"{prefix}_Model%_{i}",
+                f"{prefix}_EV%_{i}",
+            ):
+                if c not in df.columns:
+                    df[c] = pd.NA
+
+    map_m = {"SOG": "SOG", "Points": "Points", "Assists": "Assists", "Goal": "Goal"}
+
+    for mkt, pref in map_m.items():
+        ensure(pref)
+
+        df[f"{pref}_Line"] = df.get(f"BDL_{mkt}_Line", pd.NA)
+        df[f"{pref}_Odds_Over"] = df.get(f"BDL_{mkt}_Odds", pd.NA)
+        df[f"{pref}_Book"] = df.get(f"BDL_{mkt}_Book", "")
+
+        imp = df[f"{pref}_Odds_Over"].map(implied_prob_from_american)
+        df[f"{pref}_Imp%_Over"] = imp.map(lambda x: round(float(x) * 100.0, 1) if x is not None else pd.NA)
+
+        p_list = []
+        ev_list = []
+        for _, row in df.iterrows():
+            lam = _pick_lambda(row, mkt)
+            line = row.get(f"{pref}_Line", pd.NA)
+            p = _poisson_p_over(lam, line) if lam is not None else None
+            p_list.append(p if p is not None else pd.NA)
+
+            payout = _american_payout_per_1(row.get(f"{pref}_Odds_Over", pd.NA))
+            if p is None or payout is None:
+                ev_list.append(pd.NA)
+            else:
+                ev = p * payout - (1.0 - p)
+                ev_list.append(round(float(ev) * 100.0, 1))
+
+        df[f"{pref}_p_model_over"] = p_list
+        df[f"{pref}_Model%"] = pd.to_numeric(df[f"{pref}_p_model_over"], errors="coerce").map(
+            lambda x: round(float(x) * 100.0, 1) if x is not None and not (isinstance(x, float) and math.isnan(x)) else pd.NA
+        )
+        df[f"{pref}_EV%"] = ev_list
+
+        for i in range(1, int(top_k) + 1):
+            lcol = f"BDL_{mkt}_Line_{i}"
+            ocol = f"BDL_{mkt}_Odds_{i}"
+
+            p_alt = []
+            ev_alt = []
+            for _, row in df.iterrows():
+                lam = _pick_lambda(row, mkt)
+                line = row.get(lcol, pd.NA)
+                p = _poisson_p_over(lam, line) if lam is not None else None
+                p_alt.append(p if p is not None else pd.NA)
+
+                payout = _american_payout_per_1(row.get(ocol, pd.NA))
+                if p is None or payout is None:
+                    ev_alt.append(pd.NA)
+                else:
+                    ev = p * payout - (1.0 - p)
+                    ev_alt.append(round(float(ev) * 100.0, 1))
+
+            df[f"{pref}_p_model_over_{i}"] = p_alt
+            df[f"{pref}_Model%_{i}"] = pd.to_numeric(df[f"{pref}_p_model_over_{i}"], errors="coerce").map(
+                lambda x: round(float(x) * 100.0, 1) if x is not None and not (isinstance(x, float) and math.isnan(x)) else pd.NA
+            )
+            df[f"{pref}_EV%_{i}"] = ev_alt
+
+    return df
+
 
     def ensure(prefix: str):
         for c in (f"{prefix}_Line", f"{prefix}_Odds_Over", f"{prefix}_Book", f"{prefix}_Imp%_Over"):
