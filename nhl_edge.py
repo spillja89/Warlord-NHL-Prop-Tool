@@ -2196,7 +2196,7 @@ def compute_lastN_features(payload: Dict[str, Any], n10: int = 10, n5: int = 5) 
         if newest_dt is None:
             drought_verified = False
         else:
-            if newest_dt.date() < (date.today() - timedelta(days=2)):
+            if newest_dt.date() < (date.today() - timedelta(days=7)):
                 drought_verified = False
     except Exception:
         drought_verified = False
@@ -2208,8 +2208,11 @@ def compute_lastN_features(payload: Dict[str, Any], n10: int = 10, n5: int = 5) 
     drought_sog3 = drought_since(v10_shots, 3)
 
     if not drought_verified:
-        drought_sog2 = None
-        drought_sog3 = None
+        # Keep drought counts if we have any data; avoid blanking the column entirely.
+        if drought_sog2 is None:
+            drought_sog2 = 0
+        if drought_sog3 is None:
+            drought_sog3 = 0
 
     drought_ppp = drought_since(v10_ppp, 1)
 
