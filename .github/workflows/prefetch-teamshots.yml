@@ -6,6 +6,9 @@ on:
     - cron: "0 15 * * *"
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   prefetch:
     runs-on: ubuntu-latest
@@ -21,22 +24,24 @@ jobs:
           python-version: "3.11"
 
       - name: Install dependencies
-  run: |
-    python -m pip install --upgrade pip
-    if [ -f requirements.txt ]; then
-      pip install -r requirements.txt
-    else
-      pip install requests pyyaml
-    fi
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --upgrade pip
+          if [ -f requirements.txt ]; then
+            pip install -r requirements.txt
+          else
+            pip install requests pyyaml
+          fi
 
       - name: Debug repo root
+        shell: bash
         run: |
           pwd
           ls -la
 
       - name: Compile-check script
         run: python -m py_compile prefetch_teamshots_today.py
-
 
       - name: Run prefetch (never fail the workflow)
         shell: bash
