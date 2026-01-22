@@ -103,7 +103,11 @@ def _canon_market(prop: Dict[str, Any]) -> Optional[str]:
     return _MARKET_CANON.get(cand)
 
 def _extract_line(prop: Dict[str, Any]) -> Optional[float]:
-    line = prop.get("line")
+    # BALLDONTLIE NHL player props use `line_value` for the line.
+    # (Older drafts used `line` in some sports.)
+    line = prop.get("line_value")
+    if line is None:
+        line = prop.get("line")
     if line is None:
         line = (prop.get("market") or {}).get("line")
     return _to_float(line)
@@ -201,6 +205,11 @@ def merge_bdl_props_altlines(
     lines_map: Dict[Tuple[str, str], List[float]] = {}
 
     for p in props:
+        # Only use traditional O/U markets for baseline + alts.
+        mk = p.get("market") or {}
+        mk_type = str(mk.get("type") or "").strip().lower()
+        if mk_type and mk_type != "over_under":
+            continue
         mkt = _canon_market(p)
         if mkt not in _PREF_MAINLINES:
             continue
