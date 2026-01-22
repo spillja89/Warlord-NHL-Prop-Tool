@@ -1372,6 +1372,13 @@ df["🔥"] = (
     | df.get("Green_Goal", False).fillna(False)
 ).map(lambda x: "🔥" if bool(x) else "")
 
+# 🔒 FINAL LOCK COMPUTE (authoritative)
+df["LOCK"] = (
+    (df.get("Green_Points", False) | df.get("Green_Assists", False) | df.get("Green_SOG", False) | df.get("Green_Goal", False))
+    & (df.get("💰", "") == "💰")
+).map(lambda x: "🔒" if bool(x) else "")
+
+
 
 
 # Header info
@@ -2490,6 +2497,7 @@ elif page == "Ledger":
 else:
     st.subheader("Raw CSV (all columns)")
     st.dataframe(df_f, width="stretch", hide_index=True)
+
 
 
 
