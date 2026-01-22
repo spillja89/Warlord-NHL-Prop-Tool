@@ -1,7 +1,6 @@
 from __future__ import annotations
 
-"""
-NHL EDGE TOOL — Stable v7.2 (engine) — single-file paste (CLEAN FIXED + SOG + Injury Upgrade)
+#Version 7.5 autoreloaded
 
 What’s fixed tonight:
 ✅ No more NameError crashes (helpers are defined BEFORE use)
