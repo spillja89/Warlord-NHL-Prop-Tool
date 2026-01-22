@@ -197,7 +197,14 @@ def merge_bdl_props_altlines(
             df[f"BDL_{m}_Odds_{k}"] = pd.NA
             df[f"BDL_{m}_Book_{k}"] = ""
 
+
+    # Diagnostics (so CSV shows exactly why odds are missing)
+    if "BDL_Status" not in df.columns:
+        df["BDL_Status"] = ""
+    if "BDL_Error" not in df.columns:
+        df["BDL_Error"] = ""
     if not props:
+        df["BDL_Status"] = "NO_PROPS"
         return df
 
     # Build best odds per (player, market, line)
@@ -234,6 +241,7 @@ def merge_bdl_props_altlines(
             best[key] = (float(odds), vendor)
 
     if not best:
+        df["BDL_Status"] = "NO_MATCHING_PROPS"
         return df
 
     for (pn, mkt, line) in best.keys():
