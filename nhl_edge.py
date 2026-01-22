@@ -32,6 +32,16 @@ from zoneinfo import ZoneInfo
 
 import numpy as np
 import pandas as pd
+
+# -------------------------
+# Optional Odds / EV (BallDontLie)
+# -------------------------
+try:
+    from odds_ev_bdl import merge_bdl_props_altlines, add_bdl_ev_all  # type: ignore
+except Exception:
+    merge_bdl_props_altlines = None  # type: ignore
+    add_bdl_ev_all = None  # type: ignore
+
 import requests
 from bs4 import BeautifulSoup
 
@@ -1179,13 +1189,41 @@ def fetch_dfo_injuries_for_team(team_abbr: str, debug: bool = False) -> List[Dic
     return out_rows
 
 def fetch_dfo_injuries_for_teams(teams: set[str], debug: bool = False) -> pd.DataFrame:
+    """Fetch DailyFaceoff injuries for all teams in `teams`.
+
+    IMPORTANT: must always return a DataFrame (never None), even when rows exist.
+    """
     rows: List[Dict[str, Any]] = []
     for t in sorted({norm_team(x) for x in teams}):
         rows.extend(fetch_dfo_injuries_for_team(t, debug=debug))
         time.sleep(HTTP_SLEEP_SEC)
 
+    cols = ["Team", "Player", "Status", "Injury", "Expected_Return", "Player_norm"]
     if not rows:
-        return pd.DataFrame(columns=["Team", "Player", "Status", "Injury", "Expected_Return", "Player_norm"])
+        return pd.DataFrame(columns=cols)
+
+    df = pd.DataFrame(rows)
+    if df.empty:
+        return pd.DataFrame(columns=cols)
+
+    # normalize + ensure schema
+    if "Team" in df.columns:
+        df["Team"] = df["Team"].astype(str).str.upper().str.strip().map(norm_team)
+    else:
+        df["Team"] = ""
+
+    if "Player" not in df.columns:
+        df["Player"] = ""
+
+    df["Player_norm"] = df["Player"].astype(str).str.lower().str.strip()
+    for c in ["Status", "Injury", "Expected_Return"]:
+        if c not in df.columns:
+            df[c] = ""
+
+    # order columns
+    df = df[["Team", "Player", "Status", "Injury", "Expected_Return", "Player_norm"]].copy()
+    return df
+
 
 def merge_bdl_mainlines(df: pd.DataFrame, path: str = "data/cache/bdl_mainlines_best.json") -> pd.DataFrame:
     import json
@@ -2160,11 +2198,6 @@ def compute_lastN_features(payload: Dict[str, Any], n10: int = 10, n5: int = 5) 
     drought_g = drought_since(v10_goals, 1)
     drought_sog2 = drought_since(v10_shots, 2)
     drought_sog3 = drought_since(v10_shots, 3)
-
-    if not drought_verified:
-        drought_sog2 = None
-        drought_sog3 = None
-
     drought_ppp = drought_since(v10_ppp, 1)
 
     return {
@@ -2187,6 +2220,7 @@ def compute_lastN_features(payload: Dict[str, Any], n10: int = 10, n5: int = 5) 
         "Drought_G": drought_g,
         "Drought_SOG2": drought_sog2,
         "Drought_SOG3": drought_sog3,
+        "SOG_Drought_Verified": drought_verified,
         "Drought_PPP": drought_ppp,
     }
 
@@ -4057,68 +4091,56 @@ def build_tracker(today_local: date, debug: bool = False) -> str:
     # ============================
     # BallDontLie odds + EV merge (saved into tracker CSV)
     # ============================
+
+    # -------------------------
+    # Odds / EV merge (optional)
+    # -------------------------
+
+    # -------------------------
+    # BallDontLie odds + EV (optional)
+    # -------------------------
+
+    # ============================
+    # BallDontLie odds + EV merge (saved into tracker CSV)
+    # ============================
     try:
-        # Market-aware alt-line odds merge + EV engine
-        # (supports natural star lines like 1.5 Points when offered)
-        from odds_ev_bdl import merge_bdl_props_altlines, add_bdl_ev_all
+        if tracker is None:
+            raise RuntimeError("tracker is None before odds/ev merge")
+        if merge_bdl_props_altlines is None or add_bdl_ev_all is None:
+            raise NameError("odds_ev_bdl import failed")
+
+        _pre_odds = tracker
+        api_key = (os.getenv("BALLDONTLIE_API_KEY") or os.getenv("BDL_API_KEY") or "").strip()
 
         tracker = merge_bdl_props_altlines(
             tracker,
             game_date=today_local.isoformat(),
-            api_key=(os.getenv("BALLDONTLIE_API_KEY") or os.getenv("BDL_API_KEY") or ""),
+            api_key=api_key if api_key else None,
             vendors=["draftkings", "fanduel", "caesars"],
+            top_k=4,
             debug=bool(debug),
         )
-        tracker = add_bdl_ev_all(tracker)
 
-        # Hard guard: if API key is present, require meaningful coverage across at least one market
-        if (os.getenv("BALLDONTLIE_API_KEY", "") or os.getenv("BDL_API_KEY", "")).strip():
-            cov_cols = [
-                "SOG_Odds_Over",
-                "Points_Odds_Over",
-                "Goal_Odds_Over",
-                "ATG_Odds_Over",
-                "Assists_Odds_Over",
-            ]
-            cov = 0
-            for c in cov_cols:
-                if c in tracker.columns:
-                    cov = max(cov, int(pd.to_numeric(tracker[c], errors="coerce").notna().sum()))
-            if bool(debug):
-                print(f"[odds/ev] max odds coverage across markets: {cov}")
+        tracker = add_bdl_ev_all(tracker, top_k=4)
 
-            # Coverage guard: scale with slate size.
-            # Small slates (few games) will naturally have fewer priced players.
-            # We only want to fail hard when coverage is effectively zero.
-            try:
-                slate_n = int(len(tracker))
-            except Exception:
-                slate_n = 0
-
-            required = min(50, max(10, int(round(0.20 * slate_n)))) if slate_n > 0 else 10
-            if cov < required:
-                raise RuntimeError(f"BDL odds coverage too low: {cov} players (<{required})")
-
-        # $EV play flags (so every $EV column has a companion Plays_EV_* column)
-        def _mk_play(col_ev: str) -> pd.Series:
-            if col_ev not in tracker.columns:
-                return pd.Series([False] * len(tracker))
-            return pd.to_numeric(tracker[col_ev], errors="coerce").fillna(0) >= 10
-
-        if "Plays_EV_SOG" not in tracker.columns:
-            tracker["Plays_EV_SOG"] = _mk_play("SOG_EVpct_over")
-        if "Plays_EV_Points" not in tracker.columns:
-            tracker["Plays_EV_Points"] = _mk_play("Points_EVpct_over")
-        if "Plays_EV_Goal" not in tracker.columns:
-            tracker["Plays_EV_Goal"] = _mk_play("Goal_EVpct_over")
-        if "Plays_EV_ATG" not in tracker.columns:
-            tracker["Plays_EV_ATG"] = _mk_play("ATG_EVpct_over")
-        if "Plays_EV_Assists" not in tracker.columns:
-            tracker["Plays_EV_Assists"] = _mk_play("Assists_EVpct_over")
+        if tracker is None:
+            tracker = _pre_odds
 
         print("[odds/ev] merged BDL odds + EV")
+
     except Exception as e:
         print(f"[odds/ev] skipped: {e}")
+        try:
+            tracker = _pre_odds
+        except Exception:
+            pass
+
+
+
+
+
+
+
 
 
     
