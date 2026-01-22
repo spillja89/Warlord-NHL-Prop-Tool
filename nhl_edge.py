@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 """
-NHL EDGE TOOL — Stable v7.5 (engine) — single-file paste (CLEAN FIXED + SOG + Injury Upgrade)
+NHL EDGE TOOL — Stable v7.2 (engine) — single-file paste (CLEAN FIXED + SOG + Injury Upgrade)
 
 What’s fixed tonight:
 ✅ No more NameError crashes (helpers are defined BEFORE use)
@@ -32,16 +32,6 @@ from zoneinfo import ZoneInfo
 
 import numpy as np
 import pandas as pd
-
-# -------------------------
-# Optional Odds / EV (BallDontLie)
-# -------------------------
-try:
-    from odds_ev_bdl import merge_bdl_props_altlines, add_bdl_ev_all  # type: ignore
-except Exception:
-    merge_bdl_props_altlines = None  # type: ignore
-    add_bdl_ev_all = None  # type: ignore
-
 import requests
 from bs4 import BeautifulSoup
 
@@ -1189,41 +1179,13 @@ def fetch_dfo_injuries_for_team(team_abbr: str, debug: bool = False) -> List[Dic
     return out_rows
 
 def fetch_dfo_injuries_for_teams(teams: set[str], debug: bool = False) -> pd.DataFrame:
-    """Fetch DailyFaceoff injuries for all teams in `teams`.
-
-    IMPORTANT: must always return a DataFrame (never None), even when rows exist.
-    """
     rows: List[Dict[str, Any]] = []
     for t in sorted({norm_team(x) for x in teams}):
         rows.extend(fetch_dfo_injuries_for_team(t, debug=debug))
         time.sleep(HTTP_SLEEP_SEC)
 
-    cols = ["Team", "Player", "Status", "Injury", "Expected_Return", "Player_norm"]
     if not rows:
-        return pd.DataFrame(columns=cols)
-
-    df = pd.DataFrame(rows)
-    if df.empty:
-        return pd.DataFrame(columns=cols)
-
-    # normalize + ensure schema
-    if "Team" in df.columns:
-        df["Team"] = df["Team"].astype(str).str.upper().str.strip().map(norm_team)
-    else:
-        df["Team"] = ""
-
-    if "Player" not in df.columns:
-        df["Player"] = ""
-
-    df["Player_norm"] = df["Player"].astype(str).str.lower().str.strip()
-    for c in ["Status", "Injury", "Expected_Return"]:
-        if c not in df.columns:
-            df[c] = ""
-
-    # order columns
-    df = df[["Team", "Player", "Status", "Injury", "Expected_Return", "Player_norm"]].copy()
-    return df
-
+        return pd.DataFrame(columns=["Team", "Player", "Status", "Injury", "Expected_Return", "Player_norm"])
 
 def merge_bdl_mainlines(df: pd.DataFrame, path: str = "data/cache/bdl_mainlines_best.json") -> pd.DataFrame:
     import json
@@ -1564,15 +1526,7 @@ def normalize_skaters_5v5(df: pd.DataFrame, debug: bool = False) -> pd.DataFrame
         print("  Columns containing 'assist':", debug_find_like(out, "assist")[:20])
         print("  Columns containing 'cf':", debug_find_like(out, "cf")[:20])
 
-    # Prefer MoneyPuck shot-assists if present; otherwise fall back to primary assists as a proxy
-    if col_sa:
-        shot_assists = pd.to_numeric(out[col_sa], errors="coerce")
-    else:
-        # MoneyPuck occasionally renames/removes shot-assist columns; don't zero-out Assist_Volume
-        shot_assists = a1s.copy()
-        if debug:
-            print("[DEBUG] 5v5: shot-assist col missing; using primary assists as proxy")
-
+    shot_assists = pd.to_numeric(out[col_sa], errors="coerce") if col_sa else pd.Series(np.nan, index=out.index)
     icf = pd.to_numeric(out[col_icf], errors="coerce") if col_icf else pd.Series(np.nan, index=out.index)
 
     out["i5v5_points60"] = per60(points, out["icetime"])
@@ -1923,8 +1877,8 @@ def resolve_goalie_for_team(
 
     sub = gdf[gdf["Team"] == team_abbr].copy()
     if sub.empty:
-        # Starter name did not match any goalie on this team; keep team-proxy goalie (prevents wrong-team names).
-        fallback["Source"] = "dailyfaceoff_team_not_found_using_team_proxy"
+        fallback["Goalie"] = starter_name
+        fallback["Source"] = "dailyfaceoff_name_only"
         return fallback
 
     want = _norm_name(starter_name)
@@ -1937,8 +1891,8 @@ def resolve_goalie_for_team(
             hit = sub[sub["__n"].str.contains(rf"\b{re.escape(want_last)}\b", regex=True, na=False)]
 
     if hit.empty:
-        # Could not map starter name to a goalie on this team; keep team-proxy goalie instead of wrong-team name.
-        fallback["Source"] = "dailyfaceoff_name_mismatch_using_team_proxy"
+        fallback["Goalie"] = starter_name
+        fallback["Source"] = "dailyfaceoff_name_fallback_stats"
         return fallback
 
     hit_row = hit.sort_values("GP", ascending=False).iloc[0]
@@ -2085,49 +2039,8 @@ def pick_sog_from_row(r: dict) -> Optional[int]:
         return None
     return None
 
-def _parse_game_dt(row: Dict[str, Any]) -> Optional[datetime]:
-    """Best-effort parse of a game date/time from common game-log row shapes."""
-    # Common keys across feeds
-    for k in ("gameDate", "date", "game_date", "startTimeUTC", "start_time_utc", "startTime", "gameTimeUTC"):
-        v = row.get(k)
-        if isinstance(v, str) and v.strip():
-            s = v.strip()
-            # Normalize trailing Z to ISO offset
-            if s.endswith("Z"):
-                s = s[:-1] + "+00:00"
-            # Try ISO datetime
-            try:
-                return datetime.fromisoformat(s)
-            except Exception:
-                pass
-            # Try ISO date only
-            try:
-                return datetime.fromisoformat(s[:10])
-            except Exception:
-                pass
-
-    # Nested shapes sometimes have the date under a sub-dict
-    for nk in ("game", "event", "matchup"):
-        v = row.get(nk)
-        if isinstance(v, dict):
-            dt = _parse_game_dt(v)
-            if dt:
-                return dt
-
-    return None
-
 def compute_lastN_features(payload: Dict[str, Any], n10: int = 10, n5: int = 5) -> Dict[str, Any]:
     rows = _extract_game_rows(payload)
-
-    # Ensure most-recent-first ordering. Some feeds return oldest->newest, which breaks drought counters.
-    try:
-        keyed = [(_parse_game_dt(r), i, r) for i, r in enumerate(rows)]
-        if any(dt is not None for dt, _, _ in keyed):
-            keyed.sort(key=lambda t: (t[0] is None, t[0] if t[0] is not None else datetime.min, t[1]), reverse=True)
-            rows = [r for _, _, r in keyed]
-    except Exception:
-        pass
-
 
     shots: List[int] = []
     goals: List[int] = []
@@ -2187,30 +2100,11 @@ def compute_lastN_features(payload: Dict[str, Any], n10: int = 10, n5: int = 5) 
     s10_total = sum(v10_shots) if v10_shots else None
 
     p10 = [(g + a) for g, a in zip(v10_goals, v10_assists)]
-
-    newest_dt = _parse_game_dt(rows[0]) if rows else None
-    newest_sog = v10_shots[0] if v10_shots else None
-    # If logs appear stale/missing the most recent game, avoid reporting misleading drought counts.
-    drought_verified = True
-    try:
-        if newest_dt is None:
-            drought_verified = False
-        else:
-            if newest_dt.date() < (date.today() - timedelta(days=2)):
-                drought_verified = False
-    except Exception:
-        drought_verified = False
-
     drought_p = drought_since(p10, 1)
     drought_a = drought_since(v10_assists, 1)
     drought_g = drought_since(v10_goals, 1)
     drought_sog2 = drought_since(v10_shots, 2)
     drought_sog3 = drought_since(v10_shots, 3)
-
-    if not drought_verified:
-        drought_sog2 = None
-        drought_sog3 = None
-
     drought_ppp = drought_since(v10_ppp, 1)
 
     return {
@@ -2223,9 +2117,6 @@ def compute_lastN_features(payload: Dict[str, Any], n10: int = 10, n5: int = 5) 
         "G10_total": g10_total,
         "S10_total": s10_total,
         "N_games_found": len(shots),
-        "LastGameDate": (newest_dt.date().isoformat() if newest_dt else None),
-        "LastGameSOG": newest_sog,
-        "SOG_Drought_Verified": drought_verified,
         "A10_total": a10_total,
         "PPP10_total": ppp10_total,
         "Drought_P": drought_p,
@@ -2848,11 +2739,10 @@ def build_tracker(today_local: date, debug: bool = False) -> str:
             sk[c] = np.nan
 
     # Assist volume proxy
-    # Assist volume proxy (used for Assist confidence). Prefer shot-assists/60, but fall back to primary assists/60
-    _sa60 = pd.to_numeric(sk.get("i5v5_shotAssists60"), errors="coerce")
-    _pa60 = pd.to_numeric(sk.get("i5v5_primaryAssists60"), errors="coerce")
-    _use = _sa60.where(_sa60.notna(), _pa60)
-    sk["Assist_Volume"] = (_use.fillna(0.0) * 12.0).round(2)
+    sk["Assist_Volume"] = (
+        pd.to_numeric(sk.get("i5v5_shotAssists60"), errors="coerce")
+          .fillna(0.0) * 12.0
+    ).round(2)
 
 
     # POWER PLAY skaters (5v4)
@@ -4104,56 +3994,78 @@ def build_tracker(today_local: date, debug: bool = False) -> str:
     # ============================
     # BallDontLie odds + EV merge (saved into tracker CSV)
     # ============================
-
-    # -------------------------
-    # Odds / EV merge (optional)
-    # -------------------------
-
-    # -------------------------
-    # BallDontLie odds + EV (optional)
-    # -------------------------
-
-    # ============================
-    # BallDontLie odds + EV merge (saved into tracker CSV)
-    # ============================
     try:
-        if tracker is None:
-            raise RuntimeError("tracker is None before odds/ev merge")
-        if merge_bdl_props_altlines is None or add_bdl_ev_all is None:
-            raise NameError("odds_ev_bdl import failed")
+        # Market-aware alt-line odds merge + EV engine
+        # (supports natural star lines like 1.5 Points when offered)
+        # --- BDL API key (required for odds/EV) ---
+        api_key = (os.getenv("BALLDONTLIE_API_KEY","") or os.getenv("BDL_API_KEY","") or os.getenv("BALLDONTLIE_KEY","")).strip()
+        if not api_key:
+            raise RuntimeError("Missing BALLDONTLIE_API_KEY (or BDL_API_KEY). Set it in your shell/Streamlit secrets to enable odds + EV.")
 
-        _pre_odds = tracker
-        api_key = (os.getenv("BALLDONTLIE_API_KEY") or os.getenv("BDL_API_KEY") or "").strip()
+        # Import EV engine (certifi optional). Try standard filename first, then patched fallback.
+        try:
+            from odds_ev_bdl import merge_bdl_props_altlines, add_bdl_ev_all
+        except Exception:
+            from odds_ev_bdl_PATCHED import merge_bdl_props_altlines, add_bdl_ev_all
+
 
         tracker = merge_bdl_props_altlines(
             tracker,
             game_date=today_local.isoformat(),
-            api_key=api_key if api_key else None,
-            vendors=None,
-            top_k=4,
+            api_key=(os.getenv("BALLDONTLIE_API_KEY") or os.getenv("BDL_API_KEY") or ""),
+            vendors=["draftkings", "fanduel", "caesars"],
             debug=bool(debug),
         )
+        tracker = add_bdl_ev_all(tracker)
 
-        tracker = add_bdl_ev_all(tracker, top_k=4)
+        # Hard guard: if API key is present, require meaningful coverage across at least one market
+        if (os.getenv("BALLDONTLIE_API_KEY", "") or os.getenv("BDL_API_KEY", "")).strip():
+            cov_cols = [
+                "SOG_Odds_Over",
+                "Points_Odds_Over",
+                "Goal_Odds_Over",
+                "ATG_Odds_Over",
+                "Assists_Odds_Over",
+            ]
+            cov = 0
+            for c in cov_cols:
+                if c in tracker.columns:
+                    cov = max(cov, int(pd.to_numeric(tracker[c], errors="coerce").notna().sum()))
+            if bool(debug):
+                print(f"[odds/ev] max odds coverage across markets: {cov}")
 
-        if tracker is None:
-            tracker = _pre_odds
+            # Coverage guard: scale with slate size.
+            # Small slates (few games) will naturally have fewer priced players.
+            # We only want to fail hard when coverage is effectively zero.
+            try:
+                slate_n = int(len(tracker))
+            except Exception:
+                slate_n = 0
+
+            required = min(50, max(10, int(round(0.20 * slate_n)))) if slate_n > 0 else 10
+            if cov < required:
+                raise RuntimeError(f"BDL odds coverage too low: {cov} players (<{required})")
+
+        # $EV play flags (so every $EV column has a companion Plays_EV_* column)
+        def _mk_play(col_ev: str) -> pd.Series:
+            if col_ev not in tracker.columns:
+                return pd.Series([False] * len(tracker))
+            return pd.to_numeric(tracker[col_ev], errors="coerce").fillna(0) >= 10
+
+        if "Plays_EV_SOG" not in tracker.columns:
+            tracker["Plays_EV_SOG"] = _mk_play("SOG_EVpct_over")
+        if "Plays_EV_Points" not in tracker.columns:
+            tracker["Plays_EV_Points"] = _mk_play("Points_EVpct_over")
+        if "Plays_EV_Goal" not in tracker.columns:
+            tracker["Plays_EV_Goal"] = _mk_play("Goal_EVpct_over")
+        if "Plays_EV_ATG" not in tracker.columns:
+            tracker["Plays_EV_ATG"] = _mk_play("ATG_EVpct_over")
+        if "Plays_EV_Assists" not in tracker.columns:
+            tracker["Plays_EV_Assists"] = _mk_play("Assists_EVpct_over")
 
         print("[odds/ev] merged BDL odds + EV")
-
     except Exception as e:
         print(f"[odds/ev] skipped: {e}")
-        try:
-            tracker = _pre_odds
-        except Exception:
-            pass
-
-
-
-
-
-
-
 
 
     
