@@ -2196,7 +2196,7 @@ def compute_lastN_features(payload: Dict[str, Any], n10: int = 10, n5: int = 5) 
         if newest_dt is None:
             drought_verified = False
         else:
-            if newest_dt.date() < (date.today() - timedelta(days=7)):
+            if newest_dt.date() < (date.today() - timedelta(days=2)):
                 drought_verified = False
     except Exception:
         drought_verified = False
@@ -2208,11 +2208,8 @@ def compute_lastN_features(payload: Dict[str, Any], n10: int = 10, n5: int = 5) 
     drought_sog3 = drought_since(v10_shots, 3)
 
     if not drought_verified:
-        # Keep drought counts if we have any data; avoid blanking the column entirely.
-        if drought_sog2 is None:
-            drought_sog2 = 0
-        if drought_sog3 is None:
-            drought_sog3 = 0
+        drought_sog2 = None
+        drought_sog3 = None
 
     drought_ppp = drought_since(v10_ppp, 1)
 
@@ -4123,7 +4120,7 @@ def build_tracker(today_local: date, debug: bool = False) -> str:
         if tracker is None:
             raise RuntimeError("tracker is None before odds/ev merge")
         if merge_bdl_props_altlines is None or add_bdl_ev_all is None:
-            raise NameError("odds_ev_bdl import failed")
+            raise NameError("odds_ev_bdl import failed (make sure file is named odds_ev_bdl.py and is in the repo root)")
 
         _pre_odds = tracker
         api_key = (os.getenv("BALLDONTLIE_API_KEY") or os.getenv("BDL_API_KEY") or "").strip()
@@ -4132,7 +4129,7 @@ def build_tracker(today_local: date, debug: bool = False) -> str:
             tracker,
             game_date=today_local.isoformat(),
             api_key=api_key if api_key else None,
-            vendors=["draftkings", "fanduel", "caesars"],
+            vendors=None,
             top_k=4,
             debug=bool(debug),
         )
