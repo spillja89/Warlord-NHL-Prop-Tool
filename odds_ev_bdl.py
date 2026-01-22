@@ -31,6 +31,17 @@ _MARKET_CANON = {
     "goals": "Goal",
     "player_goals": "Goal",
     "anytime_goal_scorer": "ATG",
+
+    "player_shots_on_goal": "SOG",
+    "shots": "SOG",
+    "player_shots": "SOG",
+    "shots_on_goal_alternate": "SOG",
+    "player_points_alternate": "Points",
+    "player_assists_alternate": "Assists",
+    "player_goals_alternate": "Goal",
+    "goal": "Goal",
+    "points_alternate": "Points",
+    "assists_alternate": "Assists",
 }
 
 # sportsbook mainline preferences (Jason verified)
@@ -96,106 +107,87 @@ def _fetch_props_for_game(game_id: int, api_key: Optional[str], timeout: int = 2
     return out
 
 def _canon_market(prop: Dict[str, Any]) -> Optional[str]:
-    pt = (prop.get("prop_type") or "").strip().lower()
+    """Return canonical market label (SOG/Points/Assists/Goal/ATG) or None.
+
+    BDL has changed field names a few times. We try:
+      1) prop_type
+      2) market.name / market.key
+      3) heuristic keyword matching as a fallback
+    """
+    pt = (prop.get("prop_type") or prop.get("propType") or "").strip().lower()
     mk = prop.get("market") or {}
-    mk_name = (mk.get("name") or mk.get("key") or "").strip().lower()
+    if isinstance(mk, str):
+        mk = {"name": mk}
+    mk_name = (mk.get("name") or mk.get("key") or mk.get("type") or "").strip().lower()
+
     cand = pt or mk_name
-    return _MARKET_CANON.get(cand)
+    if cand:
+        hit = _MARKET_CANON.get(cand)
+        if hit:
+            return hit
+
+    # Heuristic fallback for new/unknown keys
+    blob = " ".join([str(cand or ""), str(prop.get("stat") or ""), str(prop.get("name") or ""), str(prop.get("type") or "")]).lower()
+    # common variants
+    if ("shot" in blob and "goal" in blob) or "sog" in blob or "shots_on_goal" in blob:
+        return "SOG"
+    if "assist" in blob:
+        return "Assists"
+    if "point" in blob:
+        return "Points"
+    if "anytime" in blob or "atg" in blob or "goal scorer" in blob:
+        return "ATG"
+    # Be careful: "goals against" etc shouldn't match; this is player props, so goal is OK.
+    if "goal" in blob:
+        return "Goal"
+    return None
+
+
+
+def _deep_find_number(obj: Any, keys: List[str]) -> Optional[float]:
+    """Best-effort recursive numeric lookup for any of keys."""
+    try:
+        if obj is None:
+            return None
+        if isinstance(obj, (int, float)) and not (isinstance(obj, float) and math.isnan(obj)):
+            return float(obj)
+        if isinstance(obj, str):
+            return _to_float(obj)
+        if isinstance(obj, dict):
+            for k in keys:
+                if k in obj:
+                    v = _deep_find_number(obj.get(k), keys)
+                    if v is not None:
+                        return v
+            # search nested
+            for v in obj.values():
+                hit = _deep_find_number(v, keys)
+                if hit is not None:
+                    return hit
+        if isinstance(obj, list):
+            for it in obj:
+                hit = _deep_find_number(it, keys)
+                if hit is not None:
+                    return hit
+    except Exception:
+        return None
+    return None
 
 def _extract_line(prop: Dict[str, Any]) -> Optional[float]:
-    # BALLDONTLIE NHL player props use `line_value` for the line.
-    # (Older drafts used `line` in some sports.)
-    line = prop.get("line_value")
+    # Common keys observed across BDL schema variants
+    line = (
+        prop.get("line_value")
+        if prop.get("line_value") is not None
+        else prop.get("line")
+    )
     if line is None:
-        line = prop.get("line")
+        mk = prop.get("market") or {}
+        if isinstance(mk, dict):
+            line = mk.get("line") or mk.get("line_value")
     if line is None:
-        line = (prop.get("market") or {}).get("line")
+        # Deep search (covers nested/outcomes formats)
+        line = _deep_find_number(prop, ["line_value", "line", "total", "points"])
     return _to_float(line)
-
-def _extract_odds(prop: Dict[str, Any]) -> Optional[float]:
-    o = prop.get("odds")
-    if o is None:
-        o = prop.get("price")
-    if o is None:
-        o = (prop.get("market") or {}).get("odds")
-    return _to_float(o)
-
-def _extract_vendor(prop: Dict[str, Any]) -> str:
-    v = prop.get("vendor")
-    if isinstance(v, dict):
-        v = v.get("name") or v.get("key")
-    if v is None:
-        v = prop.get("book") or prop.get("sportsbook") or ""
-    return str(v).strip().lower()
-
-def _extract_player_name(prop: Dict[str, Any]) -> str:
-    p = prop.get("player") or {}
-    name = p.get("full_name") or p.get("name") or prop.get("player_name") or ""
-    return str(name).strip()
-
-def _norm_name(s: str) -> str:
-    return " ".join(str(s or "").strip().lower().split())
-
-def _pick_mainline(market: str, avail: List[float]) -> Optional[float]:
-    if not avail:
-        return None
-    uniq = sorted({float(x) for x in avail})
-    for lv in _PREF_MAINLINES.get(market, []):
-        if lv in uniq:
-            return float(lv)
-    # fallback: choose lowest half-step, else lowest
-    halfs = [x for x in uniq if abs(x * 2 - round(x * 2)) < 1e-9]
-    return float(min(halfs)) if halfs else float(min(uniq))
-
-def _pick_topk(avail: List[float], top_k: int) -> List[float]:
-    if not avail or top_k <= 0:
-        return []
-    uniq = sorted({float(x) for x in avail})
-    return uniq[:top_k]
-
-def merge_bdl_props_altlines(
-    df: pd.DataFrame,
-    game_date: str,
-    api_key: Optional[str] = None,
-    vendors: Optional[List[str]] = None,
-    top_k: int = 4,
-    debug: bool = False,
-) -> pd.DataFrame:
-    if df is None or df.empty:
-        return df
-
-    api_key = api_key if api_key is not None else (os.getenv("BALLDONTLIE_API_KEY") or os.getenv("BDL_API_KEY") or None)
-    vendors_set = {v.strip().lower() for v in (vendors or []) if str(v).strip()}
-
-    # Fetch
-    try:
-        games = _fetch_games_for_date(game_date, api_key)
-    except Exception as e:
-        if debug:
-            print("[bdl] games fetch failed:", e)
-        return df
-
-    props = []
-    for g in games:
-        gid = g.get("id")
-        if gid is None:
-            continue
-        try:
-            props.extend(_fetch_props_for_game(int(gid), api_key))
-        except Exception as e:
-            if debug:
-                print(f"[bdl] props fetch failed game_id={gid}:", e)
-
-    # Initialize columns so downstream never breaks
-    markets = ["SOG", "Points", "Assists", "Goal"]
-    for m in markets:
-        df[f"BDL_{m}_Line"] = pd.NA
-        df[f"BDL_{m}_Odds"] = pd.NA
-        df[f"BDL_{m}_Book"] = ""
-        for k in range(1, top_k + 1):
-            df[f"BDL_{m}_Line_{k}"] = pd.NA
-            df[f"BDL_{m}_Odds_{k}"] = pd.NA
-            df[f"BDL_{m}_Book_{k}"] = ""
 
 
     # Diagnostics (so CSV shows exactly why odds are missing)
@@ -239,6 +231,31 @@ def merge_bdl_props_altlines(
         cur = best.get(key)
         if cur is None or float(odds) > float(cur[0]):
             best[key] = (float(odds), vendor)
+
+
+    # If we filtered by vendor list and ended up with nothing, fall back to ALL vendors.
+    if not best and vendors_set:
+        if debug:
+            print("[bdl] vendor-filter produced no matches; retrying with all vendors")
+        vendors_set = set()
+        for p in props:
+            mkt = _canon_market(p)
+            if mkt not in _PREF_MAINLINES:
+                continue
+            line = _extract_line(p)
+            odds = _extract_odds(p)
+            if line is None or odds is None:
+                continue
+            if abs(line * 2 - round(line * 2)) > 1e-6:
+                continue
+            vendor = _extract_vendor(p)
+            player = _norm_name(_extract_player_name(p))
+            if not player:
+                continue
+            key = (player, mkt, float(line))
+            cur = best.get(key)
+            if cur is None or float(odds) > float(cur[0]):
+                best[key] = (float(odds), vendor)
 
     if not best:
         df["BDL_Status"] = "NO_MATCHING_PROPS"
