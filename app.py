@@ -742,6 +742,9 @@ def style_df(df: pd.DataFrame, cols: list[str]) -> "pd.io.formats.style.Styler":
 def add_ui_columns(df: pd.DataFrame) -> pd.DataFrame:
     out = df.copy()
 
+    # Preserve an existing 💰 column from the tracker (some trackers provide 💰 directly)
+    _money_existing = out['💰'].copy() if '💰' in out.columns else None
+
     # Ensure these exist
     if "Play_Tag" not in out.columns:
         out["Play_Tag"] = ""
@@ -762,6 +765,14 @@ def add_ui_columns(df: pd.DataFrame) -> pd.DataFrame:
         if c in out.columns:
             ev_any = ev_any | to_bool_series(out[c])
     out["💰"] = ev_any.map(lambda x: "💰" if bool(x) else "")
+
+    # If no Plays_EV_* columns existed but the tracker already had 💰, keep it.
+    if _money_existing is not None:
+        have_ev_cols = any((c in out.columns) for c in [
+            "Plays_EV_SOG", "Plays_EV_Points", "Plays_EV_Goal", "Plays_EV_ATG", "Plays_EV_Assists"
+        ])
+        if not have_ev_cols:
+            out["💰"] = _money_existing
 
     return out
 def load_csv(path: str) -> pd.DataFrame:
@@ -1039,6 +1050,19 @@ for m in ["Points","GOAL (1+)","Assists","ATG","SOG"]:
     if ev in df.columns:
         df[f"{m}_EV%"] = pd.to_numeric(df[ev], errors="coerce").round(1)
 
+# --- Back-compat: some trackers provide EV% but not Plays_EV_* flags.
+# If Plays_EV_* columns are missing, derive them from *_EVpct_over (>0) so 🔒 works.
+if "Plays_EV_Points" not in df.columns and "Points_EVpct_over" in df.columns:
+    df["Plays_EV_Points"] = pd.to_numeric(df["Points_EVpct_over"], errors="coerce").fillna(-999) > 0
+if "Plays_EV_SOG" not in df.columns and "SOG_EVpct_over" in df.columns:
+    df["Plays_EV_SOG"] = pd.to_numeric(df["SOG_EVpct_over"], errors="coerce").fillna(-999) > 0
+if "Plays_EV_Assists" not in df.columns and "Assists_EVpct_over" in df.columns:
+    df["Plays_EV_Assists"] = pd.to_numeric(df["Assists_EVpct_over"], errors="coerce").fillna(-999) > 0
+if "Plays_EV_ATG" not in df.columns and "ATG_EVpct_over" in df.columns:
+    df["Plays_EV_ATG"] = pd.to_numeric(df["ATG_EVpct_over"], errors="coerce").fillna(-999) > 0
+if "Plays_EV_Goal" not in df.columns and "Goal_EVpct_over" in df.columns:
+    df["Plays_EV_Goal"] = pd.to_numeric(df["Goal_EVpct_over"], errors="coerce").fillna(-999) > 0
+
 # Replace Plays_EV_* booleans with a 💰 icon for readability (keep the original name)
 for c in ["Plays_EV_Points","Plays_EV_Goal","Plays_EV_Assists","Plays_EV_ATG","Plays_EV_SOG"]:
     if c in df.columns:
@@ -1049,7 +1073,9 @@ _ev_play_cols = [c for c in ["Plays_EV_Points","Plays_EV_Goal","Plays_EV_Assists
 if _ev_play_cols:
     df["💰"] = (df[_ev_play_cols].astype(str).apply(lambda r: any(v=="💰" for v in r), axis=1)).map(lambda x: "💰" if x else "")
 else:
-    df["💰"] = ""
+    # Keep existing 💰 if tracker provided it and no Plays_EV_* columns are present
+    if "💰" not in df.columns:
+        df["💰"] = ""
 
 
 # =========================
@@ -1371,13 +1397,6 @@ df["🔥"] = (
     | df.get("Green_SOG", False).fillna(False)
     | df.get("Green_Goal", False).fillna(False)
 ).map(lambda x: "🔥" if bool(x) else "")
-
-# 🔒 FINAL LOCK COMPUTE (authoritative)
-df["LOCK"] = (
-    (df.get("Green_Points", False) | df.get("Green_Assists", False) | df.get("Green_SOG", False) | df.get("Green_Goal", False))
-    & (df.get("💰", "") == "💰")
-).map(lambda x: "🔒" if bool(x) else "")
-
 
 
 
@@ -2497,7 +2516,6 @@ elif page == "Ledger":
 else:
     st.subheader("Raw CSV (all columns)")
     st.dataframe(df_f, width="stretch", hide_index=True)
-
 
 
 
