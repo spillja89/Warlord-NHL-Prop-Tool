@@ -1938,18 +1938,6 @@ elif page == "📟 Calculator":
     with c3:
         bankroll = st.number_input("Bankroll ($)", min_value=0.0, value=1000.0, step=50.0, key="calc_bankroll")
 
-    
-    # Line source: show MAINLINE in the tables, but allow ALT lines inside the calculator
-    # (Alt lines are sourced from BDL_{Market}_Line_{i}/Odds_{i} columns if present.)
-    line_source_opts = ["Mainline", "Alt #1", "Alt #2", "Alt #3", "Alt #4"]
-    line_source = st.radio("Line Source", options=line_source_opts, index=0, horizontal=True, key="calc_line_source")
-    alt_idx = 0
-    if line_source.startswith("Alt"):
-        try:
-            alt_idx = int(line_source.split("#", 1)[1].strip())
-        except Exception:
-            alt_idx = 0
-
     mcfg = _calc_market_map(market)
 
     # Pull row for the selected player (first match)
