@@ -1,19 +1,19 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
-"""odds_ev_bdl.py — BallDontLie odds merge + market-aware model probability + EV
+"""odds_ev_bdl.py ΓÇö BallDontLie odds merge + market-aware model probability + EV
 
 This version turns the BDL integration into the **alt-line cash checker** backbone.
 
 Why this matters:
 - Your previous engine normalized Points/Assists/Goals/ATG to **0.5 only**.
-  That makes model probability look “static” and makes natural star lines
+  That makes model probability look ΓÇ£staticΓÇ¥ and makes natural star lines
   (e.g. McDavid/MacK 1.5 points) impossible to evaluate.
 
-What’s new:
+WhatΓÇÖs new:
 1) Alt lines: keep up to Top-K distinct lines per player/market.
    Columns written (stable schema):
      - BDL_{M}_Line_1..K, BDL_{M}_Odds_1..K, BDL_{M}_Book_1..K
-   And a selected “mainline”:
+   And a selected ΓÇ£mainlineΓÇ¥:
      - BDL_{M}_Line / Odds / Book
 
 2) Market-aware probability:
@@ -423,7 +423,7 @@ def _market_cfgs() -> Dict[str, dict]:
 
 
 def _target_line(market: str, mu: float) -> float:
-    """Heuristic for “natural” mainline selection among available alt lines."""
+    """Heuristic for ΓÇ£naturalΓÇ¥ mainline selection among available alt lines."""
     m = market
     mu = float(mu or 0.0)
 
