@@ -1564,7 +1564,15 @@ def normalize_skaters_5v5(df: pd.DataFrame, debug: bool = False) -> pd.DataFrame
         print("  Columns containing 'assist':", debug_find_like(out, "assist")[:20])
         print("  Columns containing 'cf':", debug_find_like(out, "cf")[:20])
 
-    shot_assists = pd.to_numeric(out[col_sa], errors="coerce") if col_sa else pd.Series(np.nan, index=out.index)
+    # Prefer MoneyPuck shot-assists if present; otherwise fall back to primary assists as a proxy
+    if col_sa:
+        shot_assists = pd.to_numeric(out[col_sa], errors="coerce")
+    else:
+        # MoneyPuck occasionally renames/removes shot-assist columns; don't zero-out Assist_Volume
+        shot_assists = a1s.copy()
+        if debug:
+            print("[DEBUG] 5v5: shot-assist col missing; using primary assists as proxy")
+
     icf = pd.to_numeric(out[col_icf], errors="coerce") if col_icf else pd.Series(np.nan, index=out.index)
 
     out["i5v5_points60"] = per60(points, out["icetime"])
@@ -2198,6 +2206,11 @@ def compute_lastN_features(payload: Dict[str, Any], n10: int = 10, n5: int = 5) 
     drought_g = drought_since(v10_goals, 1)
     drought_sog2 = drought_since(v10_shots, 2)
     drought_sog3 = drought_since(v10_shots, 3)
+
+    if not drought_verified:
+        drought_sog2 = None
+        drought_sog3 = None
+
     drought_ppp = drought_since(v10_ppp, 1)
 
     return {
@@ -2220,7 +2233,6 @@ def compute_lastN_features(payload: Dict[str, Any], n10: int = 10, n5: int = 5) 
         "Drought_G": drought_g,
         "Drought_SOG2": drought_sog2,
         "Drought_SOG3": drought_sog3,
-        "SOG_Drought_Verified": drought_verified,
         "Drought_PPP": drought_ppp,
     }
 
@@ -2836,10 +2848,11 @@ def build_tracker(today_local: date, debug: bool = False) -> str:
             sk[c] = np.nan
 
     # Assist volume proxy
-    sk["Assist_Volume"] = (
-        pd.to_numeric(sk.get("i5v5_shotAssists60"), errors="coerce")
-          .fillna(0.0) * 12.0
-    ).round(2)
+    # Assist volume proxy (used for Assist confidence). Prefer shot-assists/60, but fall back to primary assists/60
+    _sa60 = pd.to_numeric(sk.get("i5v5_shotAssists60"), errors="coerce")
+    _pa60 = pd.to_numeric(sk.get("i5v5_primaryAssists60"), errors="coerce")
+    _use = _sa60.where(_sa60.notna(), _pa60)
+    sk["Assist_Volume"] = (_use.fillna(0.0) * 12.0).round(2)
 
 
     # POWER PLAY skaters (5v4)
