@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-#Version 7.5 autoreloaded
+"""
+NHL EDGE TOOL — Stable v7.5 (engine) — single-file paste (CLEAN FIXED + SOG + Injury Upgrade)
 
 What’s fixed tonight:
 ✅ No more NameError crashes (helpers are defined BEFORE use)
@@ -537,6 +538,161 @@ def http_get_text(sess: requests.Session, url: str) -> str:
     return r.text
 
 
+
+# ============================
+# NHL Stats API (PP TOI fallback)
+# ============================
+# Why: MoneyPuck sometimes ships skater summaries without reliable PP situation rows.
+# If PP_TOI_* is missing, we can pull season totals from the NHL stats REST API and
+# compute per-game PP TOI.
+# Sources:
+#  - NHL stats REST endpoints: https://api.nhle.com/stats/rest/en/* (cayenneExp queries)
+#  - Gamecenter boxscore also contains powerPlayTimeOnIce per skater for a game.
+
+def _toi_str_to_minutes(x: Any) -> Optional[float]:
+    """Parse TOI to **minutes** (float).
+
+    Handles:
+      - 'MM:SS' strings (common)
+      - numeric minutes (already minutes)
+      - numeric seconds (some NHL stats fields leak seconds)
+
+    Heuristic:
+      - if numeric value is large (> 200), treat it as **seconds** and convert to minutes.
+        (Typical season PP TOI minutes are <~ 400; seconds will be in the thousands.)
+    """
+    if x is None or x is pd.NA:
+        return None
+    s = str(x).strip()
+    if not s:
+        return None
+
+    # numeric path
+    try:
+        v = float(s)
+        if math.isnan(v):
+            return None
+        # seconds leak -> minutes
+        if v > 200:
+            return v / 60.0
+        return v
+    except Exception:
+        pass
+
+    # MM:SS path
+    if ':' in s:
+        try:
+            mm, ss = s.split(':', 1)
+            m = int(mm)
+            sec = int(ss)
+            return m + (sec / 60.0)
+        except Exception:
+            return None
+
+    return None
+
+
+def _season_id_from_date(d: date) -> int:
+    """Return NHL seasonId like 20232024."""
+    y = d.year if d.month >= 7 else d.year - 1
+    return int(f"{y}{y+1}")
+
+
+def fetch_pp_toi_from_nhle_stats(season_id: int, debug: bool = False) -> pd.DataFrame:
+    """Fetch per-skater PP TOI totals from NHL stats REST API.
+
+    Returns DataFrame with columns:
+      - playerId
+      - PP_TOI_min (season total minutes)
+      - gamesPlayed
+      - PP_TOI_per_game
+
+    Notes:
+      - Uses /skater/summary with cayenneExp filters.
+      - Different seasons may expose slightly different field names, so we match a few.
+    """
+    url = "https://api.nhle.com/stats/rest/en/skater/summary"
+    # gameTypeId=2 => regular season
+    cay = f"seasonId={int(season_id)} and gameTypeId=2"
+
+    sess = http_session()
+    params = {
+        'cayenneExp': cay,
+        'isAggregate': 'false',
+        'isGame': 'false',
+        'limit': -1,
+        'start': 0,
+    }
+    try:
+        j = sess.get(url, params=params, timeout=REQUEST_TIMEOUT_SEC).json()
+    except Exception as e:
+        if debug:
+            print(f"[PPTOI] NHL stats fetch failed: {type(e).__name__}: {e}")
+        return pd.DataFrame(columns=["playerId", "PP_TOI_min", "gamesPlayed", "PP_TOI_per_game"])
+
+    rows = list((j or {}).get("data") or [])
+    if not rows:
+        return pd.DataFrame(columns=["playerId", "PP_TOI_min", "gamesPlayed", "PP_TOI_per_game"])
+
+    df = pd.DataFrame(rows)
+
+    # playerId field name can vary (playerId is typical)
+    pid_col = find_col(df, ["playerid", "playerId"]) or "playerId"
+
+    gp_col = find_col(df, ["gamesplayed", "gamesPlayed", "gp"]) or "gamesPlayed"
+
+    # PP TOI field names vary; try common ones
+    pp_cols = [
+        "powerPlayTimeOnIce",
+        "ppTimeOnIce",
+        "ppTimeOnIcePerGame",
+        "powerPlayTimeOnIcePerGame",
+        "timeOnIcePp",
+        "timeOnIcePpPerGame",
+    ]
+    pp_col = None
+    for c in pp_cols:
+        if c in df.columns:
+            pp_col = c
+            break
+
+    # If only per-game exists, we can still use it. Prefer totals.
+    if pp_col is None:
+        # sometimes the API uses camel-case variants
+        like = [c for c in df.columns if 'pp' in str(c).lower() and 'toi' in str(c).lower()]
+        if like:
+            pp_col = like[0]
+
+    if pp_col is None or pid_col not in df.columns or gp_col not in df.columns:
+        if debug:
+            print(f"[PPTOI] NHL stats response missing expected cols. Have pid={pid_col in df.columns}, gp={gp_col in df.columns}, pp_col={pp_col}")
+        return pd.DataFrame(columns=["playerId", "PP_TOI_min", "gamesPlayed", "PP_TOI_per_game"])
+
+    out = pd.DataFrame({
+        "playerId": pd.to_numeric(df[pid_col], errors="coerce"),
+        "gamesPlayed": pd.to_numeric(df[gp_col], errors="coerce"),
+    })
+
+    # PP TOI may be 'MM:SS' string or minutes float
+    pp_raw = df[pp_col]
+    pp_min = pp_raw.apply(_toi_str_to_minutes)
+    out["PP_TOI_min"] = pd.to_numeric(pp_min, errors="coerce")
+
+    # If the field we grabbed is per-game, infer totals
+    if 'pergame' in str(pp_col).lower():
+        out["PP_TOI_per_game"] = out["PP_TOI_min"]
+        out["PP_TOI_min"] = out["PP_TOI_per_game"] * out["gamesPlayed"].replace(0, np.nan)
+    else:
+        out["PP_TOI_per_game"] = out["PP_TOI_min"] / out["gamesPlayed"].replace(0, np.nan)
+
+    out = out.dropna(subset=["playerId"]).copy()
+    out["playerId"] = out["playerId"].astype(int)
+
+    if debug:
+        nn = out["PP_TOI_per_game"].notna().sum()
+        print(f"[PPTOI] NHL stats PP TOI rows: {len(out)} (non-null per-game: {nn}) using field '{pp_col}'")
+
+    return out[["playerId", "PP_TOI_min", "gamesPlayed", "PP_TOI_per_game"]]
 # ============================
 # NHL schedule
 # ============================
@@ -1385,6 +1541,86 @@ def normalize_skaters_5v5(df: pd.DataFrame, debug: bool = False) -> pd.DataFrame
 # ============================
 # MoneyPuck normalize: teams (5v5 defense + team offense context)
 # ============================
+
+# ============================
+# MoneyPuck normalize: skaters (POWER PLAY 5v4)
+# ============================
+def normalize_skaters_pp(df: pd.DataFrame, debug: bool = False) -> pd.DataFrame:
+    """Return per-player PP usage + PP expected offense proxies using MoneyPuck situation=5on4.
+
+    Output columns (joined on playerId+Team):
+      - PP_TOI_min, PP_TOI_per_game
+      - PP_iXG60, PP_iXA60, PP_iP60 (derived)
+      - PP_Role (2=PP1, 1=PP2, 0=none) computed by team PP_TOI rank
+    """
+    out = df.copy()
+    out.columns = out.columns.str.strip()
+
+    col_pid = find_col(out, ["playerid", "playerId"])
+    col_team = find_col(out, ["team", "teamabbrev", "teamAbbrev", "team_abbrev"])
+    col_sit  = find_col(out, ["situation"])
+    col_gp   = find_col(out, ["games_played", "gamesplayed", "gp"])
+    col_it   = find_col(out, ["icetime", "timeonice", "toi", "timeOnIce"])
+
+    if not (col_pid and col_team and col_sit and col_gp and col_it):
+        raise KeyError("Skaters CSV missing required columns for PP (playerId/team/situation/gp/icetime).")
+
+    def norm_sit(x):
+        s = str(x).lower()
+        return "".join(ch for ch in s if ch.isalnum())
+
+    sit = out[col_sit].apply(norm_sit)
+    out = out[sit.astype(str).str.contains('5on4', na=False) | sit.astype(str).str.contains('5v4', na=False) | sit.astype(str).str.contains('pp', na=False) | sit.astype(str).str.contains('powerplay', na=False)].copy()
+    if out.empty:
+        raise RuntimeError("No PP (5on4) rows found in MoneyPuck skaters CSV.")
+
+    # Convert TOI to minutes (MoneyPuck icetime is season total seconds)
+    gp = pd.to_numeric(out[col_gp], errors="coerce").replace(0, np.nan)
+    toi_raw = pd.to_numeric(out[col_it], errors="coerce")
+    toi_min = toi_raw.copy()
+    sec_mask = toi_raw > 10000
+    toi_min.loc[sec_mask] = toi_raw.loc[sec_mask] / 60.0
+
+    out["PP_TOI_min"] = toi_min
+    out["PP_TOI_per_game"] = (toi_min / gp).replace([np.inf, -np.inf], np.nan)
+
+    # iXG / iXA on PP if available
+    col_ixg  = find_col(out, ["I_F_xGoals", "i_f_xgoals", "ixGoals", "ixg", "xGoals"])
+    col_a1   = find_col(out, ["I_F_primaryAssists", "i_f_primaryassists", "primaryassists", "primaryAssists"])
+    col_a2   = find_col(out, ["I_F_secondaryAssists", "i_f_secondaryassists", "secondaryassists", "secondaryAssists"])
+
+    ixg = pd.to_numeric(out[col_ixg], errors="coerce") if col_ixg else pd.Series(np.nan, index=out.index)
+    a1  = pd.to_numeric(out[col_a1], errors="coerce") if col_a1 else pd.Series(np.nan, index=out.index)
+    a2  = pd.to_numeric(out[col_a2], errors="coerce") if col_a2 else pd.Series(np.nan, index=out.index)
+
+    # Per 60 using TOI minutes
+    denom = (toi_min / 60.0).replace(0, np.nan)
+    out["PP_iXG60"] = (ixg / denom).replace([np.inf, -np.inf], np.nan)
+    out["PP_iXA60"] = (((a1.fillna(0) + 0.75*a2.fillna(0))) / denom).replace([np.inf, -np.inf], np.nan)
+    out["PP_iP60"]  = (out["PP_iXG60"].fillna(0) + 0.85*out["PP_iXA60"].fillna(0)).replace([np.inf, -np.inf], np.nan)
+
+    # Team-relative PP role by PP TOI rank (PP1=top5, PP2=next5)
+    out["Team"] = out[col_team].astype(str).str.upper().str.strip().map(norm_team)
+    out["playerId"] = pd.to_numeric(out[col_pid], errors="coerce")
+
+    role = pd.Series(0, index=out.index, dtype=int)
+    for team, g in out.groupby("Team"):
+        g2 = g[["PP_TOI_min"]].copy()
+        g2["_rank"] = g2["PP_TOI_min"].rank(method="first", ascending=False)
+        idx_pp1 = g2.index[g2["_rank"] <= 5]
+        idx_pp2 = g2.index[(g2["_rank"] > 5) & (g2["_rank"] <= 10)]
+        role.loc[idx_pp1] = 2
+        role.loc[idx_pp2] = 1
+
+    out["PP_Role"] = role
+
+    keep = out[["playerId", "Team", "PP_TOI_min", "PP_TOI_per_game", "PP_iXG60", "PP_iXA60", "PP_iP60", "PP_Role"]].copy()
+
+    if debug:
+        print("\n[DEBUG] normalize_skaters_pp: ok", keep.head(8).to_dict(orient="records"))
+
+    return keep
+
 def normalize_teams_5v5(df: pd.DataFrame, debug: bool = False) -> pd.DataFrame:
     out = df.copy()
     out.columns = out.columns.str.strip()
@@ -1487,6 +1723,124 @@ def normalize_goalies(df: pd.DataFrame) -> pd.DataFrame:
     out.loc[sec_mask & (out["icetime"] > 0), "GAA"] = out.loc[sec_mask, "GA"] * 3600.0 / out.loc[sec_mask, "icetime"]
 
     return out
+
+
+# ============================
+# MoneyPuck normalize: teams (POWER PLAY + PENALTY KILL)
+# ============================
+def normalize_teams_pppk(df: pd.DataFrame, debug: bool = False) -> pd.DataFrame:
+    """Team-level PP (5on4 offense) and PK (4on5 defense) context.
+
+    Goal: ALWAYS populate team PP/PK columns when possible.
+
+    Output columns keyed by Team:
+      - Team_PP_xGF60, Team_PP_GF60
+      - Team_PK_xGA60, Team_PK_GA60
+      - PP_Score (higher=better offense), PK_Weak (higher=weaker kill)
+
+    Notes:
+      - MoneyPuck sometimes provides per60 columns (xGoalsForPer60, etc.) AND/OR totals (xGoalsFor, goalsFor, etc.)
+        + icetime. We support both.
+      - situation strings can be messy ("5on4ScoreClose" etc). We normalize and do substring matching.
+    """
+    out = df.copy()
+    out.columns = out.columns.str.strip()
+
+    col_team = find_col(out, ["team", "teamabbrev", "teamAbbrev", "team_abbrev"])
+    col_sit  = find_col(out, ["situation"])
+    col_it   = find_col(out, ["icetime", "timeonice", "toi", "timeOnIce", "TOI", "minutes", "Min"])
+
+    if not (col_team and col_sit):
+        raise KeyError("Teams CSV missing required columns (team/situation).")
+
+    def norm_sit(x):
+        s = str(x).lower()
+        return "".join(ch for ch in s if ch.isalnum())
+
+    out["Team"] = out[col_team].astype(str).str.upper().str.strip().map(norm_team)
+    sit = out[col_sit].apply(norm_sit)
+
+    # PP offense = 5on4
+    pp = out[
+        sit.astype(str).str.contains('5on4', na=False)
+        | sit.astype(str).str.contains('5v4', na=False)
+        | sit.astype(str).str.contains('pp', na=False)
+        | sit.astype(str).str.contains('powerplay', na=False)
+    ].copy()
+
+    # PK defense = 4on5
+    pk = out[
+        sit.astype(str).str.contains('4on5', na=False)
+        | sit.astype(str).str.contains('4v5', na=False)
+        | sit.astype(str).str.contains('pk', na=False)
+        | sit.astype(str).str.contains('penaltykill', na=False)
+    ].copy()
+
+    # Try per60 columns first
+    col_xgf60 = find_col(out, ["xGoalsForPer60", "xGoalsForPer60Minutes", "xGoalsFor60", "xGFper60", "xGF60"])
+    col_gf60  = find_col(out, ["goalsForPer60", "goalsForPer60Minutes", "GFper60", "GF60"])
+    col_xga60 = find_col(out, ["xGoalsAgainstPer60", "xGoalsAgainstPer60Minutes", "xGoalsAgainst60", "xGAper60", "xGA60"])
+    col_ga60  = find_col(out, ["goalsAgainstPer60", "goalsAgainstPer60Minutes", "GAper60", "GA60"])
+
+    # Totals fallbacks (compute per60 from icetime)
+    col_xgf = find_col(out, ["xGoalsFor", "xgoalsfor", "xGF", "xgf", "expectedGoalsFor", "xGoalsForAll"])
+    col_gf  = find_col(out, ["goalsFor", "GoalsFor", "GF", "gf"])
+    col_xga = find_col(out, ["xGoalsAgainst", "xgoalsagainst", "xGA", "xga", "expectedGoalsAgainst", "xGoalsAgainstAll"])
+    col_ga  = find_col(out, ["goalsAgainst", "GoalsAgainst", "GA", "ga"])
+
+    def _per60_from_totals(df0, total_col):
+        if df0.empty or total_col is None or col_it is None:
+            return pd.Series([], dtype='float64')
+        tot = pd.to_numeric(df0[total_col], errors='coerce')
+        toi = pd.to_numeric(df0[col_it], errors='coerce')
+        return per60(tot, toi)
+
+    def _mk_pp(df0):
+        if df0.empty:
+            return pd.DataFrame({"Team": []})
+        if col_xgf60:
+            x = pd.to_numeric(df0[col_xgf60], errors='coerce')
+        else:
+            x = _per60_from_totals(df0, col_xgf)
+        if col_gf60:
+            g = pd.to_numeric(df0[col_gf60], errors='coerce')
+        else:
+            g = _per60_from_totals(df0, col_gf)
+        return pd.DataFrame({"Team": df0["Team"].values, "x": x, "g": g})
+
+    def _mk_pk(df0):
+        if df0.empty:
+            return pd.DataFrame({"Team": []})
+        if col_xga60:
+            x = pd.to_numeric(df0[col_xga60], errors='coerce')
+        else:
+            x = _per60_from_totals(df0, col_xga)
+        if col_ga60:
+            g = pd.to_numeric(df0[col_ga60], errors='coerce')
+        else:
+            g = _per60_from_totals(df0, col_ga)
+        return pd.DataFrame({"Team": df0["Team"].values, "x": x, "g": g})
+
+    pp_m = _mk_pp(pp).groupby("Team", as_index=False).mean(numeric_only=True).rename(
+        columns={"x": "Team_PP_xGF60", "g": "Team_PP_GF60"}
+    )
+    pk_m = _mk_pk(pk).groupby("Team", as_index=False).mean(numeric_only=True).rename(
+        columns={"x": "Team_PK_xGA60", "g": "Team_PK_GA60"}
+    )
+
+    merged = pp_m.merge(pk_m, on="Team", how="outer")
+
+    # Percentile scores (stable 0-100)
+    merged["PP_Score"] = pd.to_numeric(merged.get("Team_PP_xGF60"), errors="coerce").rank(pct=True) * 100.0
+    merged["PK_Weak"] = pd.to_numeric(merged.get("Team_PK_xGA60"), errors="coerce").rank(pct=True) * 100.0
+
+    if debug:
+        print("\n[DEBUG] normalize_teams_pppk: teams rows", len(out), "pp rows", len(pp), "pk rows", len(pk))
+        print("[DEBUG] normalize_teams_pppk: using cols per60", bool(col_xgf60 or col_gf60 or col_xga60 or col_ga60),
+              "totals", bool(col_xgf or col_gf or col_xga or col_ga), "icetime", col_it)
+        print("[DEBUG] normalize_teams_pppk: head", merged.head(8).to_dict(orient="records"))
+
+    return merged
 
 def build_team_goalie_map(goalies_df: pd.DataFrame) -> Dict[str, Dict[str, Any]]:
     m: Dict[str, Dict[str, Any]] = {}
@@ -1685,28 +2039,73 @@ def pick_sog_from_row(r: dict) -> Optional[int]:
         return None
     return None
 
+def _parse_game_dt(row: Dict[str, Any]) -> Optional[datetime]:
+    """Best-effort parse of a game date/time from common game-log row shapes."""
+    # Common keys across feeds
+    for k in ("gameDate", "date", "game_date", "startTimeUTC", "start_time_utc", "startTime", "gameTimeUTC"):
+        v = row.get(k)
+        if isinstance(v, str) and v.strip():
+            s = v.strip()
+            # Normalize trailing Z to ISO offset
+            if s.endswith("Z"):
+                s = s[:-1] + "+00:00"
+            # Try ISO datetime
+            try:
+                return datetime.fromisoformat(s)
+            except Exception:
+                pass
+            # Try ISO date only
+            try:
+                return datetime.fromisoformat(s[:10])
+            except Exception:
+                pass
+
+    # Nested shapes sometimes have the date under a sub-dict
+    for nk in ("game", "event", "matchup"):
+        v = row.get(nk)
+        if isinstance(v, dict):
+            dt = _parse_game_dt(v)
+            if dt:
+                return dt
+
+    return None
+
 def compute_lastN_features(payload: Dict[str, Any], n10: int = 10, n5: int = 5) -> Dict[str, Any]:
     rows = _extract_game_rows(payload)
+
+    # Ensure most-recent-first ordering. Some feeds return oldest->newest, which breaks drought counters.
+    try:
+        keyed = [(_parse_game_dt(r), i, r) for i, r in enumerate(rows)]
+        if any(dt is not None for dt, _, _ in keyed):
+            keyed.sort(key=lambda t: (t[0] is None, t[0] if t[0] is not None else datetime.min, t[1]), reverse=True)
+            rows = [r for _, _, r in keyed]
+    except Exception:
+        pass
+
 
     shots: List[int] = []
     goals: List[int] = []
     assists: List[int] = []
+    ppp: List[int] = []  # power play points
 
     for r in rows:
         sog = pick_sog_from_row(r)
         g = _pick_stat(r, ("goals", "g"))
         a = _pick_stat(r, ("assists", "a"))
+        pp = _pick_stat(r, ("powerPlayPoints", "powerplayPoints", "ppPoints"))
 
-        if sog is None and g is None and a is None:
+        if sog is None and g is None and a is None and pp is None:
             continue
 
         shots.append(int(sog) if sog is not None else 0)
         goals.append(int(g) if g is not None else 0)
         assists.append(int(a) if a is not None else 0)
+        ppp.append(int(pp) if pp is not None else 0)
 
     v10_shots = shots[:n10]
     v10_goals = goals[:n10]
     v10_assists = assists[:n10]
+    v10_ppp = ppp[:n10]
     v5_shots = shots[:n5]
     v5_goals = goals[:n5]
     v5_assists = assists[:n5]
@@ -1735,17 +2134,38 @@ def compute_lastN_features(payload: Dict[str, Any], n10: int = 10, n5: int = 5) 
     g5_total = sum(v5_goals) if v5_goals else None
     a5_total = sum(v5_assists) if v5_assists else None
     a10_total = sum(v10_assists) if v10_assists else None
+    ppp10_total = sum(v10_ppp) if v10_ppp else None
 
     p10_total = (sum(v10_goals) + sum(v10_assists)) if (v10_goals or v10_assists) else None
     g10_total = sum(v10_goals) if v10_goals else None
     s10_total = sum(v10_shots) if v10_shots else None
 
     p10 = [(g + a) for g, a in zip(v10_goals, v10_assists)]
+
+    newest_dt = _parse_game_dt(rows[0]) if rows else None
+    newest_sog = v10_shots[0] if v10_shots else None
+    # If logs appear stale/missing the most recent game, avoid reporting misleading drought counts.
+    drought_verified = True
+    try:
+        if newest_dt is None:
+            drought_verified = False
+        else:
+            if newest_dt.date() < (date.today() - timedelta(days=2)):
+                drought_verified = False
+    except Exception:
+        drought_verified = False
+
     drought_p = drought_since(p10, 1)
     drought_a = drought_since(v10_assists, 1)
     drought_g = drought_since(v10_goals, 1)
     drought_sog2 = drought_since(v10_shots, 2)
     drought_sog3 = drought_since(v10_shots, 3)
+
+    if not drought_verified:
+        drought_sog2 = None
+        drought_sog3 = None
+
+    drought_ppp = drought_since(v10_ppp, 1)
 
     return {
         "Median10_SOG": med10,
@@ -1757,12 +2177,17 @@ def compute_lastN_features(payload: Dict[str, Any], n10: int = 10, n5: int = 5) 
         "G10_total": g10_total,
         "S10_total": s10_total,
         "N_games_found": len(shots),
+        "LastGameDate": (newest_dt.date().isoformat() if newest_dt else None),
+        "LastGameSOG": newest_sog,
+        "SOG_Drought_Verified": drought_verified,
         "A10_total": a10_total,
+        "PPP10_total": ppp10_total,
         "Drought_P": drought_p,
         "Drought_A": drought_a,
         "Drought_G": drought_g,
         "Drought_SOG2": drought_sog2,
         "Drought_SOG3": drought_sog3,
+        "Drought_PPP": drought_ppp,
     }
 
 
@@ -1945,16 +2370,19 @@ def conf_assists(
     reg_gap_a10: Optional[float] = None,
     assist_vol: Optional[float] = None,
     i5v5_shotassists60: Optional[float] = None,
+    pp_share_pct_game: Optional[float] = None,
+    pp_ixA60: Optional[float] = None,
+    pp_matchup: Optional[float] = None,
 ) -> int:
     # ----------------------------
     # 1) Baseline (cannot be penalized by optional signals)
     # ----------------------------
     base = (
-        0.42 * ixa_pct +
-        0.14 * ixg_pct +
-        0.14 * stab +
+        0.45 * ixa_pct +
+        0.10 * ixg_pct +
+        0.17 * stab +
         0.12 * defweak +
-        0.08 * goalieweak
+        0.06 * goalieweak
     )
     base += 0.10 * (toi_pct - 50.0)  # light usage tilt
 
@@ -1978,6 +2406,20 @@ def conf_assists(
     if i5v5_shotassists60 is not None and not (isinstance(i5v5_shotassists60, float) and math.isnan(i5v5_shotassists60)):
         # Treat 2.0 as neutral; reward above (cap bonus)
         bonus += clamp((i5v5_shotassists60 - 2.0) * 2.0, 0.0, 5.0)
+
+    # Power-play dagger bonus: ONLY if PP usage is real and matchup is favorable (never negative)
+    # This is meant to tighten assists without creating noise.
+    try:
+        if pp_share_pct_game is not None and pp_ixA60 is not None and pp_matchup is not None:
+            # Strong PP facilitator profile
+            if (pp_share_pct_game >= 22.0 and pp_ixA60 >= 1.0 and pp_matchup >= 58.0) or (pp_share_pct_game >= 28.0 and pp_ixA60 >= 0.85):
+                # scale 0..5 based on how far above thresholds we are
+                s1 = clamp((pp_share_pct_game - 18.0) / 18.0, 0.0, 1.0)
+                s2 = clamp((pp_ixA60 - 0.80) / 1.20, 0.0, 1.0)
+                s3 = clamp((pp_matchup - 50.0) / 25.0, 0.0, 1.0)
+                bonus += 5.0 * (0.45 * s1 + 0.35 * s2 + 0.20 * s3)
+    except Exception:
+        pass
 
     # ----------------------------
     # 3) Final clamp
@@ -2366,10 +2808,222 @@ def build_tracker(today_local: date, debug: bool = False) -> str:
     ).round(2)
 
 
+    # POWER PLAY skaters (5v4)
+    try:
+        skpp = normalize_skaters_pp(sk_raw, debug=debug)
+        sk = sk.merge(skpp, on=["playerId", "Team"], how="left")
+    except Exception as e:
+        if debug:
+            print(f"WARNING: PP skaters unavailable; continuing neutral. ({type(e).__name__}: {e})")
+        for c in ["PP_TOI_min", "PP_TOI_per_game", "PP_iXG60", "PP_iXA60", "PP_iP60", "PP_Role"]:
+            sk[c] = np.nan
+
+
+
+    
+    # Fallback: if PP_TOI is missing, pull season PP TOI from NHL stats REST API
+    try:
+        if ("PP_TOI_per_game" not in sk.columns) or (sk["PP_TOI_per_game"].notna().sum() < 5):
+            season_id = _season_id_from_date(today_local)
+            pp_toi = fetch_pp_toi_from_nhle_stats(season_id, debug=debug)
+            if not pp_toi.empty:
+                sk = sk.merge(pp_toi[["playerId", "PP_TOI_min", "PP_TOI_per_game"]], on="playerId", how="left", suffixes=("", "_nhle"))
+                # prefer MoneyPuck when available
+                if "PP_TOI_min_nhle" in sk.columns:
+                    sk["PP_TOI_min"] = sk["PP_TOI_min"].fillna(sk["PP_TOI_min_nhle"]) 
+                    sk["PP_TOI_per_game"] = sk["PP_TOI_per_game"].fillna(sk["PP_TOI_per_game_nhle"]) 
+                    sk.drop(columns=[c for c in ["PP_TOI_min_nhle","PP_TOI_per_game_nhle"] if c in sk.columns], inplace=True)
+            if debug:
+                nn = int(sk["PP_TOI_per_game"].notna().sum()) if "PP_TOI_per_game" in sk.columns else 0
+                print(f"[PPTOI] after NHL fallback: non-null PP_TOI_per_game rows = {nn}")
+    except Exception as e:
+        if debug:
+            print(f"WARNING: NHL PP TOI fallback failed; continuing neutral. ({type(e).__name__}: {e})")
+
+
     # 5v5 teams
     try:
         teams_raw = load_moneypuck_best_effort(sess, "teams")
         t5 = normalize_teams_5v5(teams_raw, debug=debug)
+
+
+        # POWER PLAY / PENALTY KILL team context
+        try:
+            tpp = normalize_teams_pppk(teams_raw, debug=debug)
+            # Team PP strength
+            sk = sk.merge(tpp[["Team", "Team_PP_xGF60", "Team_PP_GF60", "PP_Score", "Team_PK_xGA60", "Team_PK_GA60", "PK_Weak"]], on="Team", how="left")
+            # Opponent PK weakness (join on Opp)
+            opp_pk = tpp[["Team", "Team_PK_xGA60", "Team_PK_GA60", "PK_Weak"]].rename(columns={
+                "Team": "Opp",
+                "Team_PK_xGA60": "Opp_PK_xGA60",
+                "Team_PK_GA60": "Opp_PK_GA60",
+                "PK_Weak": "Opp_PK_Weak",
+            })
+            sk = sk.merge(opp_pk, on="Opp", how="left")
+        except Exception as e:
+            if debug:
+                print(f"WARNING: Team PP/PK unavailable; continuing neutral. ({type(e).__name__}: {e})")
+            for c in ["Team_PP_xGF60", "Team_PP_GF60", "PP_Score", "Team_PK_xGA60", "Team_PK_GA60", "PK_Weak", "Opp_PK_xGA60", "Opp_PK_GA60", "Opp_PK_Weak"]:
+                sk[c] = np.nan
+
+
+        # -------------------------------------------------
+
+
+        # POWER PLAY derived columns (UI + downstream stability)
+
+
+        # -------------------------------------------------
+
+
+        # Normalize naming so app.py can rely on stable columns.
+
+
+        # PP_TOI: minutes per game on PP
+
+
+        if "PP_TOI_per_game" in sk.columns and ("PP_TOI" not in sk.columns or pd.to_numeric(sk.get("PP_TOI"), errors="coerce").isna().all()):
+
+
+            sk["PP_TOI"] = pd.to_numeric(sk["PP_TOI_per_game"], errors="coerce")
+
+
+
+        # PP_Points60: proxy for PP point involvement per 60
+
+
+        if "PP_iP60" in sk.columns and ("PP_Points60" not in sk.columns or pd.to_numeric(sk.get("PP_Points60"), errors="coerce").isna().all()):
+
+
+            sk["PP_Points60"] = pd.to_numeric(sk["PP_iP60"], errors="coerce")
+
+
+
+        # PP_TOI_Pct: share of total TOI spent on PP (0-100)
+
+
+        if "PP_TOI_min" in sk.columns and "TOI" in sk.columns and ("PP_TOI_Pct" not in sk.columns or pd.to_numeric(sk.get("PP_TOI_Pct"), errors="coerce").isna().all()):
+
+
+            denom = pd.to_numeric(sk["TOI"], errors="coerce")
+
+
+            num = pd.to_numeric(sk["PP_TOI_min"], errors="coerce")
+
+
+            with np.errstate(divide='ignore', invalid='ignore'):
+
+
+                sk["PP_TOI_Pct"] = (num / denom) * 100.0
+
+
+            sk["PP_TOI_Pct"] = sk["PP_TOI_Pct"].replace([np.inf, -np.inf], np.nan)
+
+
+        # ---------------------------------
+        # PP_TOI normalization + PP_TOI share (per-game)
+        # ---------------------------------
+        # We want minutes-based per-game PP deployment (NHL-like).
+        # Some feeds leak seconds; fix with conservative heuristics.
+        #
+        # Targets:
+        #   PP_TOI_min       ~ 0..400 (season total PP minutes)
+        #   PP_TOI_per_game  ~ 0..6   (PP minutes per game)
+        #   TOI_per_game     ~ 8..30  (total minutes per game)
+        #
+        # If values are wildly above those ranges, assume seconds and convert.
+        if "PP_TOI_min" in sk.columns:
+            _pp_min = pd.to_numeric(sk["PP_TOI_min"], errors="coerce")
+            # season-total PP seconds are commonly 2,000-12,000
+            sk["PP_TOI_min"] = _pp_min.where(~(_pp_min > 500), _pp_min / 60.0)
+
+        if "PP_TOI_per_game" in sk.columns:
+            _pp_pg = pd.to_numeric(sk["PP_TOI_per_game"], errors="coerce")
+            # per-game PP seconds are commonly 60-360
+            sk["PP_TOI_per_game"] = _pp_pg.where(~(_pp_pg > 10), _pp_pg / 60.0)
+
+        # Some builds already carry TOI_per_game; normalize to minutes if it leaks seconds.
+        if "TOI_per_game" in sk.columns:
+            _toi_pg = pd.to_numeric(sk["TOI_per_game"], errors="coerce")
+            sk["TOI_per_game"] = _toi_pg.where(~(_toi_pg > 60), _toi_pg / 60.0)
+
+        # Compute PP share using per-game values (preferred).
+        # This avoids relying on season-total TOI columns that may not exist in the tracker.
+        if ("PP_TOI_Share" not in sk.columns) or pd.to_numeric(sk.get("PP_TOI_Share"), errors="coerce").isna().all():
+            if "PP_TOI_per_game" in sk.columns and "TOI_per_game" in sk.columns:
+                pp_pg = pd.to_numeric(sk["PP_TOI_per_game"], errors="coerce")
+                toi_pg = pd.to_numeric(sk["TOI_per_game"], errors="coerce")
+                with np.errstate(divide='ignore', invalid='ignore'):
+                    sk["PP_TOI_Share"] = pp_pg / toi_pg
+                sk["PP_TOI_Share"] = sk["PP_TOI_Share"].replace([np.inf, -np.inf], np.nan)
+                sk["PP_TOI_Share"] = sk["PP_TOI_Share"].clip(lower=0.0, upper=1.0)
+                sk["PP_TOI_Pct_Game"] = (sk["PP_TOI_Share"] * 100.0).round(1)
+
+        # Safety: if PP_TOI_Share didn't persist for any reason but PP_TOI_Pct_Game exists, recreate it
+        if 'PP_TOI_Share' not in sk.columns and 'PP_TOI_Pct_Game' in sk.columns:
+            sk['PP_TOI_Share'] = (pd.to_numeric(sk['PP_TOI_Pct_Game'], errors='coerce') / 100.0).clip(lower=0.0, upper=1.0)
+
+
+        # If PP_TOI_Pct (season-share) is missing and we don't have season totals,
+        # approximate it from per-game share (still useful for UI sorting).
+        if ("PP_TOI_Pct" not in sk.columns) or pd.to_numeric(sk.get("PP_TOI_Pct"), errors="coerce").isna().all():
+            if "PP_TOI_Pct_Game" in sk.columns:
+                sk["PP_TOI_Pct"] = pd.to_numeric(sk["PP_TOI_Pct_Game"], errors="coerce")
+
+        # PP_Matchup: blend of team PP strength and opponent PK weakness (0-100)
+
+
+        if ("PP_Matchup" not in sk.columns) or pd.to_numeric(sk.get("PP_Matchup"), errors="coerce").isna().all():
+
+
+            pp_score = pd.to_numeric(sk.get("PP_Score"), errors="coerce")
+
+
+            opp_pk_weak = pd.to_numeric(sk.get("Opp_PK_Weak"), errors="coerce")
+
+
+            # If either side is missing, default to 50 (neutral)
+
+
+            pp_score = pp_score.fillna(50.0)
+
+
+            opp_pk_weak = opp_pk_weak.fillna(50.0)
+
+
+            sk["PP_Matchup"] = (0.55 * pp_score + 0.45 * opp_pk_weak).round(1)
+
+
+        # -------------------------------------------------
+        # ASSISTS DAGGER (power-play facilitation)
+        # -------------------------------------------------
+        # Clean, low-noise signal: high PP share + strong PP iXA60 + favorable PP matchup.
+        # Outputs:
+        #   - Assist_Dagger (0-100)
+        #   - Assist_PP_Proof (bool)
+        try:
+            # Prefer PP_TOI_Share if present; fall back to PP_TOI_Pct_Game if that's what the tracker has
+            if 'PP_TOI_Share' in sk.columns:
+                pp_share = pd.to_numeric(sk.get('PP_TOI_Share'), errors='coerce')
+                pp_share_pct = (pp_share * 100.0).replace([np.inf, -np.inf], np.nan)
+            else:
+                pp_share_pct = pd.to_numeric(sk.get('PP_TOI_Pct_Game'), errors='coerce')
+                pp_share = (pp_share_pct / 100.0).replace([np.inf, -np.inf], np.nan)
+            pp_ixA60 = pd.to_numeric(sk.get("PP_iXA60"), errors="coerce")
+            pp_m = pd.to_numeric(sk.get("PP_Matchup"), errors="coerce")
+
+            s1 = ((pp_share_pct - 12.0) / 22.0).clip(lower=0.0, upper=1.0)
+            s2 = ((pp_ixA60 - 0.80) / 1.20).clip(lower=0.0, upper=1.0)
+            s3 = ((pp_m - 50.0) / 25.0).clip(lower=0.0, upper=1.0)
+
+            sk["Assist_Dagger"] = (100.0 * (0.45 * s1 + 0.35 * s2 + 0.20 * s3)).round(1)
+            # Trigger the dagger only when PP role + facilitation are real (low-noise)
+            proof = ((pp_share_pct >= 17.5) & (pp_ixA60 >= 1.20) & (pp_m >= 56.0)) | ((pp_share_pct >= 24.0) & (pp_ixA60 >= 0.95))
+            sk["Assist_PP_Proof"] = proof.fillna(False)
+        except Exception:
+            sk["Assist_Dagger"] = np.nan
+            sk["Assist_PP_Proof"] = False
+
 
         t5_opp = t5[["Team", "opp_5v5_xGA60", "opp_5v5_HDCA60", "opp_5v5_SlotSA60"]].copy()
         sk = sk.merge(t5_opp, left_on="Opp", right_on="Team", how="left")
@@ -2670,6 +3324,9 @@ def build_tracker(today_local: date, debug: bool = False) -> str:
             reg_gap_a10=safe_float(r.get("Reg_Gap_A10")),
             assist_vol=safe_float(r.get("Assist_Volume")),
             i5v5_shotassists60=safe_float(r.get("i5v5_shotAssists60")),
+            pp_share_pct_game=safe_float(r.get("PP_TOI_Pct_Game")),
+            pp_ixA60=safe_float(r.get("PP_iXA60")),
+            pp_matchup=safe_float(r.get("PP_Matchup")),
         ),
         axis=1
     )
@@ -2862,6 +3519,31 @@ def build_tracker(today_local: date, debug: bool = False) -> str:
     sk.loc[gf_fail, "Matrix_Assists"] = "FAIL_GF"
 
     # -------------------------
+    # 🗡️ Assists dagger (PP facilitation edge)
+    # Ensure this is computed AFTER PP columns are populated.
+    # -------------------------
+    try:
+        pp_share_pct = pd.to_numeric(sk.get("PP_TOI_Pct_Game"), errors="coerce")
+        pp_ixA60 = pd.to_numeric(sk.get("PP_iXA60"), errors="coerce")
+        pp_m = pd.to_numeric(sk.get("PP_Matchup"), errors="coerce")
+
+        # percentile ranks (0..1) -> weighted dagger score (0..100)
+        s1 = pp_share_pct.rank(pct=True).fillna(0)
+        s2 = pp_ixA60.rank(pct=True).fillna(0)
+        s3 = pp_m.rank(pct=True).fillna(0)
+
+        sk["Assist_Dagger"] = (100.0 * (0.45 * s1 + 0.35 * s2 + 0.20 * s3)).round(1)
+
+        # Proof trigger: real PP role + real creation + at least decent matchup
+        proof = ((pp_share_pct >= 17.5) & (pp_ixA60 >= 1.20) & (pp_m >= 56.0)) | ((pp_share_pct >= 24.0) & (pp_ixA60 >= 0.95))
+        sk["Assist_PP_Proof"] = proof.fillna(False)
+    except Exception:
+        if "Assist_Dagger" not in sk.columns:
+            sk["Assist_Dagger"] = np.nan
+        if "Assist_PP_Proof" not in sk.columns:
+            sk["Assist_PP_Proof"] = False
+
+    # -------------------------
     # Best market
     # -------------------------
     def choose_best(r: pd.Series) -> Tuple[str, int]:
@@ -2990,6 +3672,29 @@ def build_tracker(today_local: date, debug: bool = False) -> str:
         "Drought_A": sk.get("Drought_A"),
         "Drought_G": sk.get("Drought_G"),
         "Drought_SOG": sk.get("Drought_SOG"),
+        "PPP10_total": sk.get("PPP10_total"),
+        "Drought_PPP": sk.get("Drought_PPP"),
+
+        "PP_Role": sk.get("PP_Role"),
+        "PP_TOI": sk.get("PP_TOI"),
+        "PP_TOI_min": sk.get("PP_TOI_min"),
+        "PP_TOI_per_game": sk.get("PP_TOI_per_game"),
+        "PP_TOI_Share": sk.get("PP_TOI_Share"),
+        "PP_TOI_Pct_Game": sk.get("PP_TOI_Pct_Game"),
+        "PP_TOI_Pct": sk.get("PP_TOI_Pct"),
+        "PP_Points60": sk.get("PP_Points60"),
+        "PP_iXG60": sk.get("PP_iXG60"),
+        "PP_iXA60": sk.get("PP_iXA60"),
+        "Team_PP_xGF60": sk.get("Team_PP_xGF60"),
+        "Opp_PK_xGA60": sk.get("Opp_PK_xGA60"),
+        "PP_Matchup": sk.get("PP_Matchup"),
+        "PP_TOI_min": sk.get("PP_TOI_min"),
+        "PP_TOI_per_game": sk.get("PP_TOI_per_game"),
+        "PP_TOI_Pct": sk.get("PP_TOI_Pct"),
+        "PP_TOI_Pct_Game": sk.get("PP_TOI_Pct_Game"),
+        "PP_iXA60": sk.get("PP_iXA60"),
+        "Assist_Dagger": sk.get("Assist_Dagger"),
+        "Assist_PP_Proof": sk.get("Assist_PP_Proof"),
 
         "Line": "",
         "Odds": "",
