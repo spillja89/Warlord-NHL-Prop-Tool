@@ -20,7 +20,6 @@ jobs:
     env:
       TZ: America/Chicago
       BALLDONTLIE_API_KEY: ${{ secrets.BALLDONTLIE_API_KEY }}
-      SPORTSDATAIO_KEY: ${{ secrets.SPORTSDATAIO_KEY }}
 
     steps:
       - name: Checkout repo
@@ -30,11 +29,12 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
-          cache: "pip"              # ✅ big speedup
+          cache: "pip"
           cache-dependency-path: |
             requirements.txt
 
       - name: Install dependencies
+        shell: bash
         run: |
           set -euo pipefail
           python -m pip install --upgrade pip
@@ -48,35 +48,38 @@ jobs:
           key: cache-${{ runner.os }}-${{ hashFiles('nhl_edge.py', 'odds_ev_bdl.py') }}
           restore-keys: |
             cache-${{ runner.os }}-
-- name: Prefetch team shots
-  run: |
-    set -euo pipefail
-    python prefetch_teamshots_today.py
 
+      - name: Prefetch team shots
+        shell: bash
+        run: |
+          set -euo pipefail
+          python prefetch_teamshots_today.py
 
       - name: Build tracker (edge)
+        shell: bash
         run: |
           set -euo pipefail
           mkdir -p output
           echo "Local date (TZ=$TZ): $(date -I)"
           python nhl_edge.py --date "$(date -I)"
-
-- name: Pin tracker_latest.csv (canonical output)
-  run: |
-    set -euo pipefail
-    latest_edge="$(ls -1t output/tracker_*.csv 2>/dev/null | head -n 1 || true)"
-    if [ -z "$latest_edge" ]; then
-      echo "No tracker_*.csv produced by nhl_edge.py"
-      exit 1
-    fi
-    cp "$latest_edge" output/tracker_latest.csv
-    echo "Pinned $latest_edge -> output/tracker_latest.csv"
-
           echo ""
           echo "After nhl_edge.py, output/:"
           ls -lah output || true
 
+      - name: Pin tracker_latest.csv (canonical output)
+        shell: bash
+        run: |
+          set -euo pipefail
+          latest_edge="$(ls -1t output/tracker_*.csv 2>/dev/null | head -n 1 || true)"
+          if [ -z "$latest_edge" ]; then
+            echo "No tracker_*.csv produced by nhl_edge.py"
+            exit 1
+          fi
+          cp "$latest_edge" output/tracker_latest.csv
+          echo "Pinned $latest_edge -> output/tracker_latest.csv"
+
       - name: Commit & push tracker_latest.csv
+        shell: bash
         run: |
           set -euo pipefail
           git config user.name "github-actions[bot]"
