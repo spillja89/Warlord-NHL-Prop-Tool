@@ -31,6 +31,7 @@ What’s new:
 
 import os
 import math
+import numpy as np
 from typing import Dict, Optional, Tuple, List, Any
 
 import requests
@@ -45,6 +46,25 @@ BDL_NHL_BASE = "https://api.balldontlie.io/nhl/v1"
 # -----------------------------
 # Small utilities
 # -----------------------------
+
+# -------------------------
+# Team normalization (must match nhl_edge.py)
+# -------------------------
+TEAM_ALIAS = {
+    # common book/API short codes -> NHL tricodes used by our tracker
+    "TB": "TBL", "TBL": "TBL",
+    "LA": "LAK", "LAK": "LAK",
+    "SJ": "SJS", "SJS": "SJS",
+    "NJ": "NJD", "NJD": "NJD",
+    "MON": "MTL", "MTL": "MTL",
+    "CAL": "CGY", "CGY": "CGY",
+    "PHO": "UTA", "PHX": "UTA", "ARI": "UTA", "ARZ": "UTA", "UTA": "UTA",
+    "VEG": "VGK", "VGK": "VGK",
+}
+
+def norm_team(x: str) -> str:
+    s = (x or "").strip().upper()
+    return TEAM_ALIAS.get(s, s)
 
 def _safe_float(x) -> float | None:
     try:
@@ -312,7 +332,7 @@ def _player_team_tricode(player_obj: dict) -> str:
 
 _MARKETS = {
     # mapping from BDL prop_type -> (MarketName, baseline_min, valid_range)
-    "shots_on_goal": ("SOG", 2.0, (1.5, 8.5)),
+    "shots_on_goal": ("SOG", 1.5, (1.5, 8.5)),
     "points": ("Points", 0.5, (0.5, 4.5)),
     "assists": ("Assists", 0.5, (0.5, 3.5)),
     "goals": ("Goal", 0.5, (0.5, 2.5)),
@@ -342,14 +362,39 @@ def _market_cfgs() -> Dict[str, dict]:
             "alpha": 0.50,
         },
         "Goal": {
-            "exp": ["Exp_G_10", "Exp_Goals_10", "Exp_G10"],
-            "fallback": [("L10_G", 1 / 10), ("G10_total", 1 / 10), ("GPG", 1.0)],
+            "exp": [
+                "Exp_G_10", "Exp_Goals_10", "Exp_G10",
+                # common variants
+                "Exp_Goal_10", "ExpGoals_10", "ExpG_10",
+                "Exp_G_10_total", "Exp_G10_total",
+                # expected-goals style variants (if your tracker uses them)
+                "iXG_10", "ixG_10", "xG_10", "xGoals_10",
+            ],
+            "fallback": [
+                ("L10_G", 1 / 10),
+                ("G10_total", 1 / 10),
+                ("GPG", 1.0),
+                # optional extra variants if present
+                ("Goals_last10", 1 / 10),
+                ("G_last10_total", 1 / 10),
+            ],
             "league_mu": 0.30,
             "alpha": 0.70,
         },
         "ATG": {
-            "exp": ["Exp_G_10", "Exp_Goals_10", "Exp_G10"],
-            "fallback": [("L10_G", 1 / 10), ("G10_total", 1 / 10), ("GPG", 1.0)],
+            "exp": [
+                "Exp_G_10", "Exp_Goals_10", "Exp_G10",
+                "Exp_Goal_10", "ExpGoals_10", "ExpG_10",
+                "Exp_G_10_total", "Exp_G10_total",
+                "iXG_10", "ixG_10", "xG_10", "xGoals_10",
+            ],
+            "fallback": [
+                ("L10_G", 1 / 10),
+                ("G10_total", 1 / 10),
+                ("GPG", 1.0),
+                ("Goals_last10", 1 / 10),
+                ("G_last10_total", 1 / 10),
+            ],
             "league_mu": 0.30,
             "alpha": 0.70,
         },
@@ -362,13 +407,14 @@ def _target_line(market: str, mu: float) -> float:
     mu = float(mu or 0.0)
 
     if m == "SOG":
-        if mu >= 4.2:
-            return 4.5
-        if mu >= 3.3:
-            return 3.5
-        if mu >= 2.7:
+        # Keep mainline sensible; books usually post 1.5/2.5/3.5/4.5 (alts exist above).
+        if mu < 2.1:
+            return 1.5
+        if mu < 2.9:
             return 2.5
-        return 2.0
+        if mu < 3.6:
+            return 3.5
+        return 4.5
 
     if m == "Points":
         if mu >= 1.45:
@@ -466,8 +512,18 @@ def merge_bdl_props_altlines(
             return _safe_float(mkt.get("over_odds"))
         return _safe_float(mkt.get("odds"))
 
-    # bucket best odds per (player, team, market, line)
-    best_per_line: Dict[Tuple[str, str, str, float], Tuple[float, str]] = {}
+
+    def _vendor_priority_list() -> list[str]:
+        # Comma-separated vendor preference list, e.g.:
+        #   BDL_VENDOR_PRIORITY="fanduel,draftkings,betmgm,caesars"
+        # If unset, we keep existing behavior (best odds).
+        raw = str(os.getenv("BDL_VENDOR_PRIORITY", "") or "").strip()
+        if not raw:
+            return []
+        return [v.strip().lower() for v in raw.split(",") if v.strip()]
+
+    # bucket all odds per (player, team, market, line)
+    all_per_line: Dict[Tuple[str, str, str, float], list[Tuple[float, str]]] = {}
 
     for pr in props:
         pid = pr.get("player_id")
@@ -500,13 +556,38 @@ def merge_bdl_props_altlines(
             continue
 
         key = (_norm_name(full_name), team, mkt_name, float(lv))
-        curr = best_per_line.get(key)
         vendor = str(pr.get("vendor") or "")
-        if curr is None or float(odds) > float(curr[0]):
-            best_per_line[key] = (float(odds), vendor)
+        all_per_line.setdefault(key, []).append((float(odds), vendor))
 
-    if not best_per_line:
+    if not all_per_line:
         return df
+
+    vendor_pri = _vendor_priority_list()
+
+    # Choose one odds per (player,team,market,line). If vendor priority is provided,
+    # pick the first matching vendor's odds; otherwise keep best-odds behavior.
+    best_per_line: Dict[Tuple[str, str, str, float], Tuple[float, str]] = {}
+    for k, arr in all_per_line.items():
+        if not arr:
+            continue
+        if vendor_pri:
+            # normalize vendors in arr for matching
+            norm = [(o, str(v).lower()) for o, v in arr]
+            picked = None
+            for want in vendor_pri:
+                for o, v in norm:
+                    if v == want:
+                        picked = (o, v)
+                        break
+                if picked is not None:
+                    break
+            if picked is not None:
+                best_per_line[k] = (float(picked[0]), str(picked[1]))
+                continue
+        # fallback: pick best odds
+        o, v = max(arr, key=lambda t: float(t[0]))
+        best_per_line[k] = (float(o), str(v))
+
 
     # attach keys to tracker
     if "Player_norm" in df.columns:
@@ -578,9 +659,37 @@ def merge_bdl_props_altlines(
                 mu = float(cfgs[market]["league_mu"])
             tgt = _target_line(market, mu)
 
+            # SOG guardrail: if our name/team join ever misfires, mu can be way off.
+            # For shots_on_goal, re-anchor the target to the player's observed SOG rate when available.
+            if market == "SOG":
+                proxy = None
+                for col in ("SOGPG", "SOG_per_game", "S10_total", "SOG_last10_total", "S10_total_adj"):
+                    if col in row.index:
+                        v = row.get(col)
+                        try:
+                            v = float(v)
+                        except Exception:
+                            v = None
+                        if v is None or (isinstance(v, float) and (np.isnan(v) or np.isinf(v))):
+                            continue
+                        # If this is a last-10 total, convert to per-game.
+                        if col in ("S10_total", "SOG_last10_total", "S10_total_adj") and v > 0:
+                            v = v / 10.0
+                        proxy = v
+                        break
+                if proxy is not None and proxy > 0:
+                    tgt = _target_line(market, proxy)
+
             # pick nearest available line; tie-break: prefer the higher line for stars (more "natural")
             arr_sorted = sorted(arr)
-            best_lv = min(arr_sorted, key=lambda x: (abs(float(x) - float(tgt)), -float(x)))
+            best_lv = min(
+                arr_sorted,
+                # For SOG we prefer the lower line on ties (more realistic baseline);
+                # for other markets keep the previous (slight higher-line preference).
+                key=(lambda x: (abs(float(x) - float(tgt)), float(x)))
+                    if market == "SOG"
+                    else (lambda x: (abs(float(x) - float(tgt)), -float(x))),
+            )
             chosen_line.append(float(best_lv))
             chosen_odds.append(_get_odds(kp, best_lv))
             chosen_book.append(_get_vendor(kp, best_lv))

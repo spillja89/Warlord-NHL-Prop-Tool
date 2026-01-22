@@ -1877,8 +1877,8 @@ def resolve_goalie_for_team(
 
     sub = gdf[gdf["Team"] == team_abbr].copy()
     if sub.empty:
-        fallback["Goalie"] = starter_name
-        fallback["Source"] = "dailyfaceoff_name_only"
+        # Starter name did not match any goalie on this team; keep team-proxy goalie (prevents wrong-team names).
+        fallback["Source"] = "dailyfaceoff_team_not_found_using_team_proxy"
         return fallback
 
     want = _norm_name(starter_name)
@@ -1891,8 +1891,8 @@ def resolve_goalie_for_team(
             hit = sub[sub["__n"].str.contains(rf"\b{re.escape(want_last)}\b", regex=True, na=False)]
 
     if hit.empty:
-        fallback["Goalie"] = starter_name
-        fallback["Source"] = "dailyfaceoff_name_fallback_stats"
+        # Could not map starter name to a goalie on this team; keep team-proxy goalie instead of wrong-team name.
+        fallback["Source"] = "dailyfaceoff_name_mismatch_using_team_proxy"
         return fallback
 
     hit_row = hit.sort_values("GP", ascending=False).iloc[0]
