@@ -207,9 +207,6 @@ def merge_bdl_props_altlines(
     for p in props:
         # Only use traditional O/U markets for baseline + alts.
         mk = p.get("market") or {}
-        mk_type = str(mk.get("type") or "").strip().lower()
-        if mk_type and mk_type != "over_under":
-            continue
         mkt = _canon_market(p)
         if mkt not in _PREF_MAINLINES:
             continue
