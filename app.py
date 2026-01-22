@@ -1969,43 +1969,21 @@ elif page == "📟 Calculator":
             return None
 
     # Helper: pick from Alt-line columns if present
-    def _resolve_alt_cols(mkt: str, idx: int) -> tuple[float | None, float | None, float | None]:
-        """Return (line, odds, p_model) for alt index idx (1..K) if present.
-
-        Supports both legacy and current column naming patterns:
-          - BDL_{M}_Line_{i}, BDL_{M}_Odds_{i}
-          - {M}_p_model_over_{i} / {M}_Model%_{i}
-        """
+    def _resolve_alt_cols(prefix: str, idx: int) -> tuple[float | None, float | None, float | None]:
+        """Return (line, odds, p_model) for alt index idx (1..K) if present."""
         if row is None:
             return (None, None, None)
-
-        M = str(mkt).strip()
-        if not M:
-            return (None, None, None)
-
-        # Candidate columns (first match wins)
-        line_cols = [f"BDL_{M}_Line_{idx}", f"{M}_Line_{idx}"]
-        odds_cols = [f"BDL_{M}_Odds_{idx}", f"{M}_Odds_Over_{idx}", f"{M}_Odds_{idx}"]
-        pcols = [f"{M}_p_model_over_{idx}", f"BDL_{M}_p_model_over_{idx}"]
-        mpcols = [f"{M}_Model%_{idx}", f"BDL_{M}_Model%_{idx}"]
-
-        l = next((_get_num_from_row(row, c) for c in line_cols if c in df_calc.columns), None)
-        o = next((_get_num_from_row(row, c) for c in odds_cols if c in df_calc.columns), None)
-
-        p = None
-        for c in pcols:
-            if c in df_calc.columns:
-                p = _get_num_from_row(row, c)
-                if p is not None:
-                    break
+        lc = f"{prefix}_Line_{idx}"
+        oc = f"{prefix}_Odds_Over_{idx}"
+        pc = f"{prefix}_p_model_over_{idx}"
+        mp = f"{prefix}_Model%_{idx}"
+        l = _get_num_from_row(row, lc)
+        o = _get_num_from_row(row, oc)
+        p = _get_num_from_row(row, pc)
         if p is None:
-            for c in mpcols:
-                if c in df_calc.columns:
-                    mpp = _get_num_from_row(row, c)
-                    if mpp is not None:
-                        p = float(mpp) / 100.0
-                        break
-
+            mpp = _get_num_from_row(row, mp)
+            if mpp is not None:
+                p = float(mpp) / 100.0
         return (l, o, p)
 
     if row is not None:
@@ -2038,41 +2016,31 @@ elif page == "📟 Calculator":
     key_prefix = "calc_" + hashlib.md5(f"{str(player_sel)}|{market}".encode()).hexdigest()
 
     # If alt lines exist for this market, allow selecting which line to cash-check
-    mkt_key = str(market).strip()
+    prefix = str(mcfg.get("line_col", "")).split("_Line")[0]
     alt_labels = ["Mainline"]
-
-    # Detect available alts by looking for BDL_{M}_Line_i (current) or {M}_Line_i (legacy)
-    if row is not None and mkt_key:
-        for i in range(1, 9):  # support up to 8 alts if present
-            cand = [f"BDL_{mkt_key}_Line_{i}", f"{mkt_key}_Line_{i}"]
-            lc = next((c for c in cand if c in df_calc.columns), None)
-            if lc:
+    if row is not None and prefix:
+        for i in range(1, 7):
+            lc = f"{prefix}_Line_{i}"
+            if lc in df_calc.columns:
                 lv = _get_num_from_row(row, lc)
                 if lv is not None:
                     alt_labels.append(f"Alt {i} ({lv:.1f})")
 
-    pick = "Mainline"
     if len(alt_labels) > 1:
         pick = st.selectbox("Line source", alt_labels, index=0, key=f"{key_prefix}_pick")
-
-    # Apply alt selection to auto defaults
-    if pick.startswith("Alt"):
-        try:
-            idx = int(pick.split()[1])
-        except Exception:
-            idx = None
-        if idx:
-            l2, o2, p2 = _resolve_alt_cols(mkt_key, idx)
-            if l2 is not None:
-                auto_line = l2
-            if o2 is not None:
-                auto_odds = o2
-            if p2 is not None:
-                auto_p = p2
-
-    # Make input keys depend on selected line source so widgets re-seed when switching Mainline <-> Alt
-    key_suffix = re.sub(r"[^A-Za-z0-9_]+", "_", str(pick)).strip("_")
-    key_prefix2 = f"{key_prefix}_{key_suffix}"
+        if pick.startswith("Alt"):
+            try:
+                idx = int(pick.split()[1])
+            except Exception:
+                idx = None
+            if idx:
+                l2, o2, p2 = _resolve_alt_cols(prefix, idx)
+                if l2 is not None:
+                    auto_line = l2
+                if o2 is not None:
+                    auto_odds = o2
+                if p2 is not None:
+                    auto_p = p2
 
     def _parse_american_odds_text(s: str) -> float | None:
         """Parse American odds from user text. Accepts +120, -110, unicode minus."""
@@ -2092,20 +2060,20 @@ elif page == "📟 Calculator":
     st.markdown("### Inputs (auto-filled when player selected)")
     i1, i2, i3, i4 = st.columns([1.0, 1.0, 1.0, 1.2])
     with i1:
-        line = st.number_input("Line", value=float(auto_line) if auto_line is not None else 0.5, step=0.5, key=f"{key_prefix2}_line")
+        line = st.number_input("Line", value=float(auto_line) if auto_line is not None else 0.5, step=0.5, key=f"{key_prefix}_line")
     with i2:
         odds_str = st.text_input(
             "Odds (American)",
             value=str(int(auto_odds)) if auto_odds is not None else "-110",
             help="Examples: -110, +120",
-            key=f"{key_prefix2}_odds_str",
+            key=f"{key_prefix}_odds_str",
         )
         odds = _parse_american_odds_text(odds_str)
         if odds is None:
             st.warning("Invalid odds format. Use -110 or +120.")
             odds = float(int(auto_odds)) if auto_odds is not None else -110.0
     with i3:
-        override_model = st.checkbox("Override Model%", value=False, key=f"{key_prefix2}_ovp")
+        override_model = st.checkbox("Override Model%", value=False, key=f"{key_prefix}_ovp")
         if (auto_p is not None) and (not override_model):
             model_prob = float(auto_p)
             st.metric("Model win probability", f"{model_prob*100.0:.1f}%")
@@ -2115,17 +2083,17 @@ elif page == "📟 Calculator":
                 1.0, 99.0,
                 float(auto_p * 100.0) if auto_p is not None else 55.0,
                 0.5,
-                key=f"{key_prefix2}_p"
+                key=f"{key_prefix}_p"
             ) / 100.0
     with i4:
-        use_manual_ev = st.checkbox("Override EV% manually", value=False, key=f"{key_prefix2}_usem")
-        manual_ev = st.number_input("Manual EV% (if overriding)", value=float(auto_ev) if auto_ev is not None else 0.0, step=0.5, key=f"{key_prefix2}_mev")
+        use_manual_ev = st.checkbox("Override EV% manually", value=False, key=f"{key_prefix}_usem")
+        manual_ev = st.number_input("Manual EV% (if overriding)", value=float(auto_ev) if auto_ev is not None else 0.0, step=0.5, key=f"{key_prefix}_mev")
 
     s1, s2, s3 = st.columns([1.0, 1.0, 1.0])
     with s1:
-        kelly_frac = st.slider("Kelly Fraction", 0.0, 1.0, 0.25, 0.05, key=f"{key_prefix2}_kf")
+        kelly_frac = st.slider("Kelly Fraction", 0.0, 1.0, 0.25, 0.05, key=f"{key_prefix}_kf")
     with s2:
-        max_pct = st.slider("Max Stake cap (% bankroll)", 0.0, 0.20, 0.05, 0.01, key=f"{key_prefix2}_cap")
+        max_pct = st.slider("Max Stake cap (% bankroll)", 0.0, 0.20, 0.05, 0.01, key=f"{key_prefix}_cap")
     with s3:
         st.caption("Tip: Best bets are **🟢 + 💰**. Calculator helps size the bet.")
 
@@ -2460,252 +2428,6 @@ If a market page looks blank:
 - Color filters hiding everything
 - Odds not posted yet
 """)
-
-    st.markdown("---")
-    st.header("📖 Warlord Glossary — Learn the Language of the Board")
-
-    st.markdown("""
-This glossary explains **what each signal exists for**, not just what it is.
-If you are new, read this once — everything else will click.
-
----
-
-## 🟢 Earned Green
-**What it means:**  
-This play *earned* permission to be bet.
-
-**Why it exists:**  
-Most betting models fail because they treat all “good-looking” plays the same.
-Earned Greens require **multiple independent proofs** (confidence, matchup, regression, volume, environment).
-
-**How to use it:**  
-If it is not 🟢, it is **not a real bet** — even if the odds look tempting.
-
----
-
-## 💰 +EV (Expected Value)
-**What it means:**  
-The price offered by the sportsbook is better than what the model believes is fair.
-
-**Why it exists:**  
-Winning long-term betting is about **price**, not outcomes.
-You can lose good bets and win bad bets — EV separates the two.
-
-**How to use it:**  
-EV improves long-run profitability, but EV **alone** is not enough.
-EV is strongest when paired with 🟢 (that’s why 🔒 exists).
-
----
-
-## 🔒 LOCK
-**What it means:**  
-A 🟢 Earned Green **and** 💰 +EV at the same time.
-
-**Why it exists:**  
-This is where *model edge* and *market mistake* overlap.
-
-**How to use it:**  
-These are your **highest-quality** plays. Still not guaranteed — just the best the slate offers.
-
----
-
-## 🔥 Play
-**What it means:**  
-At least one market for this player is green-earned.
-
-**Why it exists:**  
-Lets you quickly scan the slate for players worth attention.
-
-**How to use it:**  
-🔥 does **not** mean bet everything — it means *investigate further*.
-
----
-
-## Matrix (Green / Yellow / Red)
-**What it means:**  
-A fast matchup + context evaluation for each market.
-
-- **Green:** Conditions align (eligible to become 🟢 if other rules pass)
-- **Yellow:** Mixed signals (watchlist)
-- **Red:** Bad environment (hard pass)
-
-**Why it exists:**  
-Talent alone does not score — context does.
-
-**How to use it:**  
-Red = pass. Yellow = informational. Green = proceed *only if* confidence + proofs agree.
-
----
-
-## Confidence (Conf)
-**What it means:**  
-A normalized score (0–100) measuring how strongly the model believes in the outcome **today**.
-
-**Why it exists:**  
-Confidence is a *quality filter*. It compresses a bunch of stuff (role, volume, matchup, stability) into a single “how safe is this” gate.
-
-**How to use it:**  
-- Big slates → you can be picky (higher conf floors)  
-- Small slates → fewer plays overall, but the best can still qualify  
-- Conf is a **gate**, not a guarantee
-
----
-
-## Regression (HOT / DUE, Reg_Gap)
-**What it means:**  
-Expected production is higher than recent results.
-
-- **HOT / DUE:** the model sees an underperformance pocket  
-- **Reg_Gap:** expected minus actual over the window (bigger = more due)
-
-**Why it exists:**  
-Hockey has variance. Good players miss. Bad goalies spike.
-Regression highlights *unsustainable gaps* — a supportive ingredient for an edge.
-
-**How to use it:**  
-Regression **supports** a play — it does not create one by itself. Pair it with volume + role + matchup.
-
----
-
-## Drought (Drought_* and Best_Drought)
-**What it means:**  
-A simple counter: how many games since the player last hit that market.
-
-- **Drought_P / Drought_A / Drought_G / Drought_SOG:** market-specific droughts  
-- **Best_Drought:** the strongest drought tag across markets (quick scan)
-
-**Why it exists:**  
-Droughts help you spot “hasn’t hit lately” situations that can align with regression, but they also warn you when a player is cold/low-event.
-
-**How to use it:**  
-Drought is **context**, not a bet reason by itself. Best when it lines up with:
-- strong role/usage
-- strong volume
-- supportive matchup
-- HOT/DUE signals
-
----
-
-## 👑 ELITE / ⭐ STAR (Tier_Tag)
-**What it means:**  
-Talent tiers. ELITE means the player drives offense more consistently; STAR is strong but slightly less dominant.
-
-**Why it exists:**  
-Tiers help decide how strict the proof rules should be. ELITE players can legitimately “overlap” signals more often.
-
-**How to use it:**  
-Use tiers as a *context booster*, not a free pass. ELITE still needs 🟢 to bet.
-
----
-
-## 🗡️ Purple Dagger (Assists)
-**What it means:**  
-A special flag for **PP-assist leverage** — the player is positioned to create assists on the power play.
-
-You may see:
-- **🗡️** (dagger tag)  
-- **Assist_Dagger** (a score)  
-- Supporting PP columns like **PP_TOI_Pct_Game**, **PP_iXA60**, **PP_Matchup**, **Assist_PP_Proof**
-
-**Why it exists:**  
-Assists often come from PP structure and role, not just “general vibes.” The dagger isolates players whose PP role creates high-assist probability.
-
-**How to use it:**  
-Treat 🗡️ as a *supporting weapon*:
-- Best when paired with 🟢 earned assists and/or strong PP role metrics  
-- Do not bet just because you see the dagger — confirm the earned-green gate and confidence
-
----
-
-## Environment (Goalie_Weak / Opp_DefWeak)
-**What it means:**  
-Opponent vulnerability indicators.
-
-**Why it exists:**  
-You need chances. Weak goalies/defenses increase event probability.
-
-**How to use it:**  
-These are **environment boosters**, not standalone signals.
-
----
-
-## EV_Signal
-**What it means:**  
-A compact readout combining 🟢, 💰, and EV% (when available).
-
-**Why it exists:**  
-So your eyes go to the right plays first.
-
-**How to use it:**  
-If EV_Signal is empty, it usually means no 🟢 or no EV edge for that market.
-""")
-
-    st.markdown("---")
-    st.header("⚔️ The Warlord Playbook — How to Bet This Model")
-
-    st.markdown("""
-This is not a picks app.
-This is a **decision framework**.
-
----
-
-## 1️⃣ Only Bet Earned Greens
-If it is not 🟢, it is not a bet. No exceptions.
-
----
-
-## 2️⃣ Locks Are Priority, Not Obligation
-🔒 plays are the *best available*, not mandatory bets.  
-If the line is gone or the juice is awful — **pass**.
-
----
-
-## 3️⃣ One Market Per Player (ELITE Exception)
-**Default rule:** Do not stack Points + SOG + Goal on the same skater.
-
-**ELITE exception:**  
-For **👑 ELITE** players, multiple markets *may* be played **if each market independently earns 🟢**.
-
-**Why this works:**  
-Elite players drive offense across multiple dimensions. When volume, role, and matchup all align, signals can overlap legitimately.
-
-**How to use it:**  
-- STAR / non-elite → **one market only**  
-- 👑 ELITE → multiple markets allowed **only if each is earned**  
-- Never force a second prop — let signals overlap naturally
-
----
-
-## 4️⃣ Respect Slate Size
-Big slates = tighter standards. Small slates = fewer plays.  
-Let the model say *no* more often than *yes*.
-
----
-
-## 5️⃣ Size with Discipline
-- Standard play: **1u**
-- Strong / LOCK: **1.5–2u**
-- Never exceed **3u**
-If you feel emotional — you are oversized.
-
----
-
-## 6️⃣ Do Not Chase
-Losses are noise. Process is signal.
-
----
-
-## 7️⃣ Judge Decisions, Not Results
-A good bet that loses is still a good bet.  
-A bad bet that wins is still a mistake.
-
----
-
-## Final Rule
-**The board is a filter, not an order sheet.**  
-Play like a Warlord — patient, disciplined, ruthless. ⚔️
-""")
-
 
 elif page == "Ledger":
     st.subheader("📜 Ledger — What everything means")
