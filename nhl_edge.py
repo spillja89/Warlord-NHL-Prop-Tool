@@ -4120,7 +4120,7 @@ def build_tracker(today_local: date, debug: bool = False) -> str:
         if tracker is None:
             raise RuntimeError("tracker is None before odds/ev merge")
         if merge_bdl_props_altlines is None or add_bdl_ev_all is None:
-            raise NameError("odds_ev_bdl import failed (make sure file is named odds_ev_bdl.py and is in the repo root)")
+            raise NameError("odds_ev_bdl import failed")
 
         _pre_odds = tracker
         api_key = (os.getenv("BALLDONTLIE_API_KEY") or os.getenv("BDL_API_KEY") or "").strip()
