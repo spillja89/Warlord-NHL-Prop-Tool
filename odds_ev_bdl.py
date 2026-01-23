@@ -79,19 +79,6 @@ def _norm_name(x) -> str:
     return s
 
 
-def _norm_team_tricode(x: str) -> str:
-    """Normalize common team code variants so odds/team merges don't drop rows.
-
-    BallDontLie uses NHL tricodes (e.g., TBL). Some upstream feeds or tracker rows
-    may use shorter aliases (e.g., TB). Keep this mapping minimal and surgical.
-    """
-    s = (x or "").strip().upper()
-    return {
-        "TB": "TBL",
-        "TBL": "TBL",
-    }.get(s, s)
-
-
 def american_to_implied_prob(odds) -> float | None:
     """Convert odds to implied probability.
     Supports:
@@ -608,7 +595,7 @@ def merge_bdl_props_altlines(
         if not full_name:
             continue
 
-        team = _norm_team_tricode(_player_team_tricode(pobj))
+        team = _player_team_tricode(pobj)
         ptype = str(pr.get("prop_type") or "")
         mkt_name, baseline_min, (lo, hi) = _MARKETS.get(ptype, (None, None, None))
         if not mkt_name:
@@ -647,7 +634,7 @@ def merge_bdl_props_altlines(
     else:
         df["__player_key"] = df["Player"].map(_norm_name)
 
-    df["__team_key"] = df.get("Team_norm", df.get("Team", "")).astype(str).map(_norm_team_tricode)
+    df["__team_key"] = df.get("Team_norm", df.get("Team", "")).astype(str).str.upper().str.strip()
 
     cfgs = _market_cfgs()
 
