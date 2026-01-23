@@ -72,7 +72,7 @@ TEAM_GF_MIN_AVG = 2.0   # HARD FAIL threshold
 
 
 # Goalie weakness thresholds
-MIN_GOALIE_GP = 5
+MIN_GOALIE_GP = 4
 
 # Star prior strength (small nudge)
 TALENT_MULT_MAX = 1.35
@@ -4101,3 +4101,4 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+
