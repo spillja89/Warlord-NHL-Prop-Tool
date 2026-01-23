@@ -68,7 +68,7 @@ REG_WARM_GAP = 1.5
 # TEAM RECENT GOALS FOR HARD GATE (applies to GOAL / POINTS / ASSISTS)
 # -------------------------
 TEAM_GF_WINDOW = 5
-TEAM_GF_MIN_AVG = 2.0   # HARD FAIL threshold
+TEAM_GF_MIN_AVG = 1.0   # HARD FAIL threshold
 
 
 # Goalie weakness thresholds
@@ -4101,4 +4101,5 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+
 
