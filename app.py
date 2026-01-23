@@ -76,6 +76,75 @@ def calc_ev_pct_and_kelly(model_prob: float, odds: float) -> tuple[float, float,
     return imp, ev_pct, kelly, dec
 
 
+# -------------------------
+# Alt-line Model% scaling (calculator)
+# -------------------------
+def _line_to_over_threshold(line: float) -> int:
+    """Convert a prop line to the integer threshold for an OVER bet.
+    - x.5 lines: win if stat >= floor(x)+1
+    - integer lines: treat as push at exactly x, so win if stat >= x+1
+    """
+    v = float(line)
+    if abs(v - round(v)) < 1e-9:
+        return int(round(v)) + 1
+    return int(math.floor(v) + 1)
+
+def _poisson_sf(k: int, lam: float) -> float:
+    """Survival function P(X >= k) for Poisson(lam), k>=0."""
+    if k <= 0:
+        return 1.0
+    if lam <= 0:
+        return 0.0
+    term = math.exp(-lam)  # P(X=0)
+    cdf = term
+    for i in range(1, k):
+        term *= lam / float(i)
+        cdf += term
+    return max(0.0, min(1.0, 1.0 - cdf))
+
+def _infer_lambda_from_tailprob(p_over: float, base_line: float) -> float | None:
+    """Find lam such that P(Poisson(lam) >= threshold(base_line)) ~= p_over."""
+    try:
+        p = float(p_over)
+        if not (0.0 < p < 1.0):
+            return None
+        k = _line_to_over_threshold(float(base_line))
+    except Exception:
+        return None
+
+    lo = 1e-6
+    hi = 1.0
+    for _ in range(60):
+        if _poisson_sf(k, hi) >= p:
+            break
+        hi *= 2.0
+        if hi > 250.0:
+            break
+    if _poisson_sf(k, hi) < p:
+        return None
+
+    for _ in range(60):
+        mid = (lo + hi) / 2.0
+        if _poisson_sf(k, mid) >= p:
+            hi = mid
+        else:
+            lo = mid
+    return float((lo + hi) / 2.0)
+
+def adjust_model_prob_for_line(p_over_base: float, base_line: float, new_line: float) -> float:
+    """Scale model win prob to a different line using a Poisson calibration."""
+    try:
+        p0 = float(p_over_base)
+        if not (0.0 < p0 < 1.0):
+            return float(p0)
+        lam = _infer_lambda_from_tailprob(p0, float(base_line))
+        if lam is None:
+            return float(p0)
+        k_new = _line_to_over_threshold(float(new_line))
+        p1 = _poisson_sf(k_new, lam)
+        return float(max(0.0001, min(0.9999, p1)))
+    except Exception:
+        return float(p_over_base)
 def _append_csv_row(path: str, row: dict, headers: list[str]) -> None:
     _ensure_dir(os.path.dirname(path))
     file_exists = os.path.exists(path)
@@ -100,27 +169,27 @@ def make_bet_id(date_str: str, player: str, market: str, line: float, odds_taken
     return f"{d}_{_slug(player)}_{_slug(market)}_{_slug(line)}_{_slug(int(odds_taken) if float(odds_taken).is_integer() else odds_taken)}"
 
 def render_market_filter_bar(default_min_conf: int = 60, key_prefix: str = "m"):
-        c1, c2, c3, c4, c5, c6 = st.columns([1.1,1.1,1.2,1.2,1.1,1.6])
-        with c1:
-            greens_only = st.toggle("🟢 Greens", value=False, key=f"{key_prefix}_greens")
-        with c2:
-            ev_only = st.toggle("💰 +EV", value=False, key=f"{key_prefix}_ev")
-        with c3:
-            locks_only = st.toggle("🔒 Locks", value=False, key=f"{key_prefix}_locks")
-        with c4:
-            plays_first = st.toggle("⭐ Plays first", value=True, key=f"{key_prefix}_playsfirst")
-        with c5:
-            hide_reds = st.toggle("Hide 🔴", value=True, key=f"{key_prefix}_hidered")
-        with c6:
-            min_conf = st.slider("Min Conf", 0, 100, int(default_min_conf), 1, key=f"{key_prefix}_minconf")
-        return {
-            "greens_only": greens_only,
-            "ev_only": ev_only,
-            "locks_only": locks_only,
-            "plays_first": plays_first,
-            "hide_reds": hide_reds,
-            "min_conf": min_conf,
-        }
+    c1, c2, c3, c4, c5, c6 = st.columns([1.1,1.1,1.2,1.2,1.1,1.6])
+    with c1:
+        greens_only = st.toggle("🟢 Greens", value=False, key=f"{key_prefix}_greens")
+    with c2:
+        ev_only = st.toggle("💰 +EV", value=False, key=f"{key_prefix}_ev")
+    with c3:
+        locks_only = st.toggle("🔒 Locks", value=False, key=f"{key_prefix}_locks")
+    with c4:
+        plays_first = st.toggle("⭐ Plays first", value=True, key=f"{key_prefix}_playsfirst")
+    with c5:
+        hide_reds = st.toggle("Hide 🔴", value=True, key=f"{key_prefix}_hidered")
+    with c6:
+        min_conf = st.slider("Min Conf", 0, 100, int(default_min_conf), 1, key=f"{key_prefix}_minconf")
+    return {
+        "greens_only": greens_only,
+        "ev_only": ev_only,
+        "locks_only": locks_only,
+        "plays_first": plays_first,
+        "hide_reds": hide_reds,
+        "min_conf": min_conf,
+    }
 def legend_signals():
     with st.expander("Legend (signals)", expanded=False):
         st.markdown("""
@@ -668,6 +737,26 @@ def style_df(df: pd.DataFrame, cols: list[str]) -> "pd.io.formats.style.Styler":
     for c in [c for c in view.columns if c.endswith("EVpct_over")]:
         sty = sty.applymap(ev_style, subset=[c])
 
+    # 🗡️ Dagger highlight
+    def dagger_tag_style(v):
+        return "background-color:#5a00b3;color:white;font-weight:800;" if str(v).strip() == "🗡️" else ""
+
+    def dagger_score_style(v):
+        try:
+            x = float(v)
+        except Exception:
+            return ""
+        if x >= 65:
+            return "background-color:#1f7a1f;color:white;font-weight:800;"
+        if x >= 55:
+            return "background-color:#b38f00;color:white;font-weight:800;"
+        return ""
+
+    if "🗡️" in view.columns:
+        sty = sty.applymap(dagger_tag_style, subset=["🗡️"])
+    if "Assist_Dagger" in view.columns:
+        sty = sty.applymap(dagger_score_style, subset=["Assist_Dagger"])
+
     for c in [c for c in view.columns if c.startswith("Plays_EV_")]:
         sty = sty.applymap(play_ev_style, subset=[c])
 
@@ -722,6 +811,9 @@ def style_df(df: pd.DataFrame, cols: list[str]) -> "pd.io.formats.style.Styler":
 def add_ui_columns(df: pd.DataFrame) -> pd.DataFrame:
     out = df.copy()
 
+    # Preserve an existing 💰 column from the tracker (some trackers provide 💰 directly)
+    _money_existing = out['💰'].copy() if '💰' in out.columns else None
+
     # Ensure these exist
     if "Play_Tag" not in out.columns:
         out["Play_Tag"] = ""
@@ -742,6 +834,14 @@ def add_ui_columns(df: pd.DataFrame) -> pd.DataFrame:
         if c in out.columns:
             ev_any = ev_any | to_bool_series(out[c])
     out["💰"] = ev_any.map(lambda x: "💰" if bool(x) else "")
+
+    # If no Plays_EV_* columns existed but the tracker already had 💰, keep it.
+    if _money_existing is not None:
+        have_ev_cols = any((c in out.columns) for c in [
+            "Plays_EV_SOG", "Plays_EV_Points", "Plays_EV_Goal", "Plays_EV_ATG", "Plays_EV_Assists"
+        ])
+        if not have_ev_cols:
+            out["💰"] = _money_existing
 
     return out
 def load_csv(path: str) -> pd.DataFrame:
@@ -901,9 +1001,11 @@ slate_date = st.sidebar.date_input("Slate date", value=datetime.now().date())
 run_now = st.sidebar.button("Run / Refresh slate", help="Runs nhl_edge.py for the selected date and loads the fresh tracker.")
 
 @st.cache_data(show_spinner=False)
-def _run_model_cached(d: date) -> str:
-    # Import inside to keep Streamlit startup fast
+def _run_model_cached(d: date, code_stamp: float) -> str:
+    # Import + reload so Streamlit Cloud picks up new engine code
+    import importlib
     import nhl_edge
+    importlib.reload(nhl_edge)
     return str(nhl_edge.build_tracker(d, debug=False))
 
 source = None
@@ -915,7 +1017,13 @@ else:
     if run_now:
         with st.spinner("Running model…"):
             try:
-                latest_path = _run_model_cached(slate_date)
+                # Cache-buster: if nhl_edge.py changed, re-run the model
+                try:
+                    engine_path = os.path.join(os.path.dirname(__file__), 'nhl_edge.py') if '__file__' in globals() else 'nhl_edge.py'
+                    code_stamp = os.path.getmtime(engine_path) if os.path.exists(engine_path) else 0.0
+                except Exception:
+                    code_stamp = 0.0
+                latest_path = _run_model_cached(slate_date, code_stamp)
             except Exception as e:
                 st.error(f"Model run failed: {e}")
                 st.stop()
@@ -1011,6 +1119,19 @@ for m in ["Points","GOAL (1+)","Assists","ATG","SOG"]:
     if ev in df.columns:
         df[f"{m}_EV%"] = pd.to_numeric(df[ev], errors="coerce").round(1)
 
+# --- Back-compat: some trackers provide EV% but not Plays_EV_* flags.
+# If Plays_EV_* columns are missing, derive them from *_EVpct_over (>0) so 🔒 works.
+if "Plays_EV_Points" not in df.columns and "Points_EVpct_over" in df.columns:
+    df["Plays_EV_Points"] = pd.to_numeric(df["Points_EVpct_over"], errors="coerce").fillna(-999) > 0
+if "Plays_EV_SOG" not in df.columns and "SOG_EVpct_over" in df.columns:
+    df["Plays_EV_SOG"] = pd.to_numeric(df["SOG_EVpct_over"], errors="coerce").fillna(-999) > 0
+if "Plays_EV_Assists" not in df.columns and "Assists_EVpct_over" in df.columns:
+    df["Plays_EV_Assists"] = pd.to_numeric(df["Assists_EVpct_over"], errors="coerce").fillna(-999) > 0
+if "Plays_EV_ATG" not in df.columns and "ATG_EVpct_over" in df.columns:
+    df["Plays_EV_ATG"] = pd.to_numeric(df["ATG_EVpct_over"], errors="coerce").fillna(-999) > 0
+if "Plays_EV_Goal" not in df.columns and "Goal_EVpct_over" in df.columns:
+    df["Plays_EV_Goal"] = pd.to_numeric(df["Goal_EVpct_over"], errors="coerce").fillna(-999) > 0
+
 # Replace Plays_EV_* booleans with a 💰 icon for readability (keep the original name)
 for c in ["Plays_EV_Points","Plays_EV_Goal","Plays_EV_Assists","Plays_EV_ATG","Plays_EV_SOG"]:
     if c in df.columns:
@@ -1021,7 +1142,9 @@ _ev_play_cols = [c for c in ["Plays_EV_Points","Plays_EV_Goal","Plays_EV_Assists
 if _ev_play_cols:
     df["💰"] = (df[_ev_play_cols].astype(str).apply(lambda r: any(v=="💰" for v in r), axis=1)).map(lambda x: "💰" if x else "")
 else:
-    df["💰"] = ""
+    # Keep existing 💰 if tracker provided it and no Plays_EV_* columns are present
+    if "💰" not in df.columns:
+        df["💰"] = ""
 
 
 # =========================
@@ -1363,7 +1486,7 @@ with st.expander("Debug: loaded columns"):
 # Navigation
 page = st.sidebar.radio(
     "Page",
-    ["Board", "Points", "Assists", "SOG", "GOAL (1+)","Guide", "Ledger", "Raw CSV", "📟 Calculator", "🧾 Log Bet"],
+    ["Board", "Points", "Assists", "SOG", "GOAL (1+)", "Power Play", "Guide", "Ledger", "Raw CSV", "📟 Calculator", "🧾 Log Bet"],
     index=0
 )
 
@@ -1501,14 +1624,14 @@ elif page == "Points":
 
 
 
-    e = df_p.get("Plays_EV_Points", "")
+    e = df_p["Plays_EV_Points"] if "Plays_EV_Points" in df_p.columns else pd.Series([""]*len(df_p), index=df_p.index)
 
 
 
 
 
 
-    p = df_p.get("Points_EV%", None)
+    p = df_p["Points_EV%"] if "Points_EV%" in df_p.columns else pd.Series([None]*len(df_p), index=df_p.index)
 
 
 
@@ -1521,10 +1644,10 @@ elif page == "Points":
 
 
 
-
     df_p["LOCK"] = [build_lock_badge(gg, ee) for gg, ee in zip(g, e)]
     legend_signals()
     _f = render_market_filter_bar(default_min_conf=60, key_prefix="pts")
+
     try:
         df_p = apply_market_filters(
             df_p,
@@ -1537,7 +1660,6 @@ elif page == "Points":
         )
     except Exception:
         pass
-
 
 
 
@@ -1573,6 +1695,13 @@ elif page == "Assists":
 
     df_a["Green"] = df_a.get("Green_Assists", False).map(lambda x: "🟢" if bool(x) else "")
 
+    # 🗡️ Dagger indicator (PP assist edge)
+    if "🗡️" not in df_a.columns:
+        if "Assist_PP_Proof" in df_a.columns:
+            df_a["🗡️"] = df_a["Assist_PP_Proof"].map(lambda x: "🗡️" if bool(x) else "")
+        else:
+            df_a["🗡️"] = ""
+
     assists_cols = [
         "Game",
         "Player", "Pos",
@@ -1594,7 +1723,7 @@ elif page == "Assists":
 
         "Assists_Call",
         "Drought_A","Best_Drought",
-        "Assist_ProofCount", "Assist_Why",
+        "Assist_ProofCount", "Assist_Why", "🗡️", "Assist_Dagger", "PP_TOI_Pct_Game", "PP_iXA60", "PP_Matchup",
         "Reg_Heat_A", "Reg_Gap_A10", "Exp_A_10", "L10_A",
         "iXA%","iXG%", "v2_player_stability",
         "Opp_Goalie", "Opp_SV",
@@ -1608,15 +1737,16 @@ elif page == "Assists":
 
     g = df_a.get("Green_Assists", (df_a.get("Green","") == "🟢"))
 
-    e = df_a.get("Plays_EV_Assists", "")
+    e = df_a["Plays_EV_Assists"] if "Plays_EV_Assists" in df_a.columns else pd.Series([""]*len(df_a), index=df_a.index)
 
-    p = df_a.get("Assists_EV%", None)
+    p = df_a["Assists_EV%"] if "Assists_EV%" in df_a.columns else pd.Series([None]*len(df_a), index=df_a.index)
 
     df_a["EV_Signal"] = [build_ev_signal(gg, ee, pp) for gg, ee, pp in zip(g, e, p if hasattr(p, "__iter__") else [p]*len(df_a))]
 
     df_a["LOCK"] = [build_lock_badge(gg, ee) for gg, ee in zip(g, e)]
     legend_signals()
     _f = render_market_filter_bar(default_min_conf=60, key_prefix="ast")
+
     try:
         df_a = apply_market_filters(
             df_a,
@@ -1629,7 +1759,6 @@ elif page == "Assists":
         )
     except Exception:
         pass
-
 
 
 
@@ -1698,18 +1827,18 @@ elif page == "SOG":
     g = df_s.get("Green_SOG", (df_s.get("Green","") == "🟢"))
 
 
-    e = df_s.get("Plays_EV_SOG", "")
+    e = df_s["Plays_EV_SOG"] if "Plays_EV_SOG" in df_s.columns else pd.Series([""]*len(df_s), index=df_s.index)
 
 
-    p = df_s.get("SOG_EV%", None)
+    p = df_s["SOG_EV%"] if "SOG_EV%" in df_s.columns else pd.Series([None]*len(df_s), index=df_s.index)
 
 
     df_s["EV_Signal"] = [build_ev_signal(gg, ee, pp) for gg, ee, pp in zip(g, e, p if hasattr(p, "__iter__") else [p]*len(df_s))]
 
-
     df_s["LOCK"] = [build_lock_badge(gg, ee) for gg, ee in zip(g, e)]
     legend_signals()
     _f = render_market_filter_bar(default_min_conf=60, key_prefix="sog")
+
     try:
         df_s = apply_market_filters(
             df_s,
@@ -1783,15 +1912,16 @@ elif page == "GOAL (1+)":
 
     g = df_g.get("Green_Goal", (df_g.get("Green","") == "🟢"))
 
-    e = df_g.get("Plays_EV_ATG", "")
+    e = df_g["Plays_EV_ATG"] if "Plays_EV_ATG" in df_g.columns else pd.Series([""]*len(df_g), index=df_g.index)
 
-    p = df_g.get("ATG_EV%", None)
+    p = df_g["ATG_EV%"] if "ATG_EV%" in df_g.columns else pd.Series([None]*len(df_g), index=df_g.index)
 
     df_g["EV_Signal"] = [build_ev_signal(gg, ee, pp) for gg, ee, pp in zip(g, e, p if hasattr(p, "__iter__") else [p]*len(df_g))]
 
     df_g["LOCK"] = [build_lock_badge(gg, ee) for gg, ee in zip(g, e)]
     legend_signals()
-    _f = render_market_filter_bar(default_min_conf=60, key_prefix="gol")
+    _f = render_market_filter_bar(default_min_conf=60, key_prefix="goal")
+
     try:
         df_g = apply_market_filters(
             df_g,
@@ -1810,6 +1940,77 @@ elif page == "GOAL (1+)":
 
     show_table(df_g, goal_cols, "GOAL (1+) View")
 
+
+
+
+# =========================
+# POWER PLAY
+# =========================
+elif page == "Power Play":
+    st.subheader("⚡ Power Play (PPP / 5v4)")
+    st.caption("Read-only view: PP usage + PP creation + team PP vs opponent PK + PPP drought. Does not change model probabilities yet.")
+
+    # Aliases (engine naming -> app naming)
+    alias_map = {
+        "PP_TOI_min": "PP_TOI",
+        "PP_TOI_per_game": "PP_TOI_PG",
+        "PP_iP60": "PP_Points60",
+    }
+    for src, dst in alias_map.items():
+        if dst not in df_f.columns and src in df_f.columns:
+            df_f[dst] = df_f[src]
+
+    # PP unit tag/icon
+    if "PP_Role" in df_f.columns:
+        def _pp_role_tag(x):
+            try:
+                v = int(float(x))
+            except Exception:
+                return "PP0"
+            return "PP1" if v >= 2 else ("PP2" if v == 1 else "PP0")
+        df_f["PP_UnitTag"] = df_f["PP_Role"].apply(_pp_role_tag)
+        df_f["PP_Unit"] = df_f["PP_UnitTag"].map({"PP1": "🔌 PP1", "PP2": "🔋 PP2"}).fillna("")
+    else:
+        df_f["PP_Unit"] = ""
+
+    st.sidebar.subheader("Power Play Filters")
+    unit_sel = st.sidebar.multiselect("PP Unit", ["PP1", "PP2"], default=["PP1", "PP2"], key="pp_unit_sel")
+    min_pp_toi = st.sidebar.slider("Min PP TOI / game", 0.0, 10.0, 1.0, 0.25, key="pp_min_toi")
+    min_ppp_drought = st.sidebar.slider("Min PPP Drought (games)", 0, 12, 0, 1, key="pp_min_ppp_drought")
+
+    df_pp = df_f.copy()
+    if "PP_UnitTag" in df_pp.columns:
+        df_pp = df_pp[df_pp["PP_UnitTag"].isin(unit_sel)]
+
+    if "PP_TOI_PG" in df_pp.columns:
+        df_pp = df_pp[pd.to_numeric(df_pp["PP_TOI_PG"], errors="coerce").fillna(0.0) >= float(min_pp_toi)]
+
+    if "Drought_PPP" in df_pp.columns:
+        df_pp = df_pp[pd.to_numeric(df_pp["Drought_PPP"], errors="coerce").fillna(0).astype(int) >= int(min_ppp_drought)]
+
+    # Sort best-first (only by columns that exist)
+    sort_cols = [c for c in ["PP_Matchup", "PP_Points60", "PP_TOI_PG", "Drought_PPP"] if c in df_pp.columns]
+    if sort_cols:
+        df_pp = df_pp.sort_values(sort_cols, ascending=[False] * len(sort_cols))
+
+    pp_cols = [
+        "Game",
+        "Player", "Pos", "Team", "Opp",
+        "Tier_Tag",
+        "PP_Unit",
+        "PP_TOI_PG",
+        "PP_TOI_Pct",
+        "PP_Points60",
+        "PP_iXG60",
+        "PP_iXA60",
+        "Team_PP_xGF60",
+        "Opp_PK_xGA60",
+        "PP_Matchup",
+        "PPP10_total",
+        "Drought_PPP",
+    ]
+
+    show_table(df_pp, pp_cols, "Power Play (5v4) — Usage, creation, matchup, PPP drought")
 
 elif page == "📟 Calculator":
     st.subheader("📟 EV + Stake Calculator")
@@ -1969,7 +2170,15 @@ elif page == "📟 Calculator":
     with i3:
         override_model = st.checkbox("Override Model%", value=False, key=f"{key_prefix}_ovp")
         if (auto_p is not None) and (not override_model):
+            # If user changes the line (alt line), re-scale Model% from the base CSV line using Poisson calibration.
             model_prob = float(auto_p)
+            if (auto_line is not None) and (line is not None):
+                try:
+                    if abs(float(line) - float(auto_line)) > 1e-9:
+                        model_prob = adjust_model_prob_for_line(float(auto_p), float(auto_line), float(line))
+                        st.caption(f"Alt-line Model%: scaled from base line {float(auto_line):.1f} → {float(line):.1f}")
+                except Exception:
+                    pass
             st.metric("Model win probability", f"{model_prob*100.0:.1f}%")
         else:
             model_prob = st.slider(
