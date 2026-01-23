@@ -1995,21 +1995,32 @@ elif page == "📟 Calculator":
             return None
 
     # Helper: pick from Alt-line columns if present
-    def _resolve_alt_cols(prefix: str, idx: int) -> tuple[float | None, float | None, float | None]:
-        """Return (line, odds, p_model) for alt index idx (1..K) if present."""
+    def _resolve_alt_cols(market_name: str, idx: int) -> tuple[float | None, float | None, float | None]:
+        """Return (line, odds, p_model) for alt index idx (1..K) if present.
+
+        Tracker schema (from odds_ev_bdl.py):
+          - line/odds: BDL_{M}_Line_{i}, BDL_{M}_Odds_{i}
+          - model prob: {M}_p_model_over_{i}  (or {M}_Model%_{i})
+        """
         if row is None:
             return (None, None, None)
-        lc = f"{prefix}_Line_{idx}"
-        oc = f"{prefix}_Odds_Over_{idx}"
-        pc = f"{prefix}_p_model_over_{idx}"
-        mp = f"{prefix}_Model%_{idx}"
+
+        M = str(market_name).strip()
+
+        lc = f"BDL_{M}_Line_{idx}"
+        oc = f"BDL_{M}_Odds_{idx}"
+        pc = f"{M}_p_model_over_{idx}"
+        mp = f"{M}_Model%_{idx}"
+
         l = _get_num_from_row(row, lc)
         o = _get_num_from_row(row, oc)
+
         p = _get_num_from_row(row, pc)
         if p is None:
             mpp = _get_num_from_row(row, mp)
             if mpp is not None:
                 p = float(mpp) / 100.0
+
         return (l, o, p)
 
     if row is not None:
@@ -2042,11 +2053,12 @@ elif page == "📟 Calculator":
     key_prefix = "calc_" + hashlib.md5(f"{str(player_sel)}|{market}".encode()).hexdigest()
 
     # If alt lines exist for this market, allow selecting which line to cash-check
-    prefix = str(mcfg.get("line_col", "")).split("_Line")[0]
     alt_labels = ["Mainline"]
-    if row is not None and prefix:
+    if row is not None:
+        M = str(market).strip()
+        # show only available BDL alt lines for this market
         for i in range(1, 7):
-            lc = f"{prefix}_Line_{i}"
+            lc = f"BDL_{M}_Line_{i}"
             if lc in df_calc.columns:
                 lv = _get_num_from_row(row, lc)
                 if lv is not None:
@@ -2060,7 +2072,7 @@ elif page == "📟 Calculator":
             except Exception:
                 idx = None
             if idx:
-                l2, o2, p2 = _resolve_alt_cols(prefix, idx)
+                l2, o2, p2 = _resolve_alt_cols(market, idx)
                 if l2 is not None:
                     auto_line = l2
                 if o2 is not None:
