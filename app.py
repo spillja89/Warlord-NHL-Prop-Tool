@@ -293,7 +293,7 @@ def snap_int(x):
 def _promote_call_cols(cols):
     order=[
         'SOG_Call','Points_Call','Assists_Call','ATG_Call',
-        'Player','Team','Opp','Game','Pos','Tier_Tag','🔥','💰',
+        'Player','Team','Opp','Time','Game','Pos','Tier_Tag','🔥','💰',
     ]
     out=[]
     for c in order:
@@ -307,6 +307,7 @@ def _promote_call_cols(cols):
 COLUMN_WIDTHS = {
     # identity
     "Game": "small",
+    "Time": "small",
     "Pos": "small",
     "Team": "small",
     "Opp": "small",
@@ -778,6 +779,14 @@ def add_ui_columns(df: pd.DataFrame) -> pd.DataFrame:
 def load_csv(path: str) -> pd.DataFrame:
     df = pd.read_csv(path)
     df.columns = [c.strip() for c in df.columns]
+
+    # Add local game time (for table + matchup filter)
+    if "StartTimeLocal" in df.columns and "Time" not in df.columns:
+        dt = pd.to_datetime(df["StartTimeLocal"], errors="coerce")
+        # Use a portable format and strip leading zero (07:00 PM -> 7:00 PM)
+        df["Time"] = dt.dt.strftime("%I:%M %p").astype(str).str.lstrip("0")
+        df.loc[dt.isna(), "Time"] = ""
+
     return df
 def filter_common(df: pd.DataFrame) -> pd.DataFrame:
     out = df.copy()
@@ -795,14 +804,39 @@ def filter_common(df: pd.DataFrame) -> pd.DataFrame:
         sel_teams = st.sidebar.multiselect("Team", teams, default=[])
         if sel_teams:
             out = out[out["Team"].astype(str).isin(sel_teams)]
-    # Matchup filter
+    # Matchup filter (show time when available)
     if "Game" in out.columns:
-        games = sorted(
-            [g for g in out["Game"].dropna().astype(str).unique().tolist() if g.strip()]
-        )
-        sel_games = st.sidebar.multiselect("Matchup", games, default=[])
-        if sel_games:
-            out = out[out["Game"].astype(str).isin(sel_games)]
+        games = [g for g in out["Game"].dropna().astype(str).unique().tolist() if g.strip()]
+
+        if "Time" in out.columns:
+            # Build label -> game mapping like "7:00 PM — DAL@STL"
+            tmp = out[["Game", "Time"]].copy()
+            tmp["Time"] = tmp["Time"].astype(str).fillna("")
+            # Prefer earliest time per game if duplicates exist
+            best = (
+                tmp.sort_values(["Game", "Time"])
+                .drop_duplicates(subset=["Game"], keep="first")
+                .set_index("Game")["Time"]
+                .to_dict()
+            )
+
+            labels = []
+            for g in games:
+                t = best.get(g, "")
+                label = f"{t} — {g}" if t else g
+                labels.append(label)
+
+            labels = sorted(labels, key=lambda x: x.split("—")[-1].strip())
+            sel_labels = st.sidebar.multiselect("Matchup", labels, default=[])
+
+            if sel_labels:
+                sel_games = [lab.split("—")[-1].strip() for lab in sel_labels]
+                out = out[out["Game"].astype(str).isin(sel_games)]
+        else:
+            games = sorted(games)
+            sel_games = st.sidebar.multiselect("Matchup", games, default=[])
+            if sel_games:
+                out = out[out["Game"].astype(str).isin(sel_games)]
     # Only flagged plays
     only_fire = st.sidebar.checkbox("Only 🔥 plays", value=False)
     if only_fire and "🔥" in out.columns:
@@ -872,6 +906,20 @@ def show_table(df: pd.DataFrame, cols: list[str], title: str):
 
     # de-dupe requested cols while preserving order
     cols = list(dict.fromkeys(cols))
+
+    # Ensure Time column is displayed right next to Game (if available)
+    if "Game" in cols and "Time" in df.columns:
+        if "Time" not in cols:
+            gi = cols.index("Game")
+            cols.insert(gi + 1, "Time")
+        else:
+            gi = cols.index("Game")
+            ti = cols.index("Time")
+            if abs(ti - gi) != 1:
+                cols.pop(ti)
+                gi = cols.index("Game")
+                cols.insert(gi + 1, "Time")
+
 
     existing = [c for c in cols if c in df.columns]
     missing = [c for c in cols if c not in df.columns]
