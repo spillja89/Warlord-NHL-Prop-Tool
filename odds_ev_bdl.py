@@ -31,6 +31,8 @@ What’s new:
 
 import os
 import math
+import unicodedata
+import re
 from typing import Dict, Optional, Tuple, List, Any
 
 import requests
@@ -71,11 +73,41 @@ def _clamp(x: float, lo: float, hi: float) -> float:
 
 
 def _norm_name(x) -> str:
+    """Normalize player names for joining.
+
+    Handles:
+      - accents/diacritics (Stützle -> Stutzle)
+      - common mojibake from bad UTF-8 decoding (StÃ¼tzle -> Stützle -> Stutzle)
+      - punctuation/extra whitespace
+    """
     if x is None:
         return ""
-    s = str(x).lower().strip()
+    s0 = str(x).strip()
+
+    # Fix common mojibake: interpret the *text* as latin-1 bytes then decode as utf-8
+    try:
+        if any(ch in s0 for ch in ("Ã", "Â")):
+            s0 = s0.encode("latin-1", "ignore").decode("utf-8", "ignore")
+    except Exception:
+        pass
+
+    # Strip accents (ü -> u)
+    try:
+        s0 = unicodedata.normalize("NFKD", s0)
+        s0 = "".join(ch for ch in s0 if not unicodedata.combining(ch))
+    except Exception:
+        pass
+
+    s = s0.lower()
     s = s.replace(".", "").replace("'", "")
-    s = " ".join(s.split())
+    # keep letters/spaces/hyphen
+    s = re.sub(r"[^a-z\s\-]", " ", s)
+    s = " ".join(s.split()).strip()
+
+    # Safety-net alias (rare upstream drops)
+    if s.endswith(" sttzle") or s == "tim sttzle":
+        s = s.replace("sttzle", "stutzle")
+
     return s
 
 

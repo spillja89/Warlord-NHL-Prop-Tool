@@ -778,6 +778,26 @@ def add_ui_columns(df: pd.DataFrame) -> pd.DataFrame:
     return out
 def load_csv(path: str) -> pd.DataFrame:
     df = pd.read_csv(path)
+
+    # --- SNAP BETTING LINES AFTER df EXISTS (fix NameError) ---
+    def snap_half_down_sog(x):
+        try:
+            if x is None:
+                return x
+            v = float(x)
+            snapped = round(v * 2.0) / 2.0
+            if abs(snapped - round(snapped)) < 1e-6:
+                return max(0.5, snapped - 0.5)
+            return snapped
+        except Exception:
+            return x
+
+    for _c in [c for c in df.columns if c.endswith('_Line') or c == 'Line']:
+        if _c == 'SOG_Line':
+            df[_c] = df[_c].apply(snap_half_down_sog)
+        else:
+            df[_c] = df[_c].apply(snap_half)
+
     df.columns = [c.strip() for c in df.columns]
 
     # Add local game time (for table + matchup filter)
@@ -979,7 +999,6 @@ st.sidebar.markdown("---")
 slate_date = st.sidebar.date_input("Slate date", value=datetime.now().date())
 run_now = st.sidebar.button("Run / Refresh slate", help="Runs nhl_edge.py for the selected date and loads the fresh tracker.")
 
-@st.cache_data(show_spinner=False)
 def _run_model_cached(d: date, code_stamp: float) -> str:
     # Import + reload so Streamlit Cloud picks up new engine code
     import importlib
@@ -2048,12 +2067,23 @@ elif page == "🧪 Dagger Lab":
     # Focus on players with any dagger context available
     df_lab = df_f.copy()
 
-    # Build dagger icon if missing (same as assists view)
-    if "🗡️" not in df_lab.columns:
-        if "Assist_PP_Proof" in df_lab.columns:
-            df_lab["🗡️"] = df_lab["Assist_PP_Proof"].map(lambda x: "🗡️" if bool(x) else "")
-        else:
-            df_lab["🗡️"] = ""
+    # Build dagger icon (HARD GATE) — recompute every time (ignore any 🗡️ column in CSV)
+    df_lab["🗡️"] = ""
+
+    proof_col = "Assist_PP_Proof" if "Assist_PP_Proof" in df_lab.columns else None
+    proof = df_lab[proof_col].astype(bool) if proof_col else pd.Series(False, index=df_lab.index)
+
+    apc = pd.to_numeric(df_lab.get("Assist_ProofCount", 0), errors="coerce").fillna(0)
+    adg = pd.to_numeric(df_lab.get("Assist_Dagger", 0), errors="coerce").fillna(0)
+    ppt = df_lab.get("PP_Tier", "").astype(str).str.upper()
+
+    # HARD gate:
+    # 1) Explicit proof, OR
+    # 2) 4-of-4 assist proofs, OR
+    # 3) Elite dagger score (>=82), OR
+    # 4) PP A/B + strong proof (>=3) + decent dagger (>=60)
+    mask = (proof | (apc >= 4) | (adg >= 82) | ((ppt.isin(["A","B"])) & (apc >= 3) & (adg >= 60)))
+    df_lab.loc[mask, "🗡️"] = "🗡️"
 
     # Prefer listing dagger candidates first
     sort_cols = []
@@ -2186,7 +2216,7 @@ elif page == "🧪 Dagger Lab":
         strength = max(0.0, min(100.0, round(strength, 1)))
 
         st.markdown("#### Dagger Strength (explain-only)")
-        st.progress(int(strength))
+        st.progress(float(strength)/100.0)
         st.caption(f"Strength: **{strength}/100** — for explanation only (does not feed EV).")
 
         # Breakdown cards
@@ -2831,7 +2861,6 @@ elif page == "Ledger":
 else:
     st.subheader("Raw CSV (all columns)")
     st.dataframe(df_f, width="stretch", hide_index=True)
-
 
 
 

@@ -1191,9 +1191,56 @@ def merge_bdl_mainlines(df: pd.DataFrame, path: str = "data/cache/bdl_mainlines_
     import json
     import pandas as pd
 
-    def _norm_name(x):
-        return "" if x is None else str(x).strip().lower()
 
+    def _norm_name(x):
+
+        """Normalize player names for joining (fixes accents + mojibake)."""
+
+        import unicodedata, re
+
+        if x is None:
+
+            return ""
+
+        s0 = str(x).strip()
+
+        # Fix common mojibake: 'StÃ¼tzle' -> 'Stützle'
+
+        try:
+
+            if any(ch in s0 for ch in ("Ã", "Â", " ")):
+
+                s0 = s0.encode("latin-1", "ignore").decode("utf-8", "ignore")
+
+        except Exception:
+
+            pass
+
+        # Strip accents
+
+        try:
+
+            s0 = unicodedata.normalize("NFKD", s0)
+
+            s0 = "".join(ch for ch in s0 if not unicodedata.combining(ch))
+
+            s0 = s0.encode("ascii", "ignore").decode("ascii")
+
+        except Exception:
+
+            pass
+
+        s1 = s0.lower()
+
+        s1 = re.sub(r"\s+", " ", s1).strip()
+
+        # Safety net for the rare dropped 'u' case
+
+        if s1.endswith(" sttzle") or s1 == "tim sttzle":
+
+            s1 = s1.replace("sttzle", "stutzle")
+
+        return s1
     def _norm_team(x):
         return "" if x is None else str(x).strip().upper()
 
@@ -2041,6 +2088,75 @@ def pick_sog_from_row(r: dict) -> Optional[int]:
 
 def compute_lastN_features(payload: Dict[str, Any], n10: int = 10, n5: int = 5) -> Dict[str, Any]:
     rows = _extract_game_rows(payload)
+
+    # -------------------------
+    # Ensure newest-first ordering
+    # -------------------------
+    # Different upstream sources sometimes provide game logs oldest→newest.
+    # Our drought logic ("games since last stat") assumes the list is
+    # newest→oldest so that index 0 is the most recent game.
+    def _row_date_any(r: Dict[str, Any]) -> Optional[str]:
+        for kk in (
+            "gameDate",
+            "gameDateUTC",
+            "gameDateTime",
+            "date",
+            "game_date",
+            "gameDateTimeUTC",
+        ):
+            v = r.get(kk)
+            if v:
+                return str(v)
+        # nested
+        for nk in ("playerGameStats", "stats", "skaterStats", "summary"):
+            sub = r.get(nk)
+            if isinstance(sub, dict):
+                for kk in ("gameDate", "gameDateUTC", "date"):
+                    v = sub.get(kk)
+                    if v:
+                        return str(v)
+        return None
+
+    def _parse_dt(s: Optional[str]) -> Optional[datetime]:
+        if not s:
+            return None
+        ss = str(s).strip()
+        # common formats: YYYY-MM-DD, ISO with Z, etc.
+        try:
+            # fromisoformat can't parse trailing Z; normalize
+            if ss.endswith("Z"):
+                ss2 = ss[:-1] + "+00:00"
+            else:
+                ss2 = ss
+            return datetime.fromisoformat(ss2)
+        except Exception:
+            pass
+        # fallback: just take first 10 chars if looks like YYYY-MM-DD
+        try:
+            if len(ss) >= 10 and ss[4] == "-" and ss[7] == "-":
+                return datetime.fromisoformat(ss[:10])
+        except Exception:
+            return None
+        return None
+
+    try:
+        if rows and isinstance(rows[0], dict):
+            d0 = _parse_dt(_row_date_any(rows[0]))
+            d1 = _parse_dt(_row_date_any(rows[-1]))
+            # If we can compare ends and it looks ascending, reverse.
+            if d0 and d1 and d0 < d1:
+                rows = list(reversed(rows))
+            elif d0 and d1 and d0 > d1:
+                pass  # already newest-first
+            else:
+                # If dates are missing/unparseable, fall back to gameId if present.
+                g0 = safe_int(rows[0].get("gameId") or rows[0].get("game_id"))
+                g1 = safe_int(rows[-1].get("gameId") or rows[-1].get("game_id"))
+                if g0 is not None and g1 is not None and g0 < g1:
+                    rows = list(reversed(rows))
+    except Exception:
+        # Never let ordering hygiene break the build.
+        pass
 
     shots: List[int] = []
     goals: List[int] = []
@@ -4275,6 +4391,26 @@ def build_tracker(today_local: date, debug: bool = False) -> str:
         os.makedirs(OUTPUT_DIR, exist_ok=True)
     except Exception:
         pass
+    # -------------------------
+    # Display-name hygiene (do BEFORE writing CSV)
+    # -------------------------
+    def _fix_mojibake_text(s):
+        """Best-effort fix for common UTF-8 mojibake in names."""
+        if s is None:
+            return ""
+        t = str(s)
+        try:
+            if any(ch in t for ch in ("Ã", "Â", " ")):
+                return t.encode("latin-1", "ignore").decode("utf-8", "ignore")
+        except Exception:
+            pass
+        return t
+
+    if "Player" in tracker.columns:
+        tracker["Player"] = tracker["Player"].apply(_fix_mojibake_text)
+        tracker["Player"] = tracker["Player"].astype(str).str.replace(r"Sttzle", "Stutzle", regex=True)
+        tracker["Player"] = tracker["Player"].astype(str).str.replace(r"sttzle", "stutzle", regex=True)
+
     out_path = os.path.join(OUTPUT_DIR, f"tracker_{today_local.isoformat()}_{stamp}.csv")
     tracker.to_csv(out_path, index=False)
 
