@@ -67,12 +67,12 @@ REG_WARM_GAP = 1.5
 # -------------------------
 # TEAM RECENT GOALS FOR HARD GATE (applies to GOAL / POINTS / ASSISTS)
 # -------------------------
-TEAM_GF_WINDOW = 10
+TEAM_GF_WINDOW = 5
 TEAM_GF_MIN_AVG = 1.0   # HARD FAIL threshold
 
 
 # Goalie weakness thresholds
-MIN_GOALIE_GP = 4
+MIN_GOALIE_GP = 1
 
 # Star prior strength (small nudge)
 TALENT_MULT_MAX = 1.35
@@ -2168,6 +2168,10 @@ def matrix_sog(ixg_pct: float, med10: Optional[float], pos: str,
     if ixg_pct >= 85 and med10 >= (green_line - 0.30) and sip >= 90 and toi >= 60 and tsf >= 60:
         return "Green"
 
+    if ixg_pct >= 88 and med10 >= (green_line - 0.30) and sip >= 95 and toi >= 60: 
+        return "Green"
+
+
     if ixg_pct >= 80 and med10 >= 3.5 and sip >= 95 and odw >= 60:
         return "Green"
 
@@ -2574,6 +2578,75 @@ def get_team_recent_gf(sess: requests.Session, team_abbrev: str, n_games: int = 
 # ============================
 # Drought bumps (game regression)
 # ============================
+def get_team_recent_ga(sess: requests.Session, team_abbrev: str, n_games: int = 10, debug: bool = False) -> tuple[int, float, int]:
+    """
+    Returns (ga_sum, ga_avg, n_used) over the last n completed games.
+    Uses api-web.nhle.com club schedule endpoint.
+    """
+    team_abbrev = norm_team(team_abbrev)
+    url = f"https://api-web.nhle.com/v1/club-schedule-season/{team_abbrev}/now"
+
+    try:
+        data = http_get_json(sess, url)
+    except Exception as e:
+        if debug:
+            print(f"[TEAM_GA] fetch failed for {team_abbrev}: {type(e).__name__}: {e}")
+        return 0, 0.0, 0
+
+    games = data.get("games", []) or []
+
+    # Keep only completed games
+    completed = []
+    for g in games:
+        state = str(g.get("gameState", "") or "").upper()
+        if state in ("OFF", "FINAL", "FINAL_OT", "FINAL_SO"):
+            completed.append(g)
+
+    # Sort by date ascending, then take the most recent n
+    def _gdate(x):
+        return str(x.get("gameDate", "") or x.get("startTimeUTC", "") or "")
+    completed.sort(key=_gdate)
+
+    last = completed[-n_games:] if completed else []
+    ga = 0
+
+    for g in last:
+        home = g.get("homeTeam", {}) or {}
+        away = g.get("awayTeam", {}) or {}
+
+        # Determine which side is this team
+        home_ab = norm_team(str(home.get("abbrev", "") or ""))
+        away_ab = norm_team(str(away.get("abbrev", "") or ""))
+
+        # score fields can vary; handle a few known patterns
+        hs = safe_int(home.get("score")) if home.get("score") is not None else safe_int(g.get("homeTeamScore"))
+        as_ = safe_int(away.get("score")) if away.get("score") is not None else safe_int(g.get("awayTeamScore"))
+
+        if home_ab == team_abbrev:
+            ga += as_
+        elif away_ab == team_abbrev:
+            ga += hs
+        else:
+            # fallback: some payloads use 'teamAbbrev' / 'opponentAbbrev'
+            t = norm_team(str(g.get("teamAbbrev", "") or g.get("teamAbbreviation", "") or ""))
+            if t == team_abbrev:
+                ga += safe_int(g.get("opponentScore"))
+
+    n_used = len(last)
+    avg = (ga / n_used) if n_used > 0 else 0.0
+    return ga, round(avg, 2), n_used
+
+
+def ga_avg_to_defweak(ga_avg: float) -> float:
+    """Map GA/G (last-10) to a 0-100 'defense weakness' score (higher = weaker)."""
+    try:
+        ga_avg = float(ga_avg)
+    except Exception:
+        return 50.0
+    # 2.0 GA/G => ~20 (strong), 4.0 => ~80 (weak), 4.5 => ~95 (very weak)
+    weak = 20.0 + (ga_avg - 2.0) * 30.0
+    return float(max(0.0, min(100.0, weak)))
+
 def drought_bump(tier: str, market: str, drought: Optional[int]) -> tuple[int, bool]:
     if drought is None:
         return 0, False
@@ -2755,9 +2828,63 @@ def build_tracker(today_local: date, debug: bool = False) -> str:
         for c in ["PP_TOI_min", "PP_TOI_per_game", "PP_iXG60", "PP_iXA60", "PP_iP60", "PP_Role"]:
             sk[c] = np.nan
 
+    # --- Restore PP_Tier from PP_Role (legacy behavior) ---
+    # PP_Role is emitted by normalize_skaters_pp(): 2=PP1, 1=PP2, 0=PP0/passenger
+    if "PP_Role" in sk.columns and "PP_Tier" not in sk.columns:
+        def _pp_tier(v):
+            try:
+                x = int(float(v))
+            except Exception:
+                return np.nan
+            return "A" if x >= 2 else ("B" if x == 1 else ("C" if x == 0 else np.nan))
+        sk["PP_Tier"] = sk["PP_Role"].apply(_pp_tier)
+
+
 
 
     
+    # --- PP derived fields for Dagger Lab (display-only, does NOT feed EV) ---
+    # PP_Path: classify how a player contributes on PP based on iXG vs iXA profile
+    if "PP_Path" not in sk.columns:
+        def _pp_path(row):
+            role = row.get("PP_Role", np.nan)
+            try:
+                r = int(float(role))
+            except Exception:
+                r = -1
+            if r <= 0:
+                return "Passenger"
+            ixg = pd.to_numeric(row.get("PP_iXG60", np.nan), errors="coerce")
+            ixa = pd.to_numeric(row.get("PP_iXA60", np.nan), errors="coerce")
+            tot = (ixg if pd.notna(ixg) else 0.0) + (ixa if pd.notna(ixa) else 0.0)
+            if tot <= 0:
+                return "Passenger"
+            share = (ixg / tot)
+            if share >= 0.60:
+                return "Shooter"
+            if share <= 0.40:
+                return "Passer"
+            return "Balanced"
+        try:
+            sk["PP_Path"] = sk.apply(_pp_path, axis=1)
+        except Exception:
+            sk["PP_Path"] = "Passenger"
+
+    # Team share/stability/environment score are visual helpers
+    # PP_TeamShare_pct: prefer existing; if missing OR all-NaN, derive from PP_TOI_Pct_Game (already populated)
+    if ("PP_TeamShare_pct" not in sk.columns) or (pd.to_numeric(sk.get("PP_TeamShare_pct"), errors="coerce").isna().all()):
+        sk["PP_TeamShare_pct"] = pd.to_numeric(sk.get("PP_TOI_Pct_Game"), errors="coerce")
+
+    if "PP_TOI_stability" not in sk.columns:
+        # heuristic: how close PP_TOI_min is to PP_TOI (higher = more stable usage)
+        toi = pd.to_numeric(sk.get("PP_TOI"), errors="coerce")
+        toi_min = pd.to_numeric(sk.get("PP_TOI_min"), errors="coerce")
+        with np.errstate(divide="ignore", invalid="ignore"):
+            stab = 100.0 * (toi_min / toi)
+        sk["PP_TOI_stability"] = stab.clip(lower=0.0, upper=100.0)
+
+ 
+
     # Fallback: if PP_TOI is missing, pull season PP TOI from NHL stats REST API
     try:
         if ("PP_TOI_per_game" not in sk.columns) or (sk["PP_TOI_per_game"].notna().sum() < 5):
@@ -2927,9 +3054,48 @@ def build_tracker(today_local: date, debug: bool = False) -> str:
 
             opp_pk_weak = opp_pk_weak.fillna(50.0)
 
-
             sk["PP_Matchup"] = (0.55 * pp_score + 0.45 * opp_pk_weak).round(1)
 
+            # ---------------------------------
+            # PP Big 3 (MUST be AFTER PP_Matchup exists)
+            # ---------------------------------
+
+            # PP_TeamShare_pct: derive from PP_TOI_Pct_Game (already computed earlier)
+            if ("PP_TeamShare_pct" not in sk.columns) or (
+                pd.to_numeric(sk["PP_TeamShare_pct"], errors="coerce").isna().all()
+            ):
+                sk["PP_TeamShare_pct"] = pd.to_numeric(sk.get("PP_TOI_Pct_Game"), errors="coerce")
+
+            # PP_Env_Score: follow PP_Matchup with neutral fallback
+            if ("PP_Env_Score" not in sk.columns) or (
+                pd.to_numeric(sk["PP_Env_Score"], errors="coerce").isna().all()
+            ) or (
+                pd.to_numeric(sk["PP_Env_Score"], errors="coerce").nunique(dropna=True) <= 1
+            ):
+                sk["PP_Env_Score"] = pd.to_numeric(sk["PP_Matchup"], errors="coerce").fillna(50.0)
+
+            # PP_BOOST: compute every run (never NaN)
+            if "PP_BOOST" not in sk.columns:
+                sk["PP_BOOST"] = ""
+
+            share = pd.to_numeric(sk["PP_TeamShare_pct"], errors="coerce")
+            env   = pd.to_numeric(sk["PP_Env_Score"], errors="coerce")
+            tier  = sk["PP_Tier"].astype(str).str.upper().str.strip() if "PP_Tier" in sk.columns else ""
+
+            mask_a = (tier == "A") & (share >= 20.0) & (env >= 60.0)
+            mask_b = (tier == "B") & (share >= 17.5) & (env >= 62.0)
+
+            sk["PP_BOOST"] = sk["PP_BOOST"].fillna("").astype(str)
+            sk.loc[mask_a | mask_b, "PP_BOOST"] = "ON"
+
+            if debug:
+                print(
+                    "[PP BIG3 @POST-MATCHUP] non-null counts:",
+                    "PP_Matchup", int(pd.to_numeric(sk.get("PP_Matchup"), errors="coerce").notna().sum()),
+                    "PP_TeamShare_pct", int(pd.to_numeric(sk.get("PP_TeamShare_pct"), errors="coerce").notna().sum()),
+                    "PP_Env_Score uniq", int(pd.to_numeric(sk.get("PP_Env_Score"), errors="coerce").nunique(dropna=True)),
+                    "PP_BOOST ON", int((sk.get("PP_BOOST").astype(str) == "ON").sum()),
+                )
 
         # -------------------------------------------------
         # ASSISTS DAGGER (power-play facilitation)
@@ -3004,7 +3170,33 @@ def build_tracker(today_local: date, debug: bool = False) -> str:
 
     # v2 scores
     sk = add_v2_scores(sk)
-    sk["Opp_DefWeak"] = sk["v2_defense_vulnerability"].fillna(50.0)
+    # Base (season/structural) defense weakness
+    sk["Opp_DefWeak_Season"] = sk["v2_defense_vulnerability"].fillna(50.0)
+
+    # Last-10 overlay (GA/G) — aligns defense environment with other last-10 features
+    opp_teams = sorted(set(sk.get("Opp", pd.Series(dtype=str)).dropna().astype(str).map(norm_team).tolist()))
+    ga_map = {}
+    for t in opp_teams:
+        ga_sum, ga_avg, n_used = get_team_recent_ga(sess, t, n_games=10, debug=debug)
+        ga_map[t] = {"ga_avg": ga_avg, "n_used": n_used}
+
+    def _l10_weight(n_used: int) -> float:
+        # Require meaningful sample; cap influence
+        if n_used >= 8:
+            return 0.45
+        if n_used >= 5:
+            return 0.30
+        return 0.0
+
+    sk["Opp_GA_Avg_L10"] = sk["Opp"].astype(str).map(lambda x: ga_map.get(norm_team(x), {}).get("ga_avg", float("nan")))
+    sk["Opp_GA_Used_L10"] = sk["Opp"].astype(str).map(lambda x: ga_map.get(norm_team(x), {}).get("n_used", 0))
+    sk["Opp_DefWeak_L10"] = sk["Opp_GA_Avg_L10"].map(lambda v: ga_avg_to_defweak(v) if pd.notna(v) else float("nan"))
+
+    sk["Opp_DefWeak"] = sk.apply(
+        lambda r: float(r.get("Opp_DefWeak_Season", 50.0)) * (1.0 - _l10_weight(int(r.get("Opp_GA_Used_L10", 0))))
+                + (float(r.get("Opp_DefWeak_L10", r.get("Opp_DefWeak_Season", 50.0))) * _l10_weight(int(r.get("Opp_GA_Used_L10", 0))))
+        , axis=1
+    ).fillna(50.0)
 
     # star prior + toi pct
     sk = add_star_prior(sk)
@@ -3612,6 +3804,13 @@ def build_tracker(today_local: date, debug: bool = False) -> str:
         "PPP10_total": sk.get("PPP10_total"),
         "Drought_PPP": sk.get("Drought_PPP"),
 
+        "PP_Tier": sk.get("PP_Tier"),
+        "PP_Path": sk.get("PP_Path"),
+        "PP_TeamShare_pct": sk.get("PP_TeamShare_pct"),
+        "PP_TOI_stability": sk.get("PP_TOI_stability"),
+        "PP_Env_Score": sk.get("PP_Env_Score"),
+        "PP_BOOST": sk.get("PP_BOOST"),
+
         "PP_Role": sk.get("PP_Role"),
         "PP_TOI": sk.get("PP_TOI"),
         "PP_TOI_min": sk.get("PP_TOI_min"),
@@ -4071,6 +4270,11 @@ def build_tracker(today_local: date, debug: bool = False) -> str:
     
  
     stamp = datetime.now().strftime("%H%M%S")
+    # Ensure output directory exists
+    try:
+        os.makedirs(OUTPUT_DIR, exist_ok=True)
+    except Exception:
+        pass
     out_path = os.path.join(OUTPUT_DIR, f"tracker_{today_local.isoformat()}_{stamp}.csv")
     tracker.to_csv(out_path, index=False)
 
@@ -4101,6 +4305,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-
-
-
