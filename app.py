@@ -391,6 +391,8 @@ COLUMN_WIDTHS = {
     "Opp_GAA": "small",
     "Goalie_Weak": "small",
     "Opp_DefWeak": "small",
+    "Opp_SA_Avg_L10": "small",
+    "Opp_GA_Avg_L10": "small",
 
     # misc
     "Line": "small",
@@ -1300,6 +1302,7 @@ for c in [
     "iXG%", "iXA%",
     "Med10_SOG", "Avg5_SOG",
     "Goalie_Weak", "Opp_DefWeak",
+        "Opp_SA_Avg_L10", "Opp_GA_Avg_L10",
     "team_5v5_xGF60_pct",
     "Reg_Gap_P10", "Drought_P",
     "TOI_Pct",
