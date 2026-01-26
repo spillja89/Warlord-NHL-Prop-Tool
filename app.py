@@ -185,6 +185,184 @@ def _calc_market_map(market: str) -> dict:
         ev_icon_col="Plays_EV_ATG",
     )
 
+
+def build_ladder_alerts(
+    df_in: pd.DataFrame,
+    market: str = "SOG",
+    min_line: float = 3.5,
+    min_ev: float = 8.0,
+    min_model_pct: float = 12.0,
+    top_k: int = 6,
+    start_from_baseline: bool = True,
+) -> pd.DataFrame:
+    """Scan Top-K BDL alt lines and return ladder alerts.
+
+    Uses schema from odds_ev_bdl.py:
+      - Lines/Odds:  BDL_{M}_Line_{i}, BDL_{M}_Odds_{i}, BDL_{M}_Book_{i}
+      - Model prob:  {M}_p_model_over_{i} (0-1) or {M}_Model%_{i} (0-100)
+      - EV:          {M}_EVpct_over_{i} (pct) or {M}_EV%_{i} (pct)
+
+    UX behavior:
+      - If start_from_baseline=True (default), we treat the player's "baseline" as {M}_Line
+        (fallback: BDL_{M}_Line, fallback: min available BDL line) and **only show rungs
+        at/above that baseline**, ordered from baseline upward.
+      - This prevents the table from feeling like it's "starting at the top".
+    """
+    if df_in is None or df_in.empty:
+        return pd.DataFrame(columns=["Player","Team","Game","Market","Alt#","Line","Odds","Book","Model%","EV%","Rung","Why"])
+
+    M = str(market).strip()
+    df0 = df_in
+
+    def _num(v):
+        try:
+            if v is None:
+                return None
+            if isinstance(v, str) and not v.strip():
+                return None
+            x = float(v)
+            if math.isnan(x):
+                return None
+            return x
+        except Exception:
+            return None
+
+    # A short "why" string so you can see what is driving the ladder ranking.
+    def _why(r):
+        parts = []
+        # Common
+        if "Opp_DefWeak" in df0.columns:
+            odv = _num(r.get("Opp_DefWeak"))
+            if odv is not None:
+                parts.append(f"DefWeak {odv:.0f}")
+        if f"{M}_mu" in df0.columns:
+            mu = _num(r.get(f"{M}_mu"))
+            if mu is not None:
+                parts.append(f"μ {mu:.2f}")
+        # Market-specific
+        if M == "SOG":
+            for c, lab in [("Med10_SOG","Med10"), ("Avg5_SOG","Avg5"), ("ShotIntent_Pct","SI%"), ("TOI_Pct_Game","TOI%")]:
+                if c in df0.columns:
+                    v = _num(r.get(c))
+                    if v is not None:
+                        parts.append(f"{lab} {v:.1f}")
+        elif M == "Points":
+            for c, lab in [("P10_total","P10"), ("A10_total","A10"), ("G10_total","G10"), ("TOI_Pct_Game","TOI%")]:
+                if c in df0.columns:
+                    v = _num(r.get(c))
+                    if v is not None:
+                        parts.append(f"{lab} {v:.0f}")
+        elif M == "Assists":
+            for c, lab in [("A10_total","A10"), ("iXA%","iXA%"), ("TOI_Pct_Game","TOI%")]:
+                if c in df0.columns:
+                    v = _num(r.get(c))
+                    if v is not None:
+                        parts.append(f"{lab} {v:.1f}")
+        elif M == "Goal":
+            for c, lab in [("G10_total","G10"), ("iXG%","iXG%"), ("Goalie_Weak","GWeak")]:
+                if c in df0.columns:
+                    v = _num(r.get(c))
+                    if v is not None:
+                        parts.append(f"{lab} {v:.1f}")
+        return " | ".join(parts)
+
+    rows = []
+    K = max(1, int(top_k))
+    for _, r in df0.iterrows():
+        player = str(r.get("Player","") or "").strip()
+        if not player:
+            continue
+        game = str(r.get("Game","") or "").strip()
+        team = str(r.get("Team","") or "").strip()
+
+        # Baseline line (mainline) for anchoring
+        base = None
+        if f"{M}_Line" in df0.columns:
+            base = _num(r.get(f"{M}_Line"))
+        if base is None and f"BDL_{M}_Line" in df0.columns:
+            base = _num(r.get(f"BDL_{M}_Line"))
+        if base is None:
+            # fallback: minimum available alt line
+            mins = []
+            for i in range(1, K + 1):
+                lc = f"BDL_{M}_Line_{i}"
+                if lc not in df0.columns:
+                    break
+                lv = _num(r.get(lc))
+                if lv is not None:
+                    mins.append(float(lv))
+            if mins:
+                base = min(mins)
+
+        for i in range(1, K + 1):
+            lc = f"BDL_{M}_Line_{i}"
+            if lc not in df0.columns:
+                break  # no more ladder cols
+
+            line = _num(r.get(lc))
+            if line is None:
+                continue
+
+            # Anchor: start at baseline, not at the sky
+            if start_from_baseline and base is not None and float(line) < float(base):
+                continue
+
+            if float(line) < float(min_line):
+                continue
+
+            odds = _num(r.get(f"BDL_{M}_Odds_{i}"))
+            book = str(r.get(f"BDL_{M}_Book_{i}", "") or "").strip()
+
+            # model prob
+            p = _num(r.get(f"{M}_p_model_over_{i}"))
+            if p is None:
+                mp = _num(r.get(f"{M}_Model%_{i}"))
+                if mp is not None:
+                    p = float(mp) / 100.0
+            if p is None:
+                continue
+
+            model_pct = float(p) * 100.0
+            if model_pct < float(min_model_pct):
+                continue
+
+            # EV
+            ev = _num(r.get(f"{M}_EVpct_over_{i}"))
+            if ev is None:
+                ev = _num(r.get(f"{M}_EV%_{i}"))
+            if ev is not None and float(ev) < float(min_ev):
+                continue
+
+            rung = None
+            if base is not None:
+                rung = float(line) - float(base)
+
+            rows.append({
+                "Player": player,
+                "Team": team,
+                "Game": game,
+                "Market": M,
+                "Alt#": i,
+                "Line": float(line),
+                "Odds": (None if odds is None else float(odds)),
+                "Book": book,
+                "Model%": round(model_pct, 1),
+                "EV%": (None if ev is None else round(float(ev), 1)),
+                "Rung": (None if rung is None else round(float(rung), 1)),
+                "Why": _why(r),
+            })
+
+    out = pd.DataFrame(rows)
+    if not out.empty:
+        # Show baseline-up ladders first, then best EV/model within each rung.
+        sort_cols = ["Rung","EV%","Model%","Line"]
+        for c in sort_cols:
+            if c not in out.columns:
+                sort_cols.remove(c)
+        out = out.sort_values(sort_cols, ascending=[True, False, False, True][:len(sort_cols)], na_position="last")
+    return out
+
+
 def warlord_call(ev_pct: float, kelly: float) -> tuple[str, str, str]:
     """
     Returns (label, emoji, why) based on EV% and Kelly%.
@@ -2309,6 +2487,75 @@ elif page == "📟 Calculator":
 
     mcfg = _calc_market_map(market)
 
+    # -------------------------
+    # 🚨 Ladder Alerts (UI only)
+    # -------------------------
+    
+    # -------------------------
+    # Ladder Alerts (UI only)
+    # -------------------------
+    with st.expander("🚨 Ladder Alerts (Alt Lines)", expanded=False):
+        # Market first (so presets can set sane defaults)
+        cA, cB, cC, cD, cE = st.columns([1.0, 1.0, 1.0, 1.2, 1.0])
+        with cA:
+            ladder_market = st.selectbox("Market", ["SOG", "Points", "Assists", "Goal"], index=0, key="ladder_market")
+
+        preset = st.selectbox(
+            "Preset",
+            ["Baseline+", "Standard", "Elite Volume", "Nuclear"],
+            index=1,
+            key="ladder_preset",
+            help="Baseline+ starts at the player's mainline. Standard/Elite/Nuclear are higher-rung scans (rare-volume modes).",
+        )
+
+        # Per-market baseline defaults (most of the slate lives here)
+        base_defaults = {"SOG": 2.5, "Points": 1.5, "Assists": 0.5, "Goal": 0.5}
+        base_line_default = float(base_defaults.get(ladder_market, 1.5))
+
+        # Preset thresholds
+        if preset == "Baseline+":
+            _min_line, _min_ev, _min_model = base_line_default, 6.0, 10.0
+        elif preset == "Standard":
+            _min_line, _min_ev, _min_model = max(base_line_default, 3.5 if ladder_market == "SOG" else base_line_default), 8.0, 12.0
+        elif preset == "Elite Volume":
+            _min_line, _min_ev, _min_model = max(base_line_default, 5.5), 10.0, 10.0
+        else:
+            _min_line, _min_ev, _min_model = max(base_line_default, 7.5), 6.0, 10.0
+
+        with cB:
+            min_line = st.number_input("Min line", value=float(_min_line), step=0.5, key="ladder_min_line")
+        with cC:
+            min_ev = st.number_input("Min EV%", value=float(_min_ev), step=0.5, key="ladder_min_ev")
+        with cD:
+            min_model = st.number_input("Min Model%", value=float(_min_model), step=0.5, key="ladder_min_model")
+        with cE:
+            start_from_baseline = st.checkbox("Start at baseline", value=True, key="ladder_start_baseline")
+
+        # Detect how many ladders we actually have (up to 8)
+        max_k = 0
+        for k in range(8, 0, -1):
+            if f"BDL_{ladder_market}_Line_{k}" in df_calc.columns:
+                max_k = k
+                break
+        if max_k == 0:
+            st.info("No BDL alt lines found in this CSV (BDL_*_Line_i columns missing).")
+        else:
+            ladd = build_ladder_alerts(
+                df_calc,
+                market=ladder_market,
+                min_line=float(min_line),
+                min_ev=float(min_ev),
+                min_model_pct=float(min_model),
+                top_k=int(max_k),
+                start_from_baseline=bool(start_from_baseline),
+            )
+            if ladd.empty:
+                st.write("No ladder alerts met your thresholds.")
+            else:
+                st.caption(f"Showing {len(ladd)} alerts (Top-K={max_k}).")
+                st.dataframe(ladd, width="stretch", hide_index=True)
+
+
     # Pull row for the selected player (first match)
     row = None
     if player_sel != "(Manual)" and "Player" in df_calc.columns:
@@ -2871,8 +3118,6 @@ elif page == "Ledger":
 else:
     st.subheader("Raw CSV (all columns)")
     st.dataframe(df_f, width="stretch", hide_index=True)
-
-
 
 
 
