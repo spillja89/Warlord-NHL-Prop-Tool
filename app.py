@@ -988,20 +988,22 @@ st.markdown(
 # Data source (no more forced uploads)
 # -------------------------
 # Optional manual upload (still supported)
-uploaded = st.sidebar.file_uploader(
-    "Upload tracker CSV (optional)",
-    type=["csv"],
-    key="uploader_tracker_csv_sidebar",
-)
+uploaded = st.sidebar.file_uploader("Upload tracker CSV (optional)", type=["csv"], key="uploader_tracker_csv_sidebar")
 
 # Preferred stable path written by nhl_edge.py
 latest_stable = os.path.join(OUTPUT_DIR, "tracker_latest.csv")
 latest_path = latest_stable if os.path.exists(latest_stable) else find_latest_tracker_csv(OUTPUT_DIR)
+# If we ran the model this session, prefer that exact path (prevents reverting to yesterday on rerun)
+if "latest_path_override" in st.session_state:
+    _p = st.session_state.get("latest_path_override")
+    if _p and os.path.exists(str(_p)):
+        latest_path = str(_p)
+
 
 # Quick-run inside Streamlit (works on Streamlit Cloud)
 st.sidebar.markdown("---")
 slate_date = st.sidebar.date_input("Slate date", value=datetime.now().date(), key="date_slate_date")
-run_now = st.sidebar.button("Run / Refresh slate", help="Runs nhl_edge.py for the selected date and loads the fresh tracker.", key="btn_run_refresh")
+run_now = st.sidebar.button("Run / Refresh slate", help="Runs nhl_edge.py for the selected date and loads the fresh tracker.", key="btn_run_refresh_slate")
 
 def _run_model_cached(d: date, code_stamp: float) -> str:
     # Import + reload so Streamlit Cloud picks up new engine code
@@ -1026,6 +1028,7 @@ else:
                 except Exception:
                     code_stamp = 0.0
                 latest_path = _run_model_cached(slate_date, code_stamp)
+                st.session_state["latest_path_override"] = str(latest_path)
             except Exception as e:
                 st.error(f"Model run failed: {e}")
                 st.stop()
