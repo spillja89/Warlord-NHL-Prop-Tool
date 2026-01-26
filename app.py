@@ -988,7 +988,11 @@ st.markdown(
 # Data source (no more forced uploads)
 # -------------------------
 # Optional manual upload (still supported)
-uploaded = st.sidebar.file_uploader("Upload tracker CSV (optional)", type=["csv"])
+uploaded = st.sidebar.file_uploader(
+    "Upload tracker CSV (optional)",
+    type=["csv"],
+    key="uploader_tracker_csv_sidebar",
+)
 
 # Preferred stable path written by nhl_edge.py
 latest_stable = os.path.join(OUTPUT_DIR, "tracker_latest.csv")
@@ -996,8 +1000,8 @@ latest_path = latest_stable if os.path.exists(latest_stable) else find_latest_tr
 
 # Quick-run inside Streamlit (works on Streamlit Cloud)
 st.sidebar.markdown("---")
-slate_date = st.sidebar.date_input("Slate date", value=datetime.now().date())
-run_now = st.sidebar.button("Run / Refresh slate", help="Runs nhl_edge.py for the selected date and loads the fresh tracker.")
+slate_date = st.sidebar.date_input("Slate date", value=datetime.now().date(), key="date_slate_date")
+run_now = st.sidebar.button("Run / Refresh slate", help="Runs nhl_edge.py for the selected date and loads the fresh tracker.", key="btn_run_refresh")
 
 def _run_model_cached(d: date, code_stamp: float) -> str:
     # Import + reload so Streamlit Cloud picks up new engine code
