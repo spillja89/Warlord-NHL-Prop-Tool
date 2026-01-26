@@ -4354,9 +4354,10 @@ def build_tracker(today_local: date, debug: bool = False) -> str:
             game_date=today_local.isoformat(),
             api_key=(os.getenv("BALLDONTLIE_API_KEY") or os.getenv("BDL_API_KEY") or ""),
             vendors=["draftkings", "fanduel", "caesars"],
+            top_k=6,
             debug=bool(debug),
         )
-        tracker = add_bdl_ev_all(tracker)
+        tracker = add_bdl_ev_all(tracker, top_k=6)
 
         # Hard guard: if API key is present, require meaningful coverage across at least one market
         if (os.getenv("BALLDONTLIE_API_KEY", "") or os.getenv("BDL_API_KEY", "")).strip():
