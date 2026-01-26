@@ -1,2868 +1,4448 @@
+from __future__ import annotations
+
+"""
+NHL EDGE TOOL — Stable v7.2 (engine) — single-file paste (CLEAN FIXED + SOG + Injury Upgrade)
+
+What’s fixed tonight:
+✅ No more NameError crashes (helpers are defined BEFORE use)
+✅ SOG inflation fixed (NHL “shots” vs attempts guarded, prefers shotsOnGoal)
+✅ Injury upgrades (DFO line-combo injuries parsed, Team_Out_Count correct, GTD penalty applied)
+✅ Injury impact now adjusts confidence slightly (OUT/IR excluded; GTD lowers confidence)
+✅ Keeps your existing outputs + matrices/confidence/regression + assists earned rule
+
+Run:
+  python -u nhl_edge.py
+  python -u nhl_edge.py --debug
+  python -u nhl_edge.py --date 2026-01-09 --debug
+"""
+
 import os
-import glob
+import time
+import json
 import math
+import argparse
 import re
-from datetime import datetime, date
+import shutil
+from datetime import date, datetime, timedelta, timezone
+from io import StringIO
+from typing import Optional, Dict, List, Any, Tuple
+from statistics import median
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from zoneinfo import ZoneInfo
 
 import numpy as np
 import pandas as pd
-import streamlit as st
+import requests
+from bs4 import BeautifulSoup
+
+pd.options.display.float_format = "{:.2f}".format
 
 
-# =========================
-# Ledger helpers (append-only bet tracking)
-# =========================
-UNIT_VALUE_USD = 50.0   # 1u = $50 (user-defined)
-MAX_STAKE_U = 3.0       # cap per play
 
-# CSV headers (append-only)
-BETSLIP_HEADERS = [
-    'bet_id','date','datetime_placed','game','player','market','line','odds_taken','book','stake_u',
-    'earned_green','ev_flag','lock_flag','conf','matrix','model_pct','imp_pct','ev_pct','tier','proof_count','why_tags',
-    'opp','opp_goalie','notes'
-]
+# ============================
+# CONFIG
+# ============================
+OUTPUT_DIR = "output"
+CACHE_DIR = "cache"
 
-BET_EVENTS_HEADERS = [
-    'bet_id','event_type','event_datetime','event_period','event_game_minute','units_net','source','event_notes'
-]
+REQUEST_TIMEOUT_SEC = 25
+HTTP_SLEEP_SEC = 0.02
+LOCAL_TZ = "America/Chicago"
+
+MAX_WORKERS = 10
+
+PROCESS_MIN_PCT = 70     # min(max(iXG%, iXA%)) to fetch NHL logs
+CAND_CAP = 220           # cap NHL log pulls (avoid 800+)
+
+# Matrix thresholds for SOG based on last-10 median
+SOG_MED10_GREEN_FWD = 3.5
+SOG_MED10_GREEN_DEF = 2.3
+SOG_MED10_YELLOW_FWD = 3.0
+SOG_MED10_YELLOW_DEF = 1.9
+
+# Regression heat thresholds (gap over 10)
+REG_HOT_GAP = 2.5
+REG_WARM_GAP = 1.5
+
+# -------------------------
+# TEAM RECENT GOALS FOR HARD GATE (applies to GOAL / POINTS / ASSISTS)
+# -------------------------
+TEAM_GF_WINDOW = 5
+TEAM_GF_MIN_AVG = 1.0   # HARD FAIL threshold
 
 
-def _ledger_paths(output_dir: str) -> tuple[str, str, str]:
-    ledger_dir = os.path.join(output_dir, "ledger")
-    return ledger_dir, os.path.join(ledger_dir, "betslip.csv"), os.path.join(ledger_dir, "bet_events.csv")
+# Goalie weakness thresholds
+MIN_GOALIE_GP = 1
+
+# Star prior strength (small nudge)
+TALENT_MULT_MAX = 1.35
+TALENT_MULT_MIN = 0.94
+TALENT_MULT_STRENGTH = 0.40# +/- ~6% around 50->100, 50->0
+
+# Usage weighting into confidence (small)
+USAGE_WEIGHT_SOG = 0.08
+USAGE_WEIGHT_POINTS = 0.10
+
+# Injury impact into confidence (small; GTD hurts, ROLE+ helps)
+INJURY_CONF_MULT = 2.0  # Injury_DFO_Score * this added into conf (clamped)
 
 
-def _ensure_dir(path: str) -> None:
+# ============================
+# TALENT TIERS (ELITE / STAR / NONE)
+# ============================
+ELITE_SEED = set()
+STAR_SEED  = set()
+
+ELITE_STARSCORE = 93.0
+STAR_STARSCORE  = 90.0
+
+ELITE_TOI_PCT = 70.0
+STAR_TOI_PCT  = 66.0
+
+ELITE_TOPPCT = 93.0
+STAR_TOPPCT  = 88.0
+
+ELITE_SHOTINTENT_PCT = 94.0
+STAR_SHOTINTENT_PCT  = 89.0
+
+ELITE_MIN_PPG = 1.10  # tune: 0.95–1.10
+STAR_MIN_PPG  = 0.90   # tune: 0.70–0.85
+
+
+
+# ============================
+# TEAM ALIASES (schedule -> moneypuck)
+# ============================
+TEAM_ALIAS = {
+    "VEG": "VGK", "VGK": "VGK",
+    "NJ": "NJD", "NJD": "NJD",
+    "LA": "LAK", "LAK": "LAK",
+    "TB": "TBL", "TBL": "TBL",
+    "CLB": "CBJ", "CBJ": "CBJ",
+    "SJ": "SJS", "SJS": "SJS",
+    "NAS": "NSH", "NSH": "NSH",
+    "MON": "MTL", "MTL": "MTL",
+    "WAS": "WSH", "WSH": "WSH",
+    "WIN": "WPG", "WPG": "WPG",
+    "NYI": "NYI", "NYR": "NYR",
+    "PHX": "ARI", "ARZ": "ARI", "ARI": "ARI",
+    "UTA": "UTA", "UTH": "UTA","DET": "DET"
+}
+
+def norm_team(x: Any) -> str:
+    s = str(x).strip().upper()
+    return TEAM_ALIAS.get(s, s)
+
+def is_defense(pos: str) -> bool:
+    return (pos or "").upper().strip() in {"D", "LD", "RD"}
+
+# ----------------------------
+# Market-specific Talent Proofs
+# ----------------------------
+
+MARKET_TIER_RULES = {
+    "SOG": {
+        "thresholds": {
+            "TOI_STAR": 58.0,
+            "TOI_ELITE": 68.0,
+            "IXG_STAR": 65.0,
+            "IXG_ELITE": 75.0,
+            "SHOT_INTENT_STAR": 60.0,
+            "SHOT_INTENT_ELITE": 72.0,
+            "MED10_SOG_STAR": 2.4,
+            "MED10_SOG_ELITE": 3.0,
+        },
+        "elite_requires": ["TOI", "MED10_SOG"],
+        "star_min_proofs": 3,
+        "elite_min_proofs": 4,
+    },
+
+    "Points": {
+        "thresholds": {
+            "PPG_STAR": 0.75,
+            "PPG_ELITE": 0.95,
+            "TOI_STAR": 60.0,
+            "TOI_ELITE": 70.0,
+            "IXA_STAR": 65.0,
+            "IXA_ELITE": 75.0,
+            "IXG_STAR": 60.0,
+            "IXG_ELITE": 70.0,
+        },
+        "elite_requires": ["PPG", "TOI"],
+        "star_min_proofs": 3,
+        "elite_min_proofs": 4,
+    },
+
+    "Goal": {
+        "thresholds": {
+            "PPG_STAR": 0.65,
+            "PPG_ELITE": 0.85,
+            "TOI_STAR": 58.0,
+            "TOI_ELITE": 68.0,
+            "IXG_STAR": 70.0,
+            "IXG_ELITE": 82.0,
+            "MED10_SOG_STAR": 2.6,
+            "MED10_SOG_ELITE": 3.1,
+        },
+        "elite_requires": ["IXG", "MED10_SOG"],
+        "star_min_proofs": 3,
+        "elite_min_proofs": 4,
+    },
+
+    "Assists": {
+        "thresholds": {
+            "PPG_STAR": 0.70,
+            "PPG_ELITE": 0.90,
+            "TOI_STAR": 60.0,
+            "TOI_ELITE": 70.0,
+            "IXA_STAR": 72.0,
+            "IXA_ELITE": 82.0,
+            "IXG_STAR": 55.0,
+            "IXG_ELITE": 65.0,
+        },
+        "elite_requires": ["IXA", "TOI"],
+        "star_min_proofs": 3,
+        "elite_min_proofs": 4,
+    },
+}
+
+def _safe_float(x, default=None):
     try:
-        os.makedirs(path, exist_ok=True)
+        if x is None:
+            return default
+        if isinstance(x, float) and math.isnan(x):
+            return default
+        return float(x)
+    except Exception:
+        return default
+
+def market_tier_tag(row: "pd.Series", market: str) -> str:
+    rules = MARKET_TIER_RULES[market]
+    t = rules["thresholds"]
+
+    # --- pull from YOUR column names (and accept alternates) ---
+    ppg = _safe_float(row.get("PPG"), default=None)
+
+    toi = _safe_float(row.get("TOI_Pct"), default=None)          # <-- FIX
+    if toi is None:
+        toi = _safe_float(row.get("TOI_PCT"), default=None)
+
+    ixg = _safe_float(row.get("iXG_pct"), default=None)          # <-- FIX
+    if ixg is None:
+        ixg = _safe_float(row.get("ixG_pct"), default=None)
+
+    ixa = _safe_float(row.get("iXA_pct"), default=None)          # <-- FIX
+    if ixa is None:
+        ixa = _safe_float(row.get("ixA_pct"), default=None)
+
+    shot_intent = _safe_float(row.get("ShotIntent_Pct"), default=None)  # <-- FIX
+    if shot_intent is None:
+        shot_intent = _safe_float(row.get("ShotIntent_pct"), default=None)
+
+    med10_sog = _safe_float(row.get("Median10_SOG"), default=None)
+
+    # ----------------
+    # STAR proofs
+    # ----------------
+    proofs = 0
+    def pass_star():
+        nonlocal proofs
+        proofs += 1
+
+    if market in ("Points", "Goal", "Assists"):
+        if ppg is not None and ppg >= t.get("PPG_STAR", 9e9):
+            pass_star()
+
+    if toi is not None and toi >= t.get("TOI_STAR", 9e9):
+        pass_star()
+
+    if ixg is not None and ixg >= t.get("IXG_STAR", 9e9):
+        pass_star()
+
+    if market in ("Points", "Assists"):
+        if ixa is not None and ixa >= t.get("IXA_STAR", 9e9):
+            pass_star()
+
+    if market == "SOG":
+        if shot_intent is not None and shot_intent >= t.get("SHOT_INTENT_STAR", 9e9):
+            pass_star()
+        if med10_sog is not None and med10_sog >= t.get("MED10_SOG_STAR", 9e9):
+            pass_star()
+        if ixg is not None and ixg >= t.get("IXG_STAR", 9e9):
+            pass_star()
+
+    if market == "Goal":
+        if med10_sog is not None and med10_sog >= t.get("MED10_SOG_STAR", 9e9):
+            pass_star()
+
+    is_star = proofs >= rules["star_min_proofs"]
+
+    # ----------------
+    # ELITE proofs
+    # ----------------
+    elite_proofs = 0
+    elite_passed = set()
+
+    def pass_elite(name: str):
+        nonlocal elite_proofs
+        elite_proofs += 1
+        elite_passed.add(name)
+
+    if market in ("Points", "Goal", "Assists"):
+        if ppg is not None and ppg >= t.get("PPG_ELITE", 9e9):
+            pass_elite("PPG")
+
+    if toi is not None and toi >= t.get("TOI_ELITE", 9e9):
+        pass_elite("TOI")
+
+    if ixg is not None and ixg >= t.get("IXG_ELITE", 9e9):
+        pass_elite("IXG")
+
+    if market in ("Points", "Assists"):
+        if ixa is not None and ixa >= t.get("IXA_ELITE", 9e9):
+            pass_elite("IXA")
+
+    if market == "SOG":
+        if shot_intent is not None and shot_intent >= t.get("SHOT_INTENT_ELITE", 9e9):
+            pass_elite("SHOT_INTENT")
+        if med10_sog is not None and med10_sog >= t.get("MED10_SOG_ELITE", 9e9):
+            pass_elite("MED10_SOG")
+
+    if market == "Goal":
+        if med10_sog is not None and med10_sog >= t.get("MED10_SOG_ELITE", 9e9):
+            pass_elite("MED10_SOG")
+
+    gates_ok = all(g in elite_passed for g in rules["elite_requires"])
+    is_elite = (elite_proofs >= rules["elite_min_proofs"]) and gates_ok
+
+    if is_elite:
+        return "ELITE"
+    if is_star:
+        return "STAR"
+    return ""
+
+
+
+# ============================
+# REQUIRED HELPERS (MUST BE ABOVE USAGE)
+# ============================
+def safe_float(x: Any) -> Optional[float]:
+    try:
+        if x is None or x is pd.NA:
+            return None
+        if isinstance(x, float) and math.isnan(x):
+            return None
+        return float(x)
+    except Exception:
+        return None
+
+def safe_int(x: Any) -> Optional[int]:
+    try:
+        if x is None or x is pd.NA:
+            return None
+        if isinstance(x, float) and math.isnan(x):
+            return None
+        return int(x)
+    except Exception:
+        return None
+
+def clamp(x: float, lo: float = 0.0, hi: float = 100.0) -> float:
+    return max(lo, min(hi, x))
+
+def safe_ppg(df: pd.DataFrame) -> pd.Series:
+    """
+    Best-effort PPG:
+    - If actual Points/GP exist, use them
+    - else return NaN series (won't break tiering; PPG proof just fails)
+    """
+    gp = pd.to_numeric(df.get("games_played"), errors="coerce").replace(0, np.nan)
+
+    # Try common actual-stat column names if present
+    p_col = None
+    for cand in ["P", "Points", "points", "I_F_points", "pts"]:
+        if cand in df.columns:
+            p_col = cand
+            break
+
+    # If we have goals+assists, compute points
+    g_col = None
+    a_col = None
+    for cand in ["G", "Goals", "goals", "I_F_goals"]:
+        if cand in df.columns:
+            g_col = cand
+            break
+    for cand in ["A", "Assists", "assists", "I_F_assists"]:
+        if cand in df.columns:
+            a_col = cand
+            break
+
+    if p_col is not None:
+        pts = pd.to_numeric(df[p_col], errors="coerce")
+        return (pts / gp).replace([np.inf, -np.inf], np.nan)
+
+    if g_col is not None and a_col is not None:
+        g = pd.to_numeric(df[g_col], errors="coerce").fillna(0)
+        a = pd.to_numeric(df[a_col], errors="coerce").fillna(0)
+        return ((g + a) / gp).replace([np.inf, -np.inf], np.nan)
+
+    return pd.Series(np.nan, index=df.index, dtype="float64")
+
+
+def pct_rank(series: pd.Series) -> pd.Series:
+    s = pd.to_numeric(series, errors="coerce")
+    return s.rank(pct=True) * 100.0
+
+def parse_utc_to_local_date(start_time_utc: str, tz_name: str) -> Optional[date]:
+    if not start_time_utc or "T" not in start_time_utc:
+        return None
+    try:
+        dt_utc = datetime.fromisoformat(start_time_utc.replace("Z", "+00:00")).astimezone(timezone.utc)
+        dt_local = dt_utc.astimezone(ZoneInfo(tz_name))
+        return dt_local.date()
+    except Exception:
+        return None
+
+def _norm_name(s: str) -> str:
+    s = (s or "").strip().lower()
+    s = re.sub(r"[^a-z\s\-']", " ", s)
+    s = re.sub(r"\s+", " ", s).strip()
+    return s
+
+def _lower_map(df: pd.DataFrame) -> Dict[str, str]:
+    return {str(c).strip().lower(): str(c).strip() for c in df.columns}
+
+def find_col(df: pd.DataFrame, candidates: List[str]) -> Optional[str]:
+    lm = _lower_map(df)
+    for nm in candidates:
+        c = lm.get(nm.lower())
+        if c:
+            return c
+    return None
+
+def debug_find_like(df: pd.DataFrame, needle: str) -> List[str]:
+    n = needle.lower()
+    return [c for c in df.columns if n in str(c).lower()]
+
+def per60(stat: Any, toi: Any) -> pd.Series:
+    """
+    Compute per-60 from stat and icetime (MoneyPuck can be minutes or seconds).
+    """
+    s = pd.to_numeric(stat, errors="coerce")
+    t = pd.to_numeric(toi, errors="coerce")
+    out = pd.Series(np.nan, index=t.index, dtype="float64")
+    m = t > 0
+    sec = m & (t > 10000)
+    mins = m & ~sec
+    out.loc[sec] = s.loc[sec] * 3600.0 / t.loc[sec]
+    out.loc[mins] = s.loc[mins] * 60.0 / t.loc[mins]
+    return out
+
+# ----------------------------
+# Market-specific Talent Proofs
+# ----------------------------
+
+MARKET_TIER_RULES = {
+    "SOG": {
+        "thresholds": {
+            "TOI_STAR": 58.0,
+            "TOI_ELITE": 68.0,
+            "IXG_STAR": 65.0,
+            "IXG_ELITE": 75.0,
+            "SHOT_INTENT_STAR": 70,
+            "SHOT_INTENT_ELITE": 85,
+            "MED10_SOG_STAR": 2.4,
+            "MED10_SOG_ELITE": 3.3
+        },
+        "elite_requires": ["TOI", "MED10_SOG"],
+        "star_min_proofs": 3,
+        "elite_min_proofs": 4,
+    },
+
+    "Points": {
+        "thresholds": {
+            "PPG_STAR": 0.75,
+            "PPG_ELITE": 0.95,
+            "TOI_STAR": 60.0,
+            "TOI_ELITE": 70.0,
+            "IXA_STAR": 85,
+            "IXA_ELITE": 85,
+            "IXG_STAR": 60.0,
+            "IXG_ELITE": 70.0,
+        },
+        "elite_requires": ["PPG", "TOI"],
+        "star_min_proofs": 3,
+        "elite_min_proofs": 4,
+    },
+
+    "Goal": {
+        "thresholds": {
+            "PPG_STAR": 0.65,
+            "PPG_ELITE": 0.85,
+            "TOI_STAR": 58.0,
+            "TOI_ELITE": 68.0,
+            "IXG_STAR": 70.0,
+            "IXG_ELITE": 90,
+            "MED10_SOG_STAR": 2.7,
+            "MED10_SOG_ELITE": 3.3,
+        },
+        "elite_requires": ["IXG", "MED10_SOG"],
+        "star_min_proofs": 3,
+        "elite_min_proofs": 4,
+    },
+
+    "Assists": {
+        "thresholds": {
+            "PPG_STAR": 0.70,
+            "PPG_ELITE": 0.90,
+            "TOI_STAR": 60.0,
+            "TOI_ELITE": 70.0,
+            "IXA_STAR": 72.0,
+            "IXA_ELITE": 90,
+            "IXG_STAR": 55.0,
+            "IXG_ELITE": 65.0,
+        },
+        "elite_requires": ["IXA", "TOI"],
+        "star_min_proofs": 3,
+        "elite_min_proofs": 4,
+    },
+}
+
+
+
+# ============================
+# Files/HTTP
+# ============================
+def ensure_dirs() -> None:
+    os.makedirs(OUTPUT_DIR, exist_ok=True)
+    os.makedirs(CACHE_DIR, exist_ok=True)
+
+def http_session() -> requests.Session:
+    s = requests.Session()
+    s.headers.update({
+        "User-Agent": (
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+            "AppleWebKit/537.36 (KHTML, like Gecko) "
+            "Chrome/123.0.0.0 Safari/537.36"
+        )
+    })
+    return s
+
+def http_get_json(sess: requests.Session, url: str) -> Any:
+    r = sess.get(url, timeout=REQUEST_TIMEOUT_SEC)
+    r.raise_for_status()
+    return r.json()
+
+def http_get_text(sess: requests.Session, url: str) -> str:
+    r = sess.get(url, timeout=REQUEST_TIMEOUT_SEC)
+    r.raise_for_status()
+    return r.text
+
+
+
+# ============================
+# NHL Stats API (PP TOI fallback)
+# ============================
+# Why: MoneyPuck sometimes ships skater summaries without reliable PP situation rows.
+# If PP_TOI_* is missing, we can pull season totals from the NHL stats REST API and
+# compute per-game PP TOI.
+# Sources:
+#  - NHL stats REST endpoints: https://api.nhle.com/stats/rest/en/* (cayenneExp queries)
+#  - Gamecenter boxscore also contains powerPlayTimeOnIce per skater for a game.
+
+def _toi_str_to_minutes(x: Any) -> Optional[float]:
+    """Parse TOI to **minutes** (float).
+
+    Handles:
+      - 'MM:SS' strings (common)
+      - numeric minutes (already minutes)
+      - numeric seconds (some NHL stats fields leak seconds)
+
+    Heuristic:
+      - if numeric value is large (> 200), treat it as **seconds** and convert to minutes.
+        (Typical season PP TOI minutes are <~ 400; seconds will be in the thousands.)
+    """
+    if x is None or x is pd.NA:
+        return None
+    s = str(x).strip()
+    if not s:
+        return None
+
+    # numeric path
+    try:
+        v = float(s)
+        if math.isnan(v):
+            return None
+        # seconds leak -> minutes
+        if v > 200:
+            return v / 60.0
+        return v
     except Exception:
         pass
 
+    # MM:SS path
+    if ':' in s:
+        try:
+            mm, ss = s.split(':', 1)
+            m = int(mm)
+            sec = int(ss)
+            return m + (sec / 60.0)
+        except Exception:
+            return None
 
-def american_to_decimal(odds: float) -> float:
+    return None
+
+
+def _season_id_from_date(d: date) -> int:
+    """Return NHL seasonId like 20232024."""
+    y = d.year if d.month >= 7 else d.year - 1
+    return int(f"{y}{y+1}")
+
+
+def fetch_pp_toi_from_nhle_stats(season_id: int, debug: bool = False) -> pd.DataFrame:
+    """Fetch per-skater PP TOI totals from NHL stats REST API.
+
+    Returns DataFrame with columns:
+      - playerId
+      - PP_TOI_min (season total minutes)
+      - gamesPlayed
+      - PP_TOI_per_game
+
+    Notes:
+      - Uses /skater/summary with cayenneExp filters.
+      - Different seasons may expose slightly different field names, so we match a few.
+    """
+    url = "https://api.nhle.com/stats/rest/en/skater/summary"
+    # gameTypeId=2 => regular season
+    cay = f"seasonId={int(season_id)} and gameTypeId=2"
+
+    sess = http_session()
+    params = {
+        'cayenneExp': cay,
+        'isAggregate': 'false',
+        'isGame': 'false',
+        'limit': -1,
+        'start': 0,
+    }
     try:
-        o = float(odds)
-    except Exception:
-        return 1.0
-    if o == 0:
-        return 1.0
-    if o > 0:
-        return 1.0 + (o / 100.0)
-    return 1.0 + (100.0 / abs(o))
+        j = sess.get(url, params=params, timeout=REQUEST_TIMEOUT_SEC).json()
+    except Exception as e:
+        if debug:
+            print(f"[PPTOI] NHL stats fetch failed: {type(e).__name__}: {e}")
+        return pd.DataFrame(columns=["playerId", "PP_TOI_min", "gamesPlayed", "PP_TOI_per_game"])
 
+    rows = list((j or {}).get("data") or [])
+    if not rows:
+        return pd.DataFrame(columns=["playerId", "PP_TOI_min", "gamesPlayed", "PP_TOI_per_game"])
 
-def implied_prob_from_american(odds: float) -> float:
-    try:
-        o = float(odds)
-    except Exception:
-        return 0.5
-    if o == 0:
-        return 0.5
-    if o > 0:
-        return 100.0 / (o + 100.0)
-    return abs(o) / (abs(o) + 100.0)
+    df = pd.DataFrame(rows)
 
+    # playerId field name can vary (playerId is typical)
+    pid_col = find_col(df, ["playerid", "playerId"]) or "playerId"
 
-def calc_ev_pct_and_kelly(model_prob: float, odds: float) -> tuple[float, float, float, float]:
-    # returns: (imp_prob, ev_pct, kelly_full, dec_odds)
-    p = max(0.0001, min(0.9999, float(model_prob)))
-    dec = american_to_decimal(float(odds))
-    imp = implied_prob_from_american(float(odds))
-    b = dec - 1.0
-    q = 1.0 - p
-    ev_per_dollar = (p * b) - q
-    ev_pct = ev_per_dollar * 100.0
-    kelly = max(0.0, (b * p - q) / b) if b > 0 else 0.0
-    return imp, ev_pct, kelly, dec
+    gp_col = find_col(df, ["gamesplayed", "gamesPlayed", "gp"]) or "gamesPlayed"
 
+    # PP TOI field names vary; try common ones
+    pp_cols = [
+        "powerPlayTimeOnIce",
+        "ppTimeOnIce",
+        "ppTimeOnIcePerGame",
+        "powerPlayTimeOnIcePerGame",
+        "timeOnIcePp",
+        "timeOnIcePpPerGame",
+    ]
+    pp_col = None
+    for c in pp_cols:
+        if c in df.columns:
+            pp_col = c
+            break
 
-def _append_csv_row(path: str, row: dict, headers: list[str]) -> None:
-    _ensure_dir(os.path.dirname(path))
-    file_exists = os.path.exists(path)
-    # ensure all headers exist
-    safe_row = {h: row.get(h, "") for h in headers}
-    df1 = pd.DataFrame([safe_row], columns=headers)
-    if not file_exists:
-        df1.to_csv(path, index=False)
+    # If only per-game exists, we can still use it. Prefer totals.
+    if pp_col is None:
+        # sometimes the API uses camel-case variants
+        like = [c for c in df.columns if 'pp' in str(c).lower() and 'toi' in str(c).lower()]
+        if like:
+            pp_col = like[0]
+
+    if pp_col is None or pid_col not in df.columns or gp_col not in df.columns:
+        if debug:
+            print(f"[PPTOI] NHL stats response missing expected cols. Have pid={pid_col in df.columns}, gp={gp_col in df.columns}, pp_col={pp_col}")
+        return pd.DataFrame(columns=["playerId", "PP_TOI_min", "gamesPlayed", "PP_TOI_per_game"])
+
+    out = pd.DataFrame({
+        "playerId": pd.to_numeric(df[pid_col], errors="coerce"),
+        "gamesPlayed": pd.to_numeric(df[gp_col], errors="coerce"),
+    })
+
+    # PP TOI may be 'MM:SS' string or minutes float
+    pp_raw = df[pp_col]
+    pp_min = pp_raw.apply(_toi_str_to_minutes)
+    out["PP_TOI_min"] = pd.to_numeric(pp_min, errors="coerce")
+
+    # If the field we grabbed is per-game, infer totals
+    if 'pergame' in str(pp_col).lower():
+        out["PP_TOI_per_game"] = out["PP_TOI_min"]
+        out["PP_TOI_min"] = out["PP_TOI_per_game"] * out["gamesPlayed"].replace(0, np.nan)
     else:
-        df1.to_csv(path, mode='a', header=False, index=False)
+        out["PP_TOI_per_game"] = out["PP_TOI_min"] / out["gamesPlayed"].replace(0, np.nan)
+
+    out = out.dropna(subset=["playerId"]).copy()
+    out["playerId"] = out["playerId"].astype(int)
+
+    if debug:
+        nn = out["PP_TOI_per_game"].notna().sum()
+        print(f"[PPTOI] NHL stats PP TOI rows: {len(out)} (non-null per-game: {nn}) using field '{pp_col}'")
+
+    return out[["playerId", "PP_TOI_min", "gamesPlayed", "PP_TOI_per_game"]]
+# ============================
+# NHL schedule
+# ============================
+def nhl_schedule_today(sess: requests.Session, today_local: date) -> List[Dict[str, Any]]:
+    def fetch_day(d: date) -> Any:
+        return http_get_json(sess, f"https://api-web.nhle.com/v1/schedule/{d.isoformat()}")
+
+    data_today = fetch_day(today_local)
+    data_tom = fetch_day(today_local + timedelta(days=1))
+
+    out: List[Dict[str, Any]] = []
+
+    def consume(data: Any) -> None:
+        for day in data.get("gameWeek", []):
+            for g in day.get("games", []):
+                away = (g.get("awayTeam") or {}).get("abbrev")
+                home = (g.get("homeTeam") or {}).get("abbrev")
+                start_utc = str(g.get("startTimeUTC", ""))
+                local_d = parse_utc_to_local_date(start_utc, LOCAL_TZ)
+                if local_d == today_local and away and home:
+                    out.append({"away": norm_team(away), "home": norm_team(home), "startTimeUTC": start_utc})
+
+    consume(data_today)
+    consume(data_tom)
+
+    seen = set()
+    dedup: List[Dict[str, Any]] = []
+    for g in out:
+        k = (g["away"], g["home"])
+        if k not in seen:
+            seen.add(k)
+            dedup.append(g)
+    return dedup
 
 
-def _slug(s: str) -> str:
-    s = str(s or '').strip()
-    s = re.sub(r"\s+", "_", s)
-    s = re.sub(r"[^A-Za-z0-9_\-\.]", "", s)
+# ============================
+# MoneyPuck CSV loads
+# ============================
+def current_season_start_year(today: date) -> int:
+    return today.year if today.month >= 7 else today.year - 1
+
+def moneypuck_url(kind: str, y: int) -> str:
+    return f"https://moneypuck.com/moneypuck/playerData/seasonSummary/{y}/regular/{kind}.csv"
+
+def load_moneypuck_csv(sess: requests.Session, url: str) -> pd.DataFrame:
+    txt = http_get_text(sess, url)
+    if not txt.strip():
+        raise RuntimeError(f"Empty CSV from {url}")
+    df = pd.read_csv(StringIO(txt))
+    df.columns = df.columns.str.strip()
+    return df
+
+def load_moneypuck_best_effort(sess: requests.Session, kind: str) -> pd.DataFrame:
+    start = current_season_start_year(date.today())
+    last_err = None
+    for y in (start, start - 1):
+        url = moneypuck_url(kind, y)
+        try:
+            return load_moneypuck_csv(sess, url)
+        except Exception as e:
+            last_err = f"{url} -> {type(e).__name__}: {e}"
+    raise RuntimeError(f"Could not download MoneyPuck {kind}.csv. Last error: {last_err}")
+
+
+# ============================
+# DailyFaceoff team mapping
+# ============================
+DFO_TEAMNAME_TO_ABBR = {
+    "Anaheim Ducks": "ANA",
+    "Arizona Coyotes": "ARI",
+    "Boston Bruins": "BOS",
+    "Buffalo Sabres": "BUF",
+    "Calgary Flames": "CGY",
+    "Carolina Hurricanes": "CAR",
+    "Chicago Blackhawks": "CHI",
+    "Colorado Avalanche": "COL",
+    "Columbus Blue Jackets": "CBJ",
+    "Dallas Stars": "DAL",
+    "Detroit Red Wings": "DET",
+    "Edmonton Oilers": "EDM",
+    "Florida Panthers": "FLA",
+    "Los Angeles Kings": "LAK",
+    "Minnesota Wild": "MIN",
+    "Montreal Canadiens": "MTL",
+    "Nashville Predators": "NSH",
+    "New Jersey Devils": "NJD",
+    "New York Islanders": "NYI",
+    "New York Rangers": "NYR",
+    "Ottawa Senators": "OTT",
+    "Philadelphia Flyers": "PHI",
+    "Pittsburgh Penguins": "PIT",
+    "San Jose Sharks": "SJS",
+    "Seattle Kraken": "SEA",
+    "St. Louis Blues": "STL",
+    "Tampa Bay Lightning": "TBL",
+    "Toronto Maple Leafs": "TOR",
+    "Utah Hockey Club": "UTA", "Utah": "UTA", "Utah HC": "UTA", "Utah Hockey": "UTA",
+    "Vancouver Canucks": "VAN",
+    "Vegas Golden Knights": "VGK",
+    "Washington Capitals": "WSH",
+    "Winnipeg Jets": "WPG",
+    "St Louis Blues": "STL",
+}
+
+def _norm_teamname_full(s: str) -> str:
+    s = (s or "").strip().lower()
+    s = s.replace("&", "and")
+    s = re.sub(r"[^a-z\s]", " ", s)
+    s = re.sub(r"\s+", " ", s).strip()
     return s
 
+DFO_TEAMNAME_TO_ABBR_NORM = { _norm_teamname_full(k): v for k, v in DFO_TEAMNAME_TO_ABBR.items() }
 
-def make_bet_id(date_str: str, player: str, market: str, line: float, odds_taken: float) -> str:
-    d = str(date_str or '').replace('-', '')
-    return f"{d}_{_slug(player)}_{_slug(market)}_{_slug(line)}_{_slug(int(odds_taken) if float(odds_taken).is_integer() else odds_taken)}"
+def dfo_team_to_abbr(team_full: str) -> str | None:
+    n = _norm_teamname_full(team_full)
+    hit = DFO_TEAMNAME_TO_ABBR_NORM.get(n)
+    if hit:
+        return hit
+    best = None
+    best_len = 0
+    for k, ab in DFO_TEAMNAME_TO_ABBR_NORM.items():
+        if k and (k in n or n in k):
+            if len(k) > best_len:
+                best = ab
+                best_len = len(k)
+    return best
 
-def render_market_filter_bar(default_min_conf: int = 60, key_prefix: str = "m"):
-    c1, c2, c3, c4, c5, c6 = st.columns([1.1,1.1,1.2,1.2,1.1,1.6])
-    with c1:
-        greens_only = st.toggle("🟢 Greens", value=False, key=f"{key_prefix}_greens")
-    with c2:
-        ev_only = st.toggle("💰 +EV", value=False, key=f"{key_prefix}_ev")
-    with c3:
-        locks_only = st.toggle("🔒 Locks", value=False, key=f"{key_prefix}_locks")
-    with c4:
-        plays_first = st.toggle("⭐ Plays first", value=True, key=f"{key_prefix}_playsfirst")
-    with c5:
-        hide_reds = st.toggle("Hide 🔴", value=True, key=f"{key_prefix}_hidered")
-    with c6:
-        min_conf = st.slider("Min Conf", 0, 100, int(default_min_conf), 1, key=f"{key_prefix}_minconf")
-    return {
-        "greens_only": greens_only,
-        "ev_only": ev_only,
-        "locks_only": locks_only,
-        "plays_first": plays_first,
-        "hide_reds": hide_reds,
-        "min_conf": min_conf,
+
+# ============================
+# DailyFaceoff starting goalies
+# ============================
+def fetch_dailyfaceoff_starters(today_local: date, debug: bool = False) -> dict[str, dict[str, str]]:
+    url = "https://www.dailyfaceoff.com/starting-goalies"
+    html = http_get_text(http_session(), url)
+    soup = BeautifulSoup(html, "html.parser")
+
+    statuses_norm = {
+        "confirmed": "Confirmed",
+        "unconfirmed": "Unconfirmed",
+        "likely": "Likely",
+        "expected": "Expected",
+        "probable": "Likely",
     }
-def legend_signals():
-    with st.expander("Legend (signals)", expanded=False):
-        st.markdown("""
-- **🟢** = Earned Green (playable)
-- **💰** = +EV approved (price edge)
-- **🔒** = LOCK (🟢 + 💰)
-- **EV_Signal** shows the combined signal + EV% up front
-""")
 
-def _calc_market_map(market: str) -> dict:
-    """
-    Maps calculator market -> relevant df columns.
-    Returns dict with keys: line_col, odds_col, p_model_col, ev_col, conf_col, matrix_col, green_col, ev_icon_col
-    """
-    m = (market or "").strip().lower()
-    if m.startswith("point"):
-        return dict(
-            line_col="Points_Line",
-            odds_col="Points_Odds_Over",
-            p_model_col="Points_p_model_over",
-            modelpct_col="Points_Model%",
-            evpct_col="Points_EV%",
-            conf_col="Conf_Points",
-            matrix_col="Matrix_Points",
-            green_col="Green_Points",
-            ev_icon_col="Plays_EV_Points",
-        )
-    if m.startswith("sog"):
-        return dict(
-            line_col="SOG_Line",
-            odds_col="SOG_Odds_Over",
-            p_model_col="SOG_p_model_over",
-            modelpct_col="SOG_Model%",
-            evpct_col="SOG_EV%",
-            conf_col="Conf_SOG",
-            matrix_col="Matrix_SOG",
-            green_col="Green_SOG",
-            ev_icon_col="Plays_EV_SOG",
-        )
-    if m.startswith("assist"):
-        return dict(
-            line_col="Assists_Line",
-            odds_col="Assists_Odds_Over",
-            p_model_col="Assists_p_model_over",
-            modelpct_col="Assists_Model%",
-            evpct_col="Assists_EV%",
-            conf_col="Conf_Assists",
-            matrix_col="Matrix_Assists",
-            green_col="Green_Assists",
-            ev_icon_col="Plays_EV_Assists",
-        )
-    # Goal / ATG
-    return dict(
-        line_col="ATG_Line",
-        odds_col="ATG_Odds_Over",
-        p_model_col="ATG_p_model_over",
-        modelpct_col="ATG_Model%",
-        evpct_col="ATG_EV%",
-        conf_col="Conf_Goal",
-        matrix_col="Matrix_Goal",
-        green_col="Green_Goal",
-        ev_icon_col="Plays_EV_ATG",
+    def norm_status(s: Any) -> str:
+        t = str(s or "").strip().lower()
+        return statuses_norm.get(t, str(s or "").strip().title())
+
+    def team_to_abbr(team_obj: Any) -> str:
+        if isinstance(team_obj, dict):
+            for k in ("abbrev", "abbreviation", "abbr", "code", "shortName", "short_name"):
+                v = team_obj.get(k)
+                if v:
+                    return norm_team(str(v))
+            for k in ("name", "fullName", "full_name", "teamName"):
+                v = team_obj.get(k)
+                if v:
+                    ab = DFO_TEAMNAME_TO_ABBR_NORM.get(_norm_teamname_full(str(v)))
+                    return norm_team(ab or str(v))
+        s = str(team_obj or "").strip()
+        if not s:
+            return ""
+        ab = DFO_TEAMNAME_TO_ABBR_NORM.get(_norm_teamname_full(s))
+        return norm_team(ab or s)
+
+    def goalie_name(goalie_obj: Any) -> str:
+        if isinstance(goalie_obj, dict):
+            for k in ("name", "fullName", "full_name", "playerName"):
+                v = goalie_obj.get(k)
+                if v:
+                    return str(v).strip()
+            p = goalie_obj.get("player") if isinstance(goalie_obj.get("player"), dict) else None
+            if p:
+                for k in ("name", "fullName", "full_name"):
+                    v = p.get(k)
+                    if v:
+                        return str(v).strip()
+        return str(goalie_obj or "").strip()
+
+    # --------- 1) Try __NEXT_DATA__ ----------
+    out: dict[str, dict[str, str]] = {}
+    script = soup.find("script", id="__NEXT_DATA__")
+    if script and script.string:
+        try:
+            data = json.loads(script.string)
+
+            def walk(x: Any):
+                if isinstance(x, dict):
+                    yield x
+                    for v in x.values():
+                        yield from walk(v)
+                elif isinstance(x, list):
+                    for it in x:
+                        yield from walk(it)
+
+            candidates = []
+            for d in walk(data):
+                if any(k in d for k in ("goalie", "startingGoalie", "starter", "goalieStarter")) and any(
+                    k in d for k in ("team", "teamAbbrev", "team_abbrev", "teamName", "teamAbbreviation")
+                ):
+                    candidates.append(d)
+
+            for d in candidates:
+                team_obj = d.get("team") or d.get("teamName") or d.get("teamAbbrev") or d.get("team_abbrev")
+                g_obj = d.get("goalie") or d.get("startingGoalie") or d.get("starter") or d.get("goalieStarter")
+                st = d.get("status") or d.get("starterStatus") or d.get("confirmation") or ""
+                team_abbr = team_to_abbr(team_obj)
+                gname = goalie_name(g_obj)
+                if team_abbr and gname:
+                    out[team_abbr] = {"goalie": gname, "status": norm_status(st)}
+
+            if len(out) >= 10:
+                if debug:
+                    print(f"[DFO] __NEXT_DATA__ parsed starter teams: {len(out)}")
+                    print("[DFO] sample:", list(out.items())[:8])
+                return out
+
+            if debug:
+                print(f"[DFO] __NEXT_DATA__ produced only {len(out)} teams; falling back...")
+
+        except Exception as e:
+            if debug:
+                print(f"[DFO] __NEXT_DATA__ parse failed: {type(e).__name__}: {e}")
+
+    # --------- 2) Fallback text scan ----------
+    raw_lines = soup.get_text("\n", strip=True).splitlines()
+    bad_exact = {"Show More", "Line Combos", "News", "Stats", "Schedule", "|"}
+    statuses = {"Confirmed", "Unconfirmed", "Likely", "Expected"}
+
+    lines: list[str] = []
+    for ln in raw_lines:
+        ln = (ln or "").strip()
+        if not ln:
+            continue
+        if ln in bad_exact:
+            continue
+        if ln.startswith("Schedule "):
+            ln = ln.replace("Schedule ", "", 1).strip()
+        if ln == "Schedule":
+            continue
+        lines.append(ln)
+
+    def is_iso_datetime(s: str) -> bool:
+        return ("T" in s and "Z" in s and len(s) >= 18 and s[4] == "-" and s[7] == "-")
+
+    def find_goalie_after(idx: int) -> tuple[str, str, int] | None:
+        j = idx
+        while j < len(lines):
+            s = lines[j]
+            if s in statuses or is_iso_datetime(s):
+                j += 1
+                continue
+            if s.startswith(("W-L-OTL:", "GAA:", "SV%:", "SO:", "Source:", "#", "NHL Starting Goalies")):
+                j += 1
+                continue
+            goalie = s
+            k = j + 1
+            while k < len(lines) and (is_iso_datetime(lines[k]) or lines[k] in bad_exact):
+                k += 1
+            if k < len(lines) and lines[k] in statuses:
+                return goalie, lines[k], k + 1
+            j += 1
+        return None
+
+    matchup_idxs: list[tuple[int, str, str]] = []
+    for i in range(len(lines)):
+        ln = lines[i]
+        if " at " in ln:
+            away_full, home_full = [x.strip() for x in ln.split(" at ", 1)]
+            matchup_idxs.append((i, away_full, home_full))
+        elif " @ " in ln:
+            away_full, home_full = [x.strip() for x in ln.split(" @ ", 1)]
+            matchup_idxs.append((i, away_full, home_full))
+        elif ln == "at" and i - 1 >= 0 and i + 1 < len(lines):
+            matchup_idxs.append((i, lines[i - 1].strip(), lines[i + 1].strip()))
+
+    out = {}
+    for i, away_full, home_full in matchup_idxs:
+        away = dfo_team_to_abbr(away_full)
+        home = dfo_team_to_abbr(home_full)
+        if not away or not home:
+            continue
+        g1 = find_goalie_after(i + 1)
+        if not g1:
+            continue
+        goalie_away, status_away, next_idx = g1
+        g2 = find_goalie_after(next_idx)
+        if not g2:
+            continue
+        goalie_home, status_home, _ = g2
+        out[norm_team(away)] = {"goalie": goalie_away.strip(), "status": status_away.strip()}
+        out[norm_team(home)] = {"goalie": goalie_home.strip(), "status": status_home.strip()}
+
+    if debug:
+        print(f"[DFO] fallback text parsed starter teams: {len(out)}")
+        print("[DFO] sample:", list(out.items())[:8])
+
+    return out
+
+
+# ============================
+# DailyFaceoff injuries (UPGRADED)
+# ============================
+DFO_TEAM_ABBR_TO_SLUG = {
+    "ANA": "anaheim-ducks",
+    "ARI": "arizona-coyotes",
+    "BOS": "boston-bruins",
+    "BUF": "buffalo-sabres",
+    "CGY": "calgary-flames",
+    "CAR": "carolina-hurricanes",
+    "CHI": "chicago-blackhawks",
+    "COL": "colorado-avalanche",
+    "CBJ": "columbus-blue-jackets",
+    "DAL": "dallas-stars",
+    "DET": "detroit-red-wings",
+    "EDM": "edmonton-oilers",
+    "FLA": "florida-panthers",
+    "LAK": "los-angeles-kings",
+    "MIN": "minnesota-wild",
+    "MTL": "montreal-canadiens",
+    "NSH": "nashville-predators",
+    "NJD": "new-jersey-devils",
+    "NYI": "new-york-islanders",
+    "NYR": "new-york-rangers",
+    "OTT": "ottawa-senators",
+    "PHI": "philadelphia-flyers",
+    "PIT": "pittsburgh-penguins",
+    "SJS": "san-jose-sharks",
+    "SEA": "seattle-kraken",
+    "STL": "st-louis-blues",
+    "TBL": "tampa-bay-lightning",
+    "TOR": "toronto-maple-leafs",
+    "UTA": "utah-hockey-club",
+    "VAN": "vancouver-canucks",
+    "VGK": "vegas-golden-knights",
+    "WSH": "washington-capitals",
+    "WPG": "winnipeg-jets",
+}
+
+def _dfo_norm_status(s: str) -> str:
+    t = (s or "").strip().upper()
+    if not t:
+        return "Healthy"
+    if "GTD" in t or "DAY" in t or "DTD" in t:
+        return "GTD"
+    if "IR" in t or "INJURED" in t:
+        return "IR"
+    if "OUT" in t:
+        return "Out"
+    if "SCRATCH" in t:
+        return "Scratch"
+    return t.title()
+
+def _dfo_injury_type(s: str) -> str:
+    t = (s or "").strip().lower()
+    if not t:
+        return "Unknown"
+    if "upper" in t:
+        return "Upper"
+    if "lower" in t:
+        return "Lower"
+    if "ill" in t or "flu" in t:
+        return "Illness"
+    return "Unknown"
+
+def _find_injury_table(soup: BeautifulSoup) -> Any:
+    tables = soup.find_all("table")
+    best = None
+    best_score = 0
+    for tb in tables:
+        header_txt = " ".join([th.get_text(" ", strip=True) for th in tb.find_all("th")]).lower()
+        score = 0
+        score += 1 if "player" in header_txt else 0
+        score += 1 if "status" in header_txt else 0
+        score += 1 if "injury" in header_txt else 0
+        score += 1 if "return" in header_txt or "expected" in header_txt else 0
+        if score > best_score:
+            best_score = score
+            best = tb
+    return best if best_score >= 2 else None
+
+def fetch_dfo_injuries_for_team(team_abbr: str, debug: bool = False) -> List[Dict[str, Any]]:
+    team_abbr = norm_team(team_abbr)
+    slug = DFO_TEAM_ABBR_TO_SLUG.get(team_abbr)
+    if not slug:
+        return []
+
+    url = f"https://www.dailyfaceoff.com/teams/{slug}/line-combinations"
+    try:
+        html = http_get_text(http_session(), url)
+    except Exception as e:
+        if debug:
+            print(f"[DFO INJ] fetch failed {team_abbr}: {type(e).__name__}: {e}")
+        return []
+
+    soup = BeautifulSoup(html, "html.parser")
+
+    tb = _find_injury_table(soup)
+    if tb is not None:
+        rows = tb.find_all("tr")
+        out_rows: List[Dict[str, Any]] = []
+        for r in rows[1:]:
+            tds = r.find_all("td")
+            if not tds:
+                continue
+            cols = [td.get_text(" ", strip=True) for td in tds]
+            cols = [c.strip() for c in cols if c is not None]
+            player = cols[0] if len(cols) >= 1 else ""
+            status = cols[1] if len(cols) >= 2 else ""
+            injury = cols[2] if len(cols) >= 3 else ""
+            expret = cols[3] if len(cols) >= 4 else ""
+            if not player:
+                continue
+            out_rows.append({
+                "Team": team_abbr,
+                "Player": player,
+                "Status": _dfo_norm_status(status),
+                "Injury": injury,
+                "Expected_Return": expret,
+            })
+        if debug:
+            print(f"[DFO INJ] {team_abbr} injuries parsed (table): {len(out_rows)}")
+        return out_rows
+
+    # List-section parsing fallback
+    lines = soup.get_text("\n", strip=True).splitlines()
+    lines = [(ln or "").strip() for ln in lines if (ln or "").strip()]
+    try:
+        start_idx = next(i for i, ln in enumerate(lines) if ln.strip().lower() == "injuries")
+    except StopIteration:
+        if debug:
+            print(f"[DFO INJ] no 'Injuries' section found for {team_abbr}")
+        return []
+
+    stop_words = {"badges:", "badge:", "click player jersey for news, stats and more!"}
+    status_tokens = {"ir", "out", "dtd", "gtd", "day-to-day", "game-time decision", "scratch"}
+
+    out_rows: List[Dict[str, Any]] = []
+    cur_status: Optional[str] = None
+
+    i = start_idx + 1
+    while i < len(lines):
+        ln = lines[i].strip()
+        low = ln.lower()
+
+        if low in stop_words or low.startswith("badges"):
+            break
+
+        if low in status_tokens:
+            if low == "ir":
+                cur_status = "IR"
+            elif low == "out":
+                cur_status = "Out"
+            elif low == "scratch":
+                cur_status = "Scratch"
+            else:
+                cur_status = "GTD"
+            i += 1
+            continue
+
+        if low in {"injuries", "goalies", "forwards", "defensive pairings"}:
+            i += 1
+            continue
+
+        if cur_status:
+            player = ln
+            if len(player) >= 3:
+                out_rows.append({
+                    "Team": team_abbr,
+                    "Player": player,
+                    "Status": _dfo_norm_status(cur_status),
+                    "Injury": "",
+                    "Expected_Return": "",
+                })
+            cur_status = None
+            i += 1
+            continue
+
+        i += 1
+
+    if debug:
+        print(f"[DFO INJ] {team_abbr} injuries parsed (list): {len(out_rows)}")
+
+    return out_rows
+
+def fetch_dfo_injuries_for_teams(teams: set[str], debug: bool = False) -> pd.DataFrame:
+    rows: List[Dict[str, Any]] = []
+    for t in sorted({norm_team(x) for x in teams}):
+        rows.extend(fetch_dfo_injuries_for_team(t, debug=debug))
+        time.sleep(HTTP_SLEEP_SEC)
+
+    if not rows:
+        return pd.DataFrame(columns=["Team", "Player", "Status", "Injury", "Expected_Return", "Player_norm"])
+
+def merge_bdl_mainlines(df: pd.DataFrame, path: str = "data/cache/bdl_mainlines_best.json") -> pd.DataFrame:
+    import json
+    import pandas as pd
+
+
+    def _norm_name(x):
+
+        """Normalize player names for joining (fixes accents + mojibake)."""
+
+        import unicodedata, re
+
+        if x is None:
+
+            return ""
+
+        s0 = str(x).strip()
+
+        # Fix common mojibake: 'StÃ¼tzle' -> 'Stützle'
+
+        try:
+
+            if any(ch in s0 for ch in ("Ã", "Â", " ")):
+
+                s0 = s0.encode("latin-1", "ignore").decode("utf-8", "ignore")
+
+        except Exception:
+
+            pass
+
+        # Strip accents
+
+        try:
+
+            s0 = unicodedata.normalize("NFKD", s0)
+
+            s0 = "".join(ch for ch in s0 if not unicodedata.combining(ch))
+
+            s0 = s0.encode("ascii", "ignore").decode("ascii")
+
+        except Exception:
+
+            pass
+
+        s1 = s0.lower()
+
+        s1 = re.sub(r"\s+", " ", s1).strip()
+
+        # Safety net for the rare dropped 'u' case
+
+        if s1.endswith(" sttzle") or s1 == "tim sttzle":
+
+            s1 = s1.replace("sttzle", "stutzle")
+
+        return s1
+    def _norm_team(x):
+        return "" if x is None else str(x).strip().upper()
+
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            bdl_rows = json.load(f)
+        if not bdl_rows:
+            return df
+    except Exception:
+        return df
+
+    bdl = pd.DataFrame(bdl_rows)
+    if bdl.empty:
+        return df
+
+    bdl["player_key"] = bdl["player"].map(_norm_name)
+    bdl["team_key"]   = bdl["team"].map(_norm_team)
+
+    df["player_key"] = df["Player_norm"] if "Player_norm" in df.columns else df["Player"].map(_norm_name)
+    df["team_key"]   = df["Team_norm"]   if "Team_norm"   in df.columns else df["Team"].map(_norm_team)
+
+    wide = bdl.pivot_table(
+        index=["player_key", "team_key"],
+        columns="prop_type",
+        values=["main_line_plus", "main_odds", "vendor"],
+        aggfunc="first"
     )
+    wide.columns = [f"{a}_{b}" for a, b in wide.columns]
+    wide = wide.reset_index()
 
-def warlord_call(ev_pct: float, kelly: float) -> tuple[str, str, str]:
-    """
-    Returns (label, emoji, why) based on EV% and Kelly%.
-    Tune thresholds to taste.
-    """
-    k = max(0.0, float(kelly)) * 100.0
-    e = float(ev_pct)
+    df = df.merge(wide, on=["player_key", "team_key"], how="left")
 
-    if e >= 12 and k >= 6:
-        return ("PRESS THE ATTACK", "⚔️", "Big price edge + strong sizing support")
-    if e >= 8 and k >= 4:
-        return ("STRONG EDGE", "🔥", "Good EV + meaningful sizing support")
-    if e >= 5 and k >= 2:
-        return ("PLAYABLE", "✅", "Positive EV; size it responsibly")
-    if e >= 0:
-        return ("SMALL EDGE / PRICE CHECK", "🟡", "Edge is thin; consider smaller stake or pass")
-    return ("PASS", "🛑", "Negative EV at this price")
+    df.rename(columns={
+        "main_line_plus_shots_on_goal": "BDL_SOG_Line",
+        "main_odds_shots_on_goal": "BDL_SOG_Odds",
+        "vendor_shots_on_goal": "BDL_SOG_Book",
 
-# -------------------------
-# Number formatting helpers
-# -------------------------
+        "main_line_plus_goals": "BDL_Goal_Line",
+        "main_odds_goals": "BDL_Goal_Odds",
+        "vendor_goals": "BDL_Goal_Book",
 
-def _icon_is_money(v) -> bool:
-    return str(v).strip() == "💰"
+        "main_line_plus_points": "BDL_Points_Line",
+        "main_odds_points": "BDL_Points_Odds",
+        "vendor_points": "BDL_Points_Book",
 
-def _col_bool(df: pd.DataFrame, col: str) -> pd.Series:
-    if col not in df.columns:
-        return pd.Series(False, index=df.index)
-    if df[col].dtype == bool:
-        return df[col].fillna(False)
-    return df[col].astype(str).str.strip().str.lower().isin(["true","1","yes","y","t","🟢"])
+        "main_line_plus_assists": "BDL_Assists_Line",
+        "main_odds_assists": "BDL_Assists_Odds",
+        "vendor_assists": "BDL_Assists_Book",
 
-def apply_market_filters(
-    df_in: pd.DataFrame,
-    f: dict,
-    green_col: str,
-    ev_icon_col: str,
-    conf_col: str | None = None,
-    matrix_col: str | None = None,
-    lock_col: str = "LOCK",
-) -> pd.DataFrame:
-    df = df_in.copy()
+        "main_line_plus_saves": "BDL_Saves_Line",
+        "main_odds_saves": "BDL_Saves_Odds",
+        "vendor_saves": "BDL_Saves_Book",
 
-    if conf_col and conf_col in df.columns:
-        df = df[pd.to_numeric(df[conf_col], errors="coerce").fillna(0) >= float(f.get("min_conf", 0))]
-
-    if f.get("hide_reds") and matrix_col and matrix_col in df.columns:
-        df = df[~df[matrix_col].astype(str).str.lower().str.contains("red", na=False)]
-
-    if f.get("greens_only"):
-        df = df[_col_bool(df, green_col)]
-
-    if f.get("ev_only"):
-        if ev_icon_col in df.columns:
-            df = df[df[ev_icon_col].astype(str).apply(_icon_is_money)]
-
-    if f.get("locks_only"):
-        if lock_col in df.columns:
-            df = df[df[lock_col].astype(str).str.strip() == "🔒"]
-        else:
-            g = _col_bool(df, green_col)
-            e = df[ev_icon_col].astype(str).apply(_icon_is_money) if ev_icon_col in df.columns else False
-            df = df[g & e]
-
-    if f.get("plays_first"):
-        tmp = df.copy()
-        tmp["_lock_sort"] = (tmp[lock_col].astype(str).str.strip() == "🔒").astype(int) if lock_col in tmp.columns else 0
-        tmp["_ev_sort"] = tmp[ev_icon_col].astype(str).apply(_icon_is_money).astype(int) if ev_icon_col in tmp.columns else 0
-        sort_cols = ["_lock_sort", "_ev_sort"]
-        if conf_col and conf_col in tmp.columns:
-            sort_cols.append(conf_col)
-        tmp = tmp.sort_values(by=sort_cols, ascending=[False]*len(sort_cols), kind="mergesort")
-        tmp = tmp.drop(columns=[c for c in ["_lock_sort","_ev_sort"] if c in tmp.columns])
-        df = tmp
+        "main_line_plus_power_play_points": "BDL_PPP_Line",
+        "main_odds_power_play_points": "BDL_PPP_Odds",
+        "vendor_power_play_points": "BDL_PPP_Book",
+    }, inplace=True)
 
     return df
 
-def _is_nan(x) -> bool:
-    try:
-        return x is None or (isinstance(x, float) and math.isnan(x))
-    except Exception:
-        return True
-def snap_half(x):
-    """Snap a numeric value to the nearest 0.5 (prop lines should look like 2.5, 3.0, etc.)."""
-    try:
-        if _is_nan(x):
-            return np.nan
-        v = float(x)
-        return round(v * 2.0) / 2.0
-    except Exception:
-        return np.nan
-def snap_int(x):
-    """Cast odds to int-ish (American odds should be -110, +120, etc.)."""
-    try:
-        if _is_nan(x):
-            return np.nan
-        return int(round(float(x)))
-    except Exception:
-        return np.nan
+def apply_injury_dfo(sk: pd.DataFrame, inj_df: pd.DataFrame, debug: bool = False) -> pd.DataFrame:
+    out = sk.copy()
 
+    out["Injury_Status"] = "Healthy"
+    out["Injury_Type"] = "Unknown"
+    out["Injury_Text"] = ""
+    out["Injury_Return"] = ""
+    out["Team_Out_Count"] = 0
+    out["Injury_DFO_Score"] = 0.0
+    out["Injury_Badge"] = ""
 
+    if inj_df is None or inj_df.empty:
+        if debug:
+            print("[DFO INJ] inj_df empty -> neutral injuries")
+        return out
 
-# -------------------------
-# UI helpers
-# -------------------------
-def _promote_call_cols(cols):
-    order=[
-        'SOG_Call','Points_Call','Assists_Call','ATG_Call',
-        'Player','Team','Opp','Time','Game','Pos','Tier_Tag','🔥','💰',
-    ]
-    out=[]
-    for c in order:
-        if c in cols and c not in out:
-            out.append(c)
-    for c in cols:
-        if c not in out:
-            out.append(c)
+    tmp = inj_df.copy()
+    tmp["Status"] = tmp["Status"].astype(str).map(_dfo_norm_status)
+
+    # Team_Out_Count counts Out/IR/Scratch as "missing bodies"
+    out_counts = (
+        tmp[tmp["Status"].isin(["Out", "IR", "Scratch"])]
+        .groupby("Team", as_index=True)
+        .size()
+        .to_dict()
+    )
+    out["Team_Out_Count"] = out["Team"].map(lambda t: int(out_counts.get(norm_team(t), 0)))
+
+    j = inj_df[["Team", "Player_norm", "Status", "Injury", "Expected_Return"]].copy()
+    j["Team"] = j["Team"].astype(str).map(norm_team)
+    j["Player_norm"] = j["Player_norm"].astype(str)
+
+    out["Player_norm"] = out["Player"].astype(str).map(_norm_name)
+
+    out = out.merge(
+        j,
+        left_on=["Team", "Player_norm"],
+        right_on=["Team", "Player_norm"],
+        how="left",
+        suffixes=("", "_inj"),
+    )
+
+    out["Injury_Status"] = out["Status"].apply(lambda x: _dfo_norm_status(x) if pd.notna(x) else "Healthy")
+    out["Injury_Text"] = out["Injury"].apply(lambda x: str(x).strip() if pd.notna(x) else "")
+    out["Injury_Return"] = out["Expected_Return"].apply(lambda x: str(x).strip() if pd.notna(x) else "")
+    out["Injury_Type"] = out["Injury_Text"].apply(_dfo_injury_type)
+
+    def base_score(st: str) -> float:
+        if st in ("Out", "IR", "Scratch"):
+            return -3.0
+        if st == "GTD":
+            return -1.0
+        return 0.0
+
+    out["Injury_DFO_Score"] = out["Injury_Status"].apply(base_score)
+
+    # ROLE+ bump: if team is missing 2+ and this guy is high-usage, they often get extra run
+    toi_pct = pd.to_numeric(out.get("TOI_Pct", 50.0), errors="coerce").fillna(50.0)
+    bump = (
+        (out["Injury_Status"] == "Healthy") &
+        (pd.to_numeric(out["Team_Out_Count"], errors="coerce").fillna(0) >= 2) &
+        (toi_pct >= 70.0)
+    )
+    out.loc[bump, "Injury_DFO_Score"] = out.loc[bump, "Injury_DFO_Score"] + 1.0
+    out["Injury_DFO_Score"] = out["Injury_DFO_Score"].map(lambda x: max(-5.0, min(5.0, float(x))))
+
+    def badge(st: str, score: float) -> str:
+        if st in ("Out", "IR", "Scratch"):
+            return "🔴 OUT"
+        if st == "GTD":
+            return "🟡 GTD"
+        if score >= 1.0:
+            return "🟢 ROLE+"
+        return ""
+
+    out["Injury_Badge"] = out.apply(
+        lambda r: badge(str(r.get("Injury_Status", "")), float(r.get("Injury_DFO_Score", 0.0))),
+        axis=1
+    )
+
+    out = out.drop(columns=["Status", "Injury", "Expected_Return"], errors="ignore")
+    out = out.drop(columns=["Player_norm"], errors="ignore")
+
+    if debug:
+        ex = out[["Team", "Player", "Injury_Status", "Injury_Text", "Injury_DFO_Score", "Injury_Badge", "Team_Out_Count"]].head(25)
+        print("\n[DFO INJ] sample merged injury fields:\n", ex.to_string(index=False))
+
     return out
 
-COLUMN_WIDTHS = {
-    # identity
-    "Game": "small",
-    "Time": "small",
-    "Pos": "small",
-    "Team": "small",
-    "Opp": "small",
-    "Player": "medium",
 
-    # core decision columns
-    "Matrix_Points": "small",
-    "Matrix_SOG": "small",
-    "Matrix_Goal": "small",
-    "Matrix_Assists": "small",
+# ============================
+# MoneyPuck normalize: skaters (ALL)
+# ============================
+def normalize_skaters_all(df: pd.DataFrame, debug: bool = False) -> pd.DataFrame:
+    df = df.copy()
+    df.columns = df.columns.str.strip()
 
-    "Conf_Points": "small",
-    "Conf_SOG": "small",
-    "Conf_Goal": "small",
-    "Conf_Assists": "small",
-    "Best_Conf": "small",
+    col_pid = find_col(df, ["playerid", "playerId"])
+    col_name = find_col(df, ["name", "playername", "playerName", "player", "skatername", "skaterName"])
+    col_team = find_col(df, ["team", "teamabbrev", "teamAbbrev", "team_abbrev"])
+    col_pos  = find_col(df, ["position", "pos", "positioncode", "positionCode"])
+    col_sit  = find_col(df, ["situation"])
+    col_gp   = find_col(df, ["games_played", "gamesplayed", "gp"])
+    col_it   = find_col(df, ["icetime", "timeonice", "toi", "timeOnIce"])
 
-    # indicators
-    "Green": "small",
-    "GF_Gate_Badge": "small",
-    "Tier_Tag": "small",
-    "🔥": "small",
-    "💰": "small",
+    # expected offense (required)
+    col_ixg  = find_col(df, ["I_F_xGoals", "i_f_xgoals", "ixGoals", "ixg", "xGoals"])
+    col_a1   = find_col(df, ["I_F_primaryAssists", "i_f_primaryassists", "primaryassists", "primaryAssists"])
+    col_a2   = find_col(df, ["I_F_secondaryAssists", "i_f_secondaryassists", "secondaryassists", "secondaryAssists"])
 
-    # drought
-    "Drought_P": "small",
-    "Drought_A": "small",
-    "Drought_G": "small",
-    "Drought_SOG": "small",
-    "Best_Drought": "small",
+    # try true xAssists/ixA if present
+    col_xa = find_col(df, [
+        "I_F_xAssists", "i_f_xassists", "xAssists", "xassists",
+        "I_F_ixA", "i_f_ixa", "ixA", "iXA", "xA", "xa"
+    ])
 
-    "SOG_Line": "small",
-    "SOG_Book": "small",
-    "SOG_Odds_Over": "small",
-    "SOG_EVpct_over": "small",
-    "SOG_Call": "medium",
-    "SOG_p_model_over": "small",
-    "SOG_p_imp_over": "small",
-    "Plays_EV_SOG": "small",
+    # ===== NEW: actual season totals (best-effort) so we can compute REAL PPG =====
+    col_g = find_col(df, ["I_F_goals", "goals", "Goals", "G"])
+    col_a = find_col(df, ["I_F_assists", "assists", "Assists", "A"])
+    col_p = find_col(df, ["I_F_points", "points", "Points", "P", "pts"])
 
-    # EV / odds for other markets
-    "Points_Line": "small",
-    "Points_Book": "small",
-    "Points_Odds_Over": "small",
-    "Points_p_model_over": "small",
-    "Points_p_imp_over": "small",
-    "Points_EVpct_over": "small",
-    "Points_Call": "medium",
-    "Plays_EV_Points": "small",
+    missing = [k for k, v in {
+        "playerId": col_pid, "name": col_name, "team": col_team,
+        "situation": col_sit, "games_played": col_gp, "icetime": col_it,
+        "I_F_xGoals": col_ixg, "I_F_primaryAssists": col_a1, "I_F_secondaryAssists": col_a2
+    }.items() if v is None]
+    if missing:
+        raise KeyError(f"MoneyPuck skaters.csv missing required columns: {missing}")
 
-    "Goal_Line": "small",
-    "Goal_Book": "small",
-    "Goal_Odds_Over": "small",
-    "Goal_p_model_over": "small",
-    "Goal_p_imp_over": "small",
-    "Goal_EVpct_over": "small",
-    "Plays_EV_Goal": "small",
+    use_cols = [col_pid, col_name, col_team, col_sit, col_gp, col_it, col_ixg, col_a1, col_a2]
+    if col_pos:
+        use_cols.insert(3, col_pos)
+    if col_xa:
+        use_cols.append(col_xa)
 
-    "ATG_Line": "small",
-    "ATG_Book": "small",
-    "ATG_Odds_Over": "small",
-    "ATG_p_model_over": "small",
-    "ATG_p_imp_over": "small",
-    "ATG_EVpct_over": "small",
-    "ATG_Call": "medium",
-    "Plays_EV_ATG": "small",
+    # add actual totals if present
+    if col_g: use_cols.append(col_g)
+    if col_a: use_cols.append(col_a)
+    if col_p: use_cols.append(col_p)
 
-    "Assists_Line": "small",
-    "Assists_Book": "small",
-    "Assists_Odds_Over": "small",
-    "Assists_p_model_over": "small",
-    "Assists_p_imp_over": "small",
-    "Assists_EVpct_over": "small",
-    "Assists_Call": "medium",
-    "Plays_EV_Assists": "small",
+    out = df[use_cols].copy()
+
+    rename_map = {
+        col_pid: "playerId",
+        col_name: "Player",
+        col_team: "Team",
+        col_sit: "situation",
+        col_gp: "games_played",
+        col_it: "icetime",
+        col_ixg: "I_F_xGoals",
+        col_a1: "I_F_primaryAssists",
+        col_a2: "I_F_secondaryAssists",
+    }
+    if col_pos:
+        rename_map[col_pos] = "Pos"
+    if col_xa:
+        rename_map[col_xa] = "I_F_xAssists"
+
+    if col_g: rename_map[col_g] = "G"
+    if col_a: rename_map[col_a] = "A"
+    if col_p: rename_map[col_p] = "P"
+
+    out = out.rename(columns=rename_map)
+
+    if "Pos" not in out.columns:
+        out["Pos"] = "F"
+
+    out["Team"] = out["Team"].apply(norm_team)
+    out["situation"] = out["situation"].astype(str).str.lower()
+    out = out[out["situation"].isin(["all", "all situations", "all_situations", "all-situations"])].copy()
+
+    out["playerId"] = pd.to_numeric(out["playerId"], errors="coerce")
+    out["games_played"] = pd.to_numeric(out["games_played"], errors="coerce")
+    out["icetime"] = pd.to_numeric(out["icetime"], errors="coerce")
+
+    # expected xG / xA
+    out["iXG_raw"] = pd.to_numeric(out["I_F_xGoals"], errors="coerce")
+
+    if "I_F_xAssists" in out.columns:
+        out["iXA_raw"] = pd.to_numeric(out["I_F_xAssists"], errors="coerce")
+        out["iXA_Source"] = "xAssists"
+    else:
+        out["iXA_raw"] = (
+            pd.to_numeric(out["I_F_primaryAssists"], errors="coerce").fillna(0)
+            + pd.to_numeric(out["I_F_secondaryAssists"], errors="coerce").fillna(0)
+        )
+        out["iXA_Source"] = "A1+A2"
+
+    out["iXG_pct"] = out["iXG_raw"].rank(pct=True) * 100.0
+    out["iXA_pct"] = out["iXA_raw"].rank(pct=True) * 100.0
+
+    out["Player"] = out["Player"].astype(str)
+    out["Pos"] = out["Pos"].astype(str).replace({"nan": "F", "None": "F"}).fillna("F")
+
+    gp = pd.to_numeric(out["games_played"], errors="coerce").replace(0, np.nan)
+    toi_raw = pd.to_numeric(out["icetime"], errors="coerce")
+
+    # MoneyPuck icetime is season TOTAL in SECONDS (usually > 10,000)
+    # Convert to minutes before per-game calc
+    toi_minutes = toi_raw.copy()
+    sec_mask = toi_raw > 10000
+    toi_minutes.loc[sec_mask] = toi_raw.loc[sec_mask] / 60.0
+
+    out["TOI_per_game"] = (toi_minutes / gp).replace([np.inf, -np.inf], np.nan)
+
+    # ensure numeric for totals if present
+    for c in ["G", "A", "P"]:
+        if c in out.columns:
+            out[c] = pd.to_numeric(out[c], errors="coerce")
+
+    if debug:
+        print("\n[DEBUG] normalize_skaters_all: ok")
+        print("[DEBUG] actual totals present:", {c: (c in out.columns) for c in ["G", "A", "P"]})
+        print("[DEBUG] iXA_Source counts:", out["iXA_Source"].value_counts(dropna=False).to_dict())
+        print("[DEBUG] sample:", out[["Player", "Team", "Pos", "iXA_Source"]].head(6).to_dict(orient="records"))
+
+    return out
+
+# ============================
+# MoneyPuck normalize: skaters (5v5 proxies)
+# ============================
+def normalize_skaters_5v5(df: pd.DataFrame, debug: bool = False) -> pd.DataFrame:
+    out = df.copy()
+    out.columns = out.columns.str.strip()
+
+    col_pid = find_col(out, ["playerid", "playerId"])
+    col_name = find_col(out, ["name", "playername", "playerName", "player", "skatername", "skaterName"])
+    col_team = find_col(out, ["team", "teamabbrev", "teamAbbrev", "team_abbrev"])
+    col_pos  = find_col(out, ["position", "pos", "positioncode", "positionCode"])
+    col_sit  = find_col(out, ["situation"])
+    col_it   = find_col(out, ["icetime", "timeonice", "toi", "timeOnIce"])
+
+    if not (col_pid and col_team and col_sit and col_it):
+        raise KeyError("Skaters CSV missing required columns for 5v5 (playerId/team/situation/icetime).")
+
+    def norm_sit(x: Any) -> str:
+        s = str(x).lower()
+        return "".join(ch for ch in s if ch.isalnum())
+
+    sit = out[col_sit].apply(norm_sit)
+    out = out[sit.isin({"5on5", "5v5", "ev5", "ev", "evenstrength", "even"})].copy()
+
+    out["playerId"] = pd.to_numeric(out[col_pid], errors="coerce")
+    out["Team"] = out[col_team].apply(norm_team)
+    out["Pos"] = out[col_pos].astype(str) if col_pos else "F"
+    out["icetime"] = pd.to_numeric(out[col_it], errors="coerce")
+    out["Player"] = out[col_name].astype(str) if col_name else ""
+
+    col_points = find_col(out, ["I_F_points", "points"])
+    col_goals  = find_col(out, ["I_F_goals", "goals"])
+    col_a1     = find_col(out, ["I_F_primaryAssists", "i_f_primaryassists", "primaryassists", "primaryAssists"])
+    col_a2     = find_col(out, ["I_F_secondaryAssists", "i_f_secondaryassists", "secondaryassists", "secondaryAssists"])
+
+    if col_points:
+        points = pd.to_numeric(out[col_points], errors="coerce")
+    else:
+        g  = pd.to_numeric(out[col_goals], errors="coerce") if col_goals else pd.Series(0.0, index=out.index)
+        a1 = pd.to_numeric(out[col_a1], errors="coerce") if col_a1 else pd.Series(0.0, index=out.index)
+        a2 = pd.to_numeric(out[col_a2], errors="coerce") if col_a2 else pd.Series(0.0, index=out.index)
+        points = (g.fillna(0) + a1.fillna(0) + a2.fillna(0)).astype("float64")
+
+    a1s = pd.to_numeric(out[col_a1], errors="coerce") if col_a1 else pd.Series(np.nan, index=out.index)
+
+    col_sa  = find_col(out, ["I_F_shotAssists", "shotAssists", "shotassists"])
+    col_icf = find_col(out, ["I_F_iCF", "icf", "iCF"])
+
+    if debug and (col_sa is None or col_icf is None):
+        print("\n[DEBUG] skaters.csv 5v5 missing columns:")
+        print(f"  col_sa = {col_sa}  col_icf = {col_icf}")
+        print("  Columns containing 'assist':", debug_find_like(out, "assist")[:20])
+        print("  Columns containing 'cf':", debug_find_like(out, "cf")[:20])
+
+    shot_assists = pd.to_numeric(out[col_sa], errors="coerce") if col_sa else pd.Series(np.nan, index=out.index)
+    icf = pd.to_numeric(out[col_icf], errors="coerce") if col_icf else pd.Series(np.nan, index=out.index)
+
+    out["i5v5_points60"] = per60(points, out["icetime"])
+    out["i5v5_primaryAssists60"] = per60(a1s, out["icetime"])
+    out["i5v5_shotAssists60"] = per60(shot_assists, out["icetime"])
+    out["i5v5_iCF60"] = per60(icf, out["icetime"])
+
+    keep = ["playerId", "Team", "i5v5_points60", "i5v5_primaryAssists60", "i5v5_shotAssists60", "i5v5_iCF60"]
+    return out[keep].copy()
 
 
-    # goalie / defense
-    "Opp_Goalie": "medium",
-    "Opp_SV": "small",
-    "Opp_GAA": "small",
-    "Goalie_Weak": "small",
-    "Opp_DefWeak": "small",
+# ============================
+# MoneyPuck normalize: teams (5v5 defense + team offense context)
+# ============================
 
-    # misc
-    "Line": "small",
-    "Odds": "small",
-    "Result": "small",
-    "Markets": "medium",
-    "EV_Signal": "medium",
-    "LOCK": "small",
-}
-def build_column_config(df: pd.DataFrame, cols: list[str]) -> dict:
-    cfg = {}
+# ============================
+# MoneyPuck normalize: skaters (POWER PLAY 5v4)
+# ============================
+def normalize_skaters_pp(df: pd.DataFrame, debug: bool = False) -> pd.DataFrame:
+    """Return per-player PP usage + PP expected offense proxies using MoneyPuck situation=5on4.
 
-    for c in cols:
-        width = COLUMN_WIDTHS.get(c, "small")
-
-        if c not in df.columns:
-            cfg[c] = st.column_config.TextColumn(width=width)
-            continue
-
-        if pd.api.types.is_numeric_dtype(df[c]):
-            # Betting-friendly numeric formats
-            if c.endswith("_Line") or c == "Line":
-                cfg[c] = st.column_config.NumberColumn(width=width, format="%.1f")
-            elif c.endswith("_Odds_Over") or c == "Odds":
-                cfg[c] = st.column_config.NumberColumn(width=width, format="%.0f")
-            elif c.endswith("_Model%") or c.endswith("_Imp%") or c.endswith("_EV%"):
-                cfg[c] = st.column_config.NumberColumn(width=width, format="%.1f")
-            else:
-                cfg[c] = st.column_config.NumberColumn(width=width)
-        else:
-            cfg[c] = st.column_config.TextColumn(width=width)
-
-    return cfg
-
-
-
-# -------------------------
-# Safe getters
-# -------------------------
-def _get(row, key, default=0):
-    """Safe getter for dict-like rows (pandas Series or dict)."""
-    try:
-        v = row.get(key, default)
-    except Exception:
-        v = default
-    return default if v is None else v
-def _is_hot(reg_scored: str) -> bool:
-    """Treat these as Hot regression tiers."""
-    if not reg_scored:
-        return False
-    s = str(reg_scored).strip().lower()
-    return s in ("hot", "due", "overdue", "very hot")
-
-
-# -------------------------
-# CONFIG
-# -------------------------
-OUTPUT_DIR = "output"
-st.set_page_config(page_title="NHL Prop Tool", layout="wide")
-
-# =========================
-# GLOBAL TABLE COMPACT CSS (Option A)
-# =========================
-st.markdown(
+    Output columns (joined on playerId+Team):
+      - PP_TOI_min, PP_TOI_per_game
+      - PP_iXG60, PP_iXA60, PP_iP60 (derived)
+      - PP_Role (2=PP1, 1=PP2, 0=none) computed by team PP_TOI rank
     """
-    <style>
-      /* Tighten the dataframe (works for st.dataframe + Styler) */
-      div[data-testid="stDataFrame"] table {
-        font-size: 12px;
-      }
-      div[data-testid="stDataFrame"] thead tr th {
-        padding-top: 2px !important;
-        padding-bottom: 2px !important;
-      }
-      div[data-testid="stDataFrame"] tbody tr td {
-        padding-top: 1px !important;
-        padding-bottom: 1px !important;
-        line-height: 1.05 !important;
-        white-space: nowrap !important;
-      }
+    out = df.copy()
+    out.columns = out.columns.str.strip()
 
-      /* Optional: make header slightly tighter too */
-      div[data-testid="stDataFrame"] thead tr th div {
-        line-height: 1.05 !important;
-      }
-    </style>
-    """,
-    unsafe_allow_html=True,
-)
+    col_pid = find_col(out, ["playerid", "playerId"])
+    col_team = find_col(out, ["team", "teamabbrev", "teamAbbrev", "team_abbrev"])
+    col_sit  = find_col(out, ["situation"])
+    col_gp   = find_col(out, ["games_played", "gamesplayed", "gp"])
+    col_it   = find_col(out, ["icetime", "timeonice", "toi", "timeOnIce"])
 
+    if not (col_pid and col_team and col_sit and col_gp and col_it):
+        raise KeyError("Skaters CSV missing required columns for PP (playerId/team/situation/gp/icetime).")
 
+    def norm_sit(x):
+        s = str(x).lower()
+        return "".join(ch for ch in s if ch.isalnum())
 
-# =========================
-# HELPERS
-# =========================
-def find_latest_tracker_csv(output_dir: str) -> str | None:
-    files = glob.glob(os.path.join(output_dir, "tracker_*.csv"))
-    files = [f for f in files if os.path.isfile(f)]
-    if not files:
-        return None
-    files.sort(key=lambda x: os.path.getmtime(x), reverse=True)
-    return files[0]
-def to_bool_series(s: pd.Series) -> pd.Series:
-    # Handles True/False, 1/0, "true"/"false", etc.
-    if s is None:
-        return pd.Series([False] * 0)
-    return (
-        s.astype(str)
-        .str.strip()
-        .str.lower()
-        .isin(["true", "1", "yes", "y", "t"])
+    sit = out[col_sit].apply(norm_sit)
+    out = out[sit.astype(str).str.contains('5on4', na=False) | sit.astype(str).str.contains('5v4', na=False) | sit.astype(str).str.contains('pp', na=False) | sit.astype(str).str.contains('powerplay', na=False)].copy()
+    if out.empty:
+        raise RuntimeError("No PP (5on4) rows found in MoneyPuck skaters CSV.")
+
+    # Convert TOI to minutes (MoneyPuck icetime is season total seconds)
+    gp = pd.to_numeric(out[col_gp], errors="coerce").replace(0, np.nan)
+    toi_raw = pd.to_numeric(out[col_it], errors="coerce")
+
+    # MoneyPuck PP icetime is season-total **seconds**. Always convert to minutes.
+    # (The old heuristic based on a large threshold could mis-handle low-TOI players
+    #  and inflate their PP time massively.)
+    toi_min = toi_raw / 60.0
+
+    out["PP_TOI_min"] = toi_min
+    out["PP_TOI_per_game"] = (toi_min / gp).replace([np.inf, -np.inf], np.nan)
+
+    # Guardrails: PP TOI / game shouldn't ever be huge. Clip to a sane max.
+    out["PP_TOI_per_game"] = out["PP_TOI_per_game"].clip(lower=0.0, upper=10.0)
+
+    # iXG / iXA on PP if available
+    col_ixg  = find_col(out, ["I_F_xGoals", "i_f_xgoals", "ixGoals", "ixg", "xGoals"])
+    col_a1   = find_col(out, ["I_F_primaryAssists", "i_f_primaryassists", "primaryassists", "primaryAssists"])
+    col_a2   = find_col(out, ["I_F_secondaryAssists", "i_f_secondaryassists", "secondaryassists", "secondaryAssists"])
+
+    ixg = pd.to_numeric(out[col_ixg], errors="coerce") if col_ixg else pd.Series(np.nan, index=out.index)
+    a1  = pd.to_numeric(out[col_a1], errors="coerce") if col_a1 else pd.Series(np.nan, index=out.index)
+    a2  = pd.to_numeric(out[col_a2], errors="coerce") if col_a2 else pd.Series(np.nan, index=out.index)
+
+    # Per 60 using TOI minutes
+    denom = (toi_min / 60.0).replace(0, np.nan)
+    out["PP_iXG60"] = (ixg / denom).replace([np.inf, -np.inf], np.nan)
+    out["PP_iXA60"] = (((a1.fillna(0) + 0.75*a2.fillna(0))) / denom).replace([np.inf, -np.inf], np.nan)
+    out["PP_iP60"]  = (out["PP_iXG60"].fillna(0) + 0.85*out["PP_iXA60"].fillna(0)).replace([np.inf, -np.inf], np.nan)
+
+    # Team-relative PP role by PP TOI rank (PP1=top5, PP2=next5)
+    out["Team"] = out[col_team].astype(str).str.upper().str.strip().map(norm_team)
+    out["playerId"] = pd.to_numeric(out[col_pid], errors="coerce")
+
+    role = pd.Series(0, index=out.index, dtype=int)
+    for team, g in out.groupby("Team"):
+        g2 = g[["PP_TOI_min"]].copy()
+        g2["_rank"] = g2["PP_TOI_min"].rank(method="first", ascending=False)
+        idx_pp1 = g2.index[g2["_rank"] <= 5]
+        idx_pp2 = g2.index[(g2["_rank"] > 5) & (g2["_rank"] <= 10)]
+        role.loc[idx_pp1] = 2
+        role.loc[idx_pp2] = 1
+
+    out["PP_Role"] = role
+
+    keep = out[["playerId", "Team", "PP_TOI_min", "PP_TOI_per_game", "PP_iXG60", "PP_iXA60", "PP_iP60", "PP_Role"]].copy()
+
+    if debug:
+        print("\n[DEBUG] normalize_skaters_pp: ok", keep.head(8).to_dict(orient="records"))
+
+    return keep
+
+def normalize_teams_5v5(df: pd.DataFrame, debug: bool = False) -> pd.DataFrame:
+    out = df.copy()
+    out.columns = out.columns.str.strip()
+
+    col_team = find_col(out, ["team", "teamabbrev", "teamAbbrev", "team_abbrev"])
+    col_sit  = find_col(out, ["situation"])
+    col_toi  = find_col(out, ["icetime", "timeonice", "toi", "timeOnIce", "TOI", "minutes", "Min"])
+    col_xgf  = find_col(out, ["xGoalsFor", "xgoalsfor", "xGF", "xgf"])
+    col_sf   = find_col(out, [
+        "shotsFor", "ShotsFor", "shots_for", "sf", "SF",
+        "shotsOnGoalFor", "ShotsOnGoalFor", "shotsongoalfor", "sogfor", "SOGFor",
+        "shotAttemptsFor", "ShotAttemptsFor", "corsiFor", "CorsiFor", "cf", "CF",
+        "5on5ShotsFor", "5v5ShotsFor", "shotsFor5v5", "shotsFor5on5"
+    ])
+
+    if not (col_team and col_sit and col_toi):
+        raise KeyError(f"Teams CSV missing required columns (team/situation/TOI). Found team={col_team}, sit={col_sit}, toi={col_toi}")
+
+    def norm_sit(x: Any) -> str:
+        s = str(x).lower()
+        return "".join(ch for ch in s if ch.isalnum())
+
+    sit = out[col_sit].apply(norm_sit)
+    out = out[sit.isin({"5on5", "5v5", "ev5", "evenstrength", "even"})].copy()
+
+    out["Team"] = out[col_team].apply(norm_team)
+    out["TOI"] = pd.to_numeric(out[col_toi], errors="coerce")
+
+    col_xga  = find_col(out, ["xGoalsAgainst", "xgoalsagainst", "xGA", "xga"])
+    col_hdca = find_col(out, ["HDCA", "hdca", "highDangerShotsAgainst", "highdangerchancesagainst"])
+    col_slot = find_col(out, ["slotShotsAgainst", "slotshotsagainst", "SlotShotsAgainst", "slotSA", "slot_sa"])
+
+    if debug and col_slot is None:
+        print("\n[DEBUG] teams.csv slot column NOT FOUND. Columns containing 'slot':")
+        print(debug_find_like(out, "slot")[:40])
+
+    xga  = pd.to_numeric(out[col_xga], errors="coerce") if col_xga else pd.Series(np.nan, index=out.index)
+    hdca = pd.to_numeric(out[col_hdca], errors="coerce") if col_hdca else pd.Series(np.nan, index=out.index)
+    slot = pd.to_numeric(out[col_slot], errors="coerce") if col_slot else pd.Series(np.nan, index=out.index)
+    xgf  = pd.to_numeric(out[col_xgf], errors="coerce") if col_xgf else pd.Series(np.nan, index=out.index)
+    sf   = pd.to_numeric(out[col_sf], errors="coerce") if col_sf else pd.Series(np.nan, index=out.index)
+
+    out["team_5v5_xGF60"] = per60(xgf, out["TOI"])
+    out["team_5v5_SF60"]  = per60(sf, out["TOI"])
+
+    out["opp_5v5_xGA60"] = per60(xga, out["TOI"])
+    out["opp_5v5_HDCA60"] = per60(hdca, out["TOI"])
+    out["opp_5v5_SlotSA60"] = per60(slot, out["TOI"])
+
+    t5 = (
+        out[[
+            "Team",
+            "opp_5v5_xGA60", "opp_5v5_HDCA60", "opp_5v5_SlotSA60",
+            "team_5v5_xGF60", "team_5v5_SF60",
+        ]]
+        .groupby("Team", as_index=False)
+        .mean(numeric_only=True)
     )
-def safe_num(df: pd.DataFrame, col: str, default=0.0) -> pd.Series:
-    if col not in df.columns:
-        return pd.Series([default] * len(df), index=df.index)
-    return pd.to_numeric(df[col], errors="coerce").fillna(default)
+    return t5
 
 
+# ============================
+# MoneyPuck normalize: goalies
+# ============================
+def normalize_goalies(df: pd.DataFrame) -> pd.DataFrame:
+    col_name = find_col(df, ["name", "goalie", "playername", "playerName"])
+    col_team = find_col(df, ["team", "teamabbrev", "teamAbbrev", "team_abbrev"])
+    col_sit  = find_col(df, ["situation"])
+    col_gp   = find_col(df, ["games_played", "gamesplayed", "gp"])
+    col_it   = find_col(df, ["icetime", "timeonice", "toi", "timeOnIce"])
+    col_ongoal = find_col(df, ["ongoal", "shotsagainst", "shots_against", "shotsAgainst"])
+    col_goals  = find_col(df, ["goals", "ga", "goalsagainst", "goals_against"])
 
-# -------------------------
-# Signals-first helpers
-# -------------------------
-def _is_money(x) -> bool:
-    return str(x).strip() == "💰"
-def _fmt_ev_pct(x) -> str:
-    try:
-        if x is None or (isinstance(x, float) and math.isnan(x)):
-            return ""
-        v = float(x)
-        return f"{v:+.1f}%"
-    except Exception:
-        return ""
-def build_markets_pills(row) -> str:
-    pills = []
-    for key, label in [
-        ("Matrix_Points", "PTS"),
-        ("Matrix_SOG", "SOG"),
-        ("Matrix_Goal", "G"),
-        ("Matrix_Assists", "A"),
-    ]:
-        v = str(row.get(key, "")).lower()
-        if not v:
-            continue
-        if "green" in v:
-            pills.append(f"🟢{label}")
-        elif "yellow" in v:
-            pills.append(f"🟡{label}")
-        elif "red" in v:
-            pills.append(f"🔴{label}")
+    missing = [k for k, v in {
+        "name": col_name, "team": col_team, "situation": col_sit, "gp": col_gp,
+        "icetime": col_it, "ongoal": col_ongoal, "goals": col_goals
+    }.items() if v is None]
+    if missing:
+        raise KeyError(f"Goalies CSV missing columns: {missing}")
+
+    out = df[[col_name, col_team, col_sit, col_gp, col_it, col_ongoal, col_goals]].copy()
+    out.columns = ["Goalie", "Team", "situation", "GP", "icetime", "SOG_Against", "GA"]
+
+    out["Team"] = out["Team"].apply(norm_team)
+    out["situation"] = out["situation"].astype(str).str.lower()
+    out = out[out["situation"].isin(["all", "all situations", "all_situations", "all-situations"])].copy()
+
+    out["GP"] = pd.to_numeric(out["GP"], errors="coerce")
+    out["icetime"] = pd.to_numeric(out["icetime"], errors="coerce")
+    out["SOG_Against"] = pd.to_numeric(out["SOG_Against"], errors="coerce")
+    out["GA"] = pd.to_numeric(out["GA"], errors="coerce")
+
+    out["SV"] = (out["SOG_Against"] - out["GA"]) / out["SOG_Against"]
+    out.loc[out["SOG_Against"] <= 0, "SV"] = np.nan
+
+    sec_mask = out["icetime"] > 10000
+    min_mask = ~sec_mask
+    out["GAA"] = np.nan
+    out.loc[min_mask & (out["icetime"] > 0), "GAA"] = out.loc[min_mask, "GA"] * 60.0 / out.loc[min_mask, "icetime"]
+    out.loc[sec_mask & (out["icetime"] > 0), "GAA"] = out.loc[sec_mask, "GA"] * 3600.0 / out.loc[sec_mask, "icetime"]
+
+    return out
+
+
+# ============================
+# MoneyPuck normalize: teams (POWER PLAY + PENALTY KILL)
+# ============================
+def normalize_teams_pppk(df: pd.DataFrame, debug: bool = False) -> pd.DataFrame:
+    """Team-level PP (5on4 offense) and PK (4on5 defense) context.
+
+    Goal: ALWAYS populate team PP/PK columns when possible.
+
+    Output columns keyed by Team:
+      - Team_PP_xGF60, Team_PP_GF60
+      - Team_PK_xGA60, Team_PK_GA60
+      - PP_Score (higher=better offense), PK_Weak (higher=weaker kill)
+
+    Notes:
+      - MoneyPuck sometimes provides per60 columns (xGoalsForPer60, etc.) AND/OR totals (xGoalsFor, goalsFor, etc.)
+        + icetime. We support both.
+      - situation strings can be messy ("5on4ScoreClose" etc). We normalize and do substring matching.
+    """
+    out = df.copy()
+    out.columns = out.columns.str.strip()
+
+    col_team = find_col(out, ["team", "teamabbrev", "teamAbbrev", "team_abbrev"])
+    col_sit  = find_col(out, ["situation"])
+    col_it   = find_col(out, ["icetime", "timeonice", "toi", "timeOnIce", "TOI", "minutes", "Min"])
+
+    if not (col_team and col_sit):
+        raise KeyError("Teams CSV missing required columns (team/situation).")
+
+    def norm_sit(x):
+        s = str(x).lower()
+        return "".join(ch for ch in s if ch.isalnum())
+
+    out["Team"] = out[col_team].astype(str).str.upper().str.strip().map(norm_team)
+    sit = out[col_sit].apply(norm_sit)
+
+    # PP offense = 5on4
+    pp = out[
+        sit.astype(str).str.contains('5on4', na=False)
+        | sit.astype(str).str.contains('5v4', na=False)
+        | sit.astype(str).str.contains('pp', na=False)
+        | sit.astype(str).str.contains('powerplay', na=False)
+    ].copy()
+
+    # PK defense = 4on5
+    pk = out[
+        sit.astype(str).str.contains('4on5', na=False)
+        | sit.astype(str).str.contains('4v5', na=False)
+        | sit.astype(str).str.contains('pk', na=False)
+        | sit.astype(str).str.contains('penaltykill', na=False)
+    ].copy()
+
+    # Try per60 columns first
+    col_xgf60 = find_col(out, ["xGoalsForPer60", "xGoalsForPer60Minutes", "xGoalsFor60", "xGFper60", "xGF60"])
+    col_gf60  = find_col(out, ["goalsForPer60", "goalsForPer60Minutes", "GFper60", "GF60"])
+    col_xga60 = find_col(out, ["xGoalsAgainstPer60", "xGoalsAgainstPer60Minutes", "xGoalsAgainst60", "xGAper60", "xGA60"])
+    col_ga60  = find_col(out, ["goalsAgainstPer60", "goalsAgainstPer60Minutes", "GAper60", "GA60"])
+
+    # Totals fallbacks (compute per60 from icetime)
+    col_xgf = find_col(out, ["xGoalsFor", "xgoalsfor", "xGF", "xgf", "expectedGoalsFor", "xGoalsForAll"])
+    col_gf  = find_col(out, ["goalsFor", "GoalsFor", "GF", "gf"])
+    col_xga = find_col(out, ["xGoalsAgainst", "xgoalsagainst", "xGA", "xga", "expectedGoalsAgainst", "xGoalsAgainstAll"])
+    col_ga  = find_col(out, ["goalsAgainst", "GoalsAgainst", "GA", "ga"])
+
+    def _per60_from_totals(df0, total_col):
+        if df0.empty or total_col is None or col_it is None:
+            return pd.Series([], dtype='float64')
+        tot = pd.to_numeric(df0[total_col], errors='coerce')
+        toi = pd.to_numeric(df0[col_it], errors='coerce')
+        return per60(tot, toi)
+
+    def _mk_pp(df0):
+        if df0.empty:
+            return pd.DataFrame({"Team": []})
+        if col_xgf60:
+            x = pd.to_numeric(df0[col_xgf60], errors='coerce')
         else:
-            pills.append(f"⚪{label}")
-    return " ".join(pills)
-def build_ev_signal(green_bool, money_icon, ev_pct) -> str:
-    g = bool(green_bool) if green_bool is not None else False
-    m = _is_money(money_icon)
-    icons = ("🟢" if g else "") + ("💰" if m else "")
-    evs = _fmt_ev_pct(ev_pct)
-    if icons and evs:
-        return f"{icons} {evs}"
-    if icons:
-        return icons
-    return evs
-def build_lock_badge(green_bool, money_icon) -> str:
-    g = bool(green_bool) if green_bool is not None else False
-    m = _is_money(money_icon)
-    return "🔒" if (g and m) else ""
-def board_best_market_ev(row) -> tuple[str, str]:
-    bm = str(row.get("Best_Market", "")).strip().lower()
-    mapping = [
-        ("point", "Green_Points", "Plays_EV_Points", "Points_EV%"),
-        ("sog", "Green_SOG", "Plays_EV_SOG", "SOG_EV%"),
-        ("goal", "Green_Goal", "Plays_EV_ATG", "ATG_EV%"),
-        ("assist", "Green_Assists", "Plays_EV_Assists", "Assists_EV%"),
+            x = _per60_from_totals(df0, col_xgf)
+        if col_gf60:
+            g = pd.to_numeric(df0[col_gf60], errors='coerce')
+        else:
+            g = _per60_from_totals(df0, col_gf)
+        return pd.DataFrame({"Team": df0["Team"].values, "x": x, "g": g})
+
+    def _mk_pk(df0):
+        if df0.empty:
+            return pd.DataFrame({"Team": []})
+        if col_xga60:
+            x = pd.to_numeric(df0[col_xga60], errors='coerce')
+        else:
+            x = _per60_from_totals(df0, col_xga)
+        if col_ga60:
+            g = pd.to_numeric(df0[col_ga60], errors='coerce')
+        else:
+            g = _per60_from_totals(df0, col_ga)
+        return pd.DataFrame({"Team": df0["Team"].values, "x": x, "g": g})
+
+    pp_m = _mk_pp(pp).groupby("Team", as_index=False).mean(numeric_only=True).rename(
+        columns={"x": "Team_PP_xGF60", "g": "Team_PP_GF60"}
+    )
+    pk_m = _mk_pk(pk).groupby("Team", as_index=False).mean(numeric_only=True).rename(
+        columns={"x": "Team_PK_xGA60", "g": "Team_PK_GA60"}
+    )
+
+    merged = pp_m.merge(pk_m, on="Team", how="outer")
+
+    # Percentile scores (stable 0-100)
+    merged["PP_Score"] = pd.to_numeric(merged.get("Team_PP_xGF60"), errors="coerce").rank(pct=True) * 100.0
+    merged["PK_Weak"] = pd.to_numeric(merged.get("Team_PK_xGA60"), errors="coerce").rank(pct=True) * 100.0
+
+    if debug:
+        print("\n[DEBUG] normalize_teams_pppk: teams rows", len(out), "pp rows", len(pp), "pk rows", len(pk))
+        print("[DEBUG] normalize_teams_pppk: using cols per60", bool(col_xgf60 or col_gf60 or col_xga60 or col_ga60),
+              "totals", bool(col_xgf or col_gf or col_xga or col_ga), "icetime", col_it)
+        print("[DEBUG] normalize_teams_pppk: head", merged.head(8).to_dict(orient="records"))
+
+    return merged
+
+def build_team_goalie_map(goalies_df: pd.DataFrame) -> Dict[str, Dict[str, Any]]:
+    m: Dict[str, Dict[str, Any]] = {}
+    for team, grp in goalies_df.groupby("Team"):
+        g2 = grp.dropna(subset=["GP"]).sort_values("GP", ascending=False)
+        if g2.empty:
+            continue
+        top = g2.iloc[0]
+        m[str(team)] = {
+            "Goalie": str(top["Goalie"]),
+            "GP": safe_float(top["GP"]),
+            "SV": safe_float(top["SV"]),
+            "GAA": safe_float(top["GAA"]),
+        }
+    return m
+
+def resolve_goalie_for_team(
+    gdf: pd.DataFrame,
+    team_goalie_map: dict[str, dict[str, Any]],
+    team_abbr: str,
+    starter_name: str | None,
+) -> dict[str, Any]:
+    team_abbr = norm_team(team_abbr)
+    starter_name = (starter_name or "").strip()
+
+    fallback = team_goalie_map.get(team_abbr, {}).copy()
+    if fallback:
+        fallback["Source"] = "moneypuck_team_proxy"
+    else:
+        fallback = {"Goalie": "", "GP": None, "SV": None, "GAA": None, "Source": "none"}
+
+    if not starter_name:
+        return fallback
+
+    sub = gdf[gdf["Team"] == team_abbr].copy()
+    if sub.empty:
+        fallback["Goalie"] = starter_name
+        fallback["Source"] = "dailyfaceoff_name_only"
+        return fallback
+
+    want = _norm_name(starter_name)
+    sub["__n"] = sub["Goalie"].astype(str).map(_norm_name)
+
+    hit = sub[sub["__n"] == want]
+    if hit.empty:
+        want_last = want.split(" ")[-1] if want else ""
+        if want_last:
+            hit = sub[sub["__n"].str.contains(rf"\b{re.escape(want_last)}\b", regex=True, na=False)]
+
+    if hit.empty:
+        fallback["Goalie"] = starter_name
+        fallback["Source"] = "dailyfaceoff_name_fallback_stats"
+        return fallback
+
+    hit_row = hit.sort_values("GP", ascending=False).iloc[0]
+    return {
+        "Goalie": starter_name,
+        "GP": safe_float(hit_row.get("GP")),
+        "SV": safe_float(hit_row.get("SV")),
+        "GAA": safe_float(hit_row.get("GAA")),
+        "Source": "dailyfaceoff_name_and_stats",
+    }
+
+def goalie_weak_score(gp: Optional[float], sv: Optional[float], gaa: Optional[float]) -> float:
+    if gp is None or gp < MIN_GOALIE_GP:
+        return 50.0
+    sv_score = 50.0 if sv is None else clamp((0.920 - sv) / (0.920 - 0.880) * 100.0)
+    gaa_score = 50.0 if gaa is None else clamp((gaa - 2.20) / (3.80 - 2.20) * 100.0)
+    return round(0.55 * sv_score + 0.45 * gaa_score, 1)
+
+
+# ============================
+# NHL logs cache + parsing
+# ============================
+def cache_path_today(today: date) -> str:
+    return os.path.join(CACHE_DIR, f"nhle_playerlogs_{today.isoformat()}.json")
+
+def load_cache(today: date) -> Dict[str, Any]:
+    p = cache_path_today(today)
+    if not os.path.exists(p):
+        return {}
+    try:
+        with open(p, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except Exception:
+        return {}
+
+def save_cache(today: date, cache: Dict[str, Any]) -> None:
+    p = cache_path_today(today)
+    try:
+        with open(p, "w", encoding="utf-8") as f:
+            json.dump(cache, f, ensure_ascii=False, indent=2)
+    except Exception:
+        pass
+
+def nhle_player_gamelog_now(sess: requests.Session, player_id: int) -> Optional[Dict[str, Any]]:
+    url = f"https://api-web.nhle.com/v1/player/{player_id}/game-log/now"
+    try:
+        return http_get_json(sess, url)
+    except Exception:
+        return None
+
+def _extract_game_rows(payload: Dict[str, Any]) -> List[Dict[str, Any]]:
+    for k in ("gameLog", "gameLogs", "games", "gamelog", "game-log"):
+        v = payload.get(k)
+        if isinstance(v, list):
+            return v
+    for v in payload.values():
+        if isinstance(v, dict):
+            for kk in ("gameLog", "gameLogs", "games"):
+                vv = v.get(kk)
+                if isinstance(vv, list):
+                    return vv
+    return []
+
+def _pick_stat(d: Dict[str, Any], keys: Tuple[str, ...]) -> Optional[int]:
+    for k in keys:
+        if k in d:
+            return safe_int(d.get(k))
+    for nk in ("playerGameStats", "stats", "skaterStats", "summary"):
+        v = d.get(nk)
+        if isinstance(v, dict):
+            for k in keys:
+                if k in v:
+                    return safe_int(v.get(k))
+    return None
+
+def pick_sog_from_row(r: dict) -> Optional[int]:
+    """
+    Robust SOG getter from NHL game-log rows.
+    Prefers true SOG fields; only uses generic "shots" when it almost certainly is SOG.
+    """
+    v = _pick_stat(r, ("shotsOnGoal", "shots_on_goal", "sog"))
+    if v is not None:
+        return v
+
+    for nk in ("playerGameStats", "stats", "skaterStats", "summary"):
+        sub = r.get(nk)
+        if isinstance(sub, dict):
+            v2 = _pick_stat(sub, ("shotsOnGoal", "shots_on_goal", "sog"))
+            if v2 is not None:
+                return v2
+
+    shots = _pick_stat(r, ("shots",))
+    if shots is None:
+        for nk in ("playerGameStats", "stats", "skaterStats", "summary"):
+            sub = r.get(nk)
+            if isinstance(sub, dict):
+                shots = _pick_stat(sub, ("shots",))
+                if shots is not None:
+                    break
+    if shots is None:
+        return None
+
+    attempts_keys = {"shotAttempts", "shot_attempts", "corsi", "iCF", "icf", "attempts"}
+
+    def keys_of(x):
+        return set(map(str, x.keys())) if isinstance(x, dict) else set()
+
+    all_keys = set(map(str, r.keys()))
+    for nk in ("playerGameStats", "stats", "skaterStats", "summary"):
+        sub = r.get(nk)
+        if isinstance(sub, dict):
+            all_keys |= keys_of(sub)
+
+    if all_keys & attempts_keys:
+        sa = _pick_stat(r, ("shotAttempts", "shot_attempts", "iCF", "icf", "attempts"))
+        if sa is None:
+            for nk in ("playerGameStats", "stats", "skaterStats", "summary"):
+                sub = r.get(nk)
+                if isinstance(sub, dict):
+                    sa = _pick_stat(sub, ("shotAttempts", "shot_attempts", "iCF", "icf", "attempts"))
+                    if sa is not None:
+                        break
+        try:
+            s_shots = int(shots)
+            s_att = int(sa) if sa is not None else None
+        except Exception:
+            return None
+
+        # Reject classic inflation
+        if s_att is not None and (s_att == s_shots or s_att > 15):
+            return None
+
+        # Otherwise allow shots if sane
+        if 0 <= s_shots <= 15:
+            return s_shots
+        return None
+
+    # If no attempts keys exist, allow sane shots
+    try:
+        s = int(shots)
+        if 0 <= s <= 15:
+            return s
+    except Exception:
+        return None
+    return None
+
+def compute_lastN_features(payload: Dict[str, Any], n10: int = 10, n5: int = 5) -> Dict[str, Any]:
+    rows = _extract_game_rows(payload)
+
+    # -------------------------
+    # Ensure newest-first ordering
+    # -------------------------
+    # Different upstream sources sometimes provide game logs oldest→newest.
+    # Our drought logic ("games since last stat") assumes the list is
+    # newest→oldest so that index 0 is the most recent game.
+    def _row_date_any(r: Dict[str, Any]) -> Optional[str]:
+        for kk in (
+            "gameDate",
+            "gameDateUTC",
+            "gameDateTime",
+            "date",
+            "game_date",
+            "gameDateTimeUTC",
+        ):
+            v = r.get(kk)
+            if v:
+                return str(v)
+        # nested
+        for nk in ("playerGameStats", "stats", "skaterStats", "summary"):
+            sub = r.get(nk)
+            if isinstance(sub, dict):
+                for kk in ("gameDate", "gameDateUTC", "date"):
+                    v = sub.get(kk)
+                    if v:
+                        return str(v)
+        return None
+
+    def _parse_dt(s: Optional[str]) -> Optional[datetime]:
+        if not s:
+            return None
+        ss = str(s).strip()
+        # common formats: YYYY-MM-DD, ISO with Z, etc.
+        try:
+            # fromisoformat can't parse trailing Z; normalize
+            if ss.endswith("Z"):
+                ss2 = ss[:-1] + "+00:00"
+            else:
+                ss2 = ss
+            return datetime.fromisoformat(ss2)
+        except Exception:
+            pass
+        # fallback: just take first 10 chars if looks like YYYY-MM-DD
+        try:
+            if len(ss) >= 10 and ss[4] == "-" and ss[7] == "-":
+                return datetime.fromisoformat(ss[:10])
+        except Exception:
+            return None
+        return None
+
+    try:
+        if rows and isinstance(rows[0], dict):
+            d0 = _parse_dt(_row_date_any(rows[0]))
+            d1 = _parse_dt(_row_date_any(rows[-1]))
+            # If we can compare ends and it looks ascending, reverse.
+            if d0 and d1 and d0 < d1:
+                rows = list(reversed(rows))
+            elif d0 and d1 and d0 > d1:
+                pass  # already newest-first
+            else:
+                # If dates are missing/unparseable, fall back to gameId if present.
+                g0 = safe_int(rows[0].get("gameId") or rows[0].get("game_id"))
+                g1 = safe_int(rows[-1].get("gameId") or rows[-1].get("game_id"))
+                if g0 is not None and g1 is not None and g0 < g1:
+                    rows = list(reversed(rows))
+    except Exception:
+        # Never let ordering hygiene break the build.
+        pass
+
+    shots: List[int] = []
+    goals: List[int] = []
+    assists: List[int] = []
+    ppp: List[int] = []  # power play points
+
+    for r in rows:
+        sog = pick_sog_from_row(r)
+        g = _pick_stat(r, ("goals", "g"))
+        a = _pick_stat(r, ("assists", "a"))
+        pp = _pick_stat(r, ("powerPlayPoints", "powerplayPoints", "ppPoints"))
+
+        if sog is None and g is None and a is None and pp is None:
+            continue
+
+        shots.append(int(sog) if sog is not None else 0)
+        goals.append(int(g) if g is not None else 0)
+        assists.append(int(a) if a is not None else 0)
+        ppp.append(int(pp) if pp is not None else 0)
+
+    v10_shots = shots[:n10]
+    v10_goals = goals[:n10]
+    v10_assists = assists[:n10]
+    v10_ppp = ppp[:n10]
+    v5_shots = shots[:n5]
+    v5_goals = goals[:n5]
+    v5_assists = assists[:n5]
+
+    def trimmed_mean(vals: List[int], trim_each_side: int = 1) -> Optional[float]:
+        if not vals:
+            return None
+        vv = sorted([float(x) for x in vals])
+        if len(vv) <= 2 * trim_each_side:
+            return sum(vv) / len(vv)
+        vv = vv[trim_each_side: len(vv) - trim_each_side]
+        return sum(vv) / len(vv)
+
+    def drought_since(vals: List[int], thresh: int) -> Optional[int]:
+        if not vals:
+            return None
+        for i, v in enumerate(vals):
+            if v >= thresh:
+                return i
+        return len(vals)
+
+    med10 = float(median(v10_shots)) if len(v10_shots) >= 3 else None
+    trim10 = trimmed_mean(v10_shots, 1) if len(v10_shots) >= 5 else None
+    avg5 = (sum(v5_shots) / len(v5_shots)) if v5_shots else None
+
+    g5_total = sum(v5_goals) if v5_goals else None
+    a5_total = sum(v5_assists) if v5_assists else None
+    a10_total = sum(v10_assists) if v10_assists else None
+    ppp10_total = sum(v10_ppp) if v10_ppp else None
+
+    p10_total = (sum(v10_goals) + sum(v10_assists)) if (v10_goals or v10_assists) else None
+    g10_total = sum(v10_goals) if v10_goals else None
+    s10_total = sum(v10_shots) if v10_shots else None
+
+    p10 = [(g + a) for g, a in zip(v10_goals, v10_assists)]
+    drought_p = drought_since(p10, 1)
+    drought_a = drought_since(v10_assists, 1)
+    drought_g = drought_since(v10_goals, 1)
+    drought_sog2 = drought_since(v10_shots, 2)
+    drought_sog3 = drought_since(v10_shots, 3)
+    drought_ppp = drought_since(v10_ppp, 1)
+
+    return {
+        "Median10_SOG": med10,
+        "TrimMean10_SOG": trim10,
+        "Avg5_SOG": avg5,
+        "G5_total": g5_total,
+        "A5_total": a5_total,
+        "P10_total": p10_total,
+        "G10_total": g10_total,
+        "S10_total": s10_total,
+        "N_games_found": len(shots),
+        "A10_total": a10_total,
+        "PPP10_total": ppp10_total,
+        "Drought_P": drought_p,
+        "Drought_A": drought_a,
+        "Drought_G": drought_g,
+        "Drought_SOG2": drought_sog2,
+        "Drought_SOG3": drought_sog3,
+        "Drought_PPP": drought_ppp,
+    }
+
+
+# ============================
+# Scoring / matrices / regression / confidence
+# ============================
+def sog_med10_green(pos: str) -> float:
+    return SOG_MED10_GREEN_DEF if is_defense(pos) else SOG_MED10_GREEN_FWD
+
+def sog_med10_yellow(pos: str) -> float:
+    return SOG_MED10_YELLOW_DEF if is_defense(pos) else SOG_MED10_YELLOW_FWD
+
+def heat_from_gap(gap10: Optional[float]) -> str:
+    if gap10 is None:
+        return "COOL"
+    if gap10 >= REG_HOT_GAP:
+        return "HOT"
+    if gap10 >= REG_WARM_GAP:
+        return "WARM"
+    return "COOL"
+
+def matrix_sog(ixg_pct: float, med10: Optional[float], pos: str,
+               shot_intent_pct: Optional[float] = None, toi_pct: Optional[float] = None,
+               team_sf_pct: Optional[float] = None, opp_defweak: Optional[float] = None) -> str:
+    if ixg_pct < 72:
+        return "Red"
+    if med10 is None:
+        return "Yellow"
+
+    green_line = sog_med10_green(pos)
+    yellow_line = sog_med10_yellow(pos)
+
+    sip = 50.0 if shot_intent_pct is None else float(shot_intent_pct)
+    toi = 50.0 if toi_pct is None else float(toi_pct)
+    tsf = 50.0 if team_sf_pct is None else float(team_sf_pct)
+    odw = 50.0 if opp_defweak is None else float(opp_defweak)
+
+    if ixg_pct >= 95 and med10 >= green_line and sip >= 90:
+        return "Green"
+
+    if ixg_pct >= 85 and med10 >= (green_line - 0.30) and sip >= 90 and toi >= 60 and tsf >= 60:
+        return "Green"
+
+    if ixg_pct >= 88 and med10 >= (green_line - 0.30) and sip >= 95 and toi >= 60: 
+        return "Green"
+
+
+    if ixg_pct >= 80 and med10 >= 3.5 and sip >= 95 and odw >= 60:
+        return "Green"
+
+    if med10 >= yellow_line:
+        support = 0
+        support += 1 if ixg_pct >= 82 else 0
+        support += 1 if sip >= 68 else 0
+        support += 1 if toi >= 60 else 0
+        support += 1 if tsf >= 62 else 0
+        support += 1 if odw >= 62 else 0
+        if med10 >= (green_line - 0.20) and support >= 4:
+            return "Green"
+        return "Yellow"
+
+    return "Red"
+
+def matrix_goal_v2(ixg_pct: float, med10: Optional[float], pos: str,
+                   g5_total: Optional[int], goalie_weak: float) -> str:
+    if ixg_pct < 88:
+        return "Red"
+    if med10 is None:
+        return "Yellow"
+    need = 3.0 if not is_defense(pos) else 2.8
+    if med10 < (need - 0.5):
+        return "Red"
+    if med10 >= need and (g5_total or 0) >= 2:
+        return "Green"
+    if med10 >= need and goalie_weak >= 70:
+        return "Green"
+    return "Yellow"
+
+def matrix_points_v2(ixa_pct: float, v2_stab: Optional[float], reg_heat_p: str = "COOL",
+                     toi_pct: Optional[float] = None, team_xgf_pct: Optional[float] = None,
+                     opp_defweak: Optional[float] = None) -> str:
+    stab = 50.0 if v2_stab is None else float(v2_stab)
+    toi = 50.0 if toi_pct is None else float(toi_pct)
+    tx = 50.0 if team_xgf_pct is None else float(team_xgf_pct)
+    dw = 50.0 if opp_defweak is None else float(opp_defweak)
+
+    if ixa_pct < 78:
+        return "Red" if ixa_pct < 70 else "Yellow"
+
+    if ixa_pct >= 90 and stab >= 62:
+        return "Green"
+    if ixa_pct >= 90 and stab >= 65 and toi >= 55:
+        return "Green"
+    if ixa_pct >= 94 and stab >= 60 and reg_heat_p == "HOT":
+        return "Green"
+    if ixa_pct >= 90 and stab >= 63 and tx >= 60:
+        return "Green"
+    if ixa_pct >= 90 and stab >= 63 and dw >= 60:
+        return "Green"
+
+    return "Yellow"
+
+def matrix_assists_v1(ixa_pct: float, v2_stab: Optional[float], reg_heat_a: str = "COOL",
+                      toi_pct: Optional[float] = None, team_xgf_pct: Optional[float] = None,
+                      opp_defweak: Optional[float] = None, shot_assists60: Optional[float] = None) -> str:
+    stab = 50.0 if v2_stab is None else float(v2_stab)
+    toi = 50.0 if toi_pct is None else float(toi_pct)
+    tx  = 50.0 if team_xgf_pct is None else float(team_xgf_pct)
+    dw  = 50.0 if opp_defweak is None else float(opp_defweak)
+
+    sa60 = 0.0 if shot_assists60 is None or (isinstance(shot_assists60, float) and math.isnan(shot_assists60)) else float(shot_assists60)
+    sa_pct = clamp(sa60 * 20.0)
+
+    if ixa_pct < 78:
+        return "Red" if ixa_pct < 70 else "Yellow"
+
+    if ixa_pct >= 94 and stab >= 68:
+        return "Green"
+    if ixa_pct >= 90 and stab >= 60 and reg_heat_a == "HOT":
+        return "Green"
+    if ixa_pct >= 90 and stab >= 63 and tx >= 60:
+        return "Green"
+    if ixa_pct >= 92 and stab >= 60 and dw >= 60:
+        return "Green"
+    if ixa_pct >= 90 and stab >= 60 and sa_pct >= 70 and toi >= 60:
+        return "Green"
+
+    return "Yellow"
+
+def conf_sog(
+    ixg_pct: float,
+    shot_intent_pct: float,
+    shot_intent: float,
+    defweak: float,
+    toi_pct: float = 50.0,  # default keeps engine safe
+) -> int:
+    # SOG is volume-driven — goalie weakness is irrelevant
+    base = (
+        0.54 * ixg_pct
+        + 0.20 * shot_intent_pct
+        + 0.16 * defweak
+        + 0.08 * shot_intent
+    )
+    base += USAGE_WEIGHT_SOG * (toi_pct - 50.0)
+    return int(round(clamp(base)))
+
+def conf_goal(
+    ixg_pct: float,
+    ixa_pct: float,
+    g5: Optional[int],
+    defweak: float,
+    goalieweak: float,
+    toi_pct: float,
+) -> int:
+    g5s = 50.0 if g5 is None else clamp((g5 / 5.0) * 100.0)
+
+    base = (
+        0.60 * ixg_pct
+        + 0.18 * g5s
+        + 0.10 * defweak
+        + 0.12 * goalieweak
+    )
+
+    # identity bias: shooter vs facilitator
+    goal_bias = 5 if (ixg_pct - ixa_pct) >= 20 else 0
+    base += goal_bias
+
+    base += 0.05 * (toi_pct - 50.0)
+    return int(round(clamp(base)))
+
+def conf_points(ixa_pct: float, p10_gap: Optional[float], stab: float, defweak: float, goalieweak: float, toi_pct: float) -> int:
+    reg = 65.0 if p10_gap is None else clamp((p10_gap / 4.0) * 100.0)
+    base = 0.52 * ixa_pct + 0.10 * stab + 0.10 * defweak + 0.08 * goalieweak + 0.14 * reg
+    base += USAGE_WEIGHT_POINTS * (toi_pct - 50.0)
+    return int(round(clamp(base)))
+
+def conf_assists(
+    ixa_pct: float,
+    ixg_pct: float,
+    stab: float,
+    defweak: float,
+    goalieweak: float,
+    toi_pct: float,
+    reg_gap_a10: Optional[float] = None,
+    assist_vol: Optional[float] = None,
+    i5v5_shotassists60: Optional[float] = None,
+    pp_share_pct_game: Optional[float] = None,
+    pp_ixA60: Optional[float] = None,
+    pp_matchup: Optional[float] = None,
+) -> int:
+    # ----------------------------
+    # 1) Baseline (cannot be penalized by optional signals)
+    # ----------------------------
+    base = (
+        0.45 * ixa_pct +
+        0.10 * ixg_pct +
+        0.17 * stab +
+        0.12 * defweak +
+        0.06 * goalieweak
+    )
+    base += 0.10 * (toi_pct - 50.0)  # light usage tilt
+
+    # ----------------------------
+    # 2) Bonus-only signals (never negative)
+    # ----------------------------
+    bonus = 0.0
+
+    # Regression gap bonus: only applies if present and positive
+    # (If you want "missing" to be neutral, do NOT default to 65 here.)
+    if reg_gap_a10 is not None and not (isinstance(reg_gap_a10, float) and math.isnan(reg_gap_a10)):
+        # Example scaling: +0 to +10
+        bonus += clamp((reg_gap_a10 / 4.0) * 10.0, 0.0, 10.0)
+
+    # Assist volume bonus: only above neutral earns points
+    if assist_vol is not None and not (isinstance(assist_vol, float) and math.isnan(assist_vol)):
+        # Treat 5.0 as neutral; only reward above that (cap bonus)
+        bonus += clamp((assist_vol - 5.0) * 1.5, 0.0, 5.0)
+
+    # 5v5 shot-assists/60 bonus: only above neutral earns points
+    if i5v5_shotassists60 is not None and not (isinstance(i5v5_shotassists60, float) and math.isnan(i5v5_shotassists60)):
+        # Treat 2.0 as neutral; reward above (cap bonus)
+        bonus += clamp((i5v5_shotassists60 - 2.0) * 2.0, 0.0, 5.0)
+
+    # Power-play dagger bonus: ONLY if PP usage is real and matchup is favorable (never negative)
+    # This is meant to tighten assists without creating noise.
+    try:
+        if pp_share_pct_game is not None and pp_ixA60 is not None and pp_matchup is not None:
+            # Strong PP facilitator profile
+            if (pp_share_pct_game >= 22.0 and pp_ixA60 >= 1.0 and pp_matchup >= 58.0) or (pp_share_pct_game >= 28.0 and pp_ixA60 >= 0.85):
+                # scale 0..5 based on how far above thresholds we are
+                s1 = clamp((pp_share_pct_game - 18.0) / 18.0, 0.0, 1.0)
+                s2 = clamp((pp_ixA60 - 0.80) / 1.20, 0.0, 1.0)
+                s3 = clamp((pp_matchup - 50.0) / 25.0, 0.0, 1.0)
+                bonus += 5.0 * (0.45 * s1 + 0.35 * s2 + 0.20 * s3)
+    except Exception:
+        pass
+
+    # ----------------------------
+    # 3) Final clamp
+    # ----------------------------
+    conf = clamp(base + bonus, 0.0, 100.0)
+    return int(round(conf))
+# ============================
+# v2 stability + opponent defweak (0-100)
+# ============================
+def add_v2_scores(df: pd.DataFrame) -> pd.DataFrame:
+    out = df.copy()
+
+    for col in ["i5v5_points60", "i5v5_shotAssists60", "i5v5_iCF60"]:
+        if col not in out.columns:
+            out[col] = np.nan
+
+    for col in ["opp_5v5_xGA60", "opp_5v5_HDCA60", "opp_5v5_SlotSA60"]:
+        if col not in out.columns:
+            out[col] = np.nan
+
+    pts_p = pct_rank(out["i5v5_points60"]).fillna(50)
+    sa_p  = pct_rank(out["i5v5_shotAssists60"]).fillna(50)
+    icf_p = pct_rank(out["i5v5_iCF60"]).fillna(50)
+    out["v2_player_stability"] = (0.50 * pts_p + 0.25 * sa_p + 0.25 * icf_p).round(1)
+
+    xga_p  = pct_rank(out["opp_5v5_xGA60"]).fillna(50)
+    hdca_p = pct_rank(out["opp_5v5_HDCA60"]).fillna(50)
+    slot_p = pct_rank(out["opp_5v5_SlotSA60"]).fillna(50)
+    out["v2_defense_vulnerability"] = (0.45 * xga_p + 0.35 * hdca_p + 0.20 * slot_p).round(1)
+
+    return out
+
+
+# ============================
+# Star prior (TalentMult) + tiers
+# ============================
+def add_star_prior(sk: pd.DataFrame) -> pd.DataFrame:
+    out = sk.copy()
+    toi_pct = pct_rank(out["TOI_per_game"]).fillna(50)
+    out["TOI_Pct"] = toi_pct.round(1)
+
+    star = (0.45 * out["iXG_pct"].fillna(50) + 0.35 * out["iXA_pct"].fillna(50) + 0.20 * toi_pct).fillna(50)
+    out["StarScore"] = star.round(1)
+
+    mult = 1.0 + ((star - 50.0) / 100.0) * TALENT_MULT_STRENGTH
+    mult = mult.clip(TALENT_MULT_MIN, TALENT_MULT_MAX)
+    out["TalentMult"] = mult.round(3)
+
+    return out
+def add_talent_tiers(sk: pd.DataFrame, debug: bool = False) -> pd.DataFrame:
+    out = sk.copy()
+
+    starscore = pd.to_numeric(out.get("StarScore", 50.0), errors="coerce").fillna(50.0)
+    toi_pct   = pd.to_numeric(out.get("TOI_Pct", 50.0), errors="coerce").fillna(50.0)
+
+    ixg = pd.to_numeric(out.get("iXG_pct", 50.0), errors="coerce").fillna(50.0)
+    ixa = pd.to_numeric(out.get("iXA_pct", 50.0), errors="coerce").fillna(50.0)
+    top_pct = pd.concat([ixg, ixa], axis=1).max(axis=1)
+
+    sip = pd.to_numeric(out.get("ShotIntent_Pct", 50.0), errors="coerce").fillna(50.0)
+    
+    out["PPG"] = safe_ppg(out).round(3)
+    ppg = pd.to_numeric(out["PPG"], errors="coerce")
+
+
+    names = out.get("Player", "").astype(str)
+    elite_seed_hit = names.isin(ELITE_SEED)
+    star_seed_hit  = names.isin(STAR_SEED)
+
+    # -------------------------
+    # ELITE (hardened): require 2-of-3 proofs OR elite seed OR elite shot-intent lane
+    # proofs: StarScore, TOI, TopPct
+    # -------------------------
+    elite_a = (starscore >= ELITE_STARSCORE)
+    elite_b = (toi_pct   >= ELITE_TOI_PCT)
+    elite_c = (top_pct   >= ELITE_TOPPCT)
+
+    elite_proofs = elite_a.astype(int) + elite_b.astype(int) + elite_c.astype(int)
+    
+    elite_d = (ppg >= ELITE_MIN_PPG)
+    
+    star_e = (ppg >= STAR_MIN_PPG)
+
+
+    # PPG (best-effort; if missing, it'll be NaN and fail the gate unless seeded)
+    ppg = pd.to_numeric(out.get("PPG"), errors="coerce")
+
+    elite_ppg_gate = (ppg >= ELITE_MIN_PPG)
+
+    # keep your shot-intent elite lane, but require strong TOI + PPG too
+    elite_shot_lane = (
+        (sip >= ELITE_SHOTINTENT_PCT) &
+        (top_pct >= ELITE_TOPPCT) &
+        (toi_pct >= ELITE_TOI_PCT) &
+        elite_ppg_gate
+    )
+
+    # ELITE: seeded OR (3-of-3 proofs AND PPG gate) OR (elite shot lane AND PPG gate)
+    elite = elite_seed_hit | ((elite_proofs >= 3) & elite_ppg_gate) | elite_shot_lane
+    # -------------------------
+    # STAR (hardened): require 3-of-4 proofs OR star seed
+    # proofs: StarScore, TOI, TopPct, ShotIntent
+    # Uses your STAR_* constants but forces combined strength.
+    # -------------------------
+    # -------------------------
+    # STAR (hardened): require 3-of-4 proofs OR star seed
+    # proofs: StarScore, TOI, TopPct, ShotIntent
+    # Uses your STAR_* constants but forces combined strength.
+    # -------------------------
+    star_a = (starscore >= STAR_STARSCORE)
+    star_b = (toi_pct   >= STAR_TOI_PCT)
+    star_c = (top_pct   >= STAR_TOPPCT)
+    star_d = (sip        >= STAR_SHOTINTENT_PCT)
+
+    star_proofs = star_a.astype(int) + star_b.astype(int) + star_c.astype(int) + star_d.astype(int)
+
+    star = star_seed_hit | (star_proofs >= 3)
+
+    # Make tiers mutually exclusive (STAR excludes ELITE)
+    out["Is_Elite"] = elite
+    out["Is_Star"]  = star & ~elite
+
+    out["Talent_Tier"] = "NONE"
+    out.loc[out["Is_Star"],  "Talent_Tier"] = "STAR"
+    out.loc[out["Is_Elite"], "Talent_Tier"] = "ELITE"
+
+    # -------------------------
+    # Tier-based talent premium (applied AFTER tiers exist)
+    # -------------------------
+    if "TalentMult" not in out.columns:
+        out["TalentMult"] = 1.0
+
+    out.loc[out["Talent_Tier"] == "ELITE", "TalentMult"] *= 1.06
+    out.loc[out["Talent_Tier"] == "STAR",  "TalentMult"] *= 1.03
+
+    out["TalentMult"] = (
+        pd.to_numeric(out["TalentMult"], errors="coerce")
+        .fillna(1.0)
+        .clip(TALENT_MULT_MIN, TALENT_MULT_MAX)
+        .round(3)
+    )
+
+
+    if debug:
+        print("\n[TALENT] Tier counts:", out["Talent_Tier"].value_counts(dropna=False).to_dict())
+
+        # Optional quick debug: see why STAR is large
+        try:
+            print("[TALENT] STAR proofs breakdown (mean %):",
+                  {
+                      "StarScore": round(100.0 * star_a.mean(), 1),
+                      "TOI":       round(100.0 * star_b.mean(), 1),
+                      "TopPct":    round(100.0 * star_c.mean(), 1),
+                      "ShotIntent":round(100.0 * star_d.mean(), 1),
+                      "3of4":      round(100.0 * (star_proofs >= 3).mean(), 1),
+                  })
+        except Exception:
+            pass
+
+    return out
+
+def get_team_recent_gf(sess: requests.Session, team_abbrev: str, n_games: int = 5, debug: bool = False) ->  tuple[int, float, int]:
+    """
+    Returns (gf_sum, gf_avg, n_used) over the last n completed games.
+    Uses api-web.nhle.com club schedule endpoint.
+    """
+    team_abbrev = norm_team(team_abbrev)
+    url = f"https://api-web.nhle.com/v1/club-schedule-season/{team_abbrev}/now"
+
+    try:
+        data = http_get_json(sess, url)
+    except Exception as e:
+        if debug:
+            print(f"[TEAM_GF] fetch failed for {team_abbrev}: {type(e).__name__}: {e}")
+        return 0, 0.0, 0
+
+    games = data.get("games", []) or []
+
+    # Keep only completed games
+    completed = []
+    for g in games:
+        state = str(g.get("gameState", "") or "").upper()
+        if state in ("OFF", "FINAL", "FINAL_OT", "FINAL_SO"):
+            completed.append(g)
+
+    # Sort by date ascending, then take the most recent n
+    def _gdate(x):
+        return str(x.get("gameDate", "") or x.get("startTimeUTC", "") or "")
+    completed.sort(key=_gdate)
+
+    last = completed[-n_games:] if completed else []
+    gf = 0
+
+    for g in last:
+        home = g.get("homeTeam", {}) or {}
+        away = g.get("awayTeam", {}) or {}
+
+        h_abbrev = str(home.get("abbrev", "") or home.get("teamAbbrev", "") or "").upper()
+        a_abbrev = str(away.get("abbrev", "") or away.get("teamAbbrev", "") or "").upper()
+
+        h_score = int(home.get("score", 0) or 0)
+        a_score = int(away.get("score", 0) or 0)
+
+        if h_abbrev == team_abbrev:
+            gf += h_score
+        elif a_abbrev == team_abbrev:
+            gf += a_score
+
+    n_used = len(last)
+    avg = (gf / n_used) if n_used > 0 else 0.0
+    return gf, round(avg, 2), n_used
+
+
+
+# ============================
+# Drought bumps (game regression)
+# ============================
+def get_team_recent_ga(sess: requests.Session, team_abbrev: str, n_games: int = 10, debug: bool = False) -> tuple[int, float, int]:
+    """
+    Returns (ga_sum, ga_avg, n_used) over the last n completed games.
+    Uses api-web.nhle.com club schedule endpoint.
+    """
+    team_abbrev = norm_team(team_abbrev)
+    url = f"https://api-web.nhle.com/v1/club-schedule-season/{team_abbrev}/now"
+
+    try:
+        data = http_get_json(sess, url)
+    except Exception as e:
+        if debug:
+            print(f"[TEAM_GA] fetch failed for {team_abbrev}: {type(e).__name__}: {e}")
+        return 0, 0.0, 0
+
+    games = data.get("games", []) or []
+
+    # Keep only completed games
+    completed = []
+    for g in games:
+        state = str(g.get("gameState", "") or "").upper()
+        if state in ("OFF", "FINAL", "FINAL_OT", "FINAL_SO"):
+            completed.append(g)
+
+    # Sort by date ascending, then take the most recent n
+    def _gdate(x):
+        return str(x.get("gameDate", "") or x.get("startTimeUTC", "") or "")
+    completed.sort(key=_gdate)
+
+    last = completed[-n_games:] if completed else []
+    ga = 0
+
+    for g in last:
+        home = g.get("homeTeam", {}) or {}
+        away = g.get("awayTeam", {}) or {}
+
+        # Determine which side is this team
+        home_ab = norm_team(str(home.get("abbrev", "") or ""))
+        away_ab = norm_team(str(away.get("abbrev", "") or ""))
+
+        # score fields can vary; handle a few known patterns
+        hs = safe_int(home.get("score")) if home.get("score") is not None else safe_int(g.get("homeTeamScore"))
+        as_ = safe_int(away.get("score")) if away.get("score") is not None else safe_int(g.get("awayTeamScore"))
+
+        if home_ab == team_abbrev:
+            ga += as_
+        elif away_ab == team_abbrev:
+            ga += hs
+        else:
+            # fallback: some payloads use 'teamAbbrev' / 'opponentAbbrev'
+            t = norm_team(str(g.get("teamAbbrev", "") or g.get("teamAbbreviation", "") or ""))
+            if t == team_abbrev:
+                ga += safe_int(g.get("opponentScore"))
+
+    n_used = len(last)
+    avg = (ga / n_used) if n_used > 0 else 0.0
+    return ga, round(avg, 2), n_used
+
+
+def ga_avg_to_defweak(ga_avg: float) -> float:
+    """Map GA/G (last-10) to a 0-100 'defense weakness' score (higher = weaker)."""
+    try:
+        ga_avg = float(ga_avg)
+    except Exception:
+        return 50.0
+    # 2.0 GA/G => ~20 (strong), 4.0 => ~80 (weak), 4.5 => ~95 (very weak)
+    weak = 20.0 + (ga_avg - 2.0) * 30.0
+    return float(max(0.0, min(100.0, weak)))
+
+def drought_bump(tier: str, market: str, drought: Optional[int]) -> tuple[int, bool]:
+    if drought is None:
+        return 0, False
+
+    d = int(drought)
+    bump = 0
+    flag = False
+
+    if market in {"SOG", "POINTS"}:
+        if tier == "ELITE":
+            if d >= 1: bump = 2
+            if d >= 2: bump = 6
+            if d >= 3: bump = 11; flag = True
+        elif tier == "STAR":
+            if d >= 2: bump = 2
+            if d >= 3: bump = 6
+            if d >= 4: bump = 10; flag = True
+        else:
+            if d >= 3: bump = 2
+            if d >= 4: bump = 5
+            if d >= 5: bump = 8; flag = True
+
+    if market in {"GOAL", "ASSISTS"}:
+        if tier == "ELITE":
+            if d >= 2: bump = 5
+            if d >= 3: bump = 8; flag = True
+        elif tier == "STAR":
+            if d >= 3: bump = 4
+            if d >= 4: bump = 7; flag = True
+        else:
+            if d >= 4: bump = 2
+            if d >= 5: bump = 5; flag = True
+
+    return bump, flag
+
+
+
+# ============================
+# MAIN build
+# ============================
+
+def build_tracker(today_local: date, debug: bool = False) -> str:
+    ensure_dirs()
+    sess = http_session()
+
+    print(f"\nNHL EDGE TOOL — v7.2 — {today_local.isoformat()}\n")
+
+    games = nhl_schedule_today(sess, today_local)
+    if not games:
+        raise RuntimeError("No games found for today.")
+
+    teams_playing = set()
+    game_map: Dict[str, str] = {}
+    opp_map: Dict[str, str] = {}
+    game_time_utc: Dict[str, str] = {}
+    game_time_local: Dict[str, str] = {}
+
+    print("Matchups:")
+    for g in games:
+        away, home = g["away"], g["home"]
+        start_utc = str(g.get("startTimeUTC", "") or "")
+        matchup = f"{away}@{home}"
+        print(f"  {matchup}")
+
+        teams_playing.add(away)
+        teams_playing.add(home)
+
+        game_map[away] = matchup
+        game_map[home] = matchup
+        opp_map[away] = home
+        opp_map[home] = away
+
+        try:
+            dt_utc = datetime.fromisoformat(start_utc.replace("Z", "+00:00"))
+            dt_local = dt_utc.astimezone(ZoneInfo(LOCAL_TZ))
+            start_local = dt_local.strftime("%I:%M %p").lstrip("0")
+        except Exception:
+            start_local = ""
+
+        game_time_utc[matchup] = start_utc
+        game_time_local[matchup] = start_local
+
+    print("")
+
+    # -------------------------
+    # TEAM GF L5 HARD GATE (2.70) — affects GOAL/POINTS/ASSISTS
+    # -------------------------
+    team_gf = {}
+    for t in sorted(teams_playing):
+        gf, avg, n_used = get_team_recent_gf(sess, t, n_games=TEAM_GF_WINDOW, debug=debug)
+        team_gf[t] = {"GF_L5": gf, "GF_Avg_L5": avg, "GF_N": n_used, "GF_Gate": (avg >= TEAM_GF_MIN_AVG)}
+
+    
+    if debug:
+        bad = {k: v for k, v in team_gf.items() if not v.get("GF_Gate")}
+        print(f"[TEAM_GF] gate={TEAM_GF_MIN_AVG:.2f} window={TEAM_GF_WINDOW} | failing teams:", bad)
+
+
+    # MoneyPuck skaters
+    sk_raw = load_moneypuck_best_effort(sess, "skaters")
+    sk = normalize_skaters_all(sk_raw, debug=debug)
+    sk = sk[sk["Team"].isin(teams_playing)].copy()
+    if sk.empty:
+        raise RuntimeError("No skaters matched today's teams. Team abbrev mismatch.")
+
+    # Goalies (MoneyPuck)
+    g_raw = load_moneypuck_best_effort(sess, "goalies")
+    gdf = normalize_goalies(g_raw)
+    team_goalie = build_team_goalie_map(gdf)
+
+    # DFO starter map
+    dfo_map = fetch_dailyfaceoff_starters(today_local, debug=debug)
+
+    # DFO injuries
+    inj_df = fetch_dfo_injuries_for_teams(teams_playing, debug=debug)
+
+    # Schedule columns
+    sk["Game"] = sk["Team"].map(game_map).fillna("")
+    sk["Opp"] = sk["Team"].map(opp_map).fillna("")
+    sk["StartTimeUTC"] = sk["Game"].map(game_time_utc).fillna("")
+    sk["StartTimeLocal"] = sk["Game"].map(game_time_local).fillna("")
+
+    # Goalie info
+    def _goalie_pack(r: pd.Series) -> pd.Series:
+        opp_team = norm_team(str(r.get("Opp", "")).strip())
+        starter_name = dfo_map.get(opp_team, {}).get("goalie", "")
+        g = resolve_goalie_for_team(gdf, team_goalie, opp_team, starter_name)
+        return pd.Series({
+            "Opp_Goalie": g.get("Goalie", ""),
+            "Opp_GP": g.get("GP", None),
+            "Opp_SV": g.get("SV", None),
+            "Opp_GAA": g.get("GAA", None),
+            "Opp_Goalie_Source": g.get("Source", ""),
+            "Opp_Goalie_Status": dfo_map.get(opp_team, {}).get("status", ""),
+        })
+
+    # attach to skaters
+    sk["Team_GF_L5"] = sk["Team"].map(lambda x: team_gf.get(norm_team(x), {}).get("GF_L5", 0))
+    sk["Team_GF_Avg_L5"] = sk["Team"].map(lambda x: team_gf.get(norm_team(x), {}).get("GF_Avg_L5", 0.0))
+    sk["Team_GF_Gate"] = sk["Team"].map(lambda x: bool(team_gf.get(norm_team(x), {}).get("GF_Gate", False)))
+
+
+    goalie_cols = sk.apply(_goalie_pack, axis=1)
+    sk = pd.concat([sk, goalie_cols], axis=1)
+
+ 
+    sk["Goalie_Weak"] = sk.apply(
+        lambda r: goalie_weak_score(
+            safe_float(r.get("Opp_GP")),
+            safe_float(r.get("Opp_SV")),
+            safe_float(r.get("Opp_GAA")),
+        ),
+        axis=1
+    )
+
+    # 5v5 player
+    try:
+        sk5 = normalize_skaters_5v5(sk_raw, debug=debug)
+        sk = sk.merge(sk5, on=["playerId", "Team"], how="left")
+    except Exception as e:
+        print(f"WARNING: Player 5v5 unavailable; continuing neutral. ({type(e).__name__}: {e})")
+        for c in ["i5v5_points60", "i5v5_primaryAssists60", "i5v5_shotAssists60", "i5v5_iCF60"]:
+            sk[c] = np.nan
+
+    # Assist volume proxy
+    sk["Assist_Volume"] = (
+        pd.to_numeric(sk.get("i5v5_shotAssists60"), errors="coerce")
+          .fillna(0.0) * 12.0
+    ).round(2)
+
+
+    # POWER PLAY skaters (5v4)
+    try:
+        skpp = normalize_skaters_pp(sk_raw, debug=debug)
+        sk = sk.merge(skpp, on=["playerId", "Team"], how="left")
+    except Exception as e:
+        if debug:
+            print(f"WARNING: PP skaters unavailable; continuing neutral. ({type(e).__name__}: {e})")
+        for c in ["PP_TOI_min", "PP_TOI_per_game", "PP_iXG60", "PP_iXA60", "PP_iP60", "PP_Role"]:
+            sk[c] = np.nan
+
+    # --- Restore PP_Tier from PP_Role (legacy behavior) ---
+    # PP_Role is emitted by normalize_skaters_pp(): 2=PP1, 1=PP2, 0=PP0/passenger
+    if "PP_Role" in sk.columns and "PP_Tier" not in sk.columns:
+        def _pp_tier(v):
+            try:
+                x = int(float(v))
+            except Exception:
+                return np.nan
+            return "A" if x >= 2 else ("B" if x == 1 else ("C" if x == 0 else np.nan))
+        sk["PP_Tier"] = sk["PP_Role"].apply(_pp_tier)
+
+
+
+
+    
+    # --- PP derived fields for Dagger Lab (display-only, does NOT feed EV) ---
+    # PP_Path: classify how a player contributes on PP based on iXG vs iXA profile
+    if "PP_Path" not in sk.columns:
+        def _pp_path(row):
+            role = row.get("PP_Role", np.nan)
+            try:
+                r = int(float(role))
+            except Exception:
+                r = -1
+            if r <= 0:
+                return "Passenger"
+            ixg = pd.to_numeric(row.get("PP_iXG60", np.nan), errors="coerce")
+            ixa = pd.to_numeric(row.get("PP_iXA60", np.nan), errors="coerce")
+            tot = (ixg if pd.notna(ixg) else 0.0) + (ixa if pd.notna(ixa) else 0.0)
+            if tot <= 0:
+                return "Passenger"
+            share = (ixg / tot)
+            if share >= 0.60:
+                return "Shooter"
+            if share <= 0.40:
+                return "Distributor"
+            return "Hybrid"
+        try:
+            sk["PP_Path"] = sk.apply(_pp_path, axis=1)
+        except Exception:
+            sk["PP_Path"] = "Passenger"
+
+    # Team share/stability/environment score are visual helpers
+    # PP_TeamShare_pct: prefer existing; if missing OR all-NaN, derive from PP_TOI_Pct_Game (already populated)
+    if ("PP_TeamShare_pct" not in sk.columns) or (pd.to_numeric(sk.get("PP_TeamShare_pct"), errors="coerce").isna().all()):
+        sk["PP_TeamShare_pct"] = pd.to_numeric(sk.get("PP_TOI_Pct_Game"), errors="coerce")
+
+    if "PP_TOI_stability" not in sk.columns:
+        # heuristic: how close PP_TOI_min is to PP_TOI (higher = more stable usage)
+        toi = pd.to_numeric(sk.get("PP_TOI"), errors="coerce")
+        toi_min = pd.to_numeric(sk.get("PP_TOI_min"), errors="coerce")
+        with np.errstate(divide="ignore", invalid="ignore"):
+            stab = 100.0 * (toi_min / toi)
+        sk["PP_TOI_stability"] = stab.clip(lower=0.0, upper=100.0)
+
+ 
+
+    # Fallback: if PP_TOI is missing, pull season PP TOI from NHL stats REST API
+    try:
+        if ("PP_TOI_per_game" not in sk.columns) or (sk["PP_TOI_per_game"].notna().sum() < 5):
+            season_id = _season_id_from_date(today_local)
+            pp_toi = fetch_pp_toi_from_nhle_stats(season_id, debug=debug)
+            if not pp_toi.empty:
+                sk = sk.merge(pp_toi[["playerId", "PP_TOI_min", "PP_TOI_per_game"]], on="playerId", how="left", suffixes=("", "_nhle"))
+                # prefer MoneyPuck when available
+                if "PP_TOI_min_nhle" in sk.columns:
+                    sk["PP_TOI_min"] = sk["PP_TOI_min"].fillna(sk["PP_TOI_min_nhle"]) 
+                    sk["PP_TOI_per_game"] = sk["PP_TOI_per_game"].fillna(sk["PP_TOI_per_game_nhle"]) 
+                    sk.drop(columns=[c for c in ["PP_TOI_min_nhle","PP_TOI_per_game_nhle"] if c in sk.columns], inplace=True)
+            if debug:
+                nn = int(sk["PP_TOI_per_game"].notna().sum()) if "PP_TOI_per_game" in sk.columns else 0
+                print(f"[PPTOI] after NHL fallback: non-null PP_TOI_per_game rows = {nn}")
+    except Exception as e:
+        if debug:
+            print(f"WARNING: NHL PP TOI fallback failed; continuing neutral. ({type(e).__name__}: {e})")
+
+
+    # 5v5 teams
+    try:
+        teams_raw = load_moneypuck_best_effort(sess, "teams")
+        t5 = normalize_teams_5v5(teams_raw, debug=debug)
+
+
+        # POWER PLAY / PENALTY KILL team context
+        try:
+            tpp = normalize_teams_pppk(teams_raw, debug=debug)
+            # Team PP strength
+            sk = sk.merge(tpp[["Team", "Team_PP_xGF60", "Team_PP_GF60", "PP_Score", "Team_PK_xGA60", "Team_PK_GA60", "PK_Weak"]], on="Team", how="left")
+            # Opponent PK weakness (join on Opp)
+            opp_pk = tpp[["Team", "Team_PK_xGA60", "Team_PK_GA60", "PK_Weak"]].rename(columns={
+                "Team": "Opp",
+                "Team_PK_xGA60": "Opp_PK_xGA60",
+                "Team_PK_GA60": "Opp_PK_GA60",
+                "PK_Weak": "Opp_PK_Weak",
+            })
+            sk = sk.merge(opp_pk, on="Opp", how="left")
+        except Exception as e:
+            if debug:
+                print(f"WARNING: Team PP/PK unavailable; continuing neutral. ({type(e).__name__}: {e})")
+            for c in ["Team_PP_xGF60", "Team_PP_GF60", "PP_Score", "Team_PK_xGA60", "Team_PK_GA60", "PK_Weak", "Opp_PK_xGA60", "Opp_PK_GA60", "Opp_PK_Weak"]:
+                sk[c] = np.nan
+
+
+        # -------------------------------------------------
+
+
+        # POWER PLAY derived columns (UI + downstream stability)
+
+
+        # -------------------------------------------------
+
+
+        # Normalize naming so app.py can rely on stable columns.
+
+
+        # PP_TOI: minutes per game on PP
+
+
+        if "PP_TOI_per_game" in sk.columns and ("PP_TOI" not in sk.columns or pd.to_numeric(sk.get("PP_TOI"), errors="coerce").isna().all()):
+
+
+            sk["PP_TOI"] = pd.to_numeric(sk["PP_TOI_per_game"], errors="coerce")
+
+
+
+        # PP_Points60: proxy for PP point involvement per 60
+
+
+        if "PP_iP60" in sk.columns and ("PP_Points60" not in sk.columns or pd.to_numeric(sk.get("PP_Points60"), errors="coerce").isna().all()):
+
+
+            sk["PP_Points60"] = pd.to_numeric(sk["PP_iP60"], errors="coerce")
+
+
+
+        # PP_TOI_Pct: share of total TOI spent on PP (0-100)
+
+
+        if "PP_TOI_min" in sk.columns and "TOI" in sk.columns and ("PP_TOI_Pct" not in sk.columns or pd.to_numeric(sk.get("PP_TOI_Pct"), errors="coerce").isna().all()):
+
+
+            denom = pd.to_numeric(sk["TOI"], errors="coerce")
+
+
+            num = pd.to_numeric(sk["PP_TOI_min"], errors="coerce")
+
+
+            with np.errstate(divide='ignore', invalid='ignore'):
+
+
+                sk["PP_TOI_Pct"] = (num / denom) * 100.0
+
+
+            sk["PP_TOI_Pct"] = sk["PP_TOI_Pct"].replace([np.inf, -np.inf], np.nan)
+
+
+        # ---------------------------------
+        # PP_TOI normalization + PP_TOI share (per-game)
+        # ---------------------------------
+        # We want minutes-based per-game PP deployment (NHL-like).
+        # Some feeds leak seconds; fix with conservative heuristics.
+        #
+        # Targets:
+        #   PP_TOI_min       ~ 0..400 (season total PP minutes)
+        #   PP_TOI_per_game  ~ 0..6   (PP minutes per game)
+        #   TOI_per_game     ~ 8..30  (total minutes per game)
+        #
+        # If values are wildly above those ranges, assume seconds and convert.
+        if "PP_TOI_min" in sk.columns:
+            _pp_min = pd.to_numeric(sk["PP_TOI_min"], errors="coerce")
+            # season-total PP seconds are commonly 2,000-12,000
+            sk["PP_TOI_min"] = _pp_min.where(~(_pp_min > 500), _pp_min / 60.0)
+
+        if "PP_TOI_per_game" in sk.columns:
+            _pp_pg = pd.to_numeric(sk["PP_TOI_per_game"], errors="coerce")
+            # per-game PP seconds are commonly 60-360
+            sk["PP_TOI_per_game"] = _pp_pg.where(~(_pp_pg > 10), _pp_pg / 60.0)
+
+        # Some builds already carry TOI_per_game; normalize to minutes if it leaks seconds.
+        if "TOI_per_game" in sk.columns:
+            _toi_pg = pd.to_numeric(sk["TOI_per_game"], errors="coerce")
+            sk["TOI_per_game"] = _toi_pg.where(~(_toi_pg > 60), _toi_pg / 60.0)
+
+        # Compute PP share using per-game values (preferred).
+        # This avoids relying on season-total TOI columns that may not exist in the tracker.
+        if ("PP_TOI_Share" not in sk.columns) or pd.to_numeric(sk.get("PP_TOI_Share"), errors="coerce").isna().all():
+            if "PP_TOI_per_game" in sk.columns and "TOI_per_game" in sk.columns:
+                pp_pg = pd.to_numeric(sk["PP_TOI_per_game"], errors="coerce")
+                toi_pg = pd.to_numeric(sk["TOI_per_game"], errors="coerce")
+                with np.errstate(divide='ignore', invalid='ignore'):
+                    sk["PP_TOI_Share"] = pp_pg / toi_pg
+                sk["PP_TOI_Share"] = sk["PP_TOI_Share"].replace([np.inf, -np.inf], np.nan)
+                sk["PP_TOI_Share"] = sk["PP_TOI_Share"].clip(lower=0.0, upper=1.0)
+                sk["PP_TOI_Pct_Game"] = (sk["PP_TOI_Share"] * 100.0).round(1)
+
+        # Safety: if PP_TOI_Share didn't persist for any reason but PP_TOI_Pct_Game exists, recreate it
+        if 'PP_TOI_Share' not in sk.columns and 'PP_TOI_Pct_Game' in sk.columns:
+            sk['PP_TOI_Share'] = (pd.to_numeric(sk['PP_TOI_Pct_Game'], errors='coerce') / 100.0).clip(lower=0.0, upper=1.0)
+
+
+        # If PP_TOI_Pct (season-share) is missing and we don't have season totals,
+        # approximate it from per-game share (still useful for UI sorting).
+        if ("PP_TOI_Pct" not in sk.columns) or pd.to_numeric(sk.get("PP_TOI_Pct"), errors="coerce").isna().all():
+            if "PP_TOI_Pct_Game" in sk.columns:
+                sk["PP_TOI_Pct"] = pd.to_numeric(sk["PP_TOI_Pct_Game"], errors="coerce")
+
+        # PP_Matchup: blend of team PP strength and opponent PK weakness (0-100)
+
+
+        if ("PP_Matchup" not in sk.columns) or pd.to_numeric(sk.get("PP_Matchup"), errors="coerce").isna().all():
+
+
+            pp_score = pd.to_numeric(sk.get("PP_Score"), errors="coerce")
+
+
+            opp_pk_weak = pd.to_numeric(sk.get("Opp_PK_Weak"), errors="coerce")
+
+
+            # If either side is missing, default to 50 (neutral)
+
+
+            pp_score = pp_score.fillna(50.0)
+
+
+            opp_pk_weak = opp_pk_weak.fillna(50.0)
+
+            sk["PP_Matchup"] = (0.55 * pp_score + 0.45 * opp_pk_weak).round(1)
+
+            # ---------------------------------
+            # PP Big 3 (MUST be AFTER PP_Matchup exists)
+            # ---------------------------------
+
+            # PP_TeamShare_pct: derive from PP_TOI_Pct_Game (already computed earlier)
+            if ("PP_TeamShare_pct" not in sk.columns) or (
+                pd.to_numeric(sk["PP_TeamShare_pct"], errors="coerce").isna().all()
+            ):
+                sk["PP_TeamShare_pct"] = pd.to_numeric(sk.get("PP_TOI_Pct_Game"), errors="coerce")
+
+            # PP_Env_Score: follow PP_Matchup with neutral fallback
+            if ("PP_Env_Score" not in sk.columns) or (
+                pd.to_numeric(sk["PP_Env_Score"], errors="coerce").isna().all()
+            ) or (
+                pd.to_numeric(sk["PP_Env_Score"], errors="coerce").nunique(dropna=True) <= 1
+            ):
+                sk["PP_Env_Score"] = pd.to_numeric(sk["PP_Matchup"], errors="coerce").fillna(50.0)
+
+            # PP_BOOST: compute every run (never NaN)
+            if "PP_BOOST" not in sk.columns:
+                sk["PP_BOOST"] = ""
+
+            share = pd.to_numeric(sk["PP_TeamShare_pct"], errors="coerce")
+            env   = pd.to_numeric(sk["PP_Env_Score"], errors="coerce")
+            tier  = sk["PP_Tier"].astype(str).str.upper().str.strip() if "PP_Tier" in sk.columns else ""
+
+            mask_a = (tier == "A") & (share >= 20.0) & (env >= 60.0)
+            mask_b = (tier == "B") & (share >= 17.5) & (env >= 62.0)
+
+            sk["PP_BOOST"] = sk["PP_BOOST"].fillna("").astype(str)
+            sk.loc[mask_a | mask_b, "PP_BOOST"] = "ON"
+
+            if debug:
+                print(
+                    "[PP BIG3 @POST-MATCHUP] non-null counts:",
+                    "PP_Matchup", int(pd.to_numeric(sk.get("PP_Matchup"), errors="coerce").notna().sum()),
+                    "PP_TeamShare_pct", int(pd.to_numeric(sk.get("PP_TeamShare_pct"), errors="coerce").notna().sum()),
+                    "PP_Env_Score uniq", int(pd.to_numeric(sk.get("PP_Env_Score"), errors="coerce").nunique(dropna=True)),
+                    "PP_BOOST ON", int((sk.get("PP_BOOST").astype(str) == "ON").sum()),
+                )
+
+        # -------------------------------------------------
+        # ASSISTS DAGGER (power-play facilitation)
+        # -------------------------------------------------
+        # Clean, low-noise signal: high PP share + strong PP iXA60 + favorable PP matchup.
+        # Outputs:
+        #   - Assist_Dagger (0-100)
+        #   - Assist_PP_Proof (bool)
+        try:
+            # Prefer PP_TOI_Share if present; fall back to PP_TOI_Pct_Game if that's what the tracker has
+            if 'PP_TOI_Share' in sk.columns:
+                pp_share = pd.to_numeric(sk.get('PP_TOI_Share'), errors='coerce')
+                pp_share_pct = (pp_share * 100.0).replace([np.inf, -np.inf], np.nan)
+            else:
+                pp_share_pct = pd.to_numeric(sk.get('PP_TOI_Pct_Game'), errors='coerce')
+                pp_share = (pp_share_pct / 100.0).replace([np.inf, -np.inf], np.nan)
+            pp_ixA60 = pd.to_numeric(sk.get("PP_iXA60"), errors="coerce")
+            pp_m = pd.to_numeric(sk.get("PP_Matchup"), errors="coerce")
+
+            s1 = ((pp_share_pct - 12.0) / 22.0).clip(lower=0.0, upper=1.0)
+            s2 = ((pp_ixA60 - 0.80) / 1.20).clip(lower=0.0, upper=1.0)
+            s3 = ((pp_m - 50.0) / 25.0).clip(lower=0.0, upper=1.0)
+
+            sk["Assist_Dagger"] = (100.0 * (0.45 * s1 + 0.35 * s2 + 0.20 * s3)).round(1)
+            # Trigger the dagger only when PP role + facilitation are real (low-noise)
+            proof = ((pp_share_pct >= 17.5) & (pp_ixA60 >= 1.20) & (pp_m >= 56.0)) | ((pp_share_pct >= 24.0) & (pp_ixA60 >= 0.95))
+            sk["Assist_PP_Proof"] = proof.fillna(False)
+        except Exception:
+            sk["Assist_Dagger"] = np.nan
+            sk["Assist_PP_Proof"] = False
+
+
+        t5_opp = t5[["Team", "opp_5v5_xGA60", "opp_5v5_HDCA60", "opp_5v5_SlotSA60"]].copy()
+        sk = sk.merge(t5_opp, left_on="Opp", right_on="Team", how="left")
+        sk = sk.drop(columns=["Team_y"], errors="ignore")
+        sk = sk.rename(columns={"Team_x": "Team"})
+
+        t5_team = t5[["Team", "team_5v5_xGF60", "team_5v5_SF60"]].copy()
+        t5_team["team_5v5_SF60_pct"]  = pct_rank(t5_team["team_5v5_SF60"]).fillna(50).round(1)
+        t5_team["team_5v5_xGF60_pct"] = pct_rank(t5_team["team_5v5_xGF60"]).fillna(50).round(1)
+
+        sk = sk.merge(t5_team, on="Team", how="left")
+
+    except Exception as e:
+        print(f"WARNING: Opponent/team 5v5 unavailable; filling neutral. ({type(e).__name__}: {e})")
+        sk["opp_5v5_xGA60"] = np.nan
+        sk["opp_5v5_HDCA60"] = np.nan
+        sk["opp_5v5_SlotSA60"] = np.nan
+        sk["team_5v5_xGF60"] = np.nan
+        sk["team_5v5_SF60"] = np.nan
+        sk["team_5v5_SF60_pct"] = np.nan
+        sk["team_5v5_xGF60_pct"] = np.nan
+
+    for c in ["team_5v5_xGF60", "team_5v5_SF60"]:
+        if c not in sk.columns:
+            sk[c] = np.nan
+        sk[c] = pd.to_numeric(sk[c], errors="coerce").fillna(50.0)
+    sk["team_5v5_SF60_pct"] = pct_rank(sk["team_5v5_SF60"]).fillna(50).round(1)
+    sk["team_5v5_xGF60_pct"] = pct_rank(sk["team_5v5_xGF60"]).fillna(50).round(1)
+
+    for c in ["opp_5v5_xGA60", "opp_5v5_HDCA60", "opp_5v5_SlotSA60"]:
+        if c not in sk.columns:
+            sk[c] = np.nan
+        sk[c] = pd.to_numeric(sk[c], errors="coerce")
+    if sk["opp_5v5_SlotSA60"].isna().mean() >= 0.99:
+        if debug:
+            print("\n[DEBUG] SlotSA60 essentially missing for all teams. Filling neutral 50.")
+        sk["opp_5v5_SlotSA60"] = 50.0
+    sk["opp_5v5_xGA60"] = sk["opp_5v5_xGA60"].fillna(50.0)
+    sk["opp_5v5_HDCA60"] = sk["opp_5v5_HDCA60"].fillna(50.0)
+    sk["opp_5v5_SlotSA60"] = sk["opp_5v5_SlotSA60"].fillna(50.0)
+
+    # v2 scores
+    sk = add_v2_scores(sk)
+    # Base (season/structural) defense weakness
+    sk["Opp_DefWeak_Season"] = sk["v2_defense_vulnerability"].fillna(50.0)
+
+    # Last-10 overlay (GA/G) — aligns defense environment with other last-10 features
+    opp_teams = sorted(set(sk.get("Opp", pd.Series(dtype=str)).dropna().astype(str).map(norm_team).tolist()))
+    ga_map = {}
+    for t in opp_teams:
+        ga_sum, ga_avg, n_used = get_team_recent_ga(sess, t, n_games=10, debug=debug)
+        ga_map[t] = {"ga_avg": ga_avg, "n_used": n_used}
+
+    def _l10_weight(n_used: int) -> float:
+        # Require meaningful sample; cap influence
+        if n_used >= 8:
+            return 0.45
+        if n_used >= 5:
+            return 0.30
+        return 0.0
+
+    sk["Opp_GA_Avg_L10"] = sk["Opp"].astype(str).map(lambda x: ga_map.get(norm_team(x), {}).get("ga_avg", float("nan")))
+    sk["Opp_GA_Used_L10"] = sk["Opp"].astype(str).map(lambda x: ga_map.get(norm_team(x), {}).get("n_used", 0))
+    sk["Opp_DefWeak_L10"] = sk["Opp_GA_Avg_L10"].map(lambda v: ga_avg_to_defweak(v) if pd.notna(v) else float("nan"))
+
+    sk["Opp_DefWeak"] = sk.apply(
+        lambda r: float(r.get("Opp_DefWeak_Season", 50.0)) * (1.0 - _l10_weight(int(r.get("Opp_GA_Used_L10", 0))))
+                + (float(r.get("Opp_DefWeak_L10", r.get("Opp_DefWeak_Season", 50.0))) * _l10_weight(int(r.get("Opp_GA_Used_L10", 0))))
+        , axis=1
+    ).fillna(50.0)
+
+    # star prior + toi pct
+    sk = add_star_prior(sk)
+
+    # injuries
+    sk = apply_injury_dfo(sk, inj_df, debug=debug)
+
+    # Availability rules:
+    # - OUT/IR/Scratch removed
+    # - GTD stays but gets confidence penalty
+    sk["Available"] = ~sk["Injury_Status"].isin(["IR", "Out", "Scratch"])
+    sk["Unavailable_Reason"] = np.where(sk["Available"], "", sk["Injury_Status"])
+
+    # candidate pool for logs
+    sk["TopPct"] = sk[["iXG_pct", "iXA_pct"]].max(axis=1)
+    cand = sk[sk["TopPct"] >= PROCESS_MIN_PCT].copy()
+    cand = cand.sort_values("TopPct", ascending=False).head(CAND_CAP)
+    cand_ids = sorted({int(x) for x in cand["playerId"].dropna().tolist()})
+
+    print(f"Fetching NHL logs for {len(cand_ids)} players (cap={CAND_CAP}) ...\n")
+
+    cache = load_cache(today_local)
+
+    def fetch_one(pid: int) -> Tuple[int, Optional[Dict[str, Any]]]:
+        key = str(pid)
+        if key in cache:
+            return pid, cache[key]
+        data = nhle_player_gamelog_now(sess, pid)
+        time.sleep(HTTP_SLEEP_SEC)
+        if data is not None:
+            cache[key] = data
+        return pid, data
+
+    fetched: Dict[int, Optional[Dict[str, Any]]] = {}
+    with ThreadPoolExecutor(max_workers=MAX_WORKERS) as ex:
+        futures = {ex.submit(fetch_one, pid): pid for pid in cand_ids}
+        for fut in as_completed(futures):
+            pid = futures[fut]
+            try:
+                _, data = fut.result()
+                fetched[pid] = data
+            except Exception:
+                fetched[pid] = None
+
+    save_cache(today_local, cache)
+
+    feats_rows: List[Dict[str, Any]] = []
+    for pid in cand_ids:
+        payload = fetched.get(pid)
+        if payload is None:
+            feats_rows.append({"playerId": pid})
+            continue
+        feats = compute_lastN_features(payload, 10, 5)
+        feats_rows.append({"playerId": pid, **feats})
+
+    feats_df = pd.DataFrame(feats_rows)
+    sk = sk.merge(feats_df, on="playerId", how="left")
+
+    # ShotIntent proxy
+    med10 = pd.to_numeric(sk.get("Median10_SOG", np.nan), errors="coerce")
+    avg5 = pd.to_numeric(sk.get("Avg5_SOG", np.nan), errors="coerce")
+    sk["ShotIntent"] = (0.65 * med10 + 0.35 * avg5)
+    sk["ShotIntent_Pct"] = pct_rank(sk["ShotIntent"]).fillna(50).round(1)
+
+    # Talent tiers
+    sk = add_talent_tiers(sk, debug=debug)
+
+    # -------------------------
+    # Context-only: Elite PPG cohort (SAFE — no scoring impact)
+    # -------------------------
+    # PPG already computed inside add_talent_tiers(): sk["PPG"]
+    # Elite mask should use your tier system (NOT Elite_Flag).
+    elite_mask = sk.get("Talent_Tier", "NONE").astype(str).str.upper().eq("ELITE")
+
+    elite_ppg_avg = np.nan
+    if elite_mask.any():
+        elite_ppg_avg = float(pd.to_numeric(sk.loc[elite_mask, "PPG"], errors="coerce").mean())
+
+    sk["Elite_PPG_Avg"] = elite_ppg_avg
+    sk["PPG_vs_EliteAvg"] = pd.to_numeric(sk.get("PPG"), errors="coerce") - elite_ppg_avg
+
+    def elite_bucket(ppg: Any) -> str:
+        try:
+            if ppg is None or (isinstance(ppg, float) and math.isnan(ppg)):
+                return ""
+            p = float(ppg)
+        except Exception:
+            return ""
+        if p >= 1.10:
+            return "Elite 1.10+"
+        if p >= 0.95:
+            return "Elite 0.95-1.10"
+        if p >= 0.80:
+            return "Elite 0.80-0.95"
+        return "Elite <0.80"
+
+    sk["Elite_PPG_Bucket"] = np.where(
+        elite_mask,
+        sk["PPG"].apply(elite_bucket),
+        ""
+    )
+
+    
+  
+
+    # Simple UI tag (emoji label)
+    sk["Tier_Tag"] = np.where(
+        sk.get("Talent_Tier", "NONE").astype(str).str.upper().eq("ELITE"),
+        "👑 ELITE",
+        np.where(
+            sk.get("Talent_Tier", "NONE").astype(str).str.upper().eq("STAR"),
+            "⭐ STAR",
+            ""
+        )
+    )
+
+    
+
+    # Regression expectations (TalentMult only here)
+    gp = pd.to_numeric(sk["games_played"], errors="coerce")
+    exp_p10 = ((pd.to_numeric(sk["iXG_raw"], errors="coerce").fillna(0) + pd.to_numeric(sk["iXA_raw"], errors="coerce").fillna(0)) / gp) * 10.0
+    exp_g10 = (pd.to_numeric(sk["iXG_raw"], errors="coerce").fillna(0) / gp) * 10.0
+    exp_a10 = (pd.to_numeric(sk["iXA_raw"], errors="coerce").fillna(0) / gp) * 10.0
+
+    tm = pd.to_numeric(sk["TalentMult"], errors="coerce").fillna(1.0)
+    exp_p10 = exp_p10 * tm
+    exp_g10 = exp_g10 * tm
+    exp_a10 = exp_a10 * tm
+
+    sk["Exp_P_10"] = exp_p10.round(2)
+    sk["Exp_G_10"] = exp_g10.round(2)
+    sk["Exp_A_10"] = exp_a10.round(2)
+
+    sk["L10_P"] = pd.to_numeric(sk.get("P10_total", np.nan), errors="coerce")
+    sk["L10_G"] = pd.to_numeric(sk.get("G10_total", np.nan), errors="coerce")
+    sk["L10_S"] = pd.to_numeric(sk.get("S10_total", np.nan), errors="coerce")
+    sk["L10_A"] = pd.to_numeric(sk.get("A10_total", np.nan), errors="coerce")
+
+    sk["Exp_S_10"] = (pd.to_numeric(sk.get("ShotIntent", np.nan), errors="coerce") * 10.0).round(2)
+
+    sk["Reg_Gap_P10"] = (sk["Exp_P_10"] - sk["L10_P"]).round(2)
+    sk["Reg_Gap_G10"] = (sk["Exp_G_10"] - sk["L10_G"]).round(2)
+    sk["Reg_Gap_S10"] = (sk["Exp_S_10"] - sk["L10_S"]).round(2)
+    sk["Reg_Gap_A10"] = (sk["Exp_A_10"] - sk["L10_A"]).round(2)
+
+    sk["Reg_Heat_A"] = sk["Reg_Gap_A10"].apply(lambda x: heat_from_gap(safe_float(x)))
+    sk["Reg_Heat_P"] = sk["Reg_Gap_P10"].apply(lambda x: heat_from_gap(safe_float(x)))
+    sk["Reg_Heat_G"] = sk["Reg_Gap_G10"].apply(lambda x: heat_from_gap(safe_float(x)))
+    sk["Reg_Heat_S"] = sk["Reg_Gap_S10"].apply(lambda x: heat_from_gap(safe_float(x)))
+
+  
+     
+
+
+    
+
+    # Matrices
+    sk["Matrix_SOG"] = sk.apply(
+        lambda r: matrix_sog(
+            float(r.get("iXG_pct", 50)),
+            safe_float(r.get("Median10_SOG")),
+            str(r.get("Pos", "F")),
+            shot_intent_pct=safe_float(r.get("ShotIntent_Pct")),
+            toi_pct=safe_float(r.get("TOI_Pct")),
+            team_sf_pct=safe_float(r.get("team_5v5_SF60_pct")),
+            opp_defweak=safe_float(r.get("Opp_DefWeak")),
+        ),
+        axis=1
+    )
+
+    sk["Matrix_Assists"] = sk.apply(
+        lambda r: matrix_assists_v1(
+            ixa_pct=float(r.get("iXA_pct", 50)),
+            v2_stab=safe_float(r.get("v2_player_stability")),
+            reg_heat_a=str(r.get("Reg_Heat_A", "COOL")),
+            toi_pct=safe_float(r.get("TOI_Pct")),
+            team_xgf_pct=safe_float(r.get("team_5v5_xGF60_pct")),
+            opp_defweak=safe_float(r.get("Opp_DefWeak")),
+            shot_assists60=safe_float(r.get("i5v5_shotAssists60")),
+        ),
+        axis=1
+    )
+
+    sk["Matrix_Goal"] = sk.apply(
+        lambda r: matrix_goal_v2(
+            ixg_pct=float(r.get("iXG_pct", 50)),
+            med10=safe_float(r.get("Median10_SOG")),
+            pos=str(r.get("Pos", "F")),
+            g5_total=safe_int(r.get("G5_total")),
+            goalie_weak=float(r.get("Goalie_Weak", 50)),
+        ),
+        axis=1
+    )
+
+    sk["Matrix_Points"] = sk.apply(
+        lambda r: matrix_points_v2(
+            ixa_pct=float(r.get("iXA_pct", 50)),
+            v2_stab=safe_float(r.get("v2_player_stability")),
+            reg_heat_p=str(r.get("Reg_Heat_P", "COOL")),
+            toi_pct=safe_float(r.get("TOI_Pct")),
+            team_xgf_pct=safe_float(r.get("team_5v5_xGF60_pct")),
+            opp_defweak=safe_float(r.get("Opp_DefWeak")),
+        ),
+        axis=1
+    )
+
+    # Confidence (base)
+    
+    # Confidence (base)
+    sk["Conf_SOG"] = sk.apply(
+        lambda r: conf_sog(
+            ixg_pct=float(r.get("iXG_pct", 50)),
+            shot_intent_pct=float(r.get("ShotIntent_Pct", 50)),
+            shot_intent=float(r.get("ShotIntent", 0))
+                if pd.notna(r.get("ShotIntent")) else 0.0,
+            defweak=float(r.get("Opp_DefWeak", 50)),
+            toi_pct=float(r.get("TOI_Pct", 50)),
+        ),
+        axis=1
+    )
+
+    
+    sk["Conf_Goal"] = sk.apply(
+        lambda r: conf_goal(
+            float(r.get("iXG_pct", 50)),
+            float(r.get("iXA_pct", 50)),
+            r.get("G5_total", None),
+            float(r.get("Opp_DefWeak", 50)),
+            float(r.get("Goalie_Weak", 50)),
+            float(r.get("TOI_Pct", 50)),
+       ),
+       axis=1
+    ) 
+
+    sk["Conf_Points"] = sk.apply(
+        lambda r: conf_points(
+            float(r.get("iXA_pct", 50)),
+            safe_float(r.get("Reg_Gap_P10")),
+            float(r.get("v2_player_stability", 50)),
+            float(r.get("Opp_DefWeak", 50)),
+            float(r.get("Goalie_Weak", 50)),
+            float(r.get("TOI_Pct", 50)),
+        ),
+        axis=1
+    )
+    sk["Conf_Assists"] = sk.apply(
+        lambda r: conf_assists(
+            float(r.get("iXA_pct", 50)),
+            float(r.get("iXG_pct", 50)),            # ✅ add this
+            float(r.get("v2_player_stability", 50)),
+            float(r.get("Opp_DefWeak", 50)),
+            float(r.get("Goalie_Weak", 50)),
+            float(r.get("TOI_Pct", 50)),
+            reg_gap_a10=safe_float(r.get("Reg_Gap_A10")),
+            assist_vol=safe_float(r.get("Assist_Volume")),
+            i5v5_shotassists60=safe_float(r.get("i5v5_shotAssists60")),
+            pp_share_pct_game=safe_float(r.get("PP_TOI_Pct_Game")),
+            pp_ixA60=safe_float(r.get("PP_iXA60")),
+            pp_matchup=safe_float(r.get("PP_Matchup")),
+        ),
+        axis=1
+    )
+
+
+    # ----------------------------
+    # MARKET-SPECIFIC TALENT TIERS + MULTIPLIERS
+    # ----------------------------
+
+    # Tier tags (market-specific)
+    sk["Tier_Tag_SOG"] = sk.apply(
+        lambda r: market_tier_tag(r, "SOG"),
+        axis=1
+    )
+    sk["Tier_Tag_Points"] = sk.apply(
+        lambda r: market_tier_tag(r, "Points"),
+        axis=1
+    )
+    sk["Tier_Tag_Goal"] = sk.apply(
+        lambda r: market_tier_tag(r, "Goal"),
+        axis=1
+    )
+    sk["Tier_Tag_Assists"] = sk.apply(
+        lambda r: market_tier_tag(r, "Assists"),
+        axis=1
+    )
+
+    # Talent multipliers
+    STAR_MULT = 1.10
+    ELITE_MULT = 1.35
+
+    def talent_mult_from_tag(tag):
+        tag = (tag or "").upper().strip()
+        if tag == "ELITE":
+            return ELITE_MULT
+        if tag == "STAR":
+            return STAR_MULT
+        return 1.0
+
+    sk["Talent_Mult_Points"] = sk["Tier_Tag_Points"].map(talent_mult_from_tag)
+    sk["Talent_Mult_Goal"] = sk["Tier_Tag_Goal"].map(talent_mult_from_tag)
+    sk["Talent_Mult_Assists"] = sk["Tier_Tag_Assists"].map(talent_mult_from_tag)
+    sk["Talent_Mult_SOG"] = sk["Tier_Tag_SOG"].map(talent_mult_from_tag)
+
+    # Apply multipliers to expectations
+    sk["Exp_P_10"] = (sk["Exp_P_10"] * sk["Talent_Mult_Points"]).round(2)
+    sk["Exp_G_10"] = (sk["Exp_G_10"] * sk["Talent_Mult_Goal"]).round(2)
+    sk["Exp_A_10"] = (sk["Exp_A_10"] * sk["Talent_Mult_Assists"]).round(2)
+    sk["Exp_S_10"] = (sk["Exp_S_10"] * sk["Talent_Mult_SOG"]).round(2)
+
+
+        
+
+
+    
+
+
+    # -------------------------
+    # Injury adjustment into confidence (GTD down, ROLE+ up)
+    # -------------------------
+    inj_adj = (
+        pd.to_numeric(sk.get("Injury_DFO_Score"), errors="coerce")
+        .fillna(0.0)
+        * INJURY_CONF_MULT
+    ).clip(-6.0, 2.0)
+
+    for c in ["Conf_SOG", "Conf_Goal", "Conf_Points", "Conf_Assists"]:
+        sk[c] = (
+            pd.to_numeric(sk[c], errors="coerce")
+            .fillna(0)
+            .add(inj_adj)
+            .clip(0, 100)
+            .astype(int)
+        )
+
+    # -------------------------
+    # Game regression bumps (drought)
+    # -------------------------
+    sk["Drought_SOG"] = np.where(
+        sk["Pos"].astype(str).str.upper().isin(["D", "LD", "RD"]),
+        pd.to_numeric(sk.get("Drought_SOG2"), errors="coerce"),
+        pd.to_numeric(sk.get("Drought_SOG3"), errors="coerce"),
+    )
+
+    def _apply_drought(r: pd.Series) -> pd.Series:
+        tier = str(r.get("Talent_Tier", "NONE")).upper()
+        if tier not in {"ELITE", "STAR"}:
+            tier = "NONE"
+
+        b_s, f_s = drought_bump(tier, "SOG", safe_int(r.get("Drought_SOG")))
+        b_p, f_p = drought_bump(tier, "POINTS", safe_int(r.get("Drought_P")))
+        b_a, f_a = drought_bump(tier, "ASSISTS", safe_int(r.get("Drought_A")))
+        b_g, f_g = drought_bump(tier, "GOAL", safe_int(r.get("Drought_G")))
+
+        return pd.Series({
+            "GameReg_Bump_SOG": b_s,
+            "Flag_SOG_Drought": f_s,
+            "GameReg_Bump_Points": b_p,
+            "Flag_Points_Drought": f_p,
+            "GameReg_Bump_Assists": b_a,
+            "Flag_Assists_Drought": f_a,
+            "GameReg_Bump_Goal": b_g,
+            "Flag_Goal_Drought": f_g,
+        })
+
+    drought_df = sk.apply(_apply_drought, axis=1)
+    sk = pd.concat([sk, drought_df], axis=1)
+
+    # -------------------------
+    # Best Drought (ALL markets) — longest drought overall
+    # -------------------------
+    def _best_drought_all_markets(r: pd.Series) -> tuple[str, int]:
+        def _to_int(x) -> int:
+            v = pd.to_numeric(x, errors="coerce")
+            if pd.isna(v):
+                return 0
+            return int(v)
+
+        d_p = _to_int(r.get("Drought_P"))
+        d_a = _to_int(r.get("Drought_A"))
+        d_g = _to_int(r.get("Drought_G"))
+        d_s = _to_int(r.get("Drought_SOG"))
+
+        opts = [
+            ("GOAL", d_g),
+            ("ASSISTS", d_a),
+            ("POINTS", d_p),
+            ("SOG", d_s),
+        ]
+
+        # Longest drought wins; tie-breaker order = GOAL > ASSISTS > POINTS > SOG (because of list order)
+        opts.sort(key=lambda x: x[1], reverse=True)
+        return opts[0][0], opts[0][1]
+
+    best_d = sk.apply(_best_drought_all_markets, axis=1, result_type="expand")
+    sk["Best_Drought_Market"] = best_d[0].astype(str)
+    sk["Best_Drought"] = pd.to_numeric(best_d[1], errors="coerce").fillna(0).astype(int)
+    sk["Best_Drought_Tag"] = np.where(
+        sk["Best_Drought"] > 0,
+        sk["Best_Drought_Market"] + " " + sk["Best_Drought"].astype(str),
+        ""
+    )
+
+
+    # -------------------------
+    # Apply drought bumps into confidence
+    # -------------------------
+    sk["Conf_SOG"] = (
+        pd.to_numeric(sk["Conf_SOG"], errors="coerce")
+        .fillna(0)
+        .add(pd.to_numeric(sk["GameReg_Bump_SOG"], errors="coerce").fillna(0))
+        .clip(0, 100)
+        .astype(int)
+    )
+
+    sk["Conf_Points"] = (
+        pd.to_numeric(sk["Conf_Points"], errors="coerce")
+        .fillna(0)
+        .add(pd.to_numeric(sk["GameReg_Bump_Points"], errors="coerce").fillna(0))
+        .clip(0, 100)
+        .astype(int)
+    )
+
+    sk["Conf_Assists"] = (
+        pd.to_numeric(sk["Conf_Assists"], errors="coerce")
+        .fillna(0)
+        .add(pd.to_numeric(sk["GameReg_Bump_Assists"], errors="coerce").fillna(0))
+        .clip(0, 100)
+        .astype(int)
+    )
+
+    sk["Conf_Goal"] = (
+        pd.to_numeric(sk["Conf_Goal"], errors="coerce")
+        .fillna(0)
+        .add(pd.to_numeric(sk["GameReg_Bump_Goal"], errors="coerce").fillna(0))
+        .clip(0, 100)
+        .astype(int)
+    )
+
+    # -------------------------
+    # HARD FAIL: team scoring environment gate
+    # If team GF L5 avg < 2.70 => NO GOAL / POINTS / ASSISTS
+    # -------------------------
+    gf_fail = ~sk.get("Team_GF_Gate", False).astype(bool)
+
+    sk.loc[gf_fail, ["Conf_Goal", "Conf_Points", "Conf_Assists"]] = 0
+
+    sk.loc[gf_fail, "Matrix_Goal"] = "FAIL_GF"
+    sk.loc[gf_fail, "Matrix_Points"] = "FAIL_GF"
+    sk.loc[gf_fail, "Matrix_Assists"] = "FAIL_GF"
+
+    # -------------------------
+    # 🗡️ Assists dagger (PP facilitation edge)
+    # Ensure this is computed AFTER PP columns are populated.
+    # -------------------------
+    try:
+        pp_share_pct = pd.to_numeric(sk.get("PP_TOI_Pct_Game"), errors="coerce")
+        pp_ixA60 = pd.to_numeric(sk.get("PP_iXA60"), errors="coerce")
+        pp_m = pd.to_numeric(sk.get("PP_Matchup"), errors="coerce")
+
+        # percentile ranks (0..1) -> weighted dagger score (0..100)
+        s1 = pp_share_pct.rank(pct=True).fillna(0)
+        s2 = pp_ixA60.rank(pct=True).fillna(0)
+        s3 = pp_m.rank(pct=True).fillna(0)
+
+        sk["Assist_Dagger"] = (100.0 * (0.45 * s1 + 0.35 * s2 + 0.20 * s3)).round(1)
+
+        # Proof trigger: real PP role + real creation + at least decent matchup
+        proof = ((pp_share_pct >= 17.5) & (pp_ixA60 >= 1.20) & (pp_m >= 56.0)) | ((pp_share_pct >= 24.0) & (pp_ixA60 >= 0.95))
+        sk["Assist_PP_Proof"] = proof.fillna(False)
+    except Exception:
+        if "Assist_Dagger" not in sk.columns:
+            sk["Assist_Dagger"] = np.nan
+        if "Assist_PP_Proof" not in sk.columns:
+            sk["Assist_PP_Proof"] = False
+
+    # -------------------------
+    # Best market
+    # -------------------------
+    def choose_best(r: pd.Series) -> Tuple[str, int]:
+        opts = [
+            ("ASSISTS", int(r.get("Conf_Assists", 0) or 0)),
+            ("POINTS",  int(r.get("Conf_Points", 0) or 0)),
+            ("SOG",     int(r.get("Conf_SOG", 0) or 0)),
+            ("GOAL",    int(r.get("Conf_Goal", 0) or 0)),
+        ]
+        opts.sort(key=lambda x: x[1], reverse=True)
+        return opts[0][0], opts[0][1]
+
+    best = sk.apply(choose_best, axis=1, result_type="expand")
+    sk["Best_Market"] = best[0]
+    sk["Best_Conf"] = best[1]
+
+    # Filter unavailable players
+    sk = sk[sk["Available"]].reset_index(drop=True)
+    # -------------------------
+    # Output tracker
+    # -------------------------
+    tracker = pd.DataFrame({
+        "Date": today_local.isoformat(),
+        "Game": sk["Game"].fillna(""),
+        "StartTimeLocal": sk.get("StartTimeLocal"),
+        "StartTimeUTC": sk.get("StartTimeUTC"),
+
+        "Player": sk["Player"].fillna(""),
+        "Team": sk["Team"].fillna(""),
+        "Pos": sk["Pos"].fillna("F"),
+        "Tier": sk.get("Tier_Tag", ""),
+
+
+        "Injury_Status": sk.get("Injury_Status", "Healthy"),
+        "Injury_Type": sk.get("Injury_Type", "Unknown"),
+        "Injury_Text": sk.get("Injury_Text", ""),
+        "Injury_Return": sk.get("Injury_Return", ""),
+        "Team_Out_Count": sk.get("Team_Out_Count", 0),
+        "Injury_DFO_Score": sk.get("Injury_DFO_Score", 0.0),
+        "Injury_Badge": sk.get("Injury_Badge", ""),
+
+        "Opp": sk["Opp"].fillna(""),
+        "Opp_Goalie": sk["Opp_Goalie"].fillna(""),
+        "Opp_SV": sk["Opp_SV"],
+        "Opp_GAA": sk["Opp_GAA"],
+        "Goalie_Weak": sk["Goalie_Weak"],
+        "Opp_Goalie_Status": sk.get("Opp_Goalie_Status", ""),
+        "Opp_Goalie_Source": sk.get("Opp_Goalie_Source", ""),
+
+        "iXG%": sk["iXG_pct"].round(1),
+        "iXA%": sk["iXA_pct"].round(1),
+        "iXA_Source": sk.get("iXA_Source", ""),
+
+        "TOI_per_game": sk["TOI_per_game"].round(2),
+        "TOI_Pct": sk["TOI_Pct"].round(1),
+        "StarScore": sk["StarScore"].round(1),
+        "TalentMult": sk["TalentMult"].round(2),
+        "Talent_Tier": sk.get("Talent_Tier", "NONE"),
+        "Is_Elite": sk.get("Is_Elite", False),
+        "Is_Star": sk.get("Is_Star", False),
+
+        "team_5v5_SF60": sk.get("team_5v5_SF60"),
+        "team_5v5_xGF60": sk.get("team_5v5_xGF60"),
+        "team_5v5_SF60_pct": sk.get("team_5v5_SF60_pct"),
+        "team_5v5_xGF60_pct": sk.get("team_5v5_xGF60_pct"),
+        # --- Team Recent Scoring (HARD GF GATE) ---
+        "Team_GF_L5": sk.get("Team_GF_L5"),
+        "Team_GF_Avg_L5": sk.get("Team_GF_Avg_L5"),
+        "Team_GF_Gate": sk.get("Team_GF_Gate"),
+
+
+        "Med10_SOG": sk.get("Median10_SOG"),
+        "Trim10_SOG": sk.get("TrimMean10_SOG"),
+        "Avg5_SOG": sk.get("Avg5_SOG"),
+        "ShotIntent": sk.get("ShotIntent"),
+        "ShotIntent_Pct": sk.get("ShotIntent_Pct"),
+        "L10_P": sk.get("L10_P"),
+        "L10_G": sk.get("L10_G"),
+        "L10_S": sk.get("L10_S"),
+        "L5_G": sk.get("G5_total"),
+        "L5_A": sk.get("A5_total"),
+        "L10_A": sk.get("L10_A"),
+
+        "i5v5_points60": sk.get("i5v5_points60"),
+        "i5v5_primaryAssists60": sk.get("i5v5_primaryAssists60"),
+        "i5v5_shotAssists60": sk.get("i5v5_shotAssists60"),
+        "i5v5_iCF60": sk.get("i5v5_iCF60"),
+        "Assist_Volume": sk.get("Assist_Volume"),
+
+        "opp_5v5_xGA60": sk.get("opp_5v5_xGA60"),
+        "opp_5v5_HDCA60": sk.get("opp_5v5_HDCA60"),
+        "opp_5v5_SlotSA60": sk.get("opp_5v5_SlotSA60"),
+        "Opp_DefWeak": sk.get("Opp_DefWeak"),
+
+        "v2_player_stability": sk.get("v2_player_stability"),
+        "v2_defense_vulnerability": sk.get("v2_defense_vulnerability"),
+
+        "Exp_P_10": sk.get("Exp_P_10"),
+        "Exp_G_10": sk.get("Exp_G_10"),
+        "Exp_S_10": sk.get("Exp_S_10"),
+        "Reg_Gap_P10": sk.get("Reg_Gap_P10"),
+        "Reg_Gap_G10": sk.get("Reg_Gap_G10"),
+        "Reg_Gap_S10": sk.get("Reg_Gap_S10"),
+        "Reg_Heat_P": sk.get("Reg_Heat_P"),
+        "Reg_Heat_G": sk.get("Reg_Heat_G"),
+        "Reg_Heat_S": sk.get("Reg_Heat_S"),
+        "Exp_A_10": sk.get("Exp_A_10"),
+        "Reg_Gap_A10": sk.get("Reg_Gap_A10"),
+        "Reg_Heat_A": sk.get("Reg_Heat_A"),
+
+        "Matrix_Points": sk.get("Matrix_Points"),
+        "Matrix_SOG": sk.get("Matrix_SOG"),
+        "Matrix_Goal": sk.get("Matrix_Goal"),
+        "Matrix_Assists": sk.get("Matrix_Assists"),
+
+        "Conf_Points": sk.get("Conf_Points"),
+        "Conf_SOG": sk.get("Conf_SOG"),
+        "Conf_Goal": sk.get("Conf_Goal"),
+        "Conf_Assists": sk.get("Conf_Assists"),
+
+        "Best_Market": sk.get("Best_Market"),
+        "Best_Conf": sk.get("Best_Conf"),
+
+        # raw droughts (optional but useful)
+        "Drought_P": sk.get("Drought_P"),
+        "Drought_A": sk.get("Drought_A"),
+        "Drought_G": sk.get("Drought_G"),
+        "Drought_SOG": sk.get("Drought_SOG"),
+        "PPP10_total": sk.get("PPP10_total"),
+        "Drought_PPP": sk.get("Drought_PPP"),
+
+        "PP_Tier": sk.get("PP_Tier"),
+        "PP_Path": sk.get("PP_Path"),
+        "PP_TeamShare_pct": sk.get("PP_TeamShare_pct"),
+        "PP_TOI_stability": sk.get("PP_TOI_stability"),
+        "PP_Env_Score": sk.get("PP_Env_Score"),
+        "PP_BOOST": sk.get("PP_BOOST"),
+
+        "PP_Role": sk.get("PP_Role"),
+        "PP_TOI": sk.get("PP_TOI"),
+        "PP_TOI_min": sk.get("PP_TOI_min"),
+        "PP_TOI_per_game": sk.get("PP_TOI_per_game"),
+        "PP_TOI_Share": sk.get("PP_TOI_Share"),
+        "PP_TOI_Pct_Game": sk.get("PP_TOI_Pct_Game"),
+        "PP_TOI_Pct": sk.get("PP_TOI_Pct"),
+        "PP_Points60": sk.get("PP_Points60"),
+        "PP_iXG60": sk.get("PP_iXG60"),
+        "PP_iXA60": sk.get("PP_iXA60"),
+        "Team_PP_xGF60": sk.get("Team_PP_xGF60"),
+        "Opp_PK_xGA60": sk.get("Opp_PK_xGA60"),
+        "PP_Matchup": sk.get("PP_Matchup"),
+        "PP_TOI_min": sk.get("PP_TOI_min"),
+        "PP_TOI_per_game": sk.get("PP_TOI_per_game"),
+        "PP_TOI_Pct": sk.get("PP_TOI_Pct"),
+        "PP_TOI_Pct_Game": sk.get("PP_TOI_Pct_Game"),
+        "PP_iXA60": sk.get("PP_iXA60"),
+        "Assist_Dagger": sk.get("Assist_Dagger"),
+        "Assist_PP_Proof": sk.get("Assist_PP_Proof"),
+
+        "Line": "",
+        "Odds": "",
+        "Result": "",
+    })
+
+    # -------------------------
+    # Best_Drought (visual tag for the best market)
+    # -------------------------
+    def _fmt_int(v: Any) -> str:
+        try:
+            if v is None or (isinstance(v, float) and math.isnan(v)):
+                return ""
+            return str(int(float(v)))
+        except Exception:
+            return ""
+
+    def best_drought(row: pd.Series) -> str:
+        tier = str(row.get("Talent_Tier", "")).upper()
+        bm = str(row.get("Best_Market", "")).upper()
+
+        tags: list[str] = []
+
+        # --- Always surface POINTS drought for STAR / ELITE ---
+        if tier in {"ELITE", "STAR"}:
+            dp = _fmt_int(row.get("Drought_P"))
+            if dp and int(dp) >= 2:
+                tags.append(f"🅿️ PTS D:{dp}")
+
+        # --- Best market drought ---
+        if bm == "ASSISTS":
+            da = _fmt_int(row.get("Drought_A"))
+            if da:
+                tags.append(f"🅰️ D:{da}")
+
+        elif bm == "POINTS":
+            dp = _fmt_int(row.get("Drought_P"))
+            if dp:
+                tags.append(f"🅿️ D:{dp}")
+
+        elif bm == "GOAL":
+            dg = _fmt_int(row.get("Drought_G"))
+            if dg:
+                tags.append(f"🥅 D:{dg}")
+
+        elif bm == "SOG":
+            ds = _fmt_int(row.get("Drought_SOG"))
+            if ds:
+                tags.append(f"🎯 D:{ds}")
+
+        # de-dupe, preserve order
+        return " | ".join(dict.fromkeys(tags))
+
+    tracker["Best_Drought"] = tracker.apply(best_drought, axis=1)
+
+    
+
+
+    # Play tags (Points)
+    tracker["Conf_Points"] = pd.to_numeric(tracker.get("Conf_Points"), errors="coerce")
+    tracker["Play_Tag"] = ""
+    tracker["Plays_Points"] = False
+
+    hot_points = (
+        (tracker["Matrix_Points"] == "Green") &
+        (tracker["Reg_Heat_P"] == "HOT") &
+        (tracker["Conf_Points"] >= 77)
+    )
+    tracker.loc[hot_points, "Play_Tag"] = "🔥"
+    tracker.loc[hot_points, "Plays_Points"] = True
+
+
+        # -------------------------
+    # GOAL earned rule (finisher profile playable)
+    # Purpose:
+    # - Keep CONF tight (>=77)
+    # - Promote elite goal profiles even if Matrix_Goal is Yellow
+    # - Require alignment of top goal categories
+    # -------------------------
+
+    # Ensure numeric safety
+    for c in [
+        "Conf_Goal",
+        "iXG%",
+        "Med10_SOG",
+        "Reg_Gap_G10",
+        "Drought_G",
+        "Goalie_Weak",
+        "L5_G",
+    ]:
+        if c in tracker.columns:
+            tracker[c] = pd.to_numeric(tracker[c], errors="coerce")
+
+    if "Plays_Goal" not in tracker.columns:
+        tracker["Plays_Goal"] = False
+
+    tracker["Goal_ProofCount"] = 0
+    tracker["Goal_Why"] = ""
+
+    # ---- TOP 4 GOAL PROOFS ----
+
+    # 1) Finisher quality
+    proof_ixg = (tracker["iXG%"] >= 92)
+
+    # 2) Shot volume / opportunity floor
+    proof_sogfloor = (tracker["Med10_SOG"] >= 3.2)
+
+    # 3) Timing / regression / drought
+    proof_reg = (
+        tracker["Reg_Heat_G"].astype(str).str.upper().isin(["HOT", "WARM"]) |
+        (tracker["Reg_Gap_G10"] >= 1.5) |
+        (tracker["Drought_G"] >= 2)
+    )
+
+    # 4) Goalie weakness (goal market DOES care)
+    proof_goalie = (tracker["Goalie_Weak"] >= 65)
+
+    goal_proofs = pd.concat(
+        [proof_ixg, proof_sogfloor, proof_reg, proof_goalie],
+        axis=1
+    ).fillna(False)
+
+    tracker["Goal_ProofCount"] = goal_proofs.sum(axis=1)
+
+    # ---- HARD CONFIDENCE GATE ----
+    conf_gate_goal = (tracker["Conf_Goal"] >= 77)
+
+    # ---- EARNED GOAL PLAY ----
+    goal_earned = conf_gate_goal & (tracker["Goal_ProofCount"] >= 3)
+
+    tracker.loc[goal_earned, "Plays_Goal"] = True
+
+    def _goal_why(r):
+        reasons = []
+        if float(r.get("iXG%", 0) or 0) >= 92:
+            reasons.append("iXG")
+        if float(r.get("Med10_SOG", 0) or 0) >= 3.2:
+            reasons.append("SOG")
+        if (
+            str(r.get("Reg_Heat_G", "")).upper() in {"HOT", "WARM"} or
+            float(r.get("Reg_Gap_G10", 0) or 0) >= 1.5 or
+            float(r.get("Drought_G", 0) or 0) >= 2
+        ):
+            reasons.append("REG")
+        if float(r.get("Goalie_Weak", 0) or 0) >= 65:
+            reasons.append("G")
+        return ",".join(reasons)
+
+    tracker.loc[goal_earned, "Goal_Why"] = (
+        tracker.loc[goal_earned].apply(_goal_why, axis=1)
+    )
+
+    mask = (
+        goal_earned &
+        ~tracker["Play_Tag"]
+            .fillna("")
+            .str.contains("GOAL EARNED", regex=False)
+    )
+
+    tracker.loc[mask, "Play_Tag"] = np.where(
+        tracker.loc[mask, "Play_Tag"]
+            .fillna("")
+            .astype(str)
+            .str.len() > 0,
+        tracker.loc[mask, "Play_Tag"].fillna("").astype(str) + " | 🥅 GOAL EARNED",
+        "🥅 GOAL EARNED"
+    )
+
+
+    
+    
+
+    # Assists earned rule (single version)
+    for c in [
+        "iXA%", "Conf_Assists", "v2_player_stability",
+        "team_5v5_xGF60_pct", "Assist_Volume",
+        "i5v5_primaryAssists60"
+    ]:
+        if c in tracker.columns:
+            tracker[c] = pd.to_numeric(tracker[c], errors="coerce")
+
+    if "Plays_Assists" not in tracker.columns:
+        tracker["Plays_Assists"] = False
+    tracker["Assist_ProofCount"] = 0
+    tracker["Assist_Why"] = ""
+
+    proof_ixA  = (tracker["iXA%"] >= 92)
+    proof_v2   = (tracker["v2_player_stability"] >= 65)
+    proof_team = (tracker["team_5v5_xGF60_pct"] >= 60)
+    proof_vol  = (
+        (tracker["Assist_Volume"] >= 6) |
+        (tracker["i5v5_primaryAssists60"] >= 0.45)
+    )
+
+    proofs = pd.concat([proof_ixA, proof_v2, proof_team, proof_vol], axis=1).fillna(False)
+    tracker["Assist_ProofCount"] = proofs.sum(axis=1)
+
+    tier = tracker.get("Talent_Tier", "").astype(str).str.upper()
+    is_star = tier.isin(["ELITE", "STAR"])
+
+    earned_gate = (
+        (tracker["Assist_ProofCount"] >= 3) |
+        (is_star & (tracker["Assist_ProofCount"] >= 2))
+    )
+
+    assists_green_earned = (
+        (tracker["Matrix_Assists"] == "Green") &
+        (tracker["Conf_Assists"] >= 77) &
+        earned_gate
+    ).fillna(False)
+
+    tracker["Plays_Assists"] = assists_green_earned
+
+    def _assist_why(r):
+        reasons = []
+        if float(r.get("iXA%", 0) or 0) >= 90: reasons.append("iXA")
+        if float(r.get("v2_player_stability", 0) or 0) >= 60: reasons.append("v2")
+        if float(r.get("team_5v5_xGF60_pct", 0) or 0) >= 60: reasons.append("xGF")
+        if (float(r.get("Assist_Volume", 0) or 0) >= 6 or float(r.get("i5v5_primaryAssists60", 0) or 0) >= 0.45):
+            reasons.append("VOL")
+        return ",".join(reasons)
+
+    tracker.loc[assists_green_earned, "Assist_Why"] = tracker.loc[assists_green_earned].apply(_assist_why, axis=1)
+
+    mask = assists_green_earned & ~tracker["Play_Tag"].fillna("").str.contains("ASSISTS EARNED", regex=False)
+
+    tracker.loc[mask, "Play_Tag"] = np.where(
+    tracker.loc[mask, "Play_Tag"].fillna("").astype(str).str.len() > 0,
+    tracker.loc[mask, "Play_Tag"].fillna("").astype(str) + " | 🅰️ ASSISTS EARNED",
+    "🅰️ ASSISTS EARNED"
+)
+    
+    # -------------------------
+    # SOG earned rule (shot profile playable)
+    # Purpose:
+    # - Keep CONF tight (>=77)
+    # - Promote elite shot profiles even if Matrix_SOG is Yellow
+    # - Require alignment of the TOP 4 SOG categories
+    # -------------------------
+
+    # Ensure numeric safety
+    for c in [
+        "Conf_SOG",
+        "ShotIntent_Pct",
+        "Goalie_Weak",
+        "Med10_SOG",
+        "Avg5_SOG",
+        "Reg_Gap_S10",
+        "Drought_SOG"
+    ]:
+        if c in tracker.columns:
+            tracker[c] = pd.to_numeric(tracker[c], errors="coerce")
+
+    if "Plays_SOG" not in tracker.columns:
+        tracker["Plays_SOG"] = False
+
+    tracker["SOG_ProofCount"] = 0
+    tracker["SOG_Why"] = ""
+
+    # ---- TOP 4 SOG PROOFS (NO GOALIE) ----
+
+    # 1) ShotIntent (elite intent, not noisy volume)
+    proof_si = (tracker["ShotIntent_Pct"] >= 95)
+
+    # 2) Regression / timing
+    proof_reg = (
+        tracker["Reg_Heat_S"].astype(str).str.upper().isin(["HOT", "WARM"]) |
+        (tracker["Reg_Gap_S10"] >= 1.5) |
+        (tracker["Drought_SOG"] >= 1.5)
+    )
+
+    # 3) Volume floor (true shooter)
+    proof_vol = (
+        (tracker["Med10_SOG"] >= 3.5) |
+        (tracker["Avg5_SOG"] >= 3.5)
+    )
+
+    # 4) Team shot environment (pace + pressure)
+    proof_team = (tracker["team_5v5_SF60_pct"] >= 60)
+
+    proofs = pd.concat(
+        [proof_si, proof_reg, proof_vol, proof_team],
+        axis=1
+    ).fillna(False)
+
+    tracker["SOG_ProofCount"] = proofs.sum(axis=1)
+
+    # ---- HARD CONFIDENCE GATE (DO NOT LOOSEN) ----
+    conf_gate = (tracker["Conf_SOG"] >= 77)
+
+    # ---- EARNED SOG PLAY ----
+    # Require:
+    # - Confidence gate
+    # - At least 3 of the 4 SOG proofs
+    sog_earned = (
+        conf_gate &
+        (tracker["SOG_ProofCount"] >= 3)
+    )
+
+    tracker.loc[sog_earned, "Plays_SOG"] = True
+
+    # Optional explanation tag
+    def _sog_why(r):
+        reasons = []
+        if r.get("ShotIntent_Pct", 0) >= 95: reasons.append("SI")
+        if (
+            str(r.get("Reg_Heat_S", "")).upper() in {"HOT", "WARM"} or
+            (r.get("Reg_Gap_S10", 0) >= 1.5) or
+            (r.get("Drought_SOG", 0) >= 1)
+        ): reasons.append("REG")
+        if (r.get("Med10_SOG", 0) >= 3.5 or r.get("Avg5_SOG", 0) >= 3.5): reasons.append("VOL")
+        if r.get("Goalie_Weak", 0) >= 70: reasons.append("G")
+        return ",".join(reasons)
+
+    tracker.loc[sog_earned, "SOG_Why"] = tracker.loc[sog_earned].apply(_sog_why, axis=1)
+
+    # Optional UI tag (does NOT override other tags)
+    mask = sog_earned & ~tracker["Play_Tag"].fillna("").str.contains("SOG EARNED", regex=False)
+
+    tracker.loc[mask, "Play_Tag"] = np.where(
+        tracker.loc[mask, "Play_Tag"].fillna("").astype(str).str.len() > 0,
+        tracker.loc[mask, "Play_Tag"].fillna("").astype(str) + " | 🎯 SOG EARNED",
+        "🎯 SOG EARNED"
+    )
+
+    
+
+    # Sort
+    tracker["_bc"] = pd.to_numeric(tracker["Best_Conf"], errors="coerce").fillna(0)
+    tracker["_gw"] = pd.to_numeric(tracker["Goalie_Weak"], errors="coerce").fillna(50)
+    tracker["_dw"] = pd.to_numeric(tracker["Opp_DefWeak"], errors="coerce").fillna(50)
+    tracker = tracker.sort_values(["_bc", "_gw", "_dw"], ascending=[False, False, False]).drop(columns=["_bc", "_gw", "_dw"])
+
+    # -------------------------
+    # FORCE rounding right before write (for Streamlit display consistency)
+    # -------------------------
+    ROUND_1 = [
+        "iXA%", "iXG%", "v2_player_stability",
+        "team_5v5_SF60_pct", "team_5v5_xGF60_pct",
+        "Opp_DefWeak", "Goalie_Weak",
+        "TOI_Pct", "StarScore"
     ]
-    for token, gcol, ecol, pcol in mapping:
-        if token and token in bm:
-            g = row.get(gcol, False)
-            e = row.get(ecol, "")
-            p = row.get(pcol, None)
-            return build_ev_signal(g, e, p), build_lock_badge(g, e)
-    return "", ""
-def safe_str(df: pd.DataFrame, col: str, default="") -> pd.Series:
-    if col not in df.columns:
-        return pd.Series([default] * len(df), index=df.index)
-    return df[col].astype(str).fillna(default)
-def style_df(df: pd.DataFrame, cols: list[str]) -> "pd.io.formats.style.Styler":
-    # --- Pandas Styler REQUIRES unique index + unique columns ---
-    cols = [c for c in dict.fromkeys(cols) if c in df.columns]
-
-    view = df.loc[:, cols].copy().reset_index(drop=True)
-
-    if view.columns.duplicated().any():
-        view = view.loc[:, ~view.columns.duplicated()].copy()
-
-    def matrix_style(v):
-        s = str(v).strip().lower()
-        if s == "green":
-            return "background-color:#1f7a1f;color:white;font-weight:700;"
-        if s == "yellow":
-            return "background-color:#b38f00;color:white;font-weight:700;"
-        if s == "red":
-            return "background-color:#8b1a1a;color:white;font-weight:700;"
-        return ""
-
-    def heat_style(v):
-        s = str(v).strip().upper()
-        if s == "HOT":
-            return "background-color:#b30000;color:white;font-weight:700;"
-        if s == "WARM":
-            return "background-color:#e67300;color:white;font-weight:700;"
-        if s == "COOL":
-            return "background-color:#1f5aa6;color:white;font-weight:700;"
-        return ""
-
-    def conf_style(v):
-        try:
-            x = float(v)
-        except Exception:
-            return ""
-        if x >= 80:
-            return "background-color:#1f7a1f;color:white;font-weight:700;"
-        if x >= 70:
-            return "background-color:#b38f00;color:white;font-weight:700;"
-        return "background-color:#8b1a1a;color:white;font-weight:700;"
-
-    def ev_style(v):
-        try:
-            x = float(v)
-        except Exception:
-            return ""
-        if x >= 10:
-            return "background-color:#1f7a1f;color:white;font-weight:700;"
-        if x >= 5:
-            return "background-color:#b38f00;color:white;font-weight:700;"
-        if x < 0:
-            return "background-color:#8b1a1a;color:white;font-weight:700;"
-        return ""
-
-    def ev_signal_style(v):
-        s = str(v)
-        if not s or s.strip() == "":
-            return ""
-        if "%" in s:
-            return "background-color: rgba(0, 180, 0, 0.20);color: #0b4f0b;font-weight: 700;"
-        return ""
-
-    def play_ev_style(v):
-        return "background-color:#1f7a1f;color:white;font-weight:700;" if str(v).strip() == "💰" else ""
-
-    def weak_style(v):
-        try:
-            x = float(v)
-        except Exception:
-            return ""
-        if x >= 75:
-            return "background-color:#b30000;color:white;font-weight:700;"
-        return ""
-
-    sty = view.style
-
-    if "EV_Signal" in view.columns:
-        sty = sty.applymap(ev_signal_style, subset=["EV_Signal"])
-
-    for c in ["Matrix_Points", "Matrix_SOG", "Matrix_Assists", "Matrix_Goal"]:
-        if c in view.columns:
-            sty = sty.applymap(matrix_style, subset=[c])
-
-    for c in ["Reg_Heat_P", "Reg_Heat_S", "Reg_Heat_G", "Reg_Heat_A"]:
-        if c in view.columns:
-            sty = sty.applymap(heat_style, subset=[c])
-
-    for c in ["Best_Conf", "Conf_Points", "Conf_SOG", "Conf_Goal", "Conf_Assists"]:
-        if c in view.columns:
-            sty = sty.applymap(conf_style, subset=[c])
-
-    for c in [c for c in view.columns if c.endswith("EVpct_over")]:
-        sty = sty.applymap(ev_style, subset=[c])
-
-    # 🗡️ Dagger highlight
-    def dagger_tag_style(v):
-        return "background-color:#5a00b3;color:white;font-weight:800;" if str(v).strip() == "🗡️" else ""
-
-    def dagger_score_style(v):
-        try:
-            x = float(v)
-        except Exception:
-            return ""
-        if x >= 65:
-            return "background-color:#1f7a1f;color:white;font-weight:800;"
-        if x >= 55:
-            return "background-color:#b38f00;color:white;font-weight:800;"
-        return ""
-
-    if "🗡️" in view.columns:
-        sty = sty.applymap(dagger_tag_style, subset=["🗡️"])
-    if "Assist_Dagger" in view.columns:
-        sty = sty.applymap(dagger_score_style, subset=["Assist_Dagger"])
-
-    for c in [c for c in view.columns if c.startswith("Plays_EV_")]:
-        sty = sty.applymap(play_ev_style, subset=[c])
-
-    for c in ["Goalie_Weak", "Opp_DefWeak"]:
-        if c in view.columns:
-            sty = sty.applymap(weak_style, subset=[c])
-
-    fmt2_cols = [
+    ROUND_2 = [
         "Exp_A_10", "Reg_Gap_A10",
         "Exp_P_10", "Reg_Gap_P10",
         "Exp_G_10", "Reg_Gap_G10",
-        "Exp_S_10", "Reg_Gap_S10",
-        "TalentMult", "TOI_per_game",
-        "Opp_SV", "Opp_GAA",
+        "Exp_S_10", "Reg_Gap_S10"
     ]
 
-    fmt1_cols = [
-        "iXA%", "iXG%",
-        "Goalie_Weak", "Opp_DefWeak","L10_P","L10_A","L10_G","L10_SOG",
-        "TOI_Pct", "StarScore","Med10_SOG","ShotIntent","Avg5_SOG","Drought_SOG",
-        "ShotIntent_Pct","Drought_A","Drought_P","Drought_G",
-        "v2_player_stability",
-        "team_5v5_SF60_pct",
-        "team_5v5_xGF60_pct",
-    ]
+    for c in ROUND_1:
+        if c in tracker.columns:
+            tracker[c] = pd.to_numeric(tracker[c], errors="coerce").round(1)
 
-    format_dict = {}
-    for c in fmt2_cols:
-        if c in view.columns:
-            format_dict[c] = "{:.2f}"
-    for c in fmt1_cols:
-        if c in view.columns:
-            format_dict[c] = "{:.1f}"
+    for c in ROUND_2:
+        if c in tracker.columns:
+            tracker[c] = pd.to_numeric(tracker[c], errors="coerce").round(2)
 
-    for c in view.columns:
-        if c.endswith("_Line") or c in ("Line",):
-            format_dict.setdefault(c, "{:.1f}")
+    
+ 
+    # ============================
+    # BallDontLie odds + EV merge (saved into tracker CSV)
+    # ============================
+    try:
+        # Market-aware alt-line odds merge + EV engine
+        # (supports natural star lines like 1.5 Points when offered)
+        # --- BDL API key (required for odds/EV) ---
+        api_key = (os.getenv("BALLDONTLIE_API_KEY","") or os.getenv("BDL_API_KEY","") or os.getenv("BALLDONTLIE_KEY","")).strip()
+        if not api_key:
+            raise RuntimeError("Missing BALLDONTLIE_API_KEY (or BDL_API_KEY). Set it in your shell/Streamlit secrets to enable odds + EV.")
 
-    for c in view.columns:
-        if c.endswith("_Odds_Over") or c in ("Odds",):
-            format_dict.setdefault(c, "{:.0f}")
-
-    for c in view.columns:
-        if c.endswith("_p_model_over") or c.endswith("_p_imp_over"):
-            format_dict.setdefault(c, "{:.1%}")
-
-    if format_dict:
-        sty = sty.format(format_dict, na_rep="")
-
-    return sty
-
-def add_ui_columns(df: pd.DataFrame) -> pd.DataFrame:
-    out = df.copy()
-
-    # Preserve an existing 💰 column from the tracker (some trackers provide 💰 directly)
-    _money_existing = out['💰'].copy() if '💰' in out.columns else None
-
-    # Ensure these exist
-    if "Play_Tag" not in out.columns:
-        out["Play_Tag"] = ""
-    if "Plays_Points" not in out.columns:
-        out["Plays_Points"] = False
-
-    plays_points = to_bool_series(out["Plays_Points"]) if "Plays_Points" in out.columns else pd.Series(False, index=out.index)
-
-    # Fire indicator
-    out["🔥"] = plays_points.map(lambda x: "🔥" if x else "")
-
-    # 💰 EV indicator (any market): show when Plays_EV_* is true
-    ev_cols = [
-        "Plays_EV_SOG", "Plays_EV_Points", "Plays_EV_Goal", "Plays_EV_ATG", "Plays_EV_Assists",
-    ]
-    ev_any = pd.Series(False, index=out.index)
-    for c in ev_cols:
-        if c in out.columns:
-            ev_any = ev_any | to_bool_series(out[c])
-    out["💰"] = ev_any.map(lambda x: "💰" if bool(x) else "")
-
-    # If no Plays_EV_* columns existed but the tracker already had 💰, keep it.
-    if _money_existing is not None:
-        have_ev_cols = any((c in out.columns) for c in [
-            "Plays_EV_SOG", "Plays_EV_Points", "Plays_EV_Goal", "Plays_EV_ATG", "Plays_EV_Assists"
-        ])
-        if not have_ev_cols:
-            out["💰"] = _money_existing
-
-    return out
-def load_csv(path: str) -> pd.DataFrame:
-    df = pd.read_csv(path)
-
-    # --- SNAP BETTING LINES AFTER df EXISTS (fix NameError) ---
-    def snap_half_down_sog(x):
+        # Import EV engine (certifi optional). Try standard filename first, then patched fallback.
         try:
-            if x is None:
-                return x
-            v = float(x)
-            snapped = round(v * 2.0) / 2.0
-            if abs(snapped - round(snapped)) < 1e-6:
-                return max(0.5, snapped - 0.5)
-            return snapped
+            from odds_ev_bdl import merge_bdl_props_altlines, add_bdl_ev_all
         except Exception:
-            return x
-
-    for _c in [c for c in df.columns if c.endswith('_Line') or c == 'Line']:
-        if _c == 'SOG_Line':
-            df[_c] = df[_c].apply(snap_half_down_sog)
-        else:
-            df[_c] = df[_c].apply(snap_half)
-
-    df.columns = [c.strip() for c in df.columns]
-
-    # Add local game time (for table + matchup filter)
-    if "StartTimeLocal" in df.columns and "Time" not in df.columns:
-        dt = pd.to_datetime(df["StartTimeLocal"], errors="coerce")
-        # Use a portable format and strip leading zero (07:00 PM -> 7:00 PM)
-        df["Time"] = dt.dt.strftime("%I:%M %p").astype(str).str.lstrip("0")
-        df.loc[dt.isna(), "Time"] = ""
-
-    return df
-def filter_common(df: pd.DataFrame) -> pd.DataFrame:
-    out = df.copy()
-
-    st.sidebar.subheader("Filters")
-
-    # Search player
-    q = st.sidebar.text_input("Search player", value="").strip().lower()
-    if q:
-        out = out[safe_str(out, "Player").str.lower().str.contains(q, na=False)]
-
-    # Team filter
-    if "Team" in out.columns:
-        teams = sorted([t for t in out["Team"].dropna().astype(str).unique().tolist() if t.strip()])
-        sel_teams = st.sidebar.multiselect("Team", teams, default=[])
-        if sel_teams:
-            out = out[out["Team"].astype(str).isin(sel_teams)]
-    # Matchup filter (show time when available)
-    if "Game" in out.columns:
-        games = [g for g in out["Game"].dropna().astype(str).unique().tolist() if g.strip()]
-
-        if "Time" in out.columns:
-            # Build label -> game mapping like "7:00 PM — DAL@STL"
-            tmp = out[["Game", "Time"]].copy()
-            tmp["Time"] = tmp["Time"].astype(str).fillna("")
-            # Prefer earliest time per game if duplicates exist
-            best = (
-                tmp.sort_values(["Game", "Time"])
-                .drop_duplicates(subset=["Game"], keep="first")
-                .set_index("Game")["Time"]
-                .to_dict()
-            )
-
-            labels = []
-            for g in games:
-                t = best.get(g, "")
-                label = f"{t} — {g}" if t else g
-                labels.append(label)
-
-            labels = sorted(labels, key=lambda x: x.split("—")[-1].strip())
-            sel_labels = st.sidebar.multiselect("Matchup", labels, default=[])
-
-            if sel_labels:
-                sel_games = [lab.split("—")[-1].strip() for lab in sel_labels]
-                out = out[out["Game"].astype(str).isin(sel_games)]
-        else:
-            games = sorted(games)
-            sel_games = st.sidebar.multiselect("Matchup", games, default=[])
-            if sel_games:
-                out = out[out["Game"].astype(str).isin(sel_games)]
-    # Only flagged plays
-    only_fire = st.sidebar.checkbox("Only 🔥 plays", value=False)
-    if only_fire and "🔥" in out.columns:
-        out = out[out["🔥"] == "🔥"]
-
-    only_ev = st.sidebar.checkbox("Only 💰 plays", value=False)
-    if only_ev and "💰" in out.columns:
-        out = out[out["💰"] == "💰"]
-
-    return out
-def sort_board(df: pd.DataFrame) -> pd.DataFrame:
-    out = df.copy()
-    out["_bc"] = safe_num(out, "Best_Conf", 0)
-    out["_gw"] = safe_num(out, "Goalie_Weak", 50)
-    out["_dw"] = safe_num(out, "Opp_DefWeak", 50)
-    out = out.sort_values(["_bc", "_gw", "_dw"], ascending=[False, False, False]).drop(columns=["_bc", "_gw", "_dw"], errors="ignore")
-    return out
-def show_games_times(df: pd.DataFrame):
-    if "Game" not in df.columns:
-        return
-
-    have_local = "StartTimeLocal" in df.columns
-    have_utc = "StartTimeUTC" in df.columns
-    if not (have_local or have_utc):
-        return
-
-    tmp = df.copy()
-    tmp["Game"] = tmp["Game"].astype(str).fillna("").str.strip()
-    tmp = tmp[tmp["Game"] != ""]
-
-    if have_local:
-        tmp["StartTimeLocal"] = tmp["StartTimeLocal"].astype(str).fillna("").str.strip()
-    if have_utc:
-        tmp["StartTimeUTC"] = tmp["StartTimeUTC"].astype(str).fillna("").str.strip()
-
-    def first_nonempty(series: pd.Series) -> str:
-        for v in series.tolist():
-            if isinstance(v, str) and v.strip():
-                return v.strip()
-        return ""
-
-    agg = {"Game": "first"}
-    if have_local:
-        agg["StartTimeLocal"] = first_nonempty
-    if have_utc:
-        agg["StartTimeUTC"] = first_nonempty
-
-    g = tmp.groupby("Game", as_index=False).agg(agg)
-
-    if have_utc:
-        g = g.sort_values("StartTimeUTC")
-    elif have_local:
-        g = g.sort_values("StartTimeLocal")
-
-    st.subheader("Games & Start Times")
-    st.dataframe(g, width="stretch", hide_index=True)
+            from odds_ev_bdl_PATCHED import merge_bdl_props_altlines, add_bdl_ev_all
 
 
-def show_table(df: pd.DataFrame, cols: list[str], title: str):
-    st.subheader(title)
+        tracker = merge_bdl_props_altlines(
+            tracker,
+            game_date=today_local.isoformat(),
+            api_key=(os.getenv("BALLDONTLIE_API_KEY") or os.getenv("BDL_API_KEY") or ""),
+            vendors=["draftkings", "fanduel", "caesars"],
+            debug=bool(debug),
+        )
+        tracker = add_bdl_ev_all(tracker)
 
-    # Styler requires unique index + columns; filtering a df can preserve a non-unique index.
-    # Also de-dupe the requested column list (some views may accidentally include repeats).
-    df = df.copy().reset_index(drop=True)
-    if df.columns.duplicated().any():
-        df = df.loc[:, ~df.columns.duplicated()].copy()
+        # Hard guard: if API key is present, require meaningful coverage across at least one market
+        if (os.getenv("BALLDONTLIE_API_KEY", "") or os.getenv("BDL_API_KEY", "")).strip():
+            cov_cols = [
+                "SOG_Odds_Over",
+                "Points_Odds_Over",
+                "Goal_Odds_Over",
+                "ATG_Odds_Over",
+                "Assists_Odds_Over",
+            ]
+            cov = 0
+            for c in cov_cols:
+                if c in tracker.columns:
+                    cov = max(cov, int(pd.to_numeric(tracker[c], errors="coerce").notna().sum()))
+            if bool(debug):
+                print(f"[odds/ev] max odds coverage across markets: {cov}")
 
-    # de-dupe requested cols while preserving order
-    cols = list(dict.fromkeys(cols))
-
-    # Ensure Time column is displayed right next to Game (if available)
-    if "Game" in cols and "Time" in df.columns:
-        if "Time" not in cols:
-            gi = cols.index("Game")
-            cols.insert(gi + 1, "Time")
-        else:
-            gi = cols.index("Game")
-            ti = cols.index("Time")
-            if abs(ti - gi) != 1:
-                cols.pop(ti)
-                gi = cols.index("Game")
-                cols.insert(gi + 1, "Time")
-
-
-    existing = [c for c in cols if c in df.columns]
-    missing = [c for c in cols if c not in df.columns]
-
-    if missing:
-        with st.expander("Missing columns (safe to ignore)"):
-            st.write(missing)
-
-    styled = style_df(df, existing)
-
-    # ✅ Option A: keeps your Styler colors
-    st.dataframe(
-        styled,
-        width="stretch",
-        hide_index=True,
-        column_config=build_column_config(df, existing),
-    )
-
-
-# =========================
-# APP
-# =========================
-st.title("⚔️The Warlord's NHL Prop Tool⚔️")
-st.markdown(
-    """
-    <div style="
-        padding: 14px 16px;
-        border-radius: 14px;
-        font-weight: 800;
-        font-size: 22px;
-        text-align: center;
-        letter-spacing: 0.5px;
-        background: #b30000;
-        color: white;
-        box-shadow: 0 6px 18px rgba(0,0,0,0.18);
-        margin-bottom: 12px;
-    ">
-        Vengeance is Coming!
-        Cook the Books!
-    </div>
-    """,
-    unsafe_allow_html=True
-)
-
-# -------------------------
-# Data source (no more forced uploads)
-# -------------------------
-# Optional manual upload (still supported)
-uploaded = st.sidebar.file_uploader("Upload tracker CSV (optional)", type=["csv"])
-
-# Preferred stable path written by nhl_edge.py
-latest_stable = os.path.join(OUTPUT_DIR, "tracker_latest.csv")
-latest_path = latest_stable if os.path.exists(latest_stable) else find_latest_tracker_csv(OUTPUT_DIR)
-
-# Quick-run inside Streamlit (works on Streamlit Cloud)
-st.sidebar.markdown("---")
-slate_date = st.sidebar.date_input("Slate date", value=datetime.now().date())
-run_now = st.sidebar.button("Run / Refresh slate", help="Runs nhl_edge.py for the selected date and loads the fresh tracker.")
-
-def _run_model_cached(d: date, code_stamp: float) -> str:
-    # Import + reload so Streamlit Cloud picks up new engine code
-    import importlib
-    import nhl_edge
-    importlib.reload(nhl_edge)
-    return str(nhl_edge.build_tracker(d, debug=False))
-
-source = None
-if uploaded is not None:
-    source = "upload"
-    df = pd.read_csv(uploaded)
-else:
-    # If user presses run, generate fresh tracker.
-    if run_now:
-        with st.spinner("Running model…"):
+            # Coverage guard: scale with slate size.
+            # Small slates (few games) will naturally have fewer priced players.
+            # We only want to fail hard when coverage is effectively zero.
             try:
-                # Cache-buster: if nhl_edge.py changed, re-run the model
-                try:
-                    engine_path = os.path.join(os.path.dirname(__file__), 'nhl_edge.py') if '__file__' in globals() else 'nhl_edge.py'
-                    code_stamp = os.path.getmtime(engine_path) if os.path.exists(engine_path) else 0.0
-                except Exception:
-                    code_stamp = 0.0
-                latest_path = _run_model_cached(slate_date, code_stamp)
-            except Exception as e:
-                st.error(f"Model run failed: {e}")
-                st.stop()
-
-    source = "latest"
-    if latest_path is None or not os.path.exists(str(latest_path)):
-        st.warning(
-            "No tracker CSV found yet. Click **Run / Refresh slate** in the sidebar (or run `python nhl_edge.py` locally)."
-        )
-        st.stop()
-
-    df = load_csv(str(latest_path))
-
-# -------------------------
-# FIX: Styler requires unique index + columns
-# -------------------------
-# 1) reset index (unique)
-df = df.reset_index(drop=True)
-
-# 2) de-dupe column names (keep first occurrence)
-if df.columns.duplicated().any():
-    dupes = df.columns[df.columns.duplicated()].tolist()
-    st.warning(f"Duplicate columns detected and removed: {dupes}")
-    df = df.loc[:, ~df.columns.duplicated()].copy()
-
-
-# -------------------------
-# Ensure injury columns exist (older CSV safe)
-# -------------------------
-if "Injury_Badge" not in df.columns:
-    df["Injury_Badge"] = ""
-if "Injury_Status" not in df.columns:
-    df["Injury_Status"] = "Healthy"
-# -------------------------
-# Ensure drought columns exist (older CSV safe)
-# -------------------------
-for c in ["Best_Drought", "Drought_P", "Drought_A", "Drought_G", "Drought_SOG"]:
-    if c not in df.columns:
-        df[c] = ""
-# -------------------------
-# Ensure tier columns exist (older CSV safe)
-# -------------------------
-if "Talent_Tier" not in df.columns:
-    df["Talent_Tier"] = "NONE"
-if "Tier_Tag" not in df.columns:
-    df["Tier_Tag"] = ""
-
-# Build Tier_Tag from Talent_Tier (always overwrite so it stays correct)
-tt = df["Talent_Tier"].astype(str).str.upper().fillna("NONE")
-df["Tier_Tag"] = np.where(
-    tt.eq("ELITE"),
-    "👑 ELITE",
-    np.where(tt.eq("STAR"), "⭐ STAR", "")
-)
-
-# -------------------------
-# Ensure TEAM GF gate columns exist (older CSV safe)
-# -------------------------
-if "Team_GF_Gate" not in df.columns:
-    df["Team_GF_Gate"] = True  # default "passes" if old CSV
-if "Team_GF_Avg_L5" not in df.columns:
-    df["Team_GF_Avg_L5"] = np.nan
-if "Team_GF_L5" not in df.columns:
-    df["Team_GF_L5"] = np.nan
-
-# Create badge if missing (or overwrite if you want consistency)
-if "GF_Gate_Badge" not in df.columns:
-    # Normalize gate to bool (handles True/False, 1/0, "true"/"false")
-    gate_bool = df["Team_GF_Gate"].astype(str).str.strip().str.lower().isin(["true","1","yes","y","t"])
-    df["GF_Gate_Badge"] = np.where(
-        gate_bool,
-        "",  # passed gate = no badge
-        "⛔ GF GATE"  # failed gate badge
-    )
-
-
-
-
-df = add_ui_columns(df)
-
-# =========================
-# ODDS / EV UI DERIVED COLS (readable)
-# =========================
-# Convert p_model / p_imp into human % columns and create a global 💰 marker.
-for m in ["Points","GOAL (1+)","Assists","ATG","SOG"]:
-    pm = f"{m}_p_model_over"
-    pi = f"{m}_p_imp_over"
-    ev = f"{m}_EVpct_over"
-    if pm in df.columns:
-        df[f"{m}_Model%"] = (pd.to_numeric(df[pm], errors="coerce") * 100).round(1)
-    if pi in df.columns:
-        df[f"{m}_Imp%"] = (pd.to_numeric(df[pi], errors="coerce") * 100).round(1)
-    if ev in df.columns:
-        df[f"{m}_EV%"] = pd.to_numeric(df[ev], errors="coerce").round(1)
-
-# --- Back-compat: some trackers provide EV% but not Plays_EV_* flags.
-# If Plays_EV_* columns are missing, derive them from *_EVpct_over (>0) so 🔒 works.
-if "Plays_EV_Points" not in df.columns and "Points_EVpct_over" in df.columns:
-    df["Plays_EV_Points"] = pd.to_numeric(df["Points_EVpct_over"], errors="coerce").fillna(-999) > 0
-if "Plays_EV_SOG" not in df.columns and "SOG_EVpct_over" in df.columns:
-    df["Plays_EV_SOG"] = pd.to_numeric(df["SOG_EVpct_over"], errors="coerce").fillna(-999) > 0
-if "Plays_EV_Assists" not in df.columns and "Assists_EVpct_over" in df.columns:
-    df["Plays_EV_Assists"] = pd.to_numeric(df["Assists_EVpct_over"], errors="coerce").fillna(-999) > 0
-if "Plays_EV_ATG" not in df.columns and "ATG_EVpct_over" in df.columns:
-    df["Plays_EV_ATG"] = pd.to_numeric(df["ATG_EVpct_over"], errors="coerce").fillna(-999) > 0
-if "Plays_EV_Goal" not in df.columns and "Goal_EVpct_over" in df.columns:
-    df["Plays_EV_Goal"] = pd.to_numeric(df["Goal_EVpct_over"], errors="coerce").fillna(-999) > 0
-
-# Replace Plays_EV_* booleans with a 💰 icon for readability (keep the original name)
-for c in ["Plays_EV_Points","Plays_EV_Goal","Plays_EV_Assists","Plays_EV_ATG","Plays_EV_SOG"]:
-    if c in df.columns:
-        df[c] = df[c].apply(lambda x: "💰" if bool(x) else "")
-
-# Global 💰 if any EV-play is active
-_ev_play_cols = [c for c in ["Plays_EV_Points","Plays_EV_Goal","Plays_EV_Assists","Plays_EV_ATG","Plays_EV_SOG"] if c in df.columns]
-if _ev_play_cols:
-    df["💰"] = (df[_ev_play_cols].astype(str).apply(lambda r: any(v=="💰" for v in r), axis=1)).map(lambda x: "💰" if x else "")
-else:
-    # Keep existing 💰 if tracker provided it and no Plays_EV_* columns are present
-    if "💰" not in df.columns:
-        df["💰"] = ""
-
-
-# =========================
-# BETTING DISPLAY CLEANUP
-# =========================
-# Snap all *_Line columns to .0/.5 so you never see ugly 2.49999997 style floats.
-for c in list(df.columns):
-    if c.endswith("_Line") or c == "Line":
-        df[c] = pd.to_numeric(df[c], errors="coerce").apply(snap_half)
-
-# American odds should be whole numbers (no decimals)
-for c in list(df.columns):
-    if c.endswith("_Odds_Over") or c == "Odds":
-        df[c] = pd.to_numeric(df[c], errors="coerce").apply(snap_int)
-
-
-# --- slate size (safe)
-try:
-    slate_games = int(df["Game"].nunique())
-except Exception:
-    slate_games = 8
-def _tier_color(conf):
-    try:
-        x = float(conf)
-    except Exception:
-        return "red"
-    if x >= 76:
-        return "green"
-    if x >= 65:
-        return "yellow"
-    if x >= 55:
-        return "blue"
-    return "red"
-def _green_conf_threshold(market: str, slate_games: int) -> int:
-    # Normalize market aliases
-    m = market.strip()
-
-    if m.upper() in ("GOAL (1+)", "GOAL 1+", "ATG", "ANYTIME GOAL"):
-        m = "Goal"
-
-    if slate_games >= 8:
-        return {"SOG": 77, "Points": 77, "Goal": 78, "Assists": 77}[m]
-    elif slate_games >= 5:
-        return {"SOG": 77, "Points": 77, "Goal": 80, "Assists": 77}[m]
-    else:
-        return {"SOG": 77, "Points": 77, "Goal": 83, "Assists": 77}[m]
-
-
-
-
-# --- Earned greens (match YOUR columns)
-thr_s = _green_conf_threshold("SOG", slate_games)
-thr_p = _green_conf_threshold("Points", slate_games)
-thr_s = _green_conf_threshold("SOG", slate_games)
-# =========================
-# GOAL — earned green (v2 proof-count + tier-aware drought)
-# =========================
-
-thr_g = _green_conf_threshold("GOAL (1+)", slate_games)
-
-# numeric safety
-for c in ["Conf_Goal", "iXG%", "Med10_SOG", "Avg5_SOG", "Goalie_Weak", "Opp_DefWeak", "Reg_Gap_G10", "Drought_G"]:
-    if c in df.columns:
-        df[c] = pd.to_numeric(df[c], errors="coerce")
-
-tier_g = safe_str(df, "Talent_Tier", "NONE").str.upper()
-is_star_g = tier_g.isin(["ELITE", "STAR"])
-
-# Tier-aware drought trigger:
-# ELITE: >=2, STAR: >=3, NONE: >=4
-goal_drought_ok = (
-    ((tier_g == "ELITE") & (safe_num(df, "Drought_G", 0) >= 2)) |
-    ((tier_g == "STAR")  & (safe_num(df, "Drought_G", 0) >= 3)) |
-    (~tier_g.isin(["ELITE", "STAR"]) & (safe_num(df, "Drought_G", 0) >= 4))
-)
-
-# Proofs
-proof_ixg = (safe_num(df, "iXG%", 0) >= 92)
-proof_volume = (
-    (safe_num(df, "Med10_SOG", 0) >= 3.0) |
-    (safe_num(df, "Avg5_SOG", 0) >= 3.0)
-)
-proof_env = (
-    (safe_num(df, "Goalie_Weak", 0) >= 70) |
-    (safe_num(df, "Opp_DefWeak", 0) >= 70)
-)
-proof_due = (
-    (safe_str(df, "Reg_Heat_G", "").str.strip().str.upper() == "HOT") |
-    (safe_num(df, "Reg_Gap_G10", 0) >= 0.80) |
-    goal_drought_ok
-)
-
-goal_proofs = pd.concat([proof_ixg, proof_volume, proof_env, proof_due], axis=1).fillna(False)
-df["Goal_ProofCount"] = goal_proofs.sum(axis=1)
-
-needed_g = np.where(is_star_g, 2, 3)
-
-df["Green_Goal"] = (
-    (safe_num(df, "Conf_Goal", 0) >= thr_g)
-    & (safe_str(df, "Matrix_Goal", "").str.strip().str.lower() == "green")
-    & (df["Goal_ProofCount"] >= needed_g)
-)
-
-# optional: debug why
-def _goal_why(r):
-    reasons = []
-    if _get(r, "iXG%", 0) >= 92:
-        reasons.append("iXG")
-    if (_get(r, "Med10_SOG", 0) >= 3.0) or (_get(r, "Avg5_SOG", 0) >= 3.0):
-        reasons.append("VOL")
-    if (_get(r, "Goalie_Weak", 0) >= 70) or (_get(r, "Opp_DefWeak", 0) >= 70):
-        reasons.append("ENV")
-    if str(_get(r, "Reg_Heat_G", "")).strip().upper() == "HOT" or _get(r, "Reg_Gap_G10", 0) >= 0.80:
-        reasons.append("DUE")
-    if _get(r, "Drought_G", 0) >= 2:
-        reasons.append("DRT")
-    return ",".join(reasons)
-
-df["Goal_Why"] = ""
-m = df["Green_Goal"].fillna(False)
-df.loc[m, "Goal_Why"] = df.loc[m].apply(_goal_why, axis=1)
-
-
-sog_volume_proof = (
-    (safe_num(df, "Med10_SOG", 0) >= 3.0)
-    | (safe_num(df, "Avg5_SOG", 0) >= 3.0)
-)
-
-df["Green_SOG"] = (
-    (safe_num(df, "Conf_SOG", 0) >= thr_s)
-    & (safe_str(df, "Matrix_SOG", "").str.strip().str.lower() == "green")
-    & (
-        (safe_num(df, "ShotIntent_Pct", 0) >= 90)
-        | sog_volume_proof
-    )
-)
-
-
-# =========================
-# POINTS — earned green (v3 proof-count, more accurate)
-# =========================
-
-thr_p = _green_conf_threshold("Points", slate_games)
-
-# numeric safety
-for c in [
-    "Conf_Points",
-    "iXG%", "iXA%",
-    "Med10_SOG", "Avg5_SOG",
-    "Goalie_Weak", "Opp_DefWeak",
-    "team_5v5_xGF60_pct",
-    "Reg_Gap_P10", "Drought_P",
-    "TOI_Pct",
-    "Assist_Volume", "i5v5_primaryAssists60",
-]:
-    if c in df.columns:
-        df[c] = pd.to_numeric(df[c], errors="coerce")
-
-# ---- Proofs (4 lanes) ----
-# 1) Finisher involvement
-proof_finisher = (
-    (safe_num(df, "iXG%", 0) >= 90)
-    | (safe_num(df, "Med10_SOG", 0) >= 3.0)
-    | (safe_num(df, "Avg5_SOG", 0) >= 3.0)
-)
-
-# 2) Playmaking involvement
-proof_playmaker = (
-    (safe_num(df, "iXA%", 0) >= 90)
-    | (safe_num(df, "Assist_Volume", 0) >= 6)
-    | (safe_num(df, "i5v5_primaryAssists60", 0) >= 0.50)
-)
-
-# 3) Environment (you need events to get points)
-proof_env = (
-    (safe_num(df, "team_5v5_xGF60_pct", 0) >= 65)
-    | (safe_num(df, "Goalie_Weak", 0) >= 70)
-    | (safe_num(df, "Opp_DefWeak", 0) >= 70)
-)
-
-# 4) Due lane (regression/drought)
-proof_due = (
-    (safe_str(df, "Reg_Heat_P", "").str.strip().str.upper() == "HOT")
-    | (safe_num(df, "Reg_Gap_P10", 0) >= 1.25)
-    | (safe_num(df, "Drought_P", 0) >= 3)
-)
-
-points_proofs = pd.concat(
-    [proof_finisher, proof_playmaker, proof_env, proof_due],
-    axis=1
-).fillna(False)
-
-df["Points_ProofCount"] = points_proofs.sum(axis=1)
-
-# Tier-aware gate (ELITE/STAR can pass with 2 proofs; others need 3)
-tier = safe_str(df, "Talent_Tier", "NONE").str.upper()
-is_star = tier.isin(["ELITE", "STAR"])
-
-needed = np.where(is_star, 2, 3)
-
-df["Green_Points"] = (
-    (safe_num(df, "Conf_Points", 0) >= thr_p)
-    & (safe_str(df, "Matrix_Points", "").str.strip().str.lower() == "green")
-    & (df["Points_ProofCount"] >= needed)
-)
-
-# Make Points usable everywhere + revive 🔥
-df["Plays_Points"] = df["Green_Points"].fillna(False)
-# refresh 🔥 now that Plays_Points is defined in-streamlit
-df["🔥"] = df["Plays_Points"].map(lambda x: "🔥" if bool(x) else "")
-
-
-# Optional: why string (helps debugging)
-def _points_why(r):
-    reasons = []
-    if _get(r, "iXG%", 0) >= 90 or _get(r, "Med10_SOG", 0) >= 3.0 or _get(r, "Avg5_SOG", 0) >= 3.0:
-        reasons.append("FIN")
-    if _get(r, "iXA%", 0) >= 90 or _get(r, "Assist_Volume", 0) >= 6 or _get(r, "i5v5_primaryAssists60", 0) >= 0.50:
-        reasons.append("PLY")
-    if _get(r, "team_5v5_xGF60_pct", 0) >= 65 or _get(r, "Goalie_Weak", 0) >= 70 or _get(r, "Opp_DefWeak", 0) >= 70:
-        reasons.append("ENV")
-    if str(_get(r, "Reg_Heat_P", "")).strip().upper() == "HOT" or _get(r, "Reg_Gap_P10", 0) >= 1.25 or _get(r, "Drought_P", 0) >= 3:
-        reasons.append("DUE")
-    return ",".join(reasons)
-
-df["Points_Why"] = ""
-mask = df["Green_Points"].fillna(False)
-df.loc[mask, "Points_Why"] = df.loc[mask].apply(_points_why, axis=1)
-
-df["Color_SOG"] = safe_num(df, "Conf_SOG", 0).apply(_tier_color) if "Conf_SOG" in df.columns else "red"
-df["Color_Points"] = safe_num(df, "Conf_Points", 0).apply(_tier_color) if "Conf_Points" in df.columns else "red"
-df["Color_Goal"] = safe_num(df, "Conf_Goal", 0).apply(_tier_color) if "Conf_Goal" in df.columns else "red"
-
-
-# =========================
-# ASSISTS — earned green rule (v1 FINAL)  ✅ ADDED HERE
-# =========================
-# Ensure required columns exist (older CSV safe)
-if "Conf_Assists" not in df.columns:
-    df["Conf_Assists"] = 0
-if "Matrix_Assists" not in df.columns:
-    df["Matrix_Assists"] = ""
-if "iXA%" not in df.columns:
-    df["iXA%"] = np.nan
-if "v2_player_stability" not in df.columns:
-    df["v2_player_stability"] = np.nan
-if "team_5v5_xGF60_pct" not in df.columns:
-    df["team_5v5_xGF60_pct"] = np.nan
-if "Assist_Volume" not in df.columns:
-    df["Assist_Volume"] = np.nan
-if "i5v5_primaryAssists60" not in df.columns:
-    df["i5v5_primaryAssists60"] = np.nan
-
-# Optional columns
-if "Talent_Tier" not in df.columns:
-    df["Talent_Tier"] = ""
-if "Plays_Assists" not in df.columns:
-    df["Plays_Assists"] = False
-
-# numeric safety
-for c in ["iXA%", "Conf_Assists", "v2_player_stability", "team_5v5_xGF60_pct", "Assist_Volume", "i5v5_primaryAssists60"]:
-    df[c] = pd.to_numeric(df[c], errors="coerce")
-
-df["Assist_ProofCount"] = 0
-df["Assist_Why"] = ""
-
-proof_ixA = (df["iXA%"] >= 92)
-proof_v2 = (df["v2_player_stability"] >= 65)
-proof_team = (df["team_5v5_xGF60_pct"] >= 65)
-proof_vol = (
-    (df["Assist_Volume"] >= 6)
-    | (df["i5v5_primaryAssists60"] >= 0.50)
-)
-
-proofs = pd.concat([proof_ixA, proof_v2, proof_team, proof_vol], axis=1).fillna(False)
-df["Assist_ProofCount"] = proofs.sum(axis=1)
-
-tier = df["Talent_Tier"].astype(str).str.upper()
-is_star = tier.isin(["ELITE", "STAR"])
-
-earned_gate = (df["Assist_ProofCount"] >= 2) | (is_star & (df["Assist_ProofCount"] >= 1))
-
-assists_green_earned = (
-    (safe_str(df, "Matrix_Assists", "").str.strip().str.lower() == "green")
-    & (safe_num(df, "Conf_Assists", 0) >= 77)
-    & earned_gate
-)
-
-df["Plays_Assists"] = assists_green_earned.fillna(False)
-def _assist_why(r):
-    reasons = []
-    if _get(r, "iXA%", 0) >= 92:
-        reasons.append("iXA")
-    if _get(r, "v2_player_stability", 0) >= 65:
-        reasons.append("v2")
-    if _get(r, "team_5v5_xGF60_pct", 0) >= 65:
-        reasons.append("xGF")
-    if (_get(r, "Assist_Volume", 0) >= 6) or (_get(r, "i5v5_primaryAssists60", 0) >= 0.50):
-        reasons.append("VOL")
-    return ",".join(reasons)
-
-df.loc[assists_green_earned, "Assist_Why"] = df.loc[assists_green_earned].apply(_assist_why, axis=1)
-
-# append Play_Tag
-df.loc[assists_green_earned, "Play_Tag"] = np.where(
-    df.loc[assists_green_earned, "Play_Tag"].astype(str).str.len() > 0,
-    df.loc[assists_green_earned, "Play_Tag"].astype(str) + " | 🅰️ ASSISTS EARNED",
-    "🅰️ ASSISTS EARNED"
-)
-
-df["Color_Assists"] = safe_num(df, "Conf_Assists", 0).apply(_tier_color)
-df["Green_Assists"] = df["Plays_Assists"].fillna(False)
-# =========================
-# 🔥 GLOBAL PLAY FLAG (any market)
-# =========================
-df["🔥"] = (
-    df.get("Plays_Points", False).fillna(False)
-    | df.get("Plays_Assists", False).fillna(False)
-    | df.get("Green_SOG", False).fillna(False)
-    | df.get("Green_Goal", False).fillna(False)
-).map(lambda x: "🔥" if bool(x) else "")
-
-
-
-# Header info
-left, right = st.columns([3, 2])
-with left:
-    st.caption(f"Source: **{source}**")
-    if source == "latest":
-        st.caption(f"Loaded: **{os.path.basename(latest_path)}**")
-with right:
-    if "Date" in df.columns:
-        st.caption(f"Date: **{df['Date'].iloc[0]}**")
-    st.caption(f"Rows: **{len(df)}**")
-
-with st.expander("Debug: loaded columns"):
-    st.write(list(df.columns))
-
-# Navigation
-page = st.sidebar.radio(
-    "Page",
-    ["Board", "Points", "Assists", "SOG", "GOAL (1+)", "Power Play", "🧪 Dagger Lab", "Guide", "Ledger", "Raw CSV", "📟 Calculator", "🧾 Log Bet"],
-    index=0
-)
-
-df_f = filter_common(df)
-
-# Show slate times table
-show_games_times(df_f)
-
-
-# =========================
-# BOARD
-# =========================
-if page == "Board":
-    df_b = sort_board(df_f)
-
-    board_cols = [
-        "Game",
-        "Player", "Pos",
-        "Tier_Tag",
-        "Markets",
-        "EV_Signal",
-        "LOCK",
-        "Best_Market",
-        "Best_Conf",
-        "🔥",
-        "iXG%", "iXA%",
-        "Goalie_Weak", "Opp_DefWeak",
-        "Opp_Goalie", "Opp_SV", "Opp_GAA",
-        "Matrix_Points", "Conf_Points", "Reg_Heat_P", "Reg_Gap_P10",
-        "Matrix_SOG", "Conf_SOG", "Reg_Heat_S", "Reg_Gap_S10",
-        "Matrix_Goal", "Conf_Goal", "Reg_Heat_G", "Reg_Gap_G10",
-        "Matrix_Assists", "Conf_Assists", "Reg_Heat_A", "Reg_Gap_A10",
-        "Line", "Odds", "Result",
-    ]
-
-    
-
-    # Build Markets pills + best-market EV signal for Board
-
-    
-
-    df_b["Markets"] = df_b.apply(build_markets_pills, axis=1)
-
-    
-
-    _ev_lock = df_b.apply(board_best_market_ev, axis=1, result_type="expand")
-
-    
-
-    df_b["EV_Signal"] = _ev_lock[0]
-
-    
-
-    df_b["LOCK"] = _ev_lock[1]
-
-
-    
-
-    show_table(df_b, board_cols, "Board (sorted by Best_Conf)")
-
-
-# =========================
-# POINTS
-# =========================
-elif page == "Points":
-    df_p = df_f.copy()
-    df_p["_cp"] = safe_num(df_p, "Conf_Points", 0)
-    df_p = df_p.sort_values(["_cp"], ascending=[False]).drop(columns=["_cp"], errors="ignore")
-
-    st.sidebar.subheader("Points Filters")
-    show_all = st.sidebar.checkbox("Show all players (ignore filters)", value=False, key="show_all_points")
-    min_conf = st.sidebar.slider("Min Conf (Points)", 0, 100, 77, 1)
-    color_pick = st.sidebar.multiselect(
-        "Colors (Points)",
-        ["green", "yellow", "blue", "red"],
-        default=["green", "yellow", "blue"]
-    )
-
-    if not show_all:
-        df_p = df_p[df_p["Conf_Points"].fillna(0) >= min_conf]
-        if "Color_Points" in df_p.columns and color_pick:
-            df_p = df_p[df_p["Color_Points"].isin(color_pick)]
-
-    df_p["Green"] = df_p["Green_Points"].map(lambda x: "🟢" if bool(x) else "")
-
-    points_cols = [
-        "Game","Player","Pos",
-        "Tier_Tag",
-        "Markets",
-        "Green",
-        "EV_Signal",
-        "LOCK",
-        "Conf_Points","Matrix_Points",
-        "Points_Line",
-        "Points_Odds_Over",
-
-        # --- EV / Odds ---
-        "Points_Book",
-        "Points_Model%",
-        "Points_Imp%",
-        "Points_EV%",
-        "Plays_EV_Points",
-
-        "Points_Call",
-        "Reg_Heat_P","Reg_Gap_P10","Exp_P_10","L10_P",
-        "iXG%","iXA%",
-        "Opp_Goalie","Opp_SV","Opp_GAA","Goalie_Weak","Opp_DefWeak",
-        "Drought_P","Best_Drought",
-        "Line","Odds","Result",
-]
-
-
-
-
-
-
-    # Signals-first extras
-
-
-
-
-
-
-    df_p["Markets"] = df_p.apply(build_markets_pills, axis=1)
-
-
-
-
-
-
-    g = df_p.get("Green_Points", (df_p.get("Green","") == "🟢"))
-
-
-
-
-
-
-    e = df_p["Plays_EV_Points"] if "Plays_EV_Points" in df_p.columns else pd.Series([""]*len(df_p), index=df_p.index)
-
-
-
-
-
-
-    p = df_p["Points_EV%"] if "Points_EV%" in df_p.columns else pd.Series([None]*len(df_p), index=df_p.index)
-
-
-
-
-
-
-    df_p["EV_Signal"] = [build_ev_signal(gg, ee, pp) for gg, ee, pp in zip(g, e, p if hasattr(p, "__iter__") else [p]*len(df_p))]
-
-
-
-
-
-    df_p["LOCK"] = [build_lock_badge(gg, ee) for gg, ee in zip(g, e)]
-    legend_signals()
-    _f = render_market_filter_bar(default_min_conf=60, key_prefix="pts")
-
-    try:
-        df_p = apply_market_filters(
-            df_p,
-            _f,
-            green_col="Green_Points",
-            ev_icon_col="Plays_EV_Points",
-            conf_col="Conf_Points",
-            matrix_col="Matrix_Points",
-            lock_col="LOCK",
-        )
-    except Exception:
-        pass
-
-
-
-
-
-
-
-
-    show_table(df_p, points_cols, "Points View")
-
-
-# =========================
-# ASSISTS
-# =========================
-elif page == "Assists":
-    df_a = df_f.copy()
-    df_a["_ca"] = safe_num(df_a, "Conf_Assists", 0)
-    df_a = df_a.sort_values(["_ca"], ascending=[False]).drop(columns=["_ca"], errors="ignore")
-
-    st.sidebar.subheader("Assists Filters")
-    show_all = st.sidebar.checkbox("Show all players (ignore filters)", value=False, key="show_all_assists")
-    min_conf = st.sidebar.slider("Min Conf (Assists)", 0, 100, 77, 1)
-    color_pick = st.sidebar.multiselect(
-        "Colors (Assists)",
-        ["green", "yellow", "blue", "red"],
-        default=["green", "yellow", "blue"]
-    )
-
-    if not show_all:
-        df_a = df_a[df_a["Conf_Assists"].fillna(0) >= min_conf]
-        if "Color_Assists" in df_a.columns and color_pick:
-            df_a = df_a[df_a["Color_Assists"].isin(color_pick)]
-
-    df_a["Green"] = df_a.get("Green_Assists", False).map(lambda x: "🟢" if bool(x) else "")
-
-    # 🗡️ Dagger indicator (PP assist edge) — HARD GATE (recomputed every time)
-    # Goal: daggers are rare and meaningful (PP1/proof-level assist edges only).
-    df_a["🗡️"] = ""
-
-    # Safe pulls
-    proof_col = "Assist_PP_Proof" if "Assist_PP_Proof" in df_a.columns else None
-    proof = df_a[proof_col].astype(bool) if proof_col else False
-
-    apc = pd.to_numeric(df_a.get("Assist_ProofCount", 0), errors="coerce").fillna(0)
-    adg = pd.to_numeric(df_a.get("Assist_Dagger", 0), errors="coerce").fillna(0)
-    ppt = df_a.get("PP_Tier", "").astype(str).str.upper()
-
-    # HARD gate:
-    # 1) Explicit proof, OR
-    # 2) 4-of-4 assist proofs, OR
-    # 3) Elite dagger score (>=85), OR
-    # 4) PP A/B + strong proof (>=3) + decent dagger (>=70)
-    mask = (
-        (proof if isinstance(proof, pd.Series) else False)
-        | (apc >= 4)
-        | (adg >= 82)
-        | ((ppt.isin(["A", "B"])) & (apc >= 3) & (adg >= 60))
-    )
-
-    df_a.loc[mask, "🗡️"] = "🗡️"
-
-    assists_cols = [
-
-        "Game",
-        "Player", "Pos",
-        "Tier_Tag",
-        "Markets",
-        "Green",
-        "EV_Signal",
-        "LOCK",
-        "Conf_Assists", "Matrix_Assists",
-
-        # --- EV / Odds ---
-        "Assists_Line",
-        "Assists_Odds_Over",
-        "Assists_Book",
-        "Assists_Model%",
-        "Assists_Imp%",
-        "Assists_EV%",
-        "Plays_EV_Assists",
-
-        "Assists_Call",
-        "Drought_A","Best_Drought",
-        "Assist_ProofCount", "Assist_Why", "🗡️", "Assist_Dagger",
-        
-        "Reg_Heat_A", "Reg_Gap_A10", "Exp_A_10", "L10_A",
-        "PP_Tier", "PP_Path", "PP_BOOST",
-        "PP_TOI_Pct_Game", "PP_iXA60", "PP_Matchup",
-
-        
-        "iXA%","iXG%", "v2_player_stability",
-        "Opp_Goalie", "Opp_SV",
-        "Goalie_Weak", "Opp_DefWeak",
-        "Line", "Odds", "Result",
-    ]
-
-    # Signals-first extras
-
-    df_a["Markets"] = df_a.apply(build_markets_pills, axis=1)
-
-    g = df_a.get("Green_Assists", (df_a.get("Green","") == "🟢"))
-
-    e = df_a["Plays_EV_Assists"] if "Plays_EV_Assists" in df_a.columns else pd.Series([""]*len(df_a), index=df_a.index)
-
-    p = df_a["Assists_EV%"] if "Assists_EV%" in df_a.columns else pd.Series([None]*len(df_a), index=df_a.index)
-
-    df_a["EV_Signal"] = [build_ev_signal(gg, ee, pp) for gg, ee, pp in zip(g, e, p if hasattr(p, "__iter__") else [p]*len(df_a))]
-
-    df_a["LOCK"] = [build_lock_badge(gg, ee) for gg, ee in zip(g, e)]
-    legend_signals()
-    _f = render_market_filter_bar(default_min_conf=60, key_prefix="ast")
-
-    try:
-        df_a = apply_market_filters(
-            df_a,
-            _f,
-            green_col="Green_Assists",
-            ev_icon_col="Plays_EV_Assists",
-            conf_col="Conf_Assists",
-            matrix_col="Matrix_Assists",
-            lock_col="LOCK",
-        )
-    except Exception:
-        pass
-
-
-
-    show_table(df_a, assists_cols, "Assists View")
-
-
-# =========================
-# SOG
-# =========================
-elif page == "SOG":
-    df_s = df_f.copy()
-    df_s["_cs"] = safe_num(df_s, "Conf_SOG", 0)
-    df_s = df_s.sort_values(["_cs"], ascending=[False]).drop(columns=["_cs"], errors="ignore")
-
-    st.sidebar.subheader("SOG Filters")
-    show_all = st.sidebar.checkbox("Show all players (ignore filters)", value=False, key="show_all_sog")
-    min_conf = st.sidebar.slider("Min Conf (SOG)", 0, 100, 77, 1)
-    color_pick = st.sidebar.multiselect(
-        "Colors (SOG)",
-        ["green", "yellow", "blue", "red"],
-        default=["green", "yellow", "blue"]
-    )
-
-    if not show_all:
-        df_s = df_s[df_s["Conf_SOG"].fillna(0) >= min_conf]
-        if "Color_SOG" in df_s.columns and color_pick:
-            df_s = df_s[df_s["Color_SOG"].isin(color_pick)]
-
-    df_s["Green"] = df_s["Green_SOG"].map(lambda x: "🟢" if bool(x) else "")
-
-    sog_cols = [
-       "Game",
-       "Player", "Pos",
-       "Tier_Tag",
-       "Markets",
-       "Green",
-       "EV_Signal",
-       "LOCK",
-       "Conf_SOG", "Matrix_SOG",
-
-        # --- EV / Odds ---
-        "SOG_Line",
-        "SOG_Odds_Over",
-        "SOG_Book",
-        "SOG_Model%",
-        "SOG_Imp%",
-        "SOG_EV%",
-        "Plays_EV_SOG",
-
-        "SOG_Call",
-        "Drought_SOG", "Best_Drought",
-        "Reg_Heat_S", "Reg_Gap_S10", "Exp_S_10", "L10_S",
-        "Med10_SOG", "Avg5_SOG", "ShotIntent", "ShotIntent_Pct",
-        "Opp_Goalie", "Opp_SV",
-        "Goalie_Weak", "Opp_DefWeak",
-        "Line", "Odds", "Result",
-    ]
-
-
-    # Signals-first extras
-
-
-    df_s["Markets"] = df_s.apply(build_markets_pills, axis=1)
-
-
-    g = df_s.get("Green_SOG", (df_s.get("Green","") == "🟢"))
-
-
-    e = df_s["Plays_EV_SOG"] if "Plays_EV_SOG" in df_s.columns else pd.Series([""]*len(df_s), index=df_s.index)
-
-
-    p = df_s["SOG_EV%"] if "SOG_EV%" in df_s.columns else pd.Series([None]*len(df_s), index=df_s.index)
-
-
-    df_s["EV_Signal"] = [build_ev_signal(gg, ee, pp) for gg, ee, pp in zip(g, e, p if hasattr(p, "__iter__") else [p]*len(df_s))]
-
-    df_s["LOCK"] = [build_lock_badge(gg, ee) for gg, ee in zip(g, e)]
-    legend_signals()
-    _f = render_market_filter_bar(default_min_conf=60, key_prefix="sog")
-
-    try:
-        df_s = apply_market_filters(
-            df_s,
-            _f,
-            green_col="Green_SOG",
-            ev_icon_col="Plays_EV_SOG",
-            conf_col="Conf_SOG",
-            matrix_col="Matrix_SOG",
-            lock_col="LOCK",
-        )
-    except Exception:
-        pass
-
-
-
-
-
-    show_table(df_s, sog_cols, "SOG View")
-
-
-# =========================
-# GOAL
-# =========================
-elif page == "GOAL (1+)":
-    df_g = df_f.copy()
-    df_g["_cg"] = safe_num(df_g, "Conf_Goal", 0)
-    df_g = df_g.sort_values(["_cg"], ascending=[False]).drop(columns=["_cg"], errors="ignore")
-
-    st.sidebar.subheader("Goal Filters")
-    show_all = st.sidebar.checkbox("Show all players (ignore filters)", value=False)
-    min_conf = st.sidebar.slider("Min Conf (Goal)", 0, 100, 77, 1)
-    color_pick = st.sidebar.multiselect(
-        "Colors (Goal)",
-        ["green", "yellow", "blue", "red"],
-        default=["green", "yellow", "blue"]
-    )
-
-    if not show_all:
-        df_g = df_g[df_g["Conf_Goal"].fillna(0) >= min_conf]
-        if "Color_Goal" in df_g.columns and color_pick:
-            df_g = df_g[df_g["Color_Goal"].isin(color_pick)]
-
-    df_g["Green"] = df_g.get("Green_Goal", False).map(lambda x: "🟢" if bool(x) else "")
-
-    goal_cols = [
-        "Game",
-        "Player", "Pos",
-        "Tier_Tag",
-        "Markets",
-        "Green",
-        "EV_Signal",
-        "LOCK",
-        "Conf_Goal", "Matrix_Goal",
-
-        # --- EV / Odds ---
-        "ATG_Line",
-        "ATG_Odds_Over",
-        "ATG_Book",
-        "ATG_Model%", "ATG_Imp%", "ATG_EV%", "Plays_EV_ATG",
-
-        "ATG_Call",
-        "Reg_Heat_G", "Reg_Gap_G10", "Exp_G_10", "L10_G",
-        "iXG%", "iXA%",
-        "Opp_Goalie", "Opp_SV", "Opp_GAA", "Goalie_Weak", "Opp_DefWeak",
-        "Drought_G", "Best_Drought",
-    ]
-
-    # Signals-first extras
-
-    df_g["Markets"] = df_g.apply(build_markets_pills, axis=1)
-
-    g = df_g.get("Green_Goal", (df_g.get("Green","") == "🟢"))
-
-    e = df_g["Plays_EV_ATG"] if "Plays_EV_ATG" in df_g.columns else pd.Series([""]*len(df_g), index=df_g.index)
-
-    p = df_g["ATG_EV%"] if "ATG_EV%" in df_g.columns else pd.Series([None]*len(df_g), index=df_g.index)
-
-    df_g["EV_Signal"] = [build_ev_signal(gg, ee, pp) for gg, ee, pp in zip(g, e, p if hasattr(p, "__iter__") else [p]*len(df_g))]
-
-    df_g["LOCK"] = [build_lock_badge(gg, ee) for gg, ee in zip(g, e)]
-    legend_signals()
-    _f = render_market_filter_bar(default_min_conf=60, key_prefix="goal")
-
-    try:
-        df_g = apply_market_filters(
-            df_g,
-            _f,
-            green_col="Green_Goal",
-            ev_icon_col="Plays_EV_ATG",
-            conf_col="Conf_Goal",
-            matrix_col="Matrix_Goal",
-            lock_col="LOCK",
-        )
-    except Exception:
-        pass
-
-
-
-
-    show_table(df_g, goal_cols, "GOAL (1+) View")
-
-
-
-
-# =========================
-# POWER PLAY
-# =========================
-elif page == "Power Play":
-    st.subheader("⚡ Power Play (PPP / 5v4)")
-    st.caption("Read-only view: PP usage + PP creation + team PP vs opponent PK + PPP drought. Does not change model probabilities yet.")
-
-    # Aliases (engine naming -> app naming)
-    alias_map = {
-        "PP_TOI_min": "PP_TOI",
-        "PP_TOI_per_game": "PP_TOI_PG",
-        "PP_iP60": "PP_Points60",
-    }
-    for src, dst in alias_map.items():
-        if dst not in df_f.columns and src in df_f.columns:
-            df_f[dst] = df_f[src]
-
-    # PP unit tag/icon
-    if "PP_Role" in df_f.columns:
-        def _pp_role_tag(x):
-            try:
-                v = int(float(x))
+                slate_n = int(len(tracker))
             except Exception:
-                return "PP0"
-            return "PP1" if v >= 2 else ("PP2" if v == 1 else "PP0")
-        df_f["PP_UnitTag"] = df_f["PP_Role"].apply(_pp_role_tag)
-        df_f["PP_Unit"] = df_f["PP_UnitTag"].map({"PP1": "🔌 PP1", "PP2": "🔋 PP2"}).fillna("")
-    else:
-        df_f["PP_Unit"] = ""
-
-    st.sidebar.subheader("Power Play Filters")
-    unit_sel = st.sidebar.multiselect("PP Unit", ["PP1", "PP2"], default=["PP1", "PP2"], key="pp_unit_sel")
-    min_pp_toi = st.sidebar.slider("Min PP TOI / game", 0.0, 10.0, 1.0, 0.25, key="pp_min_toi")
-    min_ppp_drought = st.sidebar.slider("Min PPP Drought (games)", 0, 12, 0, 1, key="pp_min_ppp_drought")
-    tier_opts = ["A","B","C"] if "PP_Tier" in df_f.columns else []
-    tier_sel = st.sidebar.multiselect("PP Tier", tier_opts, default=tier_opts, key="pp_tier_sel") if tier_opts else []
-    path_opts = ["Shooter","Distributor","Hybrid","Passenger"] if "PP_Path" in df_f.columns else []
-    path_sel = st.sidebar.multiselect("PP Path", path_opts, default=path_opts, key="pp_path_sel") if path_opts else []
-
-
-    df_pp = df_f.copy()
-    if "PP_UnitTag" in df_pp.columns:
-        df_pp = df_pp[df_pp["PP_UnitTag"].isin(unit_sel)]
-
-    if "PP_TOI_PG" in df_pp.columns:
-        df_pp = df_pp[pd.to_numeric(df_pp["PP_TOI_PG"], errors="coerce").fillna(0.0) >= float(min_pp_toi)]
-
-    if "Drought_PPP" in df_pp.columns:
-        df_pp = df_pp[pd.to_numeric(df_pp["Drought_PPP"], errors="coerce").fillna(0).astype(int) >= int(min_ppp_drought)]
-    if "PP_Tier" in df_pp.columns and tier_sel:
-        df_pp = df_pp[df_pp["PP_Tier"].astype(str).str.upper().isin([t.upper() for t in tier_sel])]
-    if "PP_Path" in df_pp.columns and path_sel:
-        df_pp = df_pp[df_pp["PP_Path"].astype(str).isin(path_sel)]
-
-
-    # Sort best-first (only by columns that exist)
-    sort_cols = [c for c in ["PP_Matchup", "PP_BOOST", "PP_Points60", "PP_TOI_PG", "Drought_PPP"] if c in df_pp.columns]
-    if sort_cols:
-        df_pp = df_pp.sort_values(sort_cols, ascending=[False] * len(sort_cols))
-
-    pp_cols = [
-        "Game",
-        "Player", "Pos", "Team", "Opp",
-        "Tier_Tag",
-        "PP_Unit",
-        "PP_TOI_PG",
-        "PP_TeamShare_pct",
-        "PP_TOI_stability",
-        "PP_Tier",
-        "PP_Path",
-        "PP_BOOST",
-        "PP_TOI_Pct",
-        "PP_Points60",
-        "PP_iXG60",
-        "PP_iXA60",
-        "Team_PP_xGF60",
-        "Opp_PK_xGA60",
-
-        # Opportunity context (season-to-date team rates)
-        "Team_PPO_PG",
-        "Opp_TSH_PG",
-        "Team_PP_Eff",
-        "PP_Opps_Score",
-        "Opp_Penalty_Score",
-        "PP_Opportunity",
-
-        "PP_Matchup",
-        "PPP10_total",
-        "Drought_PPP",
-    ]
-
-    show_table(df_pp, pp_cols, "Power Play (5v4) — Usage, creation, matchup, PPP drought")
-
-
-elif page == "🧪 Dagger Lab":
-    st.subheader("🧪 Dagger Lab")
-    st.caption("Explain *why* the 🗡️ shows up — role, stability, environment, and creation. This page is diagnostic only (does not change EV).")
-
-    # Focus on players with any dagger context available
-    df_lab = df_f.copy()
-
-    # Build dagger icon (HARD GATE) — recompute every time (ignore any 🗡️ column in CSV)
-    df_lab["🗡️"] = ""
-
-    proof_col = "Assist_PP_Proof" if "Assist_PP_Proof" in df_lab.columns else None
-    proof = df_lab[proof_col].astype(bool) if proof_col else pd.Series(False, index=df_lab.index)
-
-    apc = pd.to_numeric(df_lab.get("Assist_ProofCount", 0), errors="coerce").fillna(0)
-    adg = pd.to_numeric(df_lab.get("Assist_Dagger", 0), errors="coerce").fillna(0)
-    ppt = df_lab.get("PP_Tier", "").astype(str).str.upper()
-
-    # HARD gate:
-    # 1) Explicit proof, OR
-    # 2) 4-of-4 assist proofs, OR
-    # 3) Elite dagger score (>=82), OR
-    # 4) PP A/B + strong proof (>=3) + decent dagger (>=60)
-    mask = (proof | (apc >= 4) | (adg >= 82) | ((ppt.isin(["A","B"])) & (apc >= 3) & (adg >= 60)))
-    df_lab.loc[mask, "🗡️"] = "🗡️"
-
-    # Prefer listing dagger candidates first
-    sort_cols = []
-    if "🗡️" in df_lab.columns: sort_cols.append("🗡️")
-    if "Assist_Dagger" in df_lab.columns: sort_cols.append("Assist_Dagger")
-    if "PP_BOOST" in df_lab.columns: sort_cols.append("PP_BOOST")
-    if sort_cols:
-        df_lab = df_lab.sort_values(by=[c for c in sort_cols if c in df_lab.columns], ascending=[False]*len(sort_cols))
-
-    # Player selector (Game context helps)
-    label_col = "Player" if "Player" in df_lab.columns else df_lab.columns[0]
-    game_col = "Game" if "Game" in df_lab.columns else None
-    def _lab_label(r):
-        name = str(r.get(label_col, "")).strip()
-        game = str(r.get(game_col, "")).strip() if game_col else ""
-        pp_tier = str(r.get("PP_Tier", "")).upper().strip()
-
-        tier_tag = f"[PP {pp_tier}]" if pp_tier and pp_tier not in {"NAN", "NONE"} else  "[PP ?]"
-
-        if game_col:
-            return f"{name} {tier_tag}  —  {game}"
-        return f"{name} {tier_tag}"
-
-
-    options = df_lab.apply(_lab_label, axis=1).tolist()
-    if not options:
-        st.warning("No rows loaded.")
-    else:
-        pick = st.selectbox("Select a player", options, index=0)
-        idx = options.index(pick)
-        r = df_lab.iloc[idx]
-
-        # Core fields (safe pulls)
-        def g(col, default=None):
-            return r.get(col, default) if col in r.index else default
-
-        # Display helpers: convert numpy types / NaN to clean primitives for UI
-        def _disp(v):
-            if v is None:
-                return ""
-            try:
-                if pd.isna(v):
-                    return ""
-            except Exception:
-                pass
-            try:
-                import numpy as _np
-                if isinstance(v, _np.generic):
-                    v = v.item()
-            except Exception:
-                pass
-            return v
-
-        # Back-compat: derive PP fields if missing from the tracker
-        if "PP_Tier" not in df_lab.columns and "PP_Role" in df_lab.columns:
-            def _pp_tier(v):
-                try:
-                    x = int(float(v))
-                except Exception:
-                    return ""
-                return "A" if x >= 2 else ("B" if x == 1 else "C")
-            df_lab["PP_Tier"] = df_lab["PP_Role"].apply(_pp_tier)
-
-        if "PP_Path" not in df_lab.columns and ("PP_iXG60" in df_lab.columns or "PP_iXA60" in df_lab.columns):
-            def _pp_path_row(rr):
-                try:
-                    role = int(float(rr.get("PP_Role", 0) or 0))
-                except Exception:
-                    role = 0
-                if role <= 0:
-                    return "Passenger"
-                ixg = pd.to_numeric(rr.get("PP_iXG60", np.nan), errors="coerce")
-                ixa = pd.to_numeric(rr.get("PP_iXA60", np.nan), errors="coerce")
-                tot = (0.0 if pd.isna(ixg) else float(ixg)) + (0.0 if pd.isna(ixa) else float(ixa))
-                if tot <= 0:
-                    return "Passenger"
-                share = (ixg / tot)
-                if share >= 0.60:
-                    return "Shooter"
-                if share <= 0.40:
-                    return "Passer"
-                return "Balanced"
-            df_lab["PP_Path"] = df_lab.apply(_pp_path_row, axis=1)
-
-        if "PP_TeamShare_pct" not in df_lab.columns and "PP_TOI_Pct_Game" in df_lab.columns:
-            df_lab["PP_TeamShare_pct"] = pd.to_numeric(df_lab["PP_TOI_Pct_Game"], errors="coerce")
-
-        if "PP_TOI_stability" not in df_lab.columns and "PP_TOI" in df_lab.columns and "PP_TOI_min" in df_lab.columns:
-            toi = pd.to_numeric(df_lab["PP_TOI"], errors="coerce")
-            toi_min = pd.to_numeric(df_lab["PP_TOI_min"], errors="coerce")
-            with np.errstate(divide="ignore", invalid="ignore"):
-                df_lab["PP_TOI_stability"] = (100.0 * (toi_min / toi)).clip(lower=0.0, upper=100.0)
-
-        if "PP_Env_Score" not in df_lab.columns and "PP_Matchup" in df_lab.columns:
-            df_lab["PP_Env_Score"] = pd.to_numeric(df_lab["PP_Matchup"], errors="coerce").fillna(50.0)
-
-        if "PP_BOOST" not in df_lab.columns and ("PP_Tier" in df_lab.columns):
-            def _boost(rr):
-                t = str(rr.get("PP_Tier","")).upper().strip()
-                s = pd.to_numeric(rr.get("PP_TeamShare_pct", np.nan), errors="coerce")
-                e = pd.to_numeric(rr.get("PP_Env_Score", np.nan), errors="coerce")
-                if t == "A" and pd.notna(s) and pd.notna(e) and s >= 20.0 and e >= 60.0:
-                    return "ON"
-                if t == "B" and pd.notna(s) and pd.notna(e) and s >= 17.5 and e >= 62.0:
-                    return "ON"
-                return ""
-            df_lab["PP_BOOST"] = df_lab.apply(_boost, axis=1)
-
-        # Re-pull the picked row after back-compat mutations
-        r = df_lab.iloc[idx]
-
-        st.markdown(f"### {g('Player','(player)')}  {g('Team','')} vs {g('Opp','')}  —  {g('Game','')}")
-        cols = st.columns(5)
-        cols[0].metric("🗡️", g("🗡️",""))
-        cols[1].metric("Assist Dagger", g("Assist_Dagger", None))
-        cols[2].metric("PP Tier", g("PP_Tier", ""))
-        cols[3].metric("PP Path", g("PP_Path", ""))
-        cols[4].metric("PP Boost", g("PP_BOOST", None))
-
-        # Build a non-binding "Dagger Strength" explainer score (0–100)
-        base_conf = float(g("Conf_Assists", 0) or 0)
-        pp_env = float(g("PP_Env_Score", 50) or 50)
-        stab = float(g("PP_TOI_stability", 50) or 50)
-        share = float(g("PP_TeamShare_pct", g("PP_TOI_Pct_Game", 0)) or 0)
-        tier = str(g("PP_Tier","C") or "C").upper().strip()
-
-        tier_bonus = {"A": 20.0, "B": 10.0, "C": 0.0}.get(tier, 0.0)
-        # Normalize base_conf roughly 0–100 (your confs are already 0–100)
-        strength = 0.40*base_conf + 0.20*pp_env + 0.15*stab + 0.15*min(100.0, share*4.0) + 0.10*tier_bonus
-        strength = max(0.0, min(100.0, round(strength, 1)))
-
-        st.markdown("#### Dagger Strength (explain-only)")
-        st.progress(float(strength)/100.0)
-        st.caption(f"Strength: **{strength}/100** — for explanation only (does not feed EV).")
-
-        # Breakdown cards
-        c1, c2 = st.columns(2)
-        with c1:
-            st.markdown("#### Base Proof")
-            st.write({
-                "Conf_Assists": _disp(g("Conf_Assists")),
-                "Matrix_Assists": _disp(g("Matrix_Assists")),
-                "Assist_ProofCount": _disp(g("Assist_ProofCount")),
-                "Assist_Why": _disp(g("Assist_Why")),
-            })
-        with c2:
-            st.markdown("#### PP Layer")
-            st.write({
-                "PP_Tier": _disp(g("PP_Tier")),
-                "PP_Path": _disp(g("PP_Path")),
-                "PP_TeamShare_pct": _disp(g("PP_TeamShare_pct")),
-                "PP_TOI_Pct_Game": _disp(g("PP_TOI_Pct_Game")),
-                "PP_TOI_stability": _disp(g("PP_TOI_stability")),
-                "PP_Env_Score": _disp(g("PP_Env_Score")),
-                "PP_Matchup": _disp(g("PP_Matchup")),
-                "PP_iXA60": _disp(g("PP_iXA60")),
-                "PP_BOOST": _disp(g("PP_BOOST")),
-            })
-
-        st.markdown("#### Quick read")
-        msgs = []
-        if str(tier) in ("A","B"):
-            msgs.append(f"PP role: **Tier {tier}** (real contributor).")
-        else:
-            msgs.append("PP role: **Tier C** (passenger / cosmetic).")
-
-        path = str(g("PP_Path","Passenger") or "Passenger")
-        if path == "Shooter":
-            msgs.append("PP Path: **Shooter** (goals/SOG skew).")
-        elif path == "Distributor":
-            msgs.append("PP Path: **Distributor** (assists skew).")
-        elif path == "Hybrid":
-            msgs.append("PP Path: **Hybrid** (assists + goals).")
-        else:
-            msgs.append("PP Path: **Passenger** (low PP usage impact).")
-        if pp_env >= 65:
-            msgs.append("Environment: **high PP volume** expected.")
-        elif pp_env <= 40:
-            msgs.append("Environment: **low PP volume** — beware empty whistles.")
-        else:
-            msgs.append("Environment: **neutral**.")
-        if stab >= 65:
-            msgs.append("Deployment: **stable PP minutes**.")
-        elif stab <= 40:
-            msgs.append("Deployment: **coach blender risk**.")
-        if bool(g("Assist_PP_Proof", False)):
-            msgs.append("🗡️ Trigger: **ON** (PP assist proof passed).")
-        else:
-            msgs.append("🗡️ Trigger: **OFF** (didn't meet proof gates).")
-        st.write(" ".join(msgs))
-
-
-elif page == "📟 Calculator":
-    st.subheader("📟 EV + Stake Calculator")
-    st.caption("Pick a player from today’s CSV and the calculator will auto-load their line/odds/model%. Override anything if you want.")
-    legend_signals()
-
-    # Base dataset (use filtered df so user can narrow by sidebar search/team/game)
-    df_calc = df_f.copy()
-
-    # Player dropdown
-    players = []
-    if "Player" in df_calc.columns:
-        players = sorted([p for p in df_calc["Player"].dropna().astype(str).unique().tolist() if p.strip()])
-
-    c1, c2, c3 = st.columns([1.4, 1.0, 1.0])
-    with c1:
-        player_sel = st.selectbox("Player", options=["(Manual)"] + players, index=0, key="calc_player")
-    with c2:
-        market = st.selectbox("Market", ["Points", "SOG", "Goal", "Assists"], index=0, key="calc_market")
-    with c3:
-        bankroll = st.number_input("Bankroll ($)", min_value=0.0, value=1000.0, step=50.0, key="calc_bankroll")
-
-    mcfg = _calc_market_map(market)
-
-    # Pull row for the selected player (first match)
-    row = None
-    if player_sel != "(Manual)" and "Player" in df_calc.columns:
-        hit = df_calc[df_calc["Player"].astype(str) == str(player_sel)]
-        if len(hit) > 0:
-            row = hit.iloc[0]
-
-    # Resolve auto values (mainline by default)
-    auto_line = None
-    auto_odds = None
-    auto_p = None
-    auto_ev = None
-    auto_conf = None
-    auto_matrix = None
-    auto_green = None
-    auto_ev_icon = None
-
-    def _get_num_from_row(r, col):
-        try:
-            if r is None or col not in df_calc.columns:
-                return None
-            v = r.get(col, None)
-            if v is None or (isinstance(v, float) and math.isnan(v)):
-                return None
-            return float(v)
-        except Exception:
-            return None
-
-    # Helper: pick from Alt-line columns if present
-    def _resolve_alt_cols(market_name: str, idx: int) -> tuple[float | None, float | None, float | None]:
-        """Return (line, odds, p_model) for alt index idx (1..K) if present.
-
-        Tracker schema (from odds_ev_bdl.py):
-          - line/odds: BDL_{M}_Line_{i}, BDL_{M}_Odds_{i}
-          - model prob: {M}_p_model_over_{i}  (or {M}_Model%_{i})
-        """
-        if row is None:
-            return (None, None, None)
-
-        M = str(market_name).strip()
-
-        lc = f"BDL_{M}_Line_{idx}"
-        oc = f"BDL_{M}_Odds_{idx}"
-        pc = f"{M}_p_model_over_{idx}"
-        mp = f"{M}_Model%_{idx}"
-
-        l = _get_num_from_row(row, lc)
-        o = _get_num_from_row(row, oc)
-
-        p = _get_num_from_row(row, pc)
-        if p is None:
-            mpp = _get_num_from_row(row, mp)
-            if mpp is not None:
-                p = float(mpp) / 100.0
-
-        return (l, o, p)
-
-    if row is not None:
-        auto_line = _get_num_from_row(row, mcfg["line_col"])
-        auto_odds = _get_num_from_row(row, mcfg["odds_col"])
-        # model prob: prefer p_model_over (0-1), else Model% (0-100)
-        auto_p = _get_num_from_row(row, mcfg.get("p_model_col", ""))
-        if auto_p is None:
-            mp = _get_num_from_row(row, mcfg.get("modelpct_col", ""))
-            if mp is not None:
-                auto_p = float(mp) / 100.0
-        auto_ev = _get_num_from_row(row, mcfg.get("evpct_col", ""))
-        auto_conf = _get_num_from_row(row, mcfg.get("conf_col", ""))
-        try:
-            auto_matrix = str(row.get(mcfg.get("matrix_col",""), "")).strip()
-        except Exception:
-            auto_matrix = ""
-        try:
-            auto_green = bool(row.get(mcfg.get("green_col",""), False))
-        except Exception:
-            auto_green = False
-        try:
-            auto_ev_icon = str(row.get(mcfg.get("ev_icon_col",""), "")).strip()
-        except Exception:
-            auto_ev_icon = ""
-
-    # Unique keys per (player, market) so switching doesn't "carry" stale values
-    # (avoid truncation collisions by hashing)
-    import hashlib
-    key_prefix = "calc_" + hashlib.md5(f"{str(player_sel)}|{market}".encode()).hexdigest()
-
-    # If alt lines exist for this market, allow selecting which line to cash-check
-    alt_labels = ["Mainline"]
-    if row is not None:
-        M = str(market).strip()
-        # show only available BDL alt lines for this market
-        for i in range(1, 7):
-            lc = f"BDL_{M}_Line_{i}"
-            if lc in df_calc.columns:
-                lv = _get_num_from_row(row, lc)
-                if lv is not None:
-                    alt_labels.append(f"Alt {i} ({lv:.1f})")
-
-    if len(alt_labels) > 1:
-        pick = st.selectbox("Line source", alt_labels, index=0, key=f"{key_prefix}_pick")
-        if pick.startswith("Alt"):
-            try:
-                idx = int(pick.split()[1])
-            except Exception:
-                idx = None
-            if idx:
-                l2, o2, p2 = _resolve_alt_cols(market, idx)
-                if l2 is not None:
-                    auto_line = l2
-                if o2 is not None:
-                    auto_odds = o2
-                if p2 is not None:
-                    auto_p = p2
-
-    def _parse_american_odds_text(s: str) -> float | None:
-        """Parse American odds from user text. Accepts +120, -110, unicode minus."""
-        try:
-            if s is None:
-                return None
-            t = str(s).strip()
-            if not t:
-                return None
-            t = t.replace("−", "-")
-            if t.startswith("+"):
-                t = t[1:]
-            return float(int(t))
-        except Exception:
-            return None
-
-    st.markdown("### Inputs (auto-filled when player selected)")
-    i1, i2, i3, i4 = st.columns([1.0, 1.0, 1.0, 1.2])
-    with i1:
-        line = st.number_input("Line", value=float(auto_line) if auto_line is not None else 0.5, step=0.5, key=f"{key_prefix}_line")
-    with i2:
-        odds_str = st.text_input(
-            "Odds (American)",
-            value=str(int(auto_odds)) if auto_odds is not None else "-110",
-            help="Examples: -110, +120",
-            key=f"{key_prefix}_odds_str",
-        )
-        odds = _parse_american_odds_text(odds_str)
-        if odds is None:
-            st.warning("Invalid odds format. Use -110 or +120.")
-            odds = float(int(auto_odds)) if auto_odds is not None else -110.0
-    with i3:
-        override_model = st.checkbox("Override Model%", value=False, key=f"{key_prefix}_ovp")
-        if (auto_p is not None) and (not override_model):
-            model_prob = float(auto_p)
-            st.metric("Model win probability", f"{model_prob*100.0:.1f}%")
-        else:
-            model_prob = st.slider(
-                "Model win probability (%)",
-                1.0, 99.0,
-                float(auto_p * 100.0) if auto_p is not None else 55.0,
-                0.5,
-                key=f"{key_prefix}_p"
-            ) / 100.0
-    with i4:
-        use_manual_ev = st.checkbox("Override EV% manually", value=False, key=f"{key_prefix}_usem")
-        manual_ev = st.number_input("Manual EV% (if overriding)", value=float(auto_ev) if auto_ev is not None else 0.0, step=0.5, key=f"{key_prefix}_mev")
-
-    s1, s2, s3 = st.columns([1.0, 1.0, 1.0])
-    with s1:
-        kelly_frac = st.slider("Kelly Fraction", 0.0, 1.0, 0.25, 0.05, key=f"{key_prefix}_kf")
-    with s2:
-        max_pct = st.slider("Max Stake cap (% bankroll)", 0.0, 0.20, 0.05, 0.01, key=f"{key_prefix}_cap")
-    with s3:
-        st.caption("Tip: Best bets are **🟢 + 💰**. Calculator helps size the bet.")
-
-    # Use shared odds math (single source of truth)
-    imp, ev_pct_calc, kelly, dec = calc_ev_pct_and_kelly(float(model_prob), float(odds))
-
-
-    p = float(model_prob)
-
-    # EV% is calculated from (model_prob, odds) via calc_ev_pct_and_kelly above.
-    ev_pct = float(ev_pct_calc)
-    if use_manual_ev:
-        ev_pct = float(manual_ev)
-
-    fair_dec = (1.0 / p) if p > 0 else 999.0
-
-    stake = bankroll * float(kelly) * float(kelly_frac)
-    stake = min(stake, bankroll * float(max_pct))
-
-
-    st.markdown("### Results")
-    r1, r2, r3, r4 = st.columns(4)
-    r1.metric("Decimal Odds", f"{dec:.3f}")
-    r2.metric("Implied Prob", f"{imp*100:.1f}%")
-    r3.metric("Model Prob", f"{p*100:.1f}%")
-    r4.metric("EV%", f"{ev_pct:+.1f}%")
-
-    r1, r2, r3 = st.columns(3)
-    r1.metric("Fair Decimal", f"{fair_dec:.3f}")
-    r2.metric("Edge (Model-Imp)", f"{(p-imp)*100:.1f}%")
-    r3.metric("Kelly % (full)", f"{kelly*100:.2f}%")
-
-    r1, r2 = st.columns(2)
-    r1.metric("Recommended Stake ($)", f"{stake:.2f}")
-    r2.metric("Stake % bankroll", f"{(stake/bankroll*100.0) if bankroll>0 else 0.0:.2f}%")
-
-    # Signal callout
-    label, emoji, why = warlord_call(ev_pct, kelly)
-    if ev_pct >= 5:
-        st.success(f"{emoji} **{label}** — {why}")
-    elif ev_pct >= 0:
-        st.warning(f"{emoji} **{label}** — {why}")
-    else:
-        st.error(f"{emoji} **{label}** — {why}")
-
-    # Player context panel (when selected)
-    if row is not None:
-        st.markdown("### Player context (from today’s CSV)")
-        c1, c2, c3, c4 = st.columns([1,1,1,1])
-        c1.metric("Conf", f"{auto_conf:.0f}" if auto_conf is not None else "—")
-        c2.metric("Matrix", auto_matrix if auto_matrix else "—")
-        c3.metric("Earned Green", "🟢" if auto_green else "—")
-        c4.metric("+EV", "💰" if str(auto_ev_icon).strip() == "💰" else "—")
-
-        if auto_ev is not None and not use_manual_ev:
-            st.caption(f"EV% from CSV: **{auto_ev:+.1f}%** (you can override if shopping a different book/price).")
-        st.caption("Remember: **Calculator is sizing + price check**. Your model signals are still king.")
-
-
-
-elif page == "🧾 Log Bet":
-    st.subheader("🧾 Log Bet — append-only Warlord Ledger")
-    st.caption("Enter only what you actually bet. Everything else auto-fills from today’s model CSV.")
-    legend_signals()
-
-    df_log = df_f.copy()
-
-    # Paths
-    ledger_dir, betslip_path, events_path = _ledger_paths(OUTPUT_DIR)
-    st.caption(f"Ledger folder: `{ledger_dir}`")
-
-    # Player dropdown
-    players = []
-    if "Player" in df_log.columns:
-        players = sorted([p for p in df_log["Player"].dropna().astype(str).unique().tolist() if p.strip()])
-
-    c1, c2, c3 = st.columns([1.6, 1.0, 1.0])
-    with c1:
-        player_sel = st.selectbox("Player", options=players, index=0 if players else None, key="log_player")
-    with c2:
-        market = st.selectbox("Market", ["Points", "SOG", "Goal", "Assists"], index=0, key="log_market")
-    with c3:
-        book = st.text_input("Book", value="", placeholder="DK / FD / MGM / CZR...", key="log_book")
-
-    # Find player row
-    row = None
-    if player_sel and "Player" in df_log.columns:
-        hit = df_log[df_log["Player"].astype(str) == str(player_sel)]
-        if len(hit) > 0:
-            row = hit.iloc[0]
-
-    mcfg = _calc_market_map(market)
-
-    def _get_num_from_row(r, col):
-        try:
-            if r is None or col not in df_log.columns:
-                return None
-            v = r.get(col, None)
-            if v is None or (isinstance(v, float) and math.isnan(v)):
-                return None
-            return float(v)
-        except Exception:
-            return None
-
-    # Auto values
-    auto_date = str(row.get("Date", "")) if row is not None and "Date" in df_log.columns else ""
-    auto_game = str(row.get("Game", "")) if row is not None and "Game" in df_log.columns else ""
-    auto_opp = str(row.get("Opp", "")) if row is not None and "Opp" in df_log.columns else ""
-    auto_goalie = str(row.get("Opp_Goalie", "")) if row is not None and "Opp_Goalie" in df_log.columns else ""
-
-    auto_line = _get_num_from_row(row, mcfg.get("line_col", "")) if row is not None else None
-    auto_odds = _get_num_from_row(row, mcfg.get("odds_col", "")) if row is not None else None
-
-    # model prob: prefer p_model_over (0-1), else Model% (0-100)
-    auto_p = _get_num_from_row(row, mcfg.get("p_model_col", "")) if row is not None else None
-    if auto_p is None and row is not None:
-        mp = _get_num_from_row(row, mcfg.get("modelpct_col", ""))
-        if mp is not None:
-            auto_p = float(mp) / 100.0
-
-    auto_conf = _get_num_from_row(row, mcfg.get("conf_col", "")) if row is not None else None
-    auto_matrix = str(row.get(mcfg.get("matrix_col", ""), "")).strip() if row is not None else ""
-    auto_green = bool(row.get(mcfg.get("green_col", ""), False)) if row is not None else False
-    auto_ev_icon = str(row.get(mcfg.get("ev_icon_col", ""), "")).strip() if row is not None else ""
-
-    # Extra model context
-    auto_tier = str(row.get("Talent_Tier", "")) if row is not None and "Talent_Tier" in df_log.columns else ""
-    proof_col = mcfg.get("proof_col", "")
-    why_col = mcfg.get("why_col", "")
-    auto_proof = int(row.get(proof_col, 0)) if row is not None and proof_col and proof_col in df_log.columns else 0
-    auto_why = str(row.get(why_col, "")) if row is not None and why_col and why_col in df_log.columns else ""
-
-    # Inputs you control
-    kpref = f"log_{player_sel}_{market}".replace(" ", "_")[:90]
-    i1, i2, i3, i4 = st.columns([1.0, 1.0, 1.0, 1.0])
-    with i1:
-        line = st.number_input("Line", value=float(auto_line) if auto_line is not None else 0.5, step=0.5, key=f"{kpref}_line")
-    with i2:
-        odds_taken = st.number_input("Odds taken (American)", value=int(auto_odds) if auto_odds is not None else -110, step=5, key=f"{kpref}_odds")
-    with i3:
-        override_model = st.checkbox("Override Model%", value=False, key=f"{kpref}_ovp")
-        if (auto_p is not None) and (not override_model):
-            model_prob = float(auto_p)
-            st.metric("Model win probability", f"{model_prob*100.0:.1f}%")
-        else:
-            model_prob = st.slider(
-                "Model win probability (%)",
-                1.0, 99.0,
-                float(auto_p * 100.0) if auto_p is not None else 55.0,
-                0.5,
-                key=f"{kpref}_p"
-            ) / 100.0
-    with i4:
-        stake_u = st.number_input("Stake (u)", min_value=0.0, max_value=float(MAX_STAKE_U), value=1.0, step=0.25, key=f"{kpref}_u")
-
-    notes = st.text_input("Notes (optional)", value="", key=f"{kpref}_notes")
-
-    # Derived
-    imp, ev_pct, kelly, dec = calc_ev_pct_and_kelly(model_prob, odds_taken)
-    ev_flag = bool(ev_pct >= 5.0)
-    lock_flag = bool(auto_green and ev_flag)
-
-    st.markdown("### Snapshot")
-    s1, s2, s3, s4 = st.columns(4)
-    s1.metric("Earned Green", "🟢" if auto_green else "—")
-    s2.metric("+EV", "💰" if ev_flag else "—")
-    s3.metric("LOCK", "🔒" if lock_flag else "—")
-    s4.metric("Stake", f"{stake_u:.2f}u  (${'{:.0f}'.format(stake_u*UNIT_VALUE_USD)})")
-
-    s1, s2, s3, s4 = st.columns(4)
-    s1.metric("Implied %", f"{imp*100:.1f}%")
-    s2.metric("Model %", f"{model_prob*100:.1f}%")
-    s3.metric("EV% (recalc)", f"{ev_pct:+.1f}%")
-    s4.metric("Kelly (full)", f"{kelly*100:.2f}%")
-
-    if row is not None:
-        st.caption(f"Model context: Conf={auto_conf:.0f} | Matrix={auto_matrix or '—'} | Tier={auto_tier or '—'} | Proofs={auto_proof} | Why={auto_why or '—'}")
-        if auto_ev_icon == '💰':
-            st.caption("Note: CSV already flagged this as 💰 at its listed odds — ledger uses the odds you took.")
-
-    # Log button
-    if st.button("🧾 Log Bet (append)", use_container_width=True):
-        dt_now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-        date_str = auto_date or datetime.now().strftime('%Y-%m-%d')
-        bet_id = make_bet_id(date_str, player_sel, market, line, odds_taken)
-
-        row_out = {
-            'bet_id': bet_id,
-            'date': date_str,
-            'datetime_placed': dt_now,
-            'game': auto_game,
-            'player': str(player_sel),
-            'market': market.upper(),
-            'line': float(line),
-            'odds_taken': int(odds_taken),
-            'book': book.strip() if book.strip() else '',
-            'stake_u': float(stake_u),
-            'earned_green': int(bool(auto_green)),
-            'ev_flag': int(bool(ev_flag)),
-            'lock_flag': int(bool(lock_flag)),
-            'conf': float(auto_conf) if auto_conf is not None else '',
-            'matrix': auto_matrix,
-            'model_pct': round(model_prob*100.0, 2),
-            'imp_pct': round(imp*100.0, 2),
-            'ev_pct': round(ev_pct, 2),
-            'tier': auto_tier,
-            'proof_count': int(auto_proof),
-            'why_tags': auto_why,
-            'opp': auto_opp,
-            'opp_goalie': auto_goalie,
-            'notes': notes,
-        }
-
-        _append_csv_row(betslip_path, row_out, BETSLIP_HEADERS)
-        st.success(f"Logged: **{bet_id}** → {stake_u:.2f}u")
-
-    # Show recent bets
-    try:
-        if os.path.exists(betslip_path):
-            st.markdown("### Recent logs")
-            tail = pd.read_csv(betslip_path).tail(10)
-            st.dataframe(tail, use_container_width=True, hide_index=True)
-        else:
-            st.info("No betslip.csv yet — first log will create it.")
+                slate_n = 0
+
+            required = min(50, max(10, int(round(0.20 * slate_n)))) if slate_n > 0 else 10
+            if cov < required:
+                raise RuntimeError(f"BDL odds coverage too low: {cov} players (<{required})")
+
+        # $EV play flags (so every $EV column has a companion Plays_EV_* column)
+        def _mk_play(col_ev: str) -> pd.Series:
+            if col_ev not in tracker.columns:
+                return pd.Series([False] * len(tracker))
+            return pd.to_numeric(tracker[col_ev], errors="coerce").fillna(0) >= 10
+
+        if "Plays_EV_SOG" not in tracker.columns:
+            tracker["Plays_EV_SOG"] = _mk_play("SOG_EVpct_over")
+        if "Plays_EV_Points" not in tracker.columns:
+            tracker["Plays_EV_Points"] = _mk_play("Points_EVpct_over")
+        if "Plays_EV_Goal" not in tracker.columns:
+            tracker["Plays_EV_Goal"] = _mk_play("Goal_EVpct_over")
+        if "Plays_EV_ATG" not in tracker.columns:
+            tracker["Plays_EV_ATG"] = _mk_play("ATG_EVpct_over")
+        if "Plays_EV_Assists" not in tracker.columns:
+            tracker["Plays_EV_Assists"] = _mk_play("Assists_EVpct_over")
+
+        print("[odds/ev] merged BDL odds + EV")
     except Exception as e:
-        st.warning(f"Could not read ledger yet: {e}")
+        print(f"[odds/ev] skipped: {e}")
 
-elif page == "Guide":
-    st.subheader("📘 Guide — How to use")
-    st.markdown(r"""
-## The 60-second workflow
-1) **Start on Board**
-   - Sorted best-first (**Best_Conf → Goalie_Weak → Opp_DefWeak**)
-   - Look for **Tier_Tag + HOT regression + weak matchup** stacking
 
-2) **Open a market view** (Points / SOG / Goal / Assists)
-   - Use **Min Conf** slider to tighten
-   - Use **Colors** to hide red
-   - Use **Only 🔥** to isolate your shortlist
+    
+ 
+    stamp = datetime.now().strftime("%H%M%S")
+    # Ensure output directory exists
+    try:
+        os.makedirs(OUTPUT_DIR, exist_ok=True)
+    except Exception:
+        pass
+    # -------------------------
+    # Display-name hygiene (do BEFORE writing CSV)
+    # -------------------------
+    def _fix_mojibake_text(s):
+        """Best-effort fix for common UTF-8 mojibake in names."""
+        if s is None:
+            return ""
+        t = str(s)
+        try:
+            if any(ch in t for ch in ("Ã", "Â", " ")):
+                return t.encode("latin-1", "ignore").decode("utf-8", "ignore")
+        except Exception:
+            pass
+        return t
 
-3) **Use two gates (this is the secret sauce)**
-   - **🟢 Earned Green** = “model says playable”
-   - **💰 EV Play** = “market is mispriced vs us”
-   
-**Best bets are when 🟢 and 💰 agree.**
+    if "Player" in tracker.columns:
+        tracker["Player"] = tracker["Player"].apply(_fix_mojibake_text)
+        tracker["Player"] = tracker["Player"].astype(str).str.replace(r"Sttzle", "Stutzle", regex=True)
+        tracker["Player"] = tracker["Player"].astype(str).str.replace(r"sttzle", "stutzle", regex=True)
 
----
+    out_path = os.path.join(OUTPUT_DIR, f"tracker_{today_local.isoformat()}_{stamp}.csv")
+    tracker.to_csv(out_path, index=False)
 
-## EV / Odds columns — what they mean
-**Line** → What must happen to win (threshold)  
-**Odds** → Payout price (American odds)  
-**Model%** → Our model probability the Over hits  
-**Imp%** → Sportsbook implied probability from odds  
-**EV%** → Expected value edge (positive = good)  
-**💰** → Approved +EV wager (EV% cleared our threshold)
+    # Also write a stable path for Streamlit Cloud (no more manual uploads)
+    latest_out_path = os.path.join(OUTPUT_DIR, 'tracker_latest.csv')
+    try:
+        tracker.to_csv(latest_out_path, index=False)
+    except Exception:
+        pass
 
-### Line vs Odds (common confusion)
-- `Points_Line = 3.0` means **Over 3.0 → 4+ points**
-- `Points_Odds_Over = +900` means **risk 1 to win 9**
-So “300/900” is **odds**, not the line.
-
-### Milestone mapping (how Overs work)
-- 0.5 → **1+**
-- 1.0 → **1+**
-- 1.5 → **2+**
-- 2.0 → **2+**
-- 2.5 → **3+**
-- 3.0 → **4+**
-(Over X.0 = X+1)
-
-### EV% interpretation
-- **< 0%** → bad price (-EV)
-- **0–4%** → thin edge
-- **5–9%** → decent edge
-- **10%+** → strong edge (this is where 💰 triggers)
-
-### Why EV fields can be blank
-Usually means:
-- no odds posted for that player/market yet
-- market not offered for that player
-- early slate (books post props in waves)
-
----
-
-## Your key signals
-### Matrix_* (Green/Yellow/Red)
-- **Green** = baseline conditions met
-- **Yellow** = borderline
-- **Red** = failed
-
-### Conf_* (0–100)
-Confidence after gates/adjustments.
-
-### Earned Green 🟢
-This is your strict “playable” rule.
-
----
-
-## Earned Green rules (plain English)
-### 🟢 SOG
-Matrix green + confidence gate + volume/intent confirmation.
-
-### 🟢 Points
-Matrix green + confidence gate + involvement proofs pass.
-
-### 🟢 Goal
-Matrix green + confidence gate + due/env/drought proof hits.
-
-### 🟢 Assists
-Matrix green + Conf_Assists ≥ 77 + proof gate passes.
-
----
-
-## Best daily betting rules
-**Safe test phase**
-- Only play **🟢 earned greens**
-- Prefer ⭐/👑 on big slates
-- Prefer HOT regression when choices are close
-
-**A+ stack**
-✅ Earned Green 🟢  
-✅ HOT regression  
-✅ Weak goalie/defense  
-✅ Tier ⭐/👑  
-✅ 💰 EV% 10+
-
----
-
-## Troubleshooting
-If a market page looks blank:
-- Min Conf too high
-- Color filters hiding everything
-- Odds not posted yet
-""")
-
-elif page == "Ledger":
-    st.subheader("📜 Ledger — What everything means")
-
-    st.markdown("""
-### Core ideas
-- **Matrix_*:** quick “signal” (Green/Yellow/Red) based on the model’s conditions.
-- **Conf_*:** 0–100 confidence score *after* adjustments (injury, drought bump, etc.).
-- **Green_*:** “earned green” rules (your stricter gating) — not just raw confidence.
-
----
-### Badges / Tags
-- **🔥** = flagged play tag (your manual/auto “this is a real look” indicator).
-- **👑 ELITE / ⭐ STAR** = talent tier tags.
-- **⛔ GF GATE** = team scoring environment failed (team’s recent scoring too low).  
-  When this triggers, **Goal/Points/Assists confidence is forced to 0** and Matrix becomes **FAIL_GF**.
-
----
-### Colors (how to read them)
-- **Matrix colors**
-  - **Green** = conditions met
-  - **Yellow** = borderline / mixed
-  - **Red** = conditions failed
-  - **FAIL_GF** = hard fail due to team scoring gate
-
-- **Confidence colors**
-  - **Green** = high confidence (your thresholding)
-  - **Yellow** = mid
-  - **Blue** = lower but usable
-  - **Red** = avoid
-
-- **Regression heat**
-  - **HOT** = due/overdue (bump potential)
-  - **WARM** = mild
-  - **COOL** = not due
-
----
-### Key columns (most important)
-- **Best_Market / Best_Conf** = which market looks best *for that player*.
-- **Reg_Gap_* / Exp_*:** expected vs actual gap (how “due” they are).
-- **Goalie_Weak / Opp_DefWeak** = matchup-based vulnerability.
-- **ShotIntent / ShotIntent_Pct** = volume + intent proxy for SOG.
-- **Assist_ProofCount / Assist_Why** = why assists earned green was triggered.
-
----
-### Injury logic
-- **Injury_Status / Injury_Badge / Injury_DFO_Score**
-  - GTD knocks confidence down
-  - ROLE+ boosts slightly (if you coded it)
-  - OUT/IR should be filtered via **Available**
-""")
-
-    st.info("If you want, I can generate this ledger automatically from a Python dict so it stays synced when you add columns.")
+    print(f"CSV saved to: {out_path}")
+    print(f"Cache saved to: {cache_path_today(today_local)}\n")
+    return out_path
 
 
 
-# =========================
-# RAW
-# =========================
-else:
-    st.subheader("Raw CSV (all columns)")
-    st.dataframe(df_f, width="stretch", hide_index=True)
+# ============================
+# Entrypoint
+# ============================
+def main() -> None:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--date", help="YYYY-MM-DD (default today)", default=None)
+    parser.add_argument("--debug", action="store_true", help="Enable debug prints")
+    args = parser.parse_args()
 
+    today_local = date.fromisoformat(args.date) if args.date else date.today()
+    build_tracker(today_local, debug=bool(args.debug))
 
-
-
-
+if __name__ == "__main__":
+    main()
