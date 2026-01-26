@@ -1705,17 +1705,11 @@ elif page == "Assists":
     adg = pd.to_numeric(df_a.get("Assist_Dagger", 0), errors="coerce").fillna(0)
     ppt = df_a.get("PP_Tier", "").astype(str).str.upper()
 
-    # HARD gate:
-    # 1) Explicit proof, OR
-    # 2) 4-of-4 assist proofs, OR
-    # 3) Elite dagger score (>=85), OR
-    # 4) PP A/B + strong proof (>=3) + decent dagger (>=70)
-    mask = (
-        (proof if isinstance(proof, pd.Series) else False)
-        | (apc >= 4)
-        | (adg >= 82)
-        | ((ppt.isin(["A", "B"])) & (apc >= 3) & (adg >= 60))
-    )
+    pp_m = pd.to_numeric(df_a.get("PP_Matchup", 0), errors="coerce").fillna(0)
+
+    # HARD gate (tight): Assist_Dagger >= 82 AND PP_Matchup >= 55
+    mask = (adg >= 82) & (pp_m >= 55)
+
 
     df_a.loc[mask, "🗡️"] = "🗡️"
 
