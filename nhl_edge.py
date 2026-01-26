@@ -2933,10 +2933,16 @@ def build_tracker(today_local: date, debug: bool = False) -> str:
             sk[c] = np.nan
 
     # Assist volume proxy
-    sk["Assist_Volume"] = (
-        pd.to_numeric(sk.get("i5v5_shotAssists60"), errors="coerce")
-          .fillna(0.0) * 12.0
-    ).round(2)
+    # Primary path: 5v5 shot-assists rate (if available)
+    assist_vol = pd.to_numeric(sk.get("i5v5_shotAssists60"), errors="coerce") * 12.0
+
+    # Fallback (tracker totals): last-10 assists
+    # Prevents assist proofs from flatlining when i5v5_shotAssists60 is missing.
+    l10_a = pd.to_numeric(sk.get("L10_A"), errors="coerce")
+
+    sk["Assist_Volume"] = assist_vol
+    sk.loc[sk["Assist_Volume"].isna() | (sk["Assist_Volume"] <= 0), "Assist_Volume"] = l10_a
+    sk["Assist_Volume"] = pd.to_numeric(sk["Assist_Volume"], errors="coerce").fillna(0.0).round(2)
 
 
     # POWER PLAY skaters (5v4)
@@ -3455,6 +3461,20 @@ def build_tracker(today_local: date, debug: bool = False) -> str:
     sk["L10_G"] = pd.to_numeric(sk.get("G10_total", np.nan), errors="coerce")
     sk["L10_S"] = pd.to_numeric(sk.get("S10_total", np.nan), errors="coerce")
     sk["L10_A"] = pd.to_numeric(sk.get("A10_total", np.nan), errors="coerce")
+
+    # -------------------------
+    # Assist Volume (MUST be AFTER L10_A exists)
+    # -------------------------
+    # Primary source: 5v5 shot-assists/60 * 12 (per-game-ish volume)
+    # Fallback: tracker totals (last-10 assists) so we never flatline to 0 just because
+    # shot-assists fields are missing.
+    _assist_vol = pd.to_numeric(sk.get("i5v5_shotAssists60", np.nan), errors="coerce") * 12.0
+    _l10_a = pd.to_numeric(sk.get("L10_A", np.nan), errors="coerce")
+
+    sk["Assist_Volume"] = _assist_vol
+    sk.loc[sk["Assist_Volume"].isna() | (sk["Assist_Volume"] <= 0), "Assist_Volume"] = _l10_a
+    sk["Assist_Volume"] = pd.to_numeric(sk["Assist_Volume"], errors="coerce").fillna(0.0).round(2)
+
 
     sk["Exp_S_10"] = (pd.to_numeric(sk.get("ShotIntent", np.nan), errors="coerce") * 10.0).round(2)
 
