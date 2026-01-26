@@ -988,7 +988,11 @@ st.markdown(
 # Data source (no more forced uploads)
 # -------------------------
 # Optional manual upload (still supported)
-uploaded = st.sidebar.file_uploader("Upload tracker CSV (optional)", type=["csv"])
+uploaded = st.sidebar.file_uploader(
+    "Upload tracker CSV (optional)",
+    type=["csv"],
+    key="uploader_tracker_csv_sidebar"
+)
 
 # Preferred stable path written by nhl_edge.py
 latest_stable = os.path.join(OUTPUT_DIR, "tracker_latest.csv")
