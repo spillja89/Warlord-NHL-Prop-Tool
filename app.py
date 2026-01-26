@@ -293,7 +293,7 @@ def snap_int(x):
 def _promote_call_cols(cols):
     order=[
         'SOG_Call','Points_Call','Assists_Call','ATG_Call',
-        'Player','Team','Opp','Game','Pos','Tier_Tag','🔥','💰',
+        'Player','Team','Opp','Time','Game','Pos','Tier_Tag','🔥','💰',
     ]
     out=[]
     for c in order:
@@ -307,6 +307,7 @@ def _promote_call_cols(cols):
 COLUMN_WIDTHS = {
     # identity
     "Game": "small",
+    "Time": "small",
     "Pos": "small",
     "Team": "small",
     "Opp": "small",
@@ -777,7 +778,35 @@ def add_ui_columns(df: pd.DataFrame) -> pd.DataFrame:
     return out
 def load_csv(path: str) -> pd.DataFrame:
     df = pd.read_csv(path)
+
+    # --- SNAP BETTING LINES AFTER df EXISTS (fix NameError) ---
+    def snap_half_down_sog(x):
+        try:
+            if x is None:
+                return x
+            v = float(x)
+            snapped = round(v * 2.0) / 2.0
+            if abs(snapped - round(snapped)) < 1e-6:
+                return max(0.5, snapped - 0.5)
+            return snapped
+        except Exception:
+            return x
+
+    for _c in [c for c in df.columns if c.endswith('_Line') or c == 'Line']:
+        if _c == 'SOG_Line':
+            df[_c] = df[_c].apply(snap_half_down_sog)
+        else:
+            df[_c] = df[_c].apply(snap_half)
+
     df.columns = [c.strip() for c in df.columns]
+
+    # Add local game time (for table + matchup filter)
+    if "StartTimeLocal" in df.columns and "Time" not in df.columns:
+        dt = pd.to_datetime(df["StartTimeLocal"], errors="coerce")
+        # Use a portable format and strip leading zero (07:00 PM -> 7:00 PM)
+        df["Time"] = dt.dt.strftime("%I:%M %p").astype(str).str.lstrip("0")
+        df.loc[dt.isna(), "Time"] = ""
+
     return df
 def filter_common(df: pd.DataFrame) -> pd.DataFrame:
     out = df.copy()
@@ -795,14 +824,39 @@ def filter_common(df: pd.DataFrame) -> pd.DataFrame:
         sel_teams = st.sidebar.multiselect("Team", teams, default=[])
         if sel_teams:
             out = out[out["Team"].astype(str).isin(sel_teams)]
-    # Matchup filter
+    # Matchup filter (show time when available)
     if "Game" in out.columns:
-        games = sorted(
-            [g for g in out["Game"].dropna().astype(str).unique().tolist() if g.strip()]
-        )
-        sel_games = st.sidebar.multiselect("Matchup", games, default=[])
-        if sel_games:
-            out = out[out["Game"].astype(str).isin(sel_games)]
+        games = [g for g in out["Game"].dropna().astype(str).unique().tolist() if g.strip()]
+
+        if "Time" in out.columns:
+            # Build label -> game mapping like "7:00 PM — DAL@STL"
+            tmp = out[["Game", "Time"]].copy()
+            tmp["Time"] = tmp["Time"].astype(str).fillna("")
+            # Prefer earliest time per game if duplicates exist
+            best = (
+                tmp.sort_values(["Game", "Time"])
+                .drop_duplicates(subset=["Game"], keep="first")
+                .set_index("Game")["Time"]
+                .to_dict()
+            )
+
+            labels = []
+            for g in games:
+                t = best.get(g, "")
+                label = f"{t} — {g}" if t else g
+                labels.append(label)
+
+            labels = sorted(labels, key=lambda x: x.split("—")[-1].strip())
+            sel_labels = st.sidebar.multiselect("Matchup", labels, default=[])
+
+            if sel_labels:
+                sel_games = [lab.split("—")[-1].strip() for lab in sel_labels]
+                out = out[out["Game"].astype(str).isin(sel_games)]
+        else:
+            games = sorted(games)
+            sel_games = st.sidebar.multiselect("Matchup", games, default=[])
+            if sel_games:
+                out = out[out["Game"].astype(str).isin(sel_games)]
     # Only flagged plays
     only_fire = st.sidebar.checkbox("Only 🔥 plays", value=False)
     if only_fire and "🔥" in out.columns:
@@ -873,6 +927,20 @@ def show_table(df: pd.DataFrame, cols: list[str], title: str):
     # de-dupe requested cols while preserving order
     cols = list(dict.fromkeys(cols))
 
+    # Ensure Time column is displayed right next to Game (if available)
+    if "Game" in cols and "Time" in df.columns:
+        if "Time" not in cols:
+            gi = cols.index("Game")
+            cols.insert(gi + 1, "Time")
+        else:
+            gi = cols.index("Game")
+            ti = cols.index("Time")
+            if abs(ti - gi) != 1:
+                cols.pop(ti)
+                gi = cols.index("Game")
+                cols.insert(gi + 1, "Time")
+
+
     existing = [c for c in cols if c in df.columns]
     missing = [c for c in cols if c not in df.columns]
 
@@ -931,7 +999,6 @@ st.sidebar.markdown("---")
 slate_date = st.sidebar.date_input("Slate date", value=datetime.now().date())
 run_now = st.sidebar.button("Run / Refresh slate", help="Runs nhl_edge.py for the selected date and loads the fresh tracker.")
 
-@st.cache_data(show_spinner=False)
 def _run_model_cached(d: date, code_stamp: float) -> str:
     # Import + reload so Streamlit Cloud picks up new engine code
     import importlib
@@ -1417,7 +1484,7 @@ with st.expander("Debug: loaded columns"):
 # Navigation
 page = st.sidebar.radio(
     "Page",
-    ["Board", "Points", "Assists", "SOG", "GOAL (1+)", "Power Play", "Guide", "Ledger", "Raw CSV", "📟 Calculator", "🧾 Log Bet"],
+    ["Board", "Points", "Assists", "SOG", "GOAL (1+)", "Power Play", "🧪 Dagger Lab", "Guide", "Ledger", "Raw CSV", "📟 Calculator", "🧾 Log Bet"],
     index=0
 )
 
@@ -1626,14 +1693,28 @@ elif page == "Assists":
 
     df_a["Green"] = df_a.get("Green_Assists", False).map(lambda x: "🟢" if bool(x) else "")
 
-    # 🗡️ Dagger indicator (PP assist edge)
-    if "🗡️" not in df_a.columns:
-        if "Assist_PP_Proof" in df_a.columns:
-            df_a["🗡️"] = df_a["Assist_PP_Proof"].map(lambda x: "🗡️" if bool(x) else "")
-        else:
-            df_a["🗡️"] = ""
+    # 🗡️ Dagger indicator (PP assist edge) — HARD GATE (recomputed every time)
+    # Goal: daggers are rare and meaningful (PP1/proof-level assist edges only).
+    df_a["🗡️"] = ""
+
+    # Safe pulls
+    proof_col = "Assist_PP_Proof" if "Assist_PP_Proof" in df_a.columns else None
+    proof = df_a[proof_col].astype(bool) if proof_col else False
+
+    apc = pd.to_numeric(df_a.get("Assist_ProofCount", 0), errors="coerce").fillna(0)
+    adg = pd.to_numeric(df_a.get("Assist_Dagger", 0), errors="coerce").fillna(0)
+    ppt = df_a.get("PP_Tier", "").astype(str).str.upper()
+
+    pp_m = pd.to_numeric(df_a.get("PP_Matchup", 0), errors="coerce").fillna(0)
+
+    # HARD gate (tight): Assist_Dagger >= 82 AND PP_Matchup >= 55
+    mask = (adg >= 82) & (pp_m >= 55)
+
+
+    df_a.loc[mask, "🗡️"] = "🗡️"
 
     assists_cols = [
+
         "Game",
         "Player", "Pos",
         "Tier_Tag",
@@ -1654,8 +1735,13 @@ elif page == "Assists":
 
         "Assists_Call",
         "Drought_A","Best_Drought",
-        "Assist_ProofCount", "Assist_Why", "🗡️", "Assist_Dagger", "PP_TOI_Pct_Game", "PP_iXA60", "PP_Matchup",
+        "Assist_ProofCount", "Assist_Why", "🗡️", "Assist_Dagger",
+        
         "Reg_Heat_A", "Reg_Gap_A10", "Exp_A_10", "L10_A",
+        "PP_Tier", "PP_Path", "PP_BOOST",
+        "PP_TOI_Pct_Game", "PP_iXA60", "PP_Matchup",
+
+        
         "iXA%","iXG%", "v2_player_stability",
         "Opp_Goalie", "Opp_SV",
         "Goalie_Weak", "Opp_DefWeak",
@@ -1908,6 +1994,11 @@ elif page == "Power Play":
     unit_sel = st.sidebar.multiselect("PP Unit", ["PP1", "PP2"], default=["PP1", "PP2"], key="pp_unit_sel")
     min_pp_toi = st.sidebar.slider("Min PP TOI / game", 0.0, 10.0, 1.0, 0.25, key="pp_min_toi")
     min_ppp_drought = st.sidebar.slider("Min PPP Drought (games)", 0, 12, 0, 1, key="pp_min_ppp_drought")
+    tier_opts = ["A","B","C"] if "PP_Tier" in df_f.columns else []
+    tier_sel = st.sidebar.multiselect("PP Tier", tier_opts, default=tier_opts, key="pp_tier_sel") if tier_opts else []
+    path_opts = ["Shooter","Distributor","Hybrid","Passenger"] if "PP_Path" in df_f.columns else []
+    path_sel = st.sidebar.multiselect("PP Path", path_opts, default=path_opts, key="pp_path_sel") if path_opts else []
+
 
     df_pp = df_f.copy()
     if "PP_UnitTag" in df_pp.columns:
@@ -1918,9 +2009,14 @@ elif page == "Power Play":
 
     if "Drought_PPP" in df_pp.columns:
         df_pp = df_pp[pd.to_numeric(df_pp["Drought_PPP"], errors="coerce").fillna(0).astype(int) >= int(min_ppp_drought)]
+    if "PP_Tier" in df_pp.columns and tier_sel:
+        df_pp = df_pp[df_pp["PP_Tier"].astype(str).str.upper().isin([t.upper() for t in tier_sel])]
+    if "PP_Path" in df_pp.columns and path_sel:
+        df_pp = df_pp[df_pp["PP_Path"].astype(str).isin(path_sel)]
+
 
     # Sort best-first (only by columns that exist)
-    sort_cols = [c for c in ["PP_Matchup", "PP_Points60", "PP_TOI_PG", "Drought_PPP"] if c in df_pp.columns]
+    sort_cols = [c for c in ["PP_Matchup", "PP_BOOST", "PP_Points60", "PP_TOI_PG", "Drought_PPP"] if c in df_pp.columns]
     if sort_cols:
         df_pp = df_pp.sort_values(sort_cols, ascending=[False] * len(sort_cols))
 
@@ -1930,18 +2026,249 @@ elif page == "Power Play":
         "Tier_Tag",
         "PP_Unit",
         "PP_TOI_PG",
+        "PP_TeamShare_pct",
+        "PP_TOI_stability",
+        "PP_Tier",
+        "PP_Path",
+        "PP_BOOST",
         "PP_TOI_Pct",
         "PP_Points60",
         "PP_iXG60",
         "PP_iXA60",
         "Team_PP_xGF60",
         "Opp_PK_xGA60",
+
+        # Opportunity context (season-to-date team rates)
+        "Team_PPO_PG",
+        "Opp_TSH_PG",
+        "Team_PP_Eff",
+        "PP_Opps_Score",
+        "Opp_Penalty_Score",
+        "PP_Opportunity",
+
         "PP_Matchup",
         "PPP10_total",
         "Drought_PPP",
     ]
 
     show_table(df_pp, pp_cols, "Power Play (5v4) — Usage, creation, matchup, PPP drought")
+
+
+elif page == "🧪 Dagger Lab":
+    st.subheader("🧪 Dagger Lab")
+    st.caption("Explain *why* the 🗡️ shows up — role, stability, environment, and creation. This page is diagnostic only (does not change EV).")
+
+    # Focus on players with any dagger context available
+    df_lab = df_f.copy()
+
+    # Build dagger icon (HARD GATE) — recompute every time (ignore any 🗡️ column in CSV)
+    df_lab["🗡️"] = ""
+
+    proof_col = "Assist_PP_Proof" if "Assist_PP_Proof" in df_lab.columns else None
+    proof = df_lab[proof_col].astype(bool) if proof_col else pd.Series(False, index=df_lab.index)
+
+    apc = pd.to_numeric(df_lab.get("Assist_ProofCount", 0), errors="coerce").fillna(0)
+    adg = pd.to_numeric(df_lab.get("Assist_Dagger", 0), errors="coerce").fillna(0)
+    ppt = df_lab.get("PP_Tier", "").astype(str).str.upper()
+
+    # HARD gate:
+    # 1) Explicit proof, OR
+    # 2) 4-of-4 assist proofs, OR
+    # 3) Elite dagger score (>=82), OR
+    # 4) PP A/B + strong proof (>=3) + decent dagger (>=60)
+    mask = (proof | (apc >= 4) | (adg >= 82) | ((ppt.isin(["A","B"])) & (apc >= 3) & (adg >= 60)))
+    df_lab.loc[mask, "🗡️"] = "🗡️"
+
+    # Prefer listing dagger candidates first
+    sort_cols = []
+    if "🗡️" in df_lab.columns: sort_cols.append("🗡️")
+    if "Assist_Dagger" in df_lab.columns: sort_cols.append("Assist_Dagger")
+    if "PP_BOOST" in df_lab.columns: sort_cols.append("PP_BOOST")
+    if sort_cols:
+        df_lab = df_lab.sort_values(by=[c for c in sort_cols if c in df_lab.columns], ascending=[False]*len(sort_cols))
+
+    # Player selector (Game context helps)
+    label_col = "Player" if "Player" in df_lab.columns else df_lab.columns[0]
+    game_col = "Game" if "Game" in df_lab.columns else None
+    def _lab_label(r):
+        name = str(r.get(label_col, "")).strip()
+        game = str(r.get(game_col, "")).strip() if game_col else ""
+        pp_tier = str(r.get("PP_Tier", "")).upper().strip()
+
+        tier_tag = f"[PP {pp_tier}]" if pp_tier and pp_tier not in {"NAN", "NONE"} else  "[PP ?]"
+
+        if game_col:
+            return f"{name} {tier_tag}  —  {game}"
+        return f"{name} {tier_tag}"
+
+
+    options = df_lab.apply(_lab_label, axis=1).tolist()
+    if not options:
+        st.warning("No rows loaded.")
+    else:
+        pick = st.selectbox("Select a player", options, index=0)
+        idx = options.index(pick)
+        r = df_lab.iloc[idx]
+
+        # Core fields (safe pulls)
+        def g(col, default=None):
+            return r.get(col, default) if col in r.index else default
+
+        # Display helpers: convert numpy types / NaN to clean primitives for UI
+        def _disp(v):
+            if v is None:
+                return ""
+            try:
+                if pd.isna(v):
+                    return ""
+            except Exception:
+                pass
+            try:
+                import numpy as _np
+                if isinstance(v, _np.generic):
+                    v = v.item()
+            except Exception:
+                pass
+            return v
+
+        # Back-compat: derive PP fields if missing from the tracker
+        if "PP_Tier" not in df_lab.columns and "PP_Role" in df_lab.columns:
+            def _pp_tier(v):
+                try:
+                    x = int(float(v))
+                except Exception:
+                    return ""
+                return "A" if x >= 2 else ("B" if x == 1 else "C")
+            df_lab["PP_Tier"] = df_lab["PP_Role"].apply(_pp_tier)
+
+        if "PP_Path" not in df_lab.columns and ("PP_iXG60" in df_lab.columns or "PP_iXA60" in df_lab.columns):
+            def _pp_path_row(rr):
+                try:
+                    role = int(float(rr.get("PP_Role", 0) or 0))
+                except Exception:
+                    role = 0
+                if role <= 0:
+                    return "Passenger"
+                ixg = pd.to_numeric(rr.get("PP_iXG60", np.nan), errors="coerce")
+                ixa = pd.to_numeric(rr.get("PP_iXA60", np.nan), errors="coerce")
+                tot = (0.0 if pd.isna(ixg) else float(ixg)) + (0.0 if pd.isna(ixa) else float(ixa))
+                if tot <= 0:
+                    return "Passenger"
+                share = (ixg / tot)
+                if share >= 0.60:
+                    return "Shooter"
+                if share <= 0.40:
+                    return "Passer"
+                return "Balanced"
+            df_lab["PP_Path"] = df_lab.apply(_pp_path_row, axis=1)
+
+        if "PP_TeamShare_pct" not in df_lab.columns and "PP_TOI_Pct_Game" in df_lab.columns:
+            df_lab["PP_TeamShare_pct"] = pd.to_numeric(df_lab["PP_TOI_Pct_Game"], errors="coerce")
+
+        if "PP_TOI_stability" not in df_lab.columns and "PP_TOI" in df_lab.columns and "PP_TOI_min" in df_lab.columns:
+            toi = pd.to_numeric(df_lab["PP_TOI"], errors="coerce")
+            toi_min = pd.to_numeric(df_lab["PP_TOI_min"], errors="coerce")
+            with np.errstate(divide="ignore", invalid="ignore"):
+                df_lab["PP_TOI_stability"] = (100.0 * (toi_min / toi)).clip(lower=0.0, upper=100.0)
+
+        if "PP_Env_Score" not in df_lab.columns and "PP_Matchup" in df_lab.columns:
+            df_lab["PP_Env_Score"] = pd.to_numeric(df_lab["PP_Matchup"], errors="coerce").fillna(50.0)
+
+        if "PP_BOOST" not in df_lab.columns and ("PP_Tier" in df_lab.columns):
+            def _boost(rr):
+                t = str(rr.get("PP_Tier","")).upper().strip()
+                s = pd.to_numeric(rr.get("PP_TeamShare_pct", np.nan), errors="coerce")
+                e = pd.to_numeric(rr.get("PP_Env_Score", np.nan), errors="coerce")
+                if t == "A" and pd.notna(s) and pd.notna(e) and s >= 20.0 and e >= 60.0:
+                    return "ON"
+                if t == "B" and pd.notna(s) and pd.notna(e) and s >= 17.5 and e >= 62.0:
+                    return "ON"
+                return ""
+            df_lab["PP_BOOST"] = df_lab.apply(_boost, axis=1)
+
+        # Re-pull the picked row after back-compat mutations
+        r = df_lab.iloc[idx]
+
+        st.markdown(f"### {g('Player','(player)')}  {g('Team','')} vs {g('Opp','')}  —  {g('Game','')}")
+        cols = st.columns(5)
+        cols[0].metric("🗡️", g("🗡️",""))
+        cols[1].metric("Assist Dagger", g("Assist_Dagger", None))
+        cols[2].metric("PP Tier", g("PP_Tier", ""))
+        cols[3].metric("PP Path", g("PP_Path", ""))
+        cols[4].metric("PP Boost", g("PP_BOOST", None))
+
+        # Build a non-binding "Dagger Strength" explainer score (0–100)
+        base_conf = float(g("Conf_Assists", 0) or 0)
+        pp_env = float(g("PP_Env_Score", 50) or 50)
+        stab = float(g("PP_TOI_stability", 50) or 50)
+        share = float(g("PP_TeamShare_pct", g("PP_TOI_Pct_Game", 0)) or 0)
+        tier = str(g("PP_Tier","C") or "C").upper().strip()
+
+        tier_bonus = {"A": 20.0, "B": 10.0, "C": 0.0}.get(tier, 0.0)
+        # Normalize base_conf roughly 0–100 (your confs are already 0–100)
+        strength = 0.40*base_conf + 0.20*pp_env + 0.15*stab + 0.15*min(100.0, share*4.0) + 0.10*tier_bonus
+        strength = max(0.0, min(100.0, round(strength, 1)))
+
+        st.markdown("#### Dagger Strength (explain-only)")
+        st.progress(float(strength)/100.0)
+        st.caption(f"Strength: **{strength}/100** — for explanation only (does not feed EV).")
+
+        # Breakdown cards
+        c1, c2 = st.columns(2)
+        with c1:
+            st.markdown("#### Base Proof")
+            st.write({
+                "Conf_Assists": _disp(g("Conf_Assists")),
+                "Matrix_Assists": _disp(g("Matrix_Assists")),
+                "Assist_ProofCount": _disp(g("Assist_ProofCount")),
+                "Assist_Why": _disp(g("Assist_Why")),
+            })
+        with c2:
+            st.markdown("#### PP Layer")
+            st.write({
+                "PP_Tier": _disp(g("PP_Tier")),
+                "PP_Path": _disp(g("PP_Path")),
+                "PP_TeamShare_pct": _disp(g("PP_TeamShare_pct")),
+                "PP_TOI_Pct_Game": _disp(g("PP_TOI_Pct_Game")),
+                "PP_TOI_stability": _disp(g("PP_TOI_stability")),
+                "PP_Env_Score": _disp(g("PP_Env_Score")),
+                "PP_Matchup": _disp(g("PP_Matchup")),
+                "PP_iXA60": _disp(g("PP_iXA60")),
+                "PP_BOOST": _disp(g("PP_BOOST")),
+            })
+
+        st.markdown("#### Quick read")
+        msgs = []
+        if tier in ("A","B"):
+            msgs.append(f"PP role: **Tier {tier}** (real contributor).")
+        else:
+            msgs.append("PP role: **Tier C** (passenger / cosmetic).")
+
+        path = str(g("PP_Path","Passenger") or "Passenger")
+        if path == "Shooter":
+            msgs.append("PP Path: **Shooter** (goals/SOG skew).")
+        elif path == "Distributor":
+            msgs.append("PP Path: **Distributor** (assists skew).")
+        elif path == "Hybrid":
+            msgs.append("PP Path: **Hybrid** (assists + goals).")
+        else:
+            msgs.append("PP Path: **Passenger** (low PP usage impact).")
+        if pp_env >= 65:
+            msgs.append("Environment: **high PP volume** expected.")
+        elif pp_env <= 40:
+            msgs.append("Environment: **low PP volume** — beware empty whistles.")
+        else:
+            msgs.append("Environment: **neutral**.")
+        if stab >= 65:
+            msgs.append("Deployment: **stable PP minutes**.")
+        elif stab <= 40:
+            msgs.append("Deployment: **coach blender risk**.")
+        if bool(g("Assist_PP_Proof", False)):
+            msgs.append("🗡️ Trigger: **ON** (PP assist proof passed).")
+        else:
+            msgs.append("🗡️ Trigger: **OFF** (didn't meet proof gates).")
+        st.write(" ".join(msgs))
+
 
 elif page == "📟 Calculator":
     st.subheader("📟 EV + Stake Calculator")
@@ -2528,8 +2855,6 @@ elif page == "Ledger":
 else:
     st.subheader("Raw CSV (all columns)")
     st.dataframe(df_f, width="stretch", hide_index=True)
-
-
 
 
 
