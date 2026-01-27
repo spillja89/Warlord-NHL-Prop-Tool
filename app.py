@@ -1672,7 +1672,7 @@ with st.expander("Debug: loaded columns"):
 # Navigation
 page = st.sidebar.radio(
     "Page",
-    ["Board", "Points", "Assists", "SOG", "GOAL (1+)", "Power Play", "🧪 Dagger Lab", "Guide", "Ledger", "Raw CSV", "📟 Calculator", "🧾 Log Bet"],
+    ["Board", "Points", "Assists", "SOG", "GOAL (1+)", "Power Play", "🧪 Dagger Lab", "🪜 Ladder Alerts", "Guide", "Ledger", "Raw CSV", "📟 Calculator", "🧾 Log Bet"],
     index=0
 )
 
@@ -2464,6 +2464,76 @@ elif page == "🧪 Dagger Lab":
         st.write(" ".join(msgs))
 
 
+
+elif page == "🪜 Ladder Alerts":
+    st.subheader("🪜 Ladder Alerts")
+    st.caption("Scan Top-K alt lines (BDL) starting from each player’s baseline line. Use presets to go from normal ladders (2.5→3.5) to rare ‘nuclear’ rungs.")
+    legend_signals()
+
+    # Use the filtered slate (sidebar filters apply)
+    df_calc = df_f.copy()
+
+    # Market first (so presets can set sane defaults)
+    cA, cB, cC, cD, cE = st.columns([1.0, 1.0, 1.0, 1.2, 1.0])
+    with cA:
+        ladder_market = st.selectbox("Market", ["SOG", "Points", "Assists", "Goal"], index=0, key="ladder_market")
+
+    preset = st.selectbox(
+        "Preset",
+        ["Baseline+", "Standard", "Elite Volume", "Nuclear"],
+        index=1,
+        key="ladder_preset",
+        help="Baseline+ starts at the player's mainline. Standard/Elite/Nuclear are higher-rung scans (rare-volume modes).",
+    )
+
+    # Per-market baseline defaults (most of the slate lives here)
+    base_defaults = {"SOG": 2.5, "Points": 1.5, "Assists": 0.5, "Goal": 0.5}
+    base_line_default = float(base_defaults.get(ladder_market, 1.5))
+
+    # Preset thresholds
+    if preset == "Baseline+":
+        _min_line, _min_ev, _min_model = base_line_default, 6.0, 10.0
+    elif preset == "Standard":
+        _min_line, _min_ev, _min_model = max(base_line_default, 3.5 if ladder_market == "SOG" else base_line_default), 8.0, 12.0
+    elif preset == "Elite Volume":
+        _min_line, _min_ev, _min_model = max(base_line_default, 5.5), 10.0, 10.0
+    else:
+        _min_line, _min_ev, _min_model = max(base_line_default, 7.5), 6.0, 10.0
+
+    with cB:
+        min_line = st.number_input("Min line", value=float(_min_line), step=0.5, key="ladder_min_line")
+    with cC:
+        min_ev = st.number_input("Min EV%", value=float(_min_ev), step=0.5, key="ladder_min_ev")
+    with cD:
+        min_model = st.number_input("Min Model%", value=float(_min_model), step=0.5, key="ladder_min_model")
+    with cE:
+        start_from_baseline = st.checkbox("Start at baseline", value=True, key="ladder_start_baseline")
+
+    # Detect how many ladders we actually have (up to 8)
+    max_k = 0
+    for k in range(8, 0, -1):
+        if f"BDL_{ladder_market}_Line_{k}" in df_calc.columns:
+            max_k = k
+            break
+    if max_k == 0:
+        st.info("No BDL alt lines found in this CSV (BDL_*_Line_i columns missing).")
+    else:
+        ladd = build_ladder_alerts(
+            df_calc,
+            market=ladder_market,
+            min_line=float(min_line),
+            min_ev=float(min_ev),
+            min_model_pct=float(min_model),
+            top_k=int(max_k),
+            start_from_baseline=bool(start_from_baseline),
+        )
+        if ladd.empty:
+            st.write("No ladder alerts met your thresholds.")
+        else:
+            st.caption(f"Showing {len(ladd)} alerts (Top-K={max_k}).")
+            st.dataframe(ladd, width="stretch", hide_index=True)
+
+
 elif page == "📟 Calculator":
     st.subheader("📟 EV + Stake Calculator")
     st.caption("Pick a player from today’s CSV and the calculator will auto-load their line/odds/model%. Override anything if you want.")
@@ -2494,67 +2564,7 @@ elif page == "📟 Calculator":
     # -------------------------
     # Ladder Alerts (UI only)
     # -------------------------
-    with st.expander("🚨 Ladder Alerts (Alt Lines)", expanded=False):
-        # Market first (so presets can set sane defaults)
-        cA, cB, cC, cD, cE = st.columns([1.0, 1.0, 1.0, 1.2, 1.0])
-        with cA:
-            ladder_market = st.selectbox("Market", ["SOG", "Points", "Assists", "Goal"], index=0, key="ladder_market")
-
-        preset = st.selectbox(
-            "Preset",
-            ["Baseline+", "Standard", "Elite Volume", "Nuclear"],
-            index=1,
-            key="ladder_preset",
-            help="Baseline+ starts at the player's mainline. Standard/Elite/Nuclear are higher-rung scans (rare-volume modes).",
-        )
-
-        # Per-market baseline defaults (most of the slate lives here)
-        base_defaults = {"SOG": 2.5, "Points": 1.5, "Assists": 0.5, "Goal": 0.5}
-        base_line_default = float(base_defaults.get(ladder_market, 1.5))
-
-        # Preset thresholds
-        if preset == "Baseline+":
-            _min_line, _min_ev, _min_model = base_line_default, 6.0, 10.0
-        elif preset == "Standard":
-            _min_line, _min_ev, _min_model = max(base_line_default, 3.5 if ladder_market == "SOG" else base_line_default), 8.0, 12.0
-        elif preset == "Elite Volume":
-            _min_line, _min_ev, _min_model = max(base_line_default, 5.5), 10.0, 10.0
-        else:
-            _min_line, _min_ev, _min_model = max(base_line_default, 7.5), 6.0, 10.0
-
-        with cB:
-            min_line = st.number_input("Min line", value=float(_min_line), step=0.5, key="ladder_min_line")
-        with cC:
-            min_ev = st.number_input("Min EV%", value=float(_min_ev), step=0.5, key="ladder_min_ev")
-        with cD:
-            min_model = st.number_input("Min Model%", value=float(_min_model), step=0.5, key="ladder_min_model")
-        with cE:
-            start_from_baseline = st.checkbox("Start at baseline", value=True, key="ladder_start_baseline")
-
-        # Detect how many ladders we actually have (up to 8)
-        max_k = 0
-        for k in range(8, 0, -1):
-            if f"BDL_{ladder_market}_Line_{k}" in df_calc.columns:
-                max_k = k
-                break
-        if max_k == 0:
-            st.info("No BDL alt lines found in this CSV (BDL_*_Line_i columns missing).")
-        else:
-            ladd = build_ladder_alerts(
-                df_calc,
-                market=ladder_market,
-                min_line=float(min_line),
-                min_ev=float(min_ev),
-                min_model_pct=float(min_model),
-                top_k=int(max_k),
-                start_from_baseline=bool(start_from_baseline),
-            )
-            if ladd.empty:
-                st.write("No ladder alerts met your thresholds.")
-            else:
-                st.caption(f"Showing {len(ladd)} alerts (Top-K={max_k}).")
-                st.dataframe(ladd, width="stretch", hide_index=True)
-
+    st.info("Ladders moved: use the **🪜 Ladder Alerts** page for full ladder scanning.")
 
     # Pull row for the selected player (first match)
     row = None
