@@ -239,6 +239,20 @@ def build_ladder_alerts(
             mu = _num(r.get(f"{M}_mu"))
             if mu is not None:
                 parts.append(f"μ {mu:.2f}")
+        # Extra ladder proof (only if present)
+        if "v2_defense_vulnerability" in df0.columns:
+            dv = _num(r.get("v2_defense_vulnerability"))
+            if dv is not None:
+                parts.append(f"DefV {dv:.0f}")
+        if "opp_5v5_SlotSA60" in df0.columns:
+            sv = _num(r.get("opp_5v5_SlotSA60"))
+            if sv is not None:
+                parts.append(f"SlotSA60 {sv:.2f}")
+        if "Player_5v5_SOG_Share" in df0.columns:
+            sh = _num(r.get("Player_5v5_SOG_Share"))
+            if sh is not None:
+                parts.append(f"5v5Share {sh:.1f}%")
+
         # Market-specific
         if M == "SOG":
             for c, lab in [("Med10_SOG","Med10"), ("Avg5_SOG","Avg5"), ("ShotIntent_Pct","SI%"), ("TOI_Pct_Game","TOI%")]:
