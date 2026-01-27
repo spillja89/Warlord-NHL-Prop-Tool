@@ -4616,8 +4616,35 @@ def build_tracker(today_local: date, debug: bool = False) -> str:
         tracker["Player"] = tracker["Player"].astype(str).str.replace(r"Sttzle", "Stutzle", regex=True)
         tracker["Player"] = tracker["Player"].astype(str).str.replace(r"sttzle", "stutzle", regex=True)
 
+    
+    # -----------------------------
+    # Ladder proof helpers (SOG)
+    # -----------------------------
+    # True 5v5 share proxy (if we have the underlying rate). Safe no-op if missing.
+    try:
+        tracker = add_player_5v5_sog_share_proxy(tracker)
+    except Exception:
+        pass
+
+    # Always compute a simple team-share proxy from recent SOG volume (Med10_SOG) so the ladder
+    # page can explain *why* a rung is interesting even when the 5v5 feed is missing.
+    if "Team" in tracker.columns and "Med10_SOG" in tracker.columns:
+        try:
+            m10 = pd.to_numeric(tracker["Med10_SOG"], errors="coerce")
+            team_sum = m10.groupby(tracker["Team"].astype(str)).transform("sum")
+            proxy = (m10 / team_sum.replace(0, np.nan) * 100.0).round(1)
+            tracker["Player_SOG_Share_Proxy"] = proxy
+
+            # If true 5v5 share is missing, backfill with proxy (keeps one simple field for UI)
+            if "Player_5v5_SOG_Share" in tracker.columns:
+                tracker["Player_5v5_SOG_Share"] = pd.to_numeric(tracker["Player_5v5_SOG_Share"], errors="coerce").fillna(proxy)
+        except Exception:
+            tracker["Player_SOG_Share_Proxy"] = np.nan
+
     out_path = os.path.join(OUTPUT_DIR, f"tracker_{today_local.isoformat()}_{stamp}.csv")
     tracker.to_csv(out_path, index=False)
+    print(f"CSV saved to: {out_path}")
+    print(f"Cache saved to: {cache_path_today(today_local)}\n")
 
     # Also write a stable path for Streamlit Cloud (no more manual uploads)
     latest_out_path = os.path.join(OUTPUT_DIR, 'tracker_latest.csv')
@@ -4626,8 +4653,6 @@ def build_tracker(today_local: date, debug: bool = False) -> str:
     except Exception:
         pass
 
-    print(f"CSV saved to: {out_path}")
-    print(f"Cache saved to: {cache_path_today(today_local)}\n")
     return out_path
 
 
