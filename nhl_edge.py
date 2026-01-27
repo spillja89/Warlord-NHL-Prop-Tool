@@ -2509,10 +2509,40 @@ def add_v2_scores(df: pd.DataFrame) -> pd.DataFrame:
 
     xga_p  = pct_rank(out["opp_5v5_xGA60"]).fillna(50)
     hdca_p = pct_rank(out["opp_5v5_HDCA60"]).fillna(50)
-    slot_p = pct_rank(out["opp_5v5_SlotSA60"]).fillna(50)
-    out["v2_defense_vulnerability"] = (0.45 * xga_p + 0.35 * hdca_p + 0.20 * slot_p).round(1)
+
+    # SlotSA60 is frequently unavailable in some feeds. If it's essentially missing/constant,
+    # drop it from the blend and renormalize to avoid fake-neutral dilution.
+    slot_raw = pd.to_numeric(out["opp_5v5_SlotSA60"], errors="coerce")
+    slot_missing = slot_raw.isna().mean() >= 0.99
+    slot_constant = slot_raw.dropna().nunique() <= 1
+    if slot_missing or slot_constant:
+        out["v2_defense_vulnerability"] = ((0.45/0.80) * xga_p + (0.35/0.80) * hdca_p).round(1)
+    else:
+        slot_p = pct_rank(slot_raw).fillna(50)
+        out["v2_defense_vulnerability"] = (0.45 * xga_p + 0.35 * hdca_p + 0.20 * slot_p).round(1)
 
     return out
+
+# ============================
+# Big 3 helper (SOG): player 5v5 share proxy
+# ============================
+def add_player_5v5_sog_share_proxy(df: pd.DataFrame) -> pd.DataFrame:
+    """Add Player_5v5_SOG_Share as a team-share proxy derived from i5v5_iCF60.
+
+    Note: MoneyPuck skater dumps we ingest do not reliably expose true 5v5 SOG by player.
+    We therefore use i5v5_iCF60 (5v5 shot attempts /60 proxy) to derive an intra-team share.
+    This is used only for ladder 'proof' / explainability.
+    """
+    out = df.copy()
+    if "Team" not in out.columns or "i5v5_iCF60" not in out.columns:
+        out["Player_5v5_SOG_Share"] = np.nan
+        return out
+    icf = pd.to_numeric(out["i5v5_iCF60"], errors="coerce")
+    team_sum = icf.groupby(out["Team"]).transform("sum")
+    share = (icf / team_sum) * 100.0
+    out["Player_5v5_SOG_Share"] = share.replace([np.inf, -np.inf], np.nan).round(1)
+    return out
+
 
 
 # ============================
@@ -2758,6 +2788,131 @@ def get_team_recent_ga(sess: requests.Session, team_abbrev: str, n_games: int = 
     return ga, round(avg, 2), n_used
 
 
+# ============================
+# Team SOG Against (recent windows) — Big 3 helper for ladders
+# ============================
+def _game_team_sog_from_boxscore(sess: requests.Session, game_id: int, cache: Dict[str, Any], debug: bool = False) -> Optional[Dict[str, Any]]:
+    """Return {'home': int, 'away': int, 'home_abbrev': str, 'away_abbrev': str} or None.
+    Uses api-web.nhle.com gamecenter boxscore endpoint and caches by game_id in the daily cache.
+    """
+    if cache is None:
+        cache = {}
+    team_sog_cache = cache.setdefault("team_game_sog", {})
+    gid = str(game_id)
+    if gid in team_sog_cache:
+        return team_sog_cache.get(gid)
+
+    url = f"https://api-web.nhle.com/v1/gamecenter/{game_id}/boxscore"
+    try:
+        data = http_get_json(sess, url)
+    except Exception as e:
+        if debug:
+            print(f"[TEAM_SOG] boxscore fetch failed game {game_id}: {type(e).__name__}: {e}")
+        return None
+
+    home = data.get("homeTeam", {}) or {}
+    away = data.get("awayTeam", {}) or {}
+
+    def _abbrev(t: Dict[str, Any]) -> str:
+        return str(t.get("abbrev", "") or t.get("teamAbbrev", "") or t.get("triCode", "") or "").upper().strip()
+
+    def _sog(t: Dict[str, Any]) -> Optional[int]:
+        # try common keys
+        for k in ("shotsOnGoal", "shotsOnGoalFor", "sog", "sogFor", "shots"):
+            v = t.get(k, None)
+            if v is not None:
+                try:
+                    return int(v)
+                except Exception:
+                    pass
+        # sometimes nested
+        stats = t.get("statistics", {}) or t.get("teamStats", {}) or {}
+        for k in ("shotsOnGoal", "sog", "shots"):
+            v = stats.get(k, None)
+            if v is not None:
+                try:
+                    return int(v)
+                except Exception:
+                    pass
+        return None
+
+    h_ab = _abbrev(home)
+    a_ab = _abbrev(away)
+    h_sog = _sog(home)
+    a_sog = _sog(away)
+
+    if h_sog is None or a_sog is None:
+        if debug:
+            print(f"[TEAM_SOG] missing sog in boxscore game {game_id}: home={h_sog} away={a_sog}")
+        return None
+
+    out = {"home": h_sog, "away": a_sog, "home_abbrev": h_ab, "away_abbrev": a_ab}
+    team_sog_cache[gid] = out
+    return out
+
+
+def get_team_recent_soga(sess: requests.Session, team_abbrev: str, n_games: int = 10, cache: Optional[Dict[str, Any]] = None, debug: bool = False) -> tuple[int, float, int]:
+    """Return (soga_sum, soga_avg, n_used) over last n completed games.
+    Uses club schedule to get game ids and gamecenter boxscore for SOG.
+    """
+    team_abbrev = norm_team(team_abbrev)
+    url = f"https://api-web.nhle.com/v1/club-schedule-season/{team_abbrev}/now"
+
+    try:
+        data = http_get_json(sess, url)
+    except Exception as e:
+        if debug:
+            print(f"[TEAM_SOGA] schedule fetch failed for {team_abbrev}: {type(e).__name__}: {e}")
+        return 0, 0.0, 0
+
+    games = data.get("games", []) or []
+
+    completed = []
+    for g in games:
+        state = str(g.get("gameState", "") or "").upper()
+        if state in ("OFF", "FINAL", "FINAL_OT", "FINAL_SO"):
+            completed.append(g)
+
+    def _gdate(x):
+        return str(x.get("gameDate", "") or x.get("startTimeUTC", "") or "")
+    completed.sort(key=_gdate)
+
+    last = completed[-n_games:] if completed else []
+    soga = 0
+    used = 0
+
+    for g in last:
+        game_id = g.get("id", None) or g.get("gameId", None)
+        if game_id is None:
+            continue
+        try:
+            game_id = int(game_id)
+        except Exception:
+            continue
+
+        bx = _game_team_sog_from_boxscore(sess, game_id, cache or {}, debug=debug)
+        if not bx:
+            continue
+
+        home = (bx.get("home_abbrev") or "").upper()
+        away = (bx.get("away_abbrev") or "").upper()
+        home_sog = bx.get("home")
+        away_sog = bx.get("away")
+
+        if home_sog is None or away_sog is None:
+            continue
+
+        if home == team_abbrev:
+            soga += int(away_sog)
+            used += 1
+        elif away == team_abbrev:
+            soga += int(home_sog)
+            used += 1
+
+    avg = (soga / used) if used > 0 else 0.0
+    return int(soga), round(avg, 2), int(used)
+
+
 def ga_avg_to_defweak(ga_avg: float) -> float:
     """Map GA/G (last-10) to a 0-100 'defense weakness' score (higher = weaker)."""
     try:
@@ -2812,6 +2967,9 @@ def drought_bump(tier: str, market: str, drought: Optional[int]) -> tuple[int, b
 def build_tracker(today_local: date, debug: bool = False) -> str:
     ensure_dirs()
     sess = http_session()
+
+    # Daily cache (used for team recent SOG-against + player log caching)
+    cache = load_cache(today_local)
 
     print(f"\nNHL EDGE TOOL — v7.2 — {today_local.isoformat()}\n")
 
@@ -3297,6 +3455,7 @@ def build_tracker(today_local: date, debug: bool = False) -> str:
 
     # v2 scores
     sk = add_v2_scores(sk)
+    sk = add_player_5v5_sog_share_proxy(sk)
     # Base (season/structural) defense weakness
     sk["Opp_DefWeak_Season"] = sk["v2_defense_vulnerability"].fillna(50.0)
 
@@ -3306,6 +3465,20 @@ def build_tracker(today_local: date, debug: bool = False) -> str:
     for t in opp_teams:
         ga_sum, ga_avg, n_used = get_team_recent_ga(sess, t, n_games=10, debug=debug)
         ga_map[t] = {"ga_avg": ga_avg, "n_used": n_used}
+    # Big 3 (SOG): Opponent shots-against per game over recent windows (L10/L50)
+    # Uses gamecenter boxscore; cached in the daily cache under cache['team_game_sog'].
+    soga10_map = {}
+    soga50_map = {}
+    for t in opp_teams:
+        _sum10, _avg10, _used10 = get_team_recent_soga(sess, t, n_games=10, cache=cache, debug=debug)
+        _sum50, _avg50, _used50 = get_team_recent_soga(sess, t, n_games=50, cache=cache, debug=debug)
+        soga10_map[t] = {"soga_avg": _avg10, "n_used": _used10}
+        soga50_map[t] = {"soga_avg": _avg50, "n_used": _used50}
+
+    sk["Opp_SOG_Against_L10"] = sk["Opp"].astype(str).map(lambda x: soga10_map.get(norm_team(x), {}).get("soga_avg", float("nan")))
+    sk["Opp_SOG_Used_L10"]    = sk["Opp"].astype(str).map(lambda x: soga10_map.get(norm_team(x), {}).get("n_used", 0))
+    sk["Opp_SOG_Against_L50"] = sk["Opp"].astype(str).map(lambda x: soga50_map.get(norm_team(x), {}).get("soga_avg", float("nan")))
+    sk["Opp_SOG_Used_L50"]    = sk["Opp"].astype(str).map(lambda x: soga50_map.get(norm_team(x), {}).get("n_used", 0))
 
     def _l10_weight(n_used: int) -> float:
         # Require meaningful sample; cap influence
@@ -3345,7 +3518,7 @@ def build_tracker(today_local: date, debug: bool = False) -> str:
 
     print(f"Fetching NHL logs for {len(cand_ids)} players (cap={CAND_CAP}) ...\n")
 
-    cache = load_cache(today_local)
+    # cache already loaded above
 
     def fetch_one(pid: int) -> Tuple[int, Optional[Dict[str, Any]]]:
         key = str(pid)
@@ -3861,7 +4034,14 @@ def build_tracker(today_local: date, debug: bool = False) -> str:
         "Opp_GAA": sk["Opp_GAA"],
         "Goalie_Weak": sk["Goalie_Weak"],
         "Opp_Goalie_Status": sk.get("Opp_Goalie_Status", ""),
-        "Opp_Goalie_Source": sk.get("Opp_Goalie_Source", ""),
+                "Opp_Goalie_Source": sk.get("Opp_Goalie_Source", ""),
+
+        # Big 3 (SOG defense context + 5v5 share proxy) — used for ladder explainability
+        "Opp_SOG_Against_L10": sk.get("Opp_SOG_Against_L10"),
+        "Opp_SOG_Used_L10": sk.get("Opp_SOG_Used_L10"),
+        "Opp_SOG_Against_L50": sk.get("Opp_SOG_Against_L50"),
+        "Opp_SOG_Used_L50": sk.get("Opp_SOG_Used_L50"),
+        "Player_5v5_SOG_Share": sk.get("Player_5v5_SOG_Share"),
 
         "iXG%": sk["iXG_pct"].round(1),
         "iXA%": sk["iXA_pct"].round(1),
@@ -4354,10 +4534,9 @@ def build_tracker(today_local: date, debug: bool = False) -> str:
             game_date=today_local.isoformat(),
             api_key=(os.getenv("BALLDONTLIE_API_KEY") or os.getenv("BDL_API_KEY") or ""),
             vendors=["draftkings", "fanduel", "caesars"],
-            top_k=6,
             debug=bool(debug),
         )
-        tracker = add_bdl_ev_all(tracker, top_k=6)
+        tracker = add_bdl_ev_all(tracker)
 
         # Hard guard: if API key is present, require meaningful coverage across at least one market
         if (os.getenv("BALLDONTLIE_API_KEY", "") or os.getenv("BDL_API_KEY", "")).strip():
