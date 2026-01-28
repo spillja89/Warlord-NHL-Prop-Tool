@@ -68,11 +68,11 @@ REG_WARM_GAP = 1.5
 # TEAM RECENT GOALS FOR HARD GATE (applies to GOAL / POINTS / ASSISTS)
 # -------------------------
 TEAM_GF_WINDOW = 5
-TEAM_GF_MIN_AVG = 1.0   # HARD FAIL threshold
+TEAM_GF_MIN_AVG = 2.0   # HARD FAIL threshold
 
 
 # Goalie weakness thresholds
-MIN_GOALIE_GP = 1
+MIN_GOALIE_GP = 5
 
 # Star prior strength (small nudge)
 TALENT_MULT_MAX = 1.35
@@ -1191,56 +1191,9 @@ def merge_bdl_mainlines(df: pd.DataFrame, path: str = "data/cache/bdl_mainlines_
     import json
     import pandas as pd
 
-
     def _norm_name(x):
+        return "" if x is None else str(x).strip().lower()
 
-        """Normalize player names for joining (fixes accents + mojibake)."""
-
-        import unicodedata, re
-
-        if x is None:
-
-            return ""
-
-        s0 = str(x).strip()
-
-        # Fix common mojibake: 'StÃ¼tzle' -> 'Stützle'
-
-        try:
-
-            if any(ch in s0 for ch in ("Ã", "Â", " ")):
-
-                s0 = s0.encode("latin-1", "ignore").decode("utf-8", "ignore")
-
-        except Exception:
-
-            pass
-
-        # Strip accents
-
-        try:
-
-            s0 = unicodedata.normalize("NFKD", s0)
-
-            s0 = "".join(ch for ch in s0 if not unicodedata.combining(ch))
-
-            s0 = s0.encode("ascii", "ignore").decode("ascii")
-
-        except Exception:
-
-            pass
-
-        s1 = s0.lower()
-
-        s1 = re.sub(r"\s+", " ", s1).strip()
-
-        # Safety net for the rare dropped 'u' case
-
-        if s1.endswith(" sttzle") or s1 == "tim sttzle":
-
-            s1 = s1.replace("sttzle", "stutzle")
-
-        return s1
     def _norm_team(x):
         return "" if x is None else str(x).strip().upper()
 
@@ -1624,17 +1577,12 @@ def normalize_skaters_pp(df: pd.DataFrame, debug: bool = False) -> pd.DataFrame:
     # Convert TOI to minutes (MoneyPuck icetime is season total seconds)
     gp = pd.to_numeric(out[col_gp], errors="coerce").replace(0, np.nan)
     toi_raw = pd.to_numeric(out[col_it], errors="coerce")
-
-    # MoneyPuck PP icetime is season-total **seconds**. Always convert to minutes.
-    # (The old heuristic based on a large threshold could mis-handle low-TOI players
-    #  and inflate their PP time massively.)
-    toi_min = toi_raw / 60.0
+    toi_min = toi_raw.copy()
+    sec_mask = toi_raw > 10000
+    toi_min.loc[sec_mask] = toi_raw.loc[sec_mask] / 60.0
 
     out["PP_TOI_min"] = toi_min
     out["PP_TOI_per_game"] = (toi_min / gp).replace([np.inf, -np.inf], np.nan)
-
-    # Guardrails: PP TOI / game shouldn't ever be huge. Clip to a sane max.
-    out["PP_TOI_per_game"] = out["PP_TOI_per_game"].clip(lower=0.0, upper=10.0)
 
     # iXG / iXA on PP if available
     col_ixg  = find_col(out, ["I_F_xGoals", "i_f_xgoals", "ixGoals", "ixg", "xGoals"])
@@ -2094,75 +2042,6 @@ def pick_sog_from_row(r: dict) -> Optional[int]:
 def compute_lastN_features(payload: Dict[str, Any], n10: int = 10, n5: int = 5) -> Dict[str, Any]:
     rows = _extract_game_rows(payload)
 
-    # -------------------------
-    # Ensure newest-first ordering
-    # -------------------------
-    # Different upstream sources sometimes provide game logs oldest→newest.
-    # Our drought logic ("games since last stat") assumes the list is
-    # newest→oldest so that index 0 is the most recent game.
-    def _row_date_any(r: Dict[str, Any]) -> Optional[str]:
-        for kk in (
-            "gameDate",
-            "gameDateUTC",
-            "gameDateTime",
-            "date",
-            "game_date",
-            "gameDateTimeUTC",
-        ):
-            v = r.get(kk)
-            if v:
-                return str(v)
-        # nested
-        for nk in ("playerGameStats", "stats", "skaterStats", "summary"):
-            sub = r.get(nk)
-            if isinstance(sub, dict):
-                for kk in ("gameDate", "gameDateUTC", "date"):
-                    v = sub.get(kk)
-                    if v:
-                        return str(v)
-        return None
-
-    def _parse_dt(s: Optional[str]) -> Optional[datetime]:
-        if not s:
-            return None
-        ss = str(s).strip()
-        # common formats: YYYY-MM-DD, ISO with Z, etc.
-        try:
-            # fromisoformat can't parse trailing Z; normalize
-            if ss.endswith("Z"):
-                ss2 = ss[:-1] + "+00:00"
-            else:
-                ss2 = ss
-            return datetime.fromisoformat(ss2)
-        except Exception:
-            pass
-        # fallback: just take first 10 chars if looks like YYYY-MM-DD
-        try:
-            if len(ss) >= 10 and ss[4] == "-" and ss[7] == "-":
-                return datetime.fromisoformat(ss[:10])
-        except Exception:
-            return None
-        return None
-
-    try:
-        if rows and isinstance(rows[0], dict):
-            d0 = _parse_dt(_row_date_any(rows[0]))
-            d1 = _parse_dt(_row_date_any(rows[-1]))
-            # If we can compare ends and it looks ascending, reverse.
-            if d0 and d1 and d0 < d1:
-                rows = list(reversed(rows))
-            elif d0 and d1 and d0 > d1:
-                pass  # already newest-first
-            else:
-                # If dates are missing/unparseable, fall back to gameId if present.
-                g0 = safe_int(rows[0].get("gameId") or rows[0].get("game_id"))
-                g1 = safe_int(rows[-1].get("gameId") or rows[-1].get("game_id"))
-                if g0 is not None and g1 is not None and g0 < g1:
-                    rows = list(reversed(rows))
-    except Exception:
-        # Never let ordering hygiene break the build.
-        pass
-
     shots: List[int] = []
     goals: List[int] = []
     assists: List[int] = []
@@ -2288,10 +2167,6 @@ def matrix_sog(ixg_pct: float, med10: Optional[float], pos: str,
 
     if ixg_pct >= 85 and med10 >= (green_line - 0.30) and sip >= 90 and toi >= 60 and tsf >= 60:
         return "Green"
-
-    if ixg_pct >= 88 and med10 >= (green_line - 0.30) and sip >= 95 and toi >= 60: 
-        return "Green"
-
 
     if ixg_pct >= 80 and med10 >= 3.5 and sip >= 95 and odw >= 60:
         return "Green"
@@ -2509,40 +2384,10 @@ def add_v2_scores(df: pd.DataFrame) -> pd.DataFrame:
 
     xga_p  = pct_rank(out["opp_5v5_xGA60"]).fillna(50)
     hdca_p = pct_rank(out["opp_5v5_HDCA60"]).fillna(50)
-
-    # SlotSA60 is frequently unavailable in some feeds. If it's essentially missing/constant,
-    # drop it from the blend and renormalize to avoid fake-neutral dilution.
-    slot_raw = pd.to_numeric(out["opp_5v5_SlotSA60"], errors="coerce")
-    slot_missing = slot_raw.isna().mean() >= 0.99
-    slot_constant = slot_raw.dropna().nunique() <= 1
-    if slot_missing or slot_constant:
-        out["v2_defense_vulnerability"] = ((0.45/0.80) * xga_p + (0.35/0.80) * hdca_p).round(1)
-    else:
-        slot_p = pct_rank(slot_raw).fillna(50)
-        out["v2_defense_vulnerability"] = (0.45 * xga_p + 0.35 * hdca_p + 0.20 * slot_p).round(1)
+    slot_p = pct_rank(out["opp_5v5_SlotSA60"]).fillna(50)
+    out["v2_defense_vulnerability"] = (0.45 * xga_p + 0.35 * hdca_p + 0.20 * slot_p).round(1)
 
     return out
-
-# ============================
-# Big 3 helper (SOG): player 5v5 share proxy
-# ============================
-def add_player_5v5_sog_share_proxy(df: pd.DataFrame) -> pd.DataFrame:
-    """Add Player_5v5_SOG_Share as a team-share proxy derived from i5v5_iCF60.
-
-    Note: MoneyPuck skater dumps we ingest do not reliably expose true 5v5 SOG by player.
-    We therefore use i5v5_iCF60 (5v5 shot attempts /60 proxy) to derive an intra-team share.
-    This is used only for ladder 'proof' / explainability.
-    """
-    out = df.copy()
-    if "Team" not in out.columns or "i5v5_iCF60" not in out.columns:
-        out["Player_5v5_SOG_Share"] = np.nan
-        return out
-    icf = pd.to_numeric(out["i5v5_iCF60"], errors="coerce")
-    team_sum = icf.groupby(out["Team"]).transform("sum")
-    share = (icf / team_sum) * 100.0
-    out["Player_5v5_SOG_Share"] = share.replace([np.inf, -np.inf], np.nan).round(1)
-    return out
-
 
 
 # ============================
@@ -2729,200 +2574,6 @@ def get_team_recent_gf(sess: requests.Session, team_abbrev: str, n_games: int = 
 # ============================
 # Drought bumps (game regression)
 # ============================
-def get_team_recent_ga(sess: requests.Session, team_abbrev: str, n_games: int = 10, debug: bool = False) -> tuple[int, float, int]:
-    """
-    Returns (ga_sum, ga_avg, n_used) over the last n completed games.
-    Uses api-web.nhle.com club schedule endpoint.
-    """
-    team_abbrev = norm_team(team_abbrev)
-    url = f"https://api-web.nhle.com/v1/club-schedule-season/{team_abbrev}/now"
-
-    try:
-        data = http_get_json(sess, url)
-    except Exception as e:
-        if debug:
-            print(f"[TEAM_GA] fetch failed for {team_abbrev}: {type(e).__name__}: {e}")
-        return 0, 0.0, 0
-
-    games = data.get("games", []) or []
-
-    # Keep only completed games
-    completed = []
-    for g in games:
-        state = str(g.get("gameState", "") or "").upper()
-        if state in ("OFF", "FINAL", "FINAL_OT", "FINAL_SO"):
-            completed.append(g)
-
-    # Sort by date ascending, then take the most recent n
-    def _gdate(x):
-        return str(x.get("gameDate", "") or x.get("startTimeUTC", "") or "")
-    completed.sort(key=_gdate)
-
-    last = completed[-n_games:] if completed else []
-    ga = 0
-
-    for g in last:
-        home = g.get("homeTeam", {}) or {}
-        away = g.get("awayTeam", {}) or {}
-
-        # Determine which side is this team
-        home_ab = norm_team(str(home.get("abbrev", "") or ""))
-        away_ab = norm_team(str(away.get("abbrev", "") or ""))
-
-        # score fields can vary; handle a few known patterns
-        hs = safe_int(home.get("score")) if home.get("score") is not None else safe_int(g.get("homeTeamScore"))
-        as_ = safe_int(away.get("score")) if away.get("score") is not None else safe_int(g.get("awayTeamScore"))
-
-        if home_ab == team_abbrev:
-            ga += as_
-        elif away_ab == team_abbrev:
-            ga += hs
-        else:
-            # fallback: some payloads use 'teamAbbrev' / 'opponentAbbrev'
-            t = norm_team(str(g.get("teamAbbrev", "") or g.get("teamAbbreviation", "") or ""))
-            if t == team_abbrev:
-                ga += safe_int(g.get("opponentScore"))
-
-    n_used = len(last)
-    avg = (ga / n_used) if n_used > 0 else 0.0
-    return ga, round(avg, 2), n_used
-
-
-# ============================
-# Team SOG Against (recent windows) — Big 3 helper for ladders
-# ============================
-def _game_team_sog_from_boxscore(sess: requests.Session, game_id: int, cache: Dict[str, Any], debug: bool = False) -> Optional[Dict[str, Any]]:
-    """Return {'home': int, 'away': int, 'home_abbrev': str, 'away_abbrev': str} or None.
-    Uses api-web.nhle.com gamecenter boxscore endpoint and caches by game_id in the daily cache.
-    """
-    if cache is None:
-        cache = {}
-    team_sog_cache = cache.setdefault("team_game_sog", {})
-    gid = str(game_id)
-    if gid in team_sog_cache:
-        return team_sog_cache.get(gid)
-
-    url = f"https://api-web.nhle.com/v1/gamecenter/{game_id}/boxscore"
-    try:
-        data = http_get_json(sess, url)
-    except Exception as e:
-        if debug:
-            print(f"[TEAM_SOG] boxscore fetch failed game {game_id}: {type(e).__name__}: {e}")
-        return None
-
-    home = data.get("homeTeam", {}) or {}
-    away = data.get("awayTeam", {}) or {}
-
-    def _abbrev(t: Dict[str, Any]) -> str:
-        return str(t.get("abbrev", "") or t.get("teamAbbrev", "") or t.get("triCode", "") or "").upper().strip()
-
-    def _sog(t: Dict[str, Any]) -> Optional[int]:
-        # try common keys
-        for k in ("shotsOnGoal", "shotsOnGoalFor", "sog", "sogFor", "shots"):
-            v = t.get(k, None)
-            if v is not None:
-                try:
-                    return int(v)
-                except Exception:
-                    pass
-        # sometimes nested
-        stats = t.get("statistics", {}) or t.get("teamStats", {}) or {}
-        for k in ("shotsOnGoal", "sog", "shots"):
-            v = stats.get(k, None)
-            if v is not None:
-                try:
-                    return int(v)
-                except Exception:
-                    pass
-        return None
-
-    h_ab = _abbrev(home)
-    a_ab = _abbrev(away)
-    h_sog = _sog(home)
-    a_sog = _sog(away)
-
-    if h_sog is None or a_sog is None:
-        if debug:
-            print(f"[TEAM_SOG] missing sog in boxscore game {game_id}: home={h_sog} away={a_sog}")
-        return None
-
-    out = {"home": h_sog, "away": a_sog, "home_abbrev": h_ab, "away_abbrev": a_ab}
-    team_sog_cache[gid] = out
-    return out
-
-
-def get_team_recent_soga(sess: requests.Session, team_abbrev: str, n_games: int = 10, cache: Optional[Dict[str, Any]] = None, debug: bool = False) -> tuple[int, float, int]:
-    """Return (soga_sum, soga_avg, n_used) over last n completed games.
-    Uses club schedule to get game ids and gamecenter boxscore for SOG.
-    """
-    team_abbrev = norm_team(team_abbrev)
-    url = f"https://api-web.nhle.com/v1/club-schedule-season/{team_abbrev}/now"
-
-    try:
-        data = http_get_json(sess, url)
-    except Exception as e:
-        if debug:
-            print(f"[TEAM_SOGA] schedule fetch failed for {team_abbrev}: {type(e).__name__}: {e}")
-        return 0, 0.0, 0
-
-    games = data.get("games", []) or []
-
-    completed = []
-    for g in games:
-        state = str(g.get("gameState", "") or "").upper()
-        if state in ("OFF", "FINAL", "FINAL_OT", "FINAL_SO"):
-            completed.append(g)
-
-    def _gdate(x):
-        return str(x.get("gameDate", "") or x.get("startTimeUTC", "") or "")
-    completed.sort(key=_gdate)
-
-    last = completed[-n_games:] if completed else []
-    soga = 0
-    used = 0
-
-    for g in last:
-        game_id = g.get("id", None) or g.get("gameId", None)
-        if game_id is None:
-            continue
-        try:
-            game_id = int(game_id)
-        except Exception:
-            continue
-
-        bx = _game_team_sog_from_boxscore(sess, game_id, cache or {}, debug=debug)
-        if not bx:
-            continue
-
-        home = (bx.get("home_abbrev") or "").upper()
-        away = (bx.get("away_abbrev") or "").upper()
-        home_sog = bx.get("home")
-        away_sog = bx.get("away")
-
-        if home_sog is None or away_sog is None:
-            continue
-
-        if home == team_abbrev:
-            soga += int(away_sog)
-            used += 1
-        elif away == team_abbrev:
-            soga += int(home_sog)
-            used += 1
-
-    avg = (soga / used) if used > 0 else 0.0
-    return int(soga), round(avg, 2), int(used)
-
-
-def ga_avg_to_defweak(ga_avg: float) -> float:
-    """Map GA/G (last-10) to a 0-100 'defense weakness' score (higher = weaker)."""
-    try:
-        ga_avg = float(ga_avg)
-    except Exception:
-        return 50.0
-    # 2.0 GA/G => ~20 (strong), 4.0 => ~80 (weak), 4.5 => ~95 (very weak)
-    weak = 20.0 + (ga_avg - 2.0) * 30.0
-    return float(max(0.0, min(100.0, weak)))
-
 def drought_bump(tier: str, market: str, drought: Optional[int]) -> tuple[int, bool]:
     if drought is None:
         return 0, False
@@ -2967,9 +2618,6 @@ def drought_bump(tier: str, market: str, drought: Optional[int]) -> tuple[int, b
 def build_tracker(today_local: date, debug: bool = False) -> str:
     ensure_dirs()
     sess = http_session()
-
-    # Daily cache (used for team recent SOG-against + player log caching)
-    cache = load_cache(today_local)
 
     print(f"\nNHL EDGE TOOL — v7.2 — {today_local.isoformat()}\n")
 
@@ -3091,16 +2739,10 @@ def build_tracker(today_local: date, debug: bool = False) -> str:
             sk[c] = np.nan
 
     # Assist volume proxy
-    # Primary path: 5v5 shot-assists rate (if available)
-    assist_vol = pd.to_numeric(sk.get("i5v5_shotAssists60"), errors="coerce") * 12.0
-
-    # Fallback (tracker totals): last-10 assists
-    # Prevents assist proofs from flatlining when i5v5_shotAssists60 is missing.
-    l10_a = pd.to_numeric(sk.get("L10_A"), errors="coerce")
-
-    sk["Assist_Volume"] = assist_vol
-    sk.loc[sk["Assist_Volume"].isna() | (sk["Assist_Volume"] <= 0), "Assist_Volume"] = l10_a
-    sk["Assist_Volume"] = pd.to_numeric(sk["Assist_Volume"], errors="coerce").fillna(0.0).round(2)
+    sk["Assist_Volume"] = (
+        pd.to_numeric(sk.get("i5v5_shotAssists60"), errors="coerce")
+          .fillna(0.0) * 12.0
+    ).round(2)
 
 
     # POWER PLAY skaters (5v4)
@@ -3113,63 +2755,9 @@ def build_tracker(today_local: date, debug: bool = False) -> str:
         for c in ["PP_TOI_min", "PP_TOI_per_game", "PP_iXG60", "PP_iXA60", "PP_iP60", "PP_Role"]:
             sk[c] = np.nan
 
-    # --- Restore PP_Tier from PP_Role (legacy behavior) ---
-    # PP_Role is emitted by normalize_skaters_pp(): 2=PP1, 1=PP2, 0=PP0/passenger
-    if "PP_Role" in sk.columns and "PP_Tier" not in sk.columns:
-        def _pp_tier(v):
-            try:
-                x = int(float(v))
-            except Exception:
-                return np.nan
-            return "A" if x >= 2 else ("B" if x == 1 else ("C" if x == 0 else np.nan))
-        sk["PP_Tier"] = sk["PP_Role"].apply(_pp_tier)
-
-
 
 
     
-    # --- PP derived fields for Dagger Lab (display-only, does NOT feed EV) ---
-    # PP_Path: classify how a player contributes on PP based on iXG vs iXA profile
-    if "PP_Path" not in sk.columns:
-        def _pp_path(row):
-            role = row.get("PP_Role", np.nan)
-            try:
-                r = int(float(role))
-            except Exception:
-                r = -1
-            if r <= 0:
-                return "Passenger"
-            ixg = pd.to_numeric(row.get("PP_iXG60", np.nan), errors="coerce")
-            ixa = pd.to_numeric(row.get("PP_iXA60", np.nan), errors="coerce")
-            tot = (ixg if pd.notna(ixg) else 0.0) + (ixa if pd.notna(ixa) else 0.0)
-            if tot <= 0:
-                return "Passenger"
-            share = (ixg / tot)
-            if share >= 0.60:
-                return "Shooter"
-            if share <= 0.40:
-                return "Distributor"
-            return "Hybrid"
-        try:
-            sk["PP_Path"] = sk.apply(_pp_path, axis=1)
-        except Exception:
-            sk["PP_Path"] = "Passenger"
-
-    # Team share/stability/environment score are visual helpers
-    # PP_TeamShare_pct: prefer existing; if missing OR all-NaN, derive from PP_TOI_Pct_Game (already populated)
-    if ("PP_TeamShare_pct" not in sk.columns) or (pd.to_numeric(sk.get("PP_TeamShare_pct"), errors="coerce").isna().all()):
-        sk["PP_TeamShare_pct"] = pd.to_numeric(sk.get("PP_TOI_Pct_Game"), errors="coerce")
-
-    if "PP_TOI_stability" not in sk.columns:
-        # heuristic: how close PP_TOI_min is to PP_TOI (higher = more stable usage)
-        toi = pd.to_numeric(sk.get("PP_TOI"), errors="coerce")
-        toi_min = pd.to_numeric(sk.get("PP_TOI_min"), errors="coerce")
-        with np.errstate(divide="ignore", invalid="ignore"):
-            stab = 100.0 * (toi_min / toi)
-        sk["PP_TOI_stability"] = stab.clip(lower=0.0, upper=100.0)
-
- 
-
     # Fallback: if PP_TOI is missing, pull season PP TOI from NHL stats REST API
     try:
         if ("PP_TOI_per_game" not in sk.columns) or (sk["PP_TOI_per_game"].notna().sum() < 5):
@@ -3339,48 +2927,9 @@ def build_tracker(today_local: date, debug: bool = False) -> str:
 
             opp_pk_weak = opp_pk_weak.fillna(50.0)
 
+
             sk["PP_Matchup"] = (0.55 * pp_score + 0.45 * opp_pk_weak).round(1)
 
-            # ---------------------------------
-            # PP Big 3 (MUST be AFTER PP_Matchup exists)
-            # ---------------------------------
-
-            # PP_TeamShare_pct: derive from PP_TOI_Pct_Game (already computed earlier)
-            if ("PP_TeamShare_pct" not in sk.columns) or (
-                pd.to_numeric(sk["PP_TeamShare_pct"], errors="coerce").isna().all()
-            ):
-                sk["PP_TeamShare_pct"] = pd.to_numeric(sk.get("PP_TOI_Pct_Game"), errors="coerce")
-
-            # PP_Env_Score: follow PP_Matchup with neutral fallback
-            if ("PP_Env_Score" not in sk.columns) or (
-                pd.to_numeric(sk["PP_Env_Score"], errors="coerce").isna().all()
-            ) or (
-                pd.to_numeric(sk["PP_Env_Score"], errors="coerce").nunique(dropna=True) <= 1
-            ):
-                sk["PP_Env_Score"] = pd.to_numeric(sk["PP_Matchup"], errors="coerce").fillna(50.0)
-
-            # PP_BOOST: compute every run (never NaN)
-            if "PP_BOOST" not in sk.columns:
-                sk["PP_BOOST"] = ""
-
-            share = pd.to_numeric(sk["PP_TeamShare_pct"], errors="coerce")
-            env   = pd.to_numeric(sk["PP_Env_Score"], errors="coerce")
-            tier  = sk["PP_Tier"].astype(str).str.upper().str.strip() if "PP_Tier" in sk.columns else ""
-
-            mask_a = (tier == "A") & (share >= 20.0) & (env >= 60.0)
-            mask_b = (tier == "B") & (share >= 17.5) & (env >= 62.0)
-
-            sk["PP_BOOST"] = sk["PP_BOOST"].fillna("").astype(str)
-            sk.loc[mask_a | mask_b, "PP_BOOST"] = "ON"
-
-            if debug:
-                print(
-                    "[PP BIG3 @POST-MATCHUP] non-null counts:",
-                    "PP_Matchup", int(pd.to_numeric(sk.get("PP_Matchup"), errors="coerce").notna().sum()),
-                    "PP_TeamShare_pct", int(pd.to_numeric(sk.get("PP_TeamShare_pct"), errors="coerce").notna().sum()),
-                    "PP_Env_Score uniq", int(pd.to_numeric(sk.get("PP_Env_Score"), errors="coerce").nunique(dropna=True)),
-                    "PP_BOOST ON", int((sk.get("PP_BOOST").astype(str) == "ON").sum()),
-                )
 
         # -------------------------------------------------
         # ASSISTS DAGGER (power-play facilitation)
@@ -3455,48 +3004,7 @@ def build_tracker(today_local: date, debug: bool = False) -> str:
 
     # v2 scores
     sk = add_v2_scores(sk)
-    sk = add_player_5v5_sog_share_proxy(sk)
-    # Base (season/structural) defense weakness
-    sk["Opp_DefWeak_Season"] = sk["v2_defense_vulnerability"].fillna(50.0)
-
-    # Last-10 overlay (GA/G) — aligns defense environment with other last-10 features
-    opp_teams = sorted(set(sk.get("Opp", pd.Series(dtype=str)).dropna().astype(str).map(norm_team).tolist()))
-    ga_map = {}
-    for t in opp_teams:
-        ga_sum, ga_avg, n_used = get_team_recent_ga(sess, t, n_games=10, debug=debug)
-        ga_map[t] = {"ga_avg": ga_avg, "n_used": n_used}
-    # Big 3 (SOG): Opponent shots-against per game over recent windows (L10/L50)
-    # Uses gamecenter boxscore; cached in the daily cache under cache['team_game_sog'].
-    soga10_map = {}
-    soga50_map = {}
-    for t in opp_teams:
-        _sum10, _avg10, _used10 = get_team_recent_soga(sess, t, n_games=10, cache=cache, debug=debug)
-        _sum50, _avg50, _used50 = get_team_recent_soga(sess, t, n_games=50, cache=cache, debug=debug)
-        soga10_map[t] = {"soga_avg": _avg10, "n_used": _used10}
-        soga50_map[t] = {"soga_avg": _avg50, "n_used": _used50}
-
-    sk["Opp_SOG_Against_L10"] = sk["Opp"].astype(str).map(lambda x: soga10_map.get(norm_team(x), {}).get("soga_avg", float("nan")))
-    sk["Opp_SOG_Used_L10"]    = sk["Opp"].astype(str).map(lambda x: soga10_map.get(norm_team(x), {}).get("n_used", 0))
-    sk["Opp_SOG_Against_L50"] = sk["Opp"].astype(str).map(lambda x: soga50_map.get(norm_team(x), {}).get("soga_avg", float("nan")))
-    sk["Opp_SOG_Used_L50"]    = sk["Opp"].astype(str).map(lambda x: soga50_map.get(norm_team(x), {}).get("n_used", 0))
-
-    def _l10_weight(n_used: int) -> float:
-        # Require meaningful sample; cap influence
-        if n_used >= 8:
-            return 0.45
-        if n_used >= 5:
-            return 0.30
-        return 0.0
-
-    sk["Opp_GA_Avg_L10"] = sk["Opp"].astype(str).map(lambda x: ga_map.get(norm_team(x), {}).get("ga_avg", float("nan")))
-    sk["Opp_GA_Used_L10"] = sk["Opp"].astype(str).map(lambda x: ga_map.get(norm_team(x), {}).get("n_used", 0))
-    sk["Opp_DefWeak_L10"] = sk["Opp_GA_Avg_L10"].map(lambda v: ga_avg_to_defweak(v) if pd.notna(v) else float("nan"))
-
-    sk["Opp_DefWeak"] = sk.apply(
-        lambda r: float(r.get("Opp_DefWeak_Season", 50.0)) * (1.0 - _l10_weight(int(r.get("Opp_GA_Used_L10", 0))))
-                + (float(r.get("Opp_DefWeak_L10", r.get("Opp_DefWeak_Season", 50.0))) * _l10_weight(int(r.get("Opp_GA_Used_L10", 0))))
-        , axis=1
-    ).fillna(50.0)
+    sk["Opp_DefWeak"] = sk["v2_defense_vulnerability"].fillna(50.0)
 
     # star prior + toi pct
     sk = add_star_prior(sk)
@@ -3518,7 +3026,7 @@ def build_tracker(today_local: date, debug: bool = False) -> str:
 
     print(f"Fetching NHL logs for {len(cand_ids)} players (cap={CAND_CAP}) ...\n")
 
-    # cache already loaded above
+    cache = load_cache(today_local)
 
     def fetch_one(pid: int) -> Tuple[int, Optional[Dict[str, Any]]]:
         key = str(pid)
@@ -3634,20 +3142,6 @@ def build_tracker(today_local: date, debug: bool = False) -> str:
     sk["L10_G"] = pd.to_numeric(sk.get("G10_total", np.nan), errors="coerce")
     sk["L10_S"] = pd.to_numeric(sk.get("S10_total", np.nan), errors="coerce")
     sk["L10_A"] = pd.to_numeric(sk.get("A10_total", np.nan), errors="coerce")
-
-    # -------------------------
-    # Assist Volume (MUST be AFTER L10_A exists)
-    # -------------------------
-    # Primary source: 5v5 shot-assists/60 * 12 (per-game-ish volume)
-    # Fallback: tracker totals (last-10 assists) so we never flatline to 0 just because
-    # shot-assists fields are missing.
-    _assist_vol = pd.to_numeric(sk.get("i5v5_shotAssists60", np.nan), errors="coerce") * 12.0
-    _l10_a = pd.to_numeric(sk.get("L10_A", np.nan), errors="coerce")
-
-    sk["Assist_Volume"] = _assist_vol
-    sk.loc[sk["Assist_Volume"].isna() | (sk["Assist_Volume"] <= 0), "Assist_Volume"] = _l10_a
-    sk["Assist_Volume"] = pd.to_numeric(sk["Assist_Volume"], errors="coerce").fillna(0.0).round(2)
-
 
     sk["Exp_S_10"] = (pd.to_numeric(sk.get("ShotIntent", np.nan), errors="coerce") * 10.0).round(2)
 
@@ -4034,14 +3528,7 @@ def build_tracker(today_local: date, debug: bool = False) -> str:
         "Opp_GAA": sk["Opp_GAA"],
         "Goalie_Weak": sk["Goalie_Weak"],
         "Opp_Goalie_Status": sk.get("Opp_Goalie_Status", ""),
-                "Opp_Goalie_Source": sk.get("Opp_Goalie_Source", ""),
-
-        # Big 3 (SOG defense context + 5v5 share proxy) — used for ladder explainability
-        "Opp_SOG_Against_L10": sk.get("Opp_SOG_Against_L10"),
-        "Opp_SOG_Used_L10": sk.get("Opp_SOG_Used_L10"),
-        "Opp_SOG_Against_L50": sk.get("Opp_SOG_Against_L50"),
-        "Opp_SOG_Used_L50": sk.get("Opp_SOG_Used_L50"),
-        "Player_5v5_SOG_Share": sk.get("Player_5v5_SOG_Share"),
+        "Opp_Goalie_Source": sk.get("Opp_Goalie_Source", ""),
 
         "iXG%": sk["iXG_pct"].round(1),
         "iXA%": sk["iXA_pct"].round(1),
@@ -4124,13 +3611,6 @@ def build_tracker(today_local: date, debug: bool = False) -> str:
         "Drought_SOG": sk.get("Drought_SOG"),
         "PPP10_total": sk.get("PPP10_total"),
         "Drought_PPP": sk.get("Drought_PPP"),
-
-        "PP_Tier": sk.get("PP_Tier"),
-        "PP_Path": sk.get("PP_Path"),
-        "PP_TeamShare_pct": sk.get("PP_TeamShare_pct"),
-        "PP_TOI_stability": sk.get("PP_TOI_stability"),
-        "PP_Env_Score": sk.get("PP_Env_Score"),
-        "PP_BOOST": sk.get("PP_BOOST"),
 
         "PP_Role": sk.get("PP_Role"),
         "PP_TOI": sk.get("PP_TOI"),
@@ -4591,60 +4071,8 @@ def build_tracker(today_local: date, debug: bool = False) -> str:
     
  
     stamp = datetime.now().strftime("%H%M%S")
-    # Ensure output directory exists
-    try:
-        os.makedirs(OUTPUT_DIR, exist_ok=True)
-    except Exception:
-        pass
-    # -------------------------
-    # Display-name hygiene (do BEFORE writing CSV)
-    # -------------------------
-    def _fix_mojibake_text(s):
-        """Best-effort fix for common UTF-8 mojibake in names."""
-        if s is None:
-            return ""
-        t = str(s)
-        try:
-            if any(ch in t for ch in ("Ã", "Â", " ")):
-                return t.encode("latin-1", "ignore").decode("utf-8", "ignore")
-        except Exception:
-            pass
-        return t
-
-    if "Player" in tracker.columns:
-        tracker["Player"] = tracker["Player"].apply(_fix_mojibake_text)
-        tracker["Player"] = tracker["Player"].astype(str).str.replace(r"Sttzle", "Stutzle", regex=True)
-        tracker["Player"] = tracker["Player"].astype(str).str.replace(r"sttzle", "stutzle", regex=True)
-
-    
-    # -----------------------------
-    # Ladder proof helpers (SOG)
-    # -----------------------------
-    # True 5v5 share proxy (if we have the underlying rate). Safe no-op if missing.
-    try:
-        tracker = add_player_5v5_sog_share_proxy(tracker)
-    except Exception:
-        pass
-
-    # Always compute a simple team-share proxy from recent SOG volume (Med10_SOG) so the ladder
-    # page can explain *why* a rung is interesting even when the 5v5 feed is missing.
-    if "Team" in tracker.columns and "Med10_SOG" in tracker.columns:
-        try:
-            m10 = pd.to_numeric(tracker["Med10_SOG"], errors="coerce")
-            team_sum = m10.groupby(tracker["Team"].astype(str)).transform("sum")
-            proxy = (m10 / team_sum.replace(0, np.nan) * 100.0).round(1)
-            tracker["Player_SOG_Share_Proxy"] = proxy
-
-            # If true 5v5 share is missing, backfill with proxy (keeps one simple field for UI)
-            if "Player_5v5_SOG_Share" in tracker.columns:
-                tracker["Player_5v5_SOG_Share"] = pd.to_numeric(tracker["Player_5v5_SOG_Share"], errors="coerce").fillna(proxy)
-        except Exception:
-            tracker["Player_SOG_Share_Proxy"] = np.nan
-
     out_path = os.path.join(OUTPUT_DIR, f"tracker_{today_local.isoformat()}_{stamp}.csv")
     tracker.to_csv(out_path, index=False)
-    print(f"CSV saved to: {out_path}")
-    print(f"Cache saved to: {cache_path_today(today_local)}\n")
 
     # Also write a stable path for Streamlit Cloud (no more manual uploads)
     latest_out_path = os.path.join(OUTPUT_DIR, 'tracker_latest.csv')
@@ -4653,6 +4081,8 @@ def build_tracker(today_local: date, debug: bool = False) -> str:
     except Exception:
         pass
 
+    print(f"CSV saved to: {out_path}")
+    print(f"Cache saved to: {cache_path_today(today_local)}\n")
     return out_path
 
 
