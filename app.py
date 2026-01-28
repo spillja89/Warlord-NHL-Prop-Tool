@@ -730,21 +730,45 @@ def _is_hot(reg_scored: str) -> bool:
 OUTPUT_DIR = "output"
 st.set_page_config(layout='wide', page_title="The Warlord's NHL Prop Tool")
 
+def inject_warlord_css():
+    import streamlit as st
+    st.markdown("""
+    <style>
+      .wl-card{
+        background: rgba(255,255,255,0.03);
+        border: 1px solid rgba(255,255,255,0.10);
+        border-radius: 16px;
+        padding: 12px 14px;
+        margin-bottom: 10px;
+      }
+      .wl-pill{
+        display:inline-block;
+        padding: 4px 10px;
+        border-radius: 999px;
+        border: 1px solid rgba(255,255,255,0.12);
+        font-size: 12px;
+        font-weight: 800;
+        letter-spacing: .2px;
+      }
+
+      /* market pills */
+      .wl-purple{ background: rgba(168,85,247,0.14); border-color: rgba(168,85,247,0.35); } /* Assists */
+      .wl-blue  { background: rgba(11,27,58,0.14);  border-color: rgba(11,27,58,0.35);} /* Points */
+      .wl-orange{ background: rgba(245,158,11,0.14); border-color: rgba(245,158,11,0.35);} /* SOG */
+      .wl-red   { background: rgba(239,68,68,0.14);  border-color: rgba(239,68,68,0.35);}  /* Goals */
+
+      /* accent stripe */
+      .wl-accent-purple{ background: rgba(168,85,247,0.18); }{ border-left: 5px solid #a855f7; }
+      .wl-accent-blue{ background: rgba(11,27,58,0.18); border-left: 5px solid #0b1b3a; }
+      .wl-accent-orange{ background: rgba(245,158,11,0.18); }{ border-left: 5px solid #f59e0b; }
+      .wl-accent-red{ background: rgba(239,68,68,0.18); }{    border-left: 5px solid #ef4444; }
+    </style>
+    """, unsafe_allow_html=True)
+
+inject_warlord_css()
 
 
 
-
-# --- Warlord Points (Blue) final shade — SAFE injection ---
-import streamlit as st
-st.markdown("""
-<style>
-.wl-bg-blue {
-  background: rgba(11, 27, 58, 0.65);
-  color: #e5e7eb;
-}
-</style>
-""", unsafe_allow_html=True)
-# --- end Points blue injection ---
 
 # -----------------------------
 
@@ -850,11 +874,14 @@ def safe_str(df: pd.DataFrame, col: str, default="") -> pd.Series:
 def style_df(df: pd.DataFrame, cols: list[str]) -> "pd.io.formats.style.Styler":
     # Market color pill (Ninja Turtles palette)
     mkt_bg = {
-        "SOG": "#1f6feb",       # darker blue
-        "SHOTS": "#1f6feb",
-        "POINTS": "#f59e0b",    # orange
-        "GOALS": "#ef4444",     # red
         "ASSISTS": "#a855f7",   # purple
+        "A": "#a855f7",
+        "POINTS": "#0b1b3a",    # dark blue
+        "PTS": "#0b1b3a",
+        "SOG": "#f59e0b",       # orange
+        "SHOTS": "#f59e0b",
+        "GOALS": "#ef4444",     # red
+        "G": "#ef4444",
     }
     def _mkt_style(v):
         key = str(v).upper().strip()
@@ -2052,6 +2079,70 @@ show_games_times(df_f)
 if page == "Board":
 
     # -------------------------
+    # Board market color theme (Ninja palette)
+    # Purple = Assists, Dark Blue = Points, Orange = SOG, Red = Goals
+    # (Board is already gated; colors are MARKET identity, not quality.)
+    # -------------------------
+    st.markdown("""
+    <style>
+      .wl-board-legend{
+        display:flex; flex-wrap:wrap; gap:8px; align-items:center;
+        padding:10px 12px;
+        border:1px solid rgba(255,255,255,0.10);
+        border-radius:14px;
+        background: rgba(255,255,255,0.03);
+        margin: 6px 0 10px 0;
+      }
+      .wl-board-pill{
+        display:inline-flex; align-items:center; gap:8px;
+        padding:6px 10px;
+        border-radius:999px;
+        border:1px solid rgba(255,255,255,0.12);
+        font-size:12px;
+        font-weight:800;
+        letter-spacing:.2px;
+      }
+      .wl-board-dot{ width:10px; height:10px; border-radius:50%; display:inline-block; }
+
+      .wl-board-card{
+        font-size: 15px;
+
+        background: rgba(255,255,255,0.03);
+        border: 1px solid rgba(255,255,255,0.10);
+        border-radius: 16px;
+        padding: 12px 14px;
+        margin-bottom: 10px;
+        box-shadow: 0 10px 25px rgba(0,0,0,0.35);
+      }
+      .wl-accent-purple{ background: rgba(168,85,247,0.18); }{ border-left: 5px solid #a855f7; }
+      .wl-accent-blue{ background: rgba(11,27,58,0.45); }  { border-left: 5px solid #0b1b3a; }
+      .wl-accent-orange{ background: rgba(245,158,11,0.18); }{ border-left: 5px solid #f59e0b; }
+      .wl-accent-red{ background: rgba(239,68,68,0.18); }   { border-left: 5px solid #ef4444; }
+    </style>
+    """, unsafe_allow_html=True)
+
+    st.markdown("""
+      <div class="wl-board-legend">
+        <span class="wl-board-pill"><span class="wl-board-dot" style="background:#a855f7"></span> Assists</span>
+        <span class="wl-board-pill"><span class="wl-board-dot" style="background:#0b1b3a"></span> Points</span>
+        <span class="wl-board-pill"><span class="wl-board-dot" style="background:#f59e0b"></span> SOG</span>
+        <span class="wl-board-pill"><span class="wl-board-dot" style="background:#ef4444"></span> Goals</span>
+      </div>
+    """, unsafe_allow_html=True)
+
+    def _board_market_accent(best_market: str) -> str:
+        bm0 = str(best_market or "").lower()
+        if "assist" in bm0:
+            return "wl-accent-purple"
+        if "point" in bm0:
+            return "wl-accent-blue"
+        if "sog" in bm0 or "shot" in bm0:
+            return "wl-accent-orange"
+        if "goal" in bm0:
+            return "wl-accent-red"
+        return ""
+
+    # -------------------------
     # Board-only gating (does NOT affect other pages)
     # -------------------------
     thr_conf = int(st.sidebar.number_input("Smash min Confidence", min_value=0, max_value=100, value=int(THR_CONF_DEFAULT), step=1, key="board_thr_conf"))
@@ -2185,6 +2276,7 @@ if page == "Board":
             game = r.get("Game","")
             tier = r.get("Tier_Tag","")
             bm = r.get("Best_Market","")
+            accent = _board_market_accent(bm)
             bc = r.get("Best_Conf","")
             evsig = r.get("EV_Signal","")
             lock = r.get("LOCK","")
@@ -2195,7 +2287,7 @@ if page == "Board":
             mb = calc_ev_per_dollar(_to_float(_get(r, "Model%", "Model_Prob", default="")), _to_float(_get(r, "Odds", "Odds_Amer", default="")))
             mb_txt = f"↩ {mb:+.2f}/$1" if mb is not None else ""
             badges = " ".join([str(x) for x in [lock, evsig, mb_txt] if str(x).strip()])
-            st.markdown(f"<div class='wl-card'>"
+            st.markdown(f"<div class='wl-board-card {accent}'>"
                         f"<div style='display:flex;justify-content:space-between;gap:10px;'>"
                         f"<div style='font-size:16px;line-height:1.2;'>{headline}</div>"
                         f"<div style='font-size:16px;white-space:nowrap;'>{badges}</div>"
