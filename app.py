@@ -2161,12 +2161,26 @@ if page == "Board":
 
     df_board_src = df_f.copy()
 
-    # Tier gate: STAR/ELITE only (robust; fall back if Tier_Tag is blank)
+    # Tier gate: STAR/ELITE only (robust; prefer tracker tiers; fall back safely)
     _mask = None
+
+    # 1) Unified Tier_Tag (if present and populated)
     if "Tier_Tag" in df_board_src.columns:
         _t = df_board_src["Tier_Tag"].astype(str).str.upper()
         _mask = _t.str.contains("STAR") | _t.str.contains("ELITE")
 
+    # 2) If unified Tier_Tag is blank/empty, use per-market Tier_Tag_* columns from engine
+    if (_mask is None or int(_mask.sum()) == 0):
+        tier_cols = [c for c in ["Tier_Tag_Points", "Tier_Tag_SOG", "Tier_Tag_Assists", "Tier_Tag_Goal"] if c in df_board_src.columns]
+        if tier_cols:
+            _any = None
+            for c in tier_cols:
+                _tc = df_board_src[c].astype(str).str.upper()
+                _m = _tc.str.contains("STAR") | _tc.str.contains("ELITE")
+                _any = _m if _any is None else (_any | _m)
+            _mask = _any
+
+    # 3) Fallbacks (legacy)
     if (_mask is None or int(_mask.sum()) == 0) and "Talent_Tier" in df_board_src.columns:
         _t2 = df_board_src["Talent_Tier"].astype(str).str.upper()
         _mask = _t2.str.contains("STAR") | _t2.str.contains("ELITE")
@@ -2194,6 +2208,20 @@ if page == "Board":
             rr["Best_Drought"] = b["drought"]
             rr["Best_Reg_Gap10"] = b["reg_gap"]
             rr["Best_Reg_Heat10"] = b["reg_heat"]
+
+            # --- Tier tag display: choose the tier corresponding to the best market (engine provides per-market tags)
+            try:
+                _lbl = str(b.get("label","") or "").lower()
+                if "assist" in _lbl and "Tier_Tag_Assists" in rr.index:
+                    rr["Tier_Tag"] = rr.get("Tier_Tag_Assists", rr.get("Tier_Tag",""))
+                elif "point" in _lbl and "Tier_Tag_Points" in rr.index:
+                    rr["Tier_Tag"] = rr.get("Tier_Tag_Points", rr.get("Tier_Tag",""))
+                elif ("sog" in _lbl or "shot" in _lbl) and "Tier_Tag_SOG" in rr.index:
+                    rr["Tier_Tag"] = rr.get("Tier_Tag_SOG", rr.get("Tier_Tag",""))
+                elif "goal" in _lbl and "Tier_Tag_Goal" in rr.index:
+                    rr["Tier_Tag"] = rr.get("Tier_Tag_Goal", rr.get("Tier_Tag",""))
+            except Exception:
+                pass
             best_rows.append(rr)
 
     df_board = pd.DataFrame(best_rows) if best_rows else df_board_src.iloc[0:0]
