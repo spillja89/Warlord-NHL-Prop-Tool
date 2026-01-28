@@ -29,10 +29,7 @@ from typing import Optional, Dict, List, Any, Tuple
 from statistics import median
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from zoneinfo import ZoneInfo
-from dotenv import load_dotenv
-from pathlib import Path
 
-load_dotenv(dotenv_path=Path(__file__).with_name(".env"), override=True)
 
 
 import numpy as np
@@ -4676,3 +4673,4 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+
