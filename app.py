@@ -746,7 +746,7 @@ def inject_warlord_css():
         padding: 6px 12px;
         border-radius: 999px;
         border: 1px solid rgba(255,255,255,0.12);
-        font-size: 14px;
+        font-size: 20px;
         font-weight: 800;
         letter-spacing: .3px;
       }
@@ -3908,5 +3908,6 @@ elif page == "Ledger":
 else:
     st.subheader("Raw CSV (all columns)")
     st.dataframe(df_f, width="stretch", hide_index=True)
+
 
 
