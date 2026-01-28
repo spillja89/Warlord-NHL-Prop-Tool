@@ -76,6 +76,26 @@ def calc_ev_pct_and_kelly(model_prob: float, odds: float) -> tuple[float, float,
     return imp, ev_pct, kelly, dec
 
 
+def calc_ev_per_dollar(model_prob: float, odds_american: float) -> float | None:
+    """Return expected profit (or loss) per $1 staked. Positive = +EV."""
+    try:
+        p = float(model_prob)
+        if p > 1.0:  # accept percent inputs
+            p = p / 100.0
+        odds = float(odds_american)
+        if p <= 0 or p >= 1:
+            return None
+        if odds == 0:
+            return None
+        if odds > 0:
+            profit_if_win = odds / 100.0
+        else:
+            profit_if_win = 100.0 / abs(odds)
+        ev_per_dollar = p * profit_if_win - (1.0 - p) * 1.0
+        return ev_per_dollar
+    except Exception:
+        return None
+
 def _append_csv_row(path: str, row: dict, headers: list[str]) -> None:
     _ensure_dir(os.path.dirname(path))
     file_exists = os.path.exists(path)
@@ -123,12 +143,22 @@ def render_market_filter_bar(default_min_conf: int = 60, key_prefix: str = "m"):
     }
 def legend_signals():
     with st.expander("Legend (signals)", expanded=False):
-        st.markdown("""
-- **🟢** = Earned Green (playable)
-- **💰** = +EV approved (price edge)
-- **🔒** = LOCK (🟢 + 💰)
-- **EV_Signal** shows the combined signal + EV% up front
-""")
+        st.markdown(
+            '''
+<div class="wl-card">
+  <div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;">
+    <span class="wl-pill wl-green">🟢 Earned Green</span>
+    <span class="wl-pill wl-gold">💰 +EV</span>
+    <span class="wl-pill wl-purple">🔒 LOCK</span>
+    <span class="wl-pill wl-blue">EV_Signal = best EV% shown</span>
+  </div>
+  <div style="opacity:0.85;font-size:13px;margin-top:8px;">
+    Use <b>🟢</b> when the play is earned by proofs, <b>💰</b> when price is +EV, and <b>🔒</b> when both align.
+  </div>
+</div>
+            ''',
+            unsafe_allow_html=True,
+        )
 
 def _calc_market_map(market: str) -> dict:
     """
@@ -184,6 +214,223 @@ def _calc_market_map(market: str) -> dict:
         green_col="Green_Goal",
         ev_icon_col="Plays_EV_ATG",
     )
+
+
+def build_ladder_alerts(
+    df_in: pd.DataFrame,
+    market: str = "SOG",
+    min_line: float = 3.5,
+    min_ev: float = 8.0,
+    min_model_pct: float = 12.0,
+    top_k: int = 6,
+    start_from_baseline: bool = True,
+) -> pd.DataFrame:
+    """Scan Top-K BDL alt lines and return ladder alerts.
+
+    Uses schema from odds_ev_bdl.py:
+      - Lines/Odds:  BDL_{M}_Line_{i}, BDL_{M}_Odds_{i}, BDL_{M}_Book_{i}
+      - Model prob:  {M}_p_model_over_{i} (0-1) or {M}_Model%_{i} (0-100)
+      - EV:          {M}_EVpct_over_{i} (pct) or {M}_EV%_{i} (pct)
+
+    UX behavior:
+      - If start_from_baseline=True (default), we treat the player's "baseline" as {M}_Line
+        (fallback: BDL_{M}_Line, fallback: min available BDL line) and **only show rungs
+        at/above that baseline**, ordered from baseline upward.
+      - This prevents the table from feeling like it's "starting at the top".
+    """
+    if df_in is None or df_in.empty:
+        return pd.DataFrame(columns=["Player","Team","Game","Market","Alt#","Line","Odds","Book","Model%","EV%","Rung","Why"])
+
+    M = str(market).strip()
+    df0 = df_in
+
+    def _num(v):
+        try:
+            if v is None:
+                return None
+            if isinstance(v, str) and not v.strip():
+                return None
+            x = float(v)
+            if math.isnan(x):
+                return None
+            return x
+        except Exception:
+            return None
+
+    # A short "why" string so you can see what is driving the ladder ranking.
+    def _why(r):
+        parts = []
+        # Common
+        if "Opp_DefWeak" in df0.columns:
+            odv = _num(r.get("Opp_DefWeak"))
+            if odv is not None:
+                parts.append(f"DefWeak {odv:.0f}")
+        if f"{M}_mu" in df0.columns:
+            mu = _num(r.get(f"{M}_mu"))
+            if mu is not None:
+                parts.append(f"μ {mu:.2f}")
+        # Extra ladder proof (only if present)
+        if "v2_defense_vulnerability" in df0.columns:
+            dv = _num(r.get("v2_defense_vulnerability"))
+            if dv is not None:
+                parts.append(f"DefV {dv:.0f}")
+        if "opp_5v5_SlotSA60" in df0.columns:
+            sv = _num(r.get("opp_5v5_SlotSA60"))
+            # If we had to fill neutral (50) league-wide, don't spam the UI with it.
+            if sv is not None and abs(float(sv) - 50.0) > 0.01:
+                parts.append(f"SlotSA60 {sv:.2f}")
+        # Prefer true 5v5 share when available; otherwise fall back to our proxy share.
+        sh = None
+        if "Player_5v5_SOG_Share" in df0.columns:
+            sh = _num(r.get("Player_5v5_SOG_Share"))
+        if sh is None and "Player_SOG_Share_Proxy" in df0.columns:
+            sh = _num(r.get("Player_SOG_Share_Proxy"))
+        if sh is not None:
+            parts.append(f"5v5Share {sh:.1f}%")
+
+        # Market-specific
+        if M == "SOG":
+            for c, lab in [("Med10_SOG","Med10"), ("Avg5_SOG","Avg5"), ("ShotIntent_Pct","SI%"), ("TOI_Pct_Game","TOI%")]:
+                if c in df0.columns:
+                    v = _num(r.get(c))
+                    if v is not None:
+                        parts.append(f"{lab} {v:.1f}")
+        elif M == "Points":
+            for c, lab in [("P10_total","P10"), ("A10_total","A10"), ("G10_total","G10"), ("TOI_Pct_Game","TOI%")]:
+                if c in df0.columns:
+                    v = _num(r.get(c))
+                    if v is not None:
+                        parts.append(f"{lab} {v:.0f}")
+        elif M == "Assists":
+            for c, lab in [("A10_total","A10"), ("iXA%","iXA%"), ("TOI_Pct_Game","TOI%")]:
+                if c in df0.columns:
+                    v = _num(r.get(c))
+                    if v is not None:
+                        parts.append(f"{lab} {v:.1f}")
+        elif M == "Goal":
+            for c, lab in [("G10_total","G10"), ("iXG%","iXG%"), ("Goalie_Weak","GWeak")]:
+                if c in df0.columns:
+                    v = _num(r.get(c))
+                    if v is not None:
+                        parts.append(f"{lab} {v:.1f}")
+        return " | ".join(parts)
+
+    rows = []
+    K = max(1, int(top_k))
+    for _, r in df0.iterrows():
+        player = str(r.get("Player","") or "").strip()
+        if not player:
+            continue
+        game = str(r.get("Game","") or "").strip()
+        team = str(r.get("Team","") or "").strip()
+
+        # Baseline line (mainline) for anchoring
+        base = None
+        if f"{M}_Line" in df0.columns:
+            base = _num(r.get(f"{M}_Line"))
+        if base is None and f"BDL_{M}_Line" in df0.columns:
+            base = _num(r.get(f"BDL_{M}_Line"))
+        if base is None:
+            # fallback: minimum available alt line
+            mins = []
+            for i in range(1, K + 1):
+                lc = f"BDL_{M}_Line_{i}"
+                if lc not in df0.columns:
+                    break
+                lv = _num(r.get(lc))
+                if lv is not None:
+                    mins.append(float(lv))
+            if mins:
+                base = min(mins)
+
+        for i in range(1, K + 1):
+            lc = f"BDL_{M}_Line_{i}"
+            if lc not in df0.columns:
+                break  # no more ladder cols
+
+            line = _num(r.get(lc))
+            if line is None:
+                continue
+
+            # Anchor: start at baseline, not at the sky
+            if start_from_baseline and base is not None and float(line) < float(base):
+                continue
+
+            if float(line) < float(min_line):
+                continue
+
+            odds = _num(r.get(f"BDL_{M}_Odds_{i}"))
+            book = str(r.get(f"BDL_{M}_Book_{i}", "") or "").strip()
+
+            # model prob
+            p = _num(r.get(f"{M}_p_model_over_{i}"))
+            if p is None:
+                mp = _num(r.get(f"{M}_Model%_{i}"))
+                if mp is not None:
+                    p = float(mp) / 100.0
+            if p is None:
+                continue
+
+            model_pct = float(p) * 100.0
+            if model_pct < float(min_model_pct):
+                continue
+
+            # EV
+            ev = _num(r.get(f"{M}_EVpct_over_{i}"))
+            if ev is None:
+                ev = _num(r.get(f"{M}_EV%_{i}"))
+            if ev is not None and float(ev) < float(min_ev):
+                continue
+
+            rung = None
+            if base is not None:
+                rung = float(line) - float(base)
+
+            rows.append({
+                "Player": player,
+                "Team": team,
+                "Game": game,
+                "Market": M,
+                "Alt#": i,
+                "Line": float(line),
+                "Odds": (None if odds is None else float(odds)),
+                "Book": book,
+                "Model%": round(model_pct, 1),
+                "EV%": (None if ev is None else round(float(ev), 1)),
+                "Rung": (None if rung is None else round(float(rung), 1)),
+                "Why": _why(r),
+                "DefV": (None if _num(r.get("v2_defense_vulnerability")) is None else round(float(_num(r.get("v2_defense_vulnerability"))), 1)),
+                "SlotSA60": (None if _num(r.get("opp_5v5_SlotSA60")) is None or abs(float(_num(r.get("opp_5v5_SlotSA60"))) - 50.0) <= 0.01 else round(float(_num(r.get("opp_5v5_SlotSA60"))), 2)),
+                "5v5Share%": (
+                    None
+                    if (
+                        _num(r.get("Player_5v5_SOG_Share")) is None
+                        and _num(r.get("Player_SOG_Share_Proxy")) is None
+                    )
+                    else round(
+                        float(
+                            _num(r.get("Player_5v5_SOG_Share"))
+                            if _num(r.get("Player_5v5_SOG_Share")) is not None
+                            else _num(r.get("Player_SOG_Share_Proxy"))
+                        ),
+                        1,
+                    )
+                ),
+                "OppSOG_L10": (None if _num(r.get("Opp_SOG_Against_L10")) is None else round(float(_num(r.get("Opp_SOG_Against_L10"))), 2)),
+                "OppSOG_L50": (None if _num(r.get("Opp_SOG_Against_L50")) is None else round(float(_num(r.get("Opp_SOG_Against_L50"))), 2)),
+
+            })
+
+    out = pd.DataFrame(rows)
+    if not out.empty:
+        # Show baseline-up ladders first, then best EV/model within each rung.
+        sort_cols = ["Rung","EV%","Model%","Line"]
+        for c in sort_cols:
+            if c not in out.columns:
+                sort_cols.remove(c)
+        out = out.sort_values(sort_cols, ascending=[True, False, False, True][:len(sort_cols)], na_position="last")
+    return out
+
 
 def warlord_call(ev_pct: float, kelly: float) -> tuple[str, str, str]:
     """
@@ -293,7 +540,7 @@ def snap_int(x):
 def _promote_call_cols(cols):
     order=[
         'SOG_Call','Points_Call','Assists_Call','ATG_Call',
-        'Player','Team','Opp','Game','Pos','Tier_Tag','🔥','💰',
+        'Player','Team','Opp','Time','Game','Pos','Tier_Tag','🔥','💰',
     ]
     out=[]
     for c in order:
@@ -307,6 +554,7 @@ def _promote_call_cols(cols):
 COLUMN_WIDTHS = {
     # identity
     "Game": "small",
+    "Time": "small",
     "Pos": "small",
     "Team": "small",
     "Opp": "small",
@@ -390,6 +638,8 @@ COLUMN_WIDTHS = {
     "Opp_GAA": "small",
     "Goalie_Weak": "small",
     "Opp_DefWeak": "small",
+    "Opp_SA_Avg_L10": "small",
+    "Opp_GA_Avg_L10": "small",
 
     # misc
     "Line": "small",
@@ -429,13 +679,43 @@ def build_column_config(df: pd.DataFrame, cols: list[str]) -> dict:
 # -------------------------
 # Safe getters
 # -------------------------
-def _get(row, key, default=0):
-    """Safe getter for dict-like rows (pandas Series or dict)."""
+
+def _to_float(x, default=0.0):
     try:
-        v = row.get(key, default)
+        if x is None:
+            return default
+        if isinstance(x, str):
+            x = x.strip().replace('%', '')
+            if x == "":
+                return default
+        return float(x)
     except Exception:
-        v = default
-    return default if v is None else v
+        return default
+
+def _get(row, *keys, default=""):
+    """Safe getter for dict-like rows (pandas Series or dict).
+
+    Usage:
+      _get(r, "A", "A_alt", default="")
+    Returns first non-null value among keys, else default.
+    """
+    # pandas Series supports `get`, dict supports `get`
+    for key in keys:
+        try:
+            v = row.get(key, None)
+        except Exception:
+            v = None
+        # treat NaN as missing
+        if v is None:
+            continue
+        try:
+            # pandas NaN
+            if isinstance(v, float) and v != v:
+                continue
+        except Exception:
+            pass
+        return v
+    return default
 def _is_hot(reg_scored: str) -> bool:
     """Treat these as Hot regression tiers."""
     if not reg_scored:
@@ -448,39 +728,17 @@ def _is_hot(reg_scored: str) -> bool:
 # CONFIG
 # -------------------------
 OUTPUT_DIR = "output"
-st.set_page_config(page_title="NHL Prop Tool", layout="wide")
+st.set_page_config(layout='wide', page_title="The Warlord's NHL Prop Tool")
+
+
+
+# -----------------------------
+
+
+
+
 
 # =========================
-# GLOBAL TABLE COMPACT CSS (Option A)
-# =========================
-st.markdown(
-    """
-    <style>
-      /* Tighten the dataframe (works for st.dataframe + Styler) */
-      div[data-testid="stDataFrame"] table {
-        font-size: 12px;
-      }
-      div[data-testid="stDataFrame"] thead tr th {
-        padding-top: 2px !important;
-        padding-bottom: 2px !important;
-      }
-      div[data-testid="stDataFrame"] tbody tr td {
-        padding-top: 1px !important;
-        padding-bottom: 1px !important;
-        line-height: 1.05 !important;
-        white-space: nowrap !important;
-      }
-
-      /* Optional: make header slightly tighter too */
-      div[data-testid="stDataFrame"] thead tr th div {
-        line-height: 1.05 !important;
-      }
-    </style>
-    """,
-    unsafe_allow_html=True,
-)
-
-
 
 # =========================
 # HELPERS
@@ -576,6 +834,21 @@ def safe_str(df: pd.DataFrame, col: str, default="") -> pd.Series:
         return pd.Series([default] * len(df), index=df.index)
     return df[col].astype(str).fillna(default)
 def style_df(df: pd.DataFrame, cols: list[str]) -> "pd.io.formats.style.Styler":
+    # Market color pill (Ninja Turtles palette)
+    mkt_bg = {
+        "SOG": "#1f6feb",       # darker blue
+        "SHOTS": "#1f6feb",
+        "POINTS": "#f59e0b",    # orange
+        "GOALS": "#ef4444",     # red
+        "ASSISTS": "#a855f7",   # purple
+    }
+    def _mkt_style(v):
+        key = str(v).upper().strip()
+        bg = mkt_bg.get(key, "")
+        if not bg:
+            return ""
+        return f"background-color: {bg}; color: white; font-weight: 700;"
+
     # --- Pandas Styler REQUIRES unique index + unique columns ---
     cols = [c for c in dict.fromkeys(cols) if c in df.columns]
 
@@ -736,6 +1009,9 @@ def style_df(df: pd.DataFrame, cols: list[str]) -> "pd.io.formats.style.Styler":
 
     if format_dict:
         sty = sty.format(format_dict, na_rep="")
+    if "Market" in view.columns:
+        sty = sty.applymap(_mkt_style, subset=["Market"])
+
 
     return sty
 
@@ -777,7 +1053,35 @@ def add_ui_columns(df: pd.DataFrame) -> pd.DataFrame:
     return out
 def load_csv(path: str) -> pd.DataFrame:
     df = pd.read_csv(path)
+
+    # --- SNAP BETTING LINES AFTER df EXISTS (fix NameError) ---
+    def snap_half_down_sog(x):
+        try:
+            if x is None:
+                return x
+            v = float(x)
+            snapped = round(v * 2.0) / 2.0
+            if abs(snapped - round(snapped)) < 1e-6:
+                return max(0.5, snapped - 0.5)
+            return snapped
+        except Exception:
+            return x
+
+    for _c in [c for c in df.columns if c.endswith('_Line') or c == 'Line']:
+        if _c == 'SOG_Line':
+            df[_c] = df[_c].apply(snap_half_down_sog)
+        else:
+            df[_c] = df[_c].apply(snap_half)
+
     df.columns = [c.strip() for c in df.columns]
+
+    # Add local game time (for table + matchup filter)
+    if "StartTimeLocal" in df.columns and "Time" not in df.columns:
+        dt = pd.to_datetime(df["StartTimeLocal"], errors="coerce")
+        # Use a portable format and strip leading zero (07:00 PM -> 7:00 PM)
+        df["Time"] = dt.dt.strftime("%I:%M %p").astype(str).str.lstrip("0")
+        df.loc[dt.isna(), "Time"] = ""
+
     return df
 def filter_common(df: pd.DataFrame) -> pd.DataFrame:
     out = df.copy()
@@ -795,14 +1099,39 @@ def filter_common(df: pd.DataFrame) -> pd.DataFrame:
         sel_teams = st.sidebar.multiselect("Team", teams, default=[])
         if sel_teams:
             out = out[out["Team"].astype(str).isin(sel_teams)]
-    # Matchup filter
+    # Matchup filter (show time when available)
     if "Game" in out.columns:
-        games = sorted(
-            [g for g in out["Game"].dropna().astype(str).unique().tolist() if g.strip()]
-        )
-        sel_games = st.sidebar.multiselect("Matchup", games, default=[])
-        if sel_games:
-            out = out[out["Game"].astype(str).isin(sel_games)]
+        games = [g for g in out["Game"].dropna().astype(str).unique().tolist() if g.strip()]
+
+        if "Time" in out.columns:
+            # Build label -> game mapping like "7:00 PM — DAL@STL"
+            tmp = out[["Game", "Time"]].copy()
+            tmp["Time"] = tmp["Time"].astype(str).fillna("")
+            # Prefer earliest time per game if duplicates exist
+            best = (
+                tmp.sort_values(["Game", "Time"])
+                .drop_duplicates(subset=["Game"], keep="first")
+                .set_index("Game")["Time"]
+                .to_dict()
+            )
+
+            labels = []
+            for g in games:
+                t = best.get(g, "")
+                label = f"{t} — {g}" if t else g
+                labels.append(label)
+
+            labels = sorted(labels, key=lambda x: x.split("—")[-1].strip())
+            sel_labels = st.sidebar.multiselect("Matchup", labels, default=[])
+
+            if sel_labels:
+                sel_games = [lab.split("—")[-1].strip() for lab in sel_labels]
+                out = out[out["Game"].astype(str).isin(sel_games)]
+        else:
+            games = sorted(games)
+            sel_games = st.sidebar.multiselect("Matchup", games, default=[])
+            if sel_games:
+                out = out[out["Game"].astype(str).isin(sel_games)]
     # Only flagged plays
     only_fire = st.sidebar.checkbox("Only 🔥 plays", value=False)
     if only_fire and "🔥" in out.columns:
@@ -861,6 +1190,265 @@ def show_games_times(df: pd.DataFrame):
     st.dataframe(g, width="stretch", hide_index=True)
 
 
+# ---------------------------------
+# Smash Plays gating (strict)
+# conf/matrix + EV% + (Drought>=2 OR Regression hot/gap)
+# ---------------------------------
+THR_CONF_DEFAULT = 70
+THR_EV_DEFAULT = 0.0
+THR_DROUGHT_DEFAULT = 2
+THR_REG_GAP_DEFAULT = 1.0   # Reg_Gap_*10
+THR_REG_HEAT_DEFAULT = 1.0  # Reg_Heat_*10
+
+def _num(v, default=0.0):
+    try:
+        if v is None:
+            return float(default)
+        if isinstance(v, str) and v.strip() == "":
+            return float(default)
+        return float(v)
+    except Exception:
+        return float(default)
+
+def _get_first(row, *cols, default=""):
+    for c in cols:
+        try:
+            if c in row and pd.notna(row.get(c)):
+                return row.get(c)
+        except Exception:
+            continue
+    return default
+
+def _is_matrix_green(matrix_str: str) -> bool:
+    """STRICT: accept only fully-green matrix values."""
+    s = str(matrix_str or "").strip()
+    if not s:
+        return False
+    return (s == "🟢") or (s.upper() == "GREEN")
+
+def _bundle_for_market(row, market_key: str) -> dict:
+    """Normalize column naming differences across tracker versions."""
+    mk = str(market_key).lower().strip()
+
+    def _first_num(*keys, default=0.0):
+        return _num(_get_first(row, *keys, default=default))
+
+    def _first_str(*keys, default=""):
+        return str(_get_first(row, *keys, default=default) or "")
+
+    # helper: compute EV% from model prob + american odds if not already provided
+    def _ev_from_model_odds(model_pct: float, odds_amer: float) -> float:
+        try:
+            p = float(model_pct) / 100.0
+            o = float(odds_amer)
+            if p <= 0 or p >= 1 or o == 0:
+                return 0.0
+            if o > 0:
+                b = o / 100.0
+            else:
+                b = 100.0 / abs(o)
+            ev = p * b - (1 - p) * 1.0  # profit expectation per $1 risk
+            return float(ev * 100.0)
+        except Exception:
+            return 0.0
+
+    if mk in ("sog", "shots"):
+        label = "SOG"
+        conf = _first_num("Conf_SOG", "Conf_Shots", default=0)
+        matrix = _first_str("Matrix_SOG", "Matrix_Shots", default="")
+        # tracker variants: SOG_EVpct_over (preferred), SOG_EV%, EV_SOG
+        ev = _first_num("SOG_EV%", "SOG_EVpct_over", "EV_SOG", default=0)
+        model = _first_num("SOG_Model%", "Model%_SOG", "Model_SOG", default=0)
+        odds = _first_num("SOG_Odds_Over", "Odds_SOG", "Odds_Amer_SOG", default=0)
+        if ev == 0 and model and odds:
+            ev = _ev_from_model_odds(model, odds)
+        return {
+            "label": label,
+            "conf": conf,
+            "matrix": matrix,
+            "ev": ev,
+            "model": model,
+            "odds": odds,
+            "line": _first_num("SOG_Line", "Line_SOG", default=0),
+            "drought": _first_num("Drought_S", "Drought_SOG", default=0),
+            # tracker variants: Reg_Gap_S10 or Reg_Gap_S, heat: Reg_Heat_S
+            "reg_gap": _first_num("Reg_Gap_S10", "Reg_Gap_S", default=0),
+            "reg_heat": _first_str("Reg_Heat_S", default=""),
+            # U / mu variants (you called this the "U")
+            "mu": _first_num("SOG_mu", "MU_SOG", "U_SOG", "U", "MU", default=0),
+            "share_5v5": _first_num("5v5_Share", "Share_5v5", "ShotShare_5v5", default=0),
+            "lsa10": _first_num("L10_Team_SA", "L10SA", "TeamSA10", "LSA10", default=0),
+        }
+
+    if mk in ("assists", "a"):
+        label = "ASSISTS"
+        conf = _first_num("Conf_Assists", "Conf_A", default=0)
+        matrix = _first_str("Matrix_Assists", "Matrix_A", default="")
+        ev = _first_num("Assists_EV%", "Assists_EVpct_over", "A_EV%", "EV_Assists", default=0)
+        model = _first_num("Assists_Model%", "Model%_Assists", default=0)
+        odds = _first_num("Assists_Odds_Over", "Odds_Assists", default=0)
+        if ev == 0 and model and odds:
+            ev = _ev_from_model_odds(model, odds)
+        return {
+            "label": label,
+            "conf": conf,
+            "matrix": matrix,
+            "ev": ev,
+            "model": model,
+            "odds": odds,
+            "line": _first_num("Assists_Line", "Line_Assists", default=0),
+            "drought": _first_num("Drought_A", "Drought_Assists", default=0),
+            "reg_gap": _first_num("Reg_Gap_A10", "Reg_Gap_A", default=0),
+            "reg_heat": _first_str("Reg_Heat_A", default=""),
+            "mu": _first_num("Assists_mu", "MU_Assists", "U_Assists", "U", "MU", default=0),
+            "share_5v5": _first_num("5v5_Share", "Share_5v5", default=0),
+            "lsa10": _first_num("L10_Team_SA", "L10SA", "TeamSA10", default=0),
+        }
+
+    if mk in ("points", "pts", "p"):
+        label = "POINTS"
+        conf = _first_num("Conf_Points", "Conf_P", default=0)
+        matrix = _first_str("Matrix_Points", "Matrix_P", default="")
+        ev = _first_num("Points_EV%", "Points_EVpct_over", "P_EV%", "EV_Points", default=0)
+        model = _first_num("Points_Model%", "Model%_Points", default=0)
+        odds = _first_num("Points_Odds_Over", "Odds_Points", default=0)
+        if ev == 0 and model and odds:
+            ev = _ev_from_model_odds(model, odds)
+        return {
+            "label": label,
+            "conf": conf,
+            "matrix": matrix,
+            "ev": ev,
+            "model": model,
+            "odds": odds,
+            "line": _first_num("Points_Line", "Line_Points", default=0),
+            "drought": _first_num("Drought_P", "Drought_Points", default=0),
+            "reg_gap": _first_num("Reg_Gap_P10", "Reg_Gap_P", default=0),
+            "reg_heat": _first_str("Reg_Heat_P", default=""),
+            "mu": _first_num("Points_mu", "MU_Points", "U_Points", "U", "MU", default=0),
+            "share_5v5": _first_num("5v5_Share", "Share_5v5", default=0),
+            "lsa10": _first_num("L10_Team_SA", "L10SA", "TeamSA10", default=0),
+        }
+
+    if mk in ("goals", "goal", "g"):
+        label = "GOALS"
+        conf = _first_num("Conf_Goal", "Conf_Goals", "Conf_G", default=0)
+        matrix = _first_str("Matrix_Goal", "Matrix_Goals", "Matrix_G", default="")
+        ev = _first_num("Goal_EV%", "Goal_EVpct_over", "Goals_EVpct_over", "G_EV%", "EV_Goal", "EV_Goals", default=0)
+        model = _first_num("Goal_Model%", "Goals_Model%", "Model%_Goal", "Model%_Goals", default=0)
+        odds = _first_num("Goal_Odds_Over", "Goal_Odds", "Goals_Odds_Over", "Odds_Goal", "Odds_Goals", "Odds", "Odds_Amer", default=0)
+        if ev == 0 and model and odds:
+            ev = _ev_from_model_odds(model, odds)
+        return {
+            "label": label,
+            "conf": conf,
+            "matrix": matrix,
+            "ev": ev,
+            "model": model,
+            "odds": odds,
+            "line": _first_num("Goals_Line", "Line_Goal", "Line_Goals", default=0),
+            "drought": _first_num("Drought_G", "Drought_Goal", "Drought_Goals", default=0),
+            "reg_gap": _first_num("Reg_Gap_G10", "Reg_Gap_G", default=0),
+            "reg_heat": _first_str("Reg_Heat_G", default=""),
+            "mu": _first_num("Goals_mu", "MU_Goal", "MU_Goals", "U_Goal", "U_Goals", "U", "MU", default=0),
+            "share_5v5": _first_num("5v5_Share", "Share_5v5", default=0),
+            "lsa10": _first_num("L10_Team_SA", "L10SA", "TeamSA10", default=0),
+        }
+
+    # fallback
+    return {
+        "label": str(market_key).upper(),
+        "conf": 0.0,
+        "matrix": "",
+        "ev": 0.0,
+        "model": 0.0,
+        "odds": 0.0,
+        "line": 0.0,
+        "drought": 0.0,
+        "reg_gap": 0.0,
+        "reg_heat": "",
+        "mu": 0.0,
+        "share_5v5": 0.0,
+        "lsa10": 0.0,
+    }
+
+
+def _passes_smash(b: dict, thr_conf: int, thr_ev: float, thr_drought: int, thr_gap: float, thr_heat: float) -> bool:
+    """HARD Board gate:
+    - CONF must pass
+    - MATRIX must be green (strict)
+    - EV must pass
+    - AND (Drought OR Regression) must pass
+    """
+    # CONF (hard)
+    try:
+        conf = int(float(b.get("conf", 0) or 0))
+    except Exception:
+        conf = 0
+    if conf < int(thr_conf):
+        return False
+
+    # MATRIX (hard, strict green)
+    matrix = str(b.get("matrix", "") or "").strip()
+    if not _is_matrix_green(matrix):
+        return False
+
+    # EV (hard)
+    try:
+        ev = float(b.get("ev", 0.0) or 0.0)
+    except Exception:
+        ev = 0.0
+    if ev < float(thr_ev):
+        return False
+
+    # SECONDARY: Drought OR Regression
+    try:
+        drought = int(float(b.get("drought", 0) or 0))
+    except Exception:
+        drought = 0
+
+    try:
+        reg_gap = float(b.get("reg_gap", 0.0) or 0.0)
+    except Exception:
+        reg_gap = 0.0
+
+    reg_heat = str(b.get("reg_heat", "") or "").strip().upper()
+    # treat HOT/OVERDUE/DUE as heat signals; thr_heat acts as on/off (>=1 means require heat keyword)
+    heat_ok = reg_heat in ("HOT", "OVERDUE", "DUE")
+    reg_ok = (reg_gap >= float(thr_gap)) or (heat_ok and float(thr_heat) >= 1.0)
+
+    return (drought >= int(thr_drought)) or reg_ok
+
+
+
+def select_all_market_rows(row, thr_conf: int, thr_ev: float, thr_drought: int, thr_gap: float, thr_heat: float) -> list[dict]:
+    """Return ALL market bundles that pass the hard gate (multi-market allowed)."""
+    cands = [
+        _bundle_for_market(row, "sog"),
+        _bundle_for_market(row, "assists"),
+        _bundle_for_market(row, "points"),
+        _bundle_for_market(row, "goal"),
+    ]
+    elig = [c for c in cands if _passes_smash(c, thr_conf, thr_ev, thr_drought, thr_gap, thr_heat)]
+    # sort strongest first
+    elig.sort(key=lambda x: (x.get("ev", 0.0), x.get("conf", 0), x.get("model", 0.0)), reverse=True)
+    return elig
+
+def select_best_market_row(row, thr_conf: int, thr_ev: float, thr_drought: int, thr_gap: float, thr_heat: float):
+    cands = [
+        _bundle_for_market(row, "sog"),
+        _bundle_for_market(row, "assists"),
+        _bundle_for_market(row, "points"),
+        _bundle_for_market(row, "goal"),
+    ]
+    elig = [c for c in cands if _passes_smash(c, thr_conf, thr_ev, thr_drought, thr_gap, thr_heat)]
+    if not elig:
+        return None
+    elig.sort(key=lambda x: (x["ev"], x["conf"], x["model"]), reverse=True)
+    return elig[0]
+
+
+
 def show_table(df: pd.DataFrame, cols: list[str], title: str):
     st.subheader(title)
 
@@ -872,6 +1460,20 @@ def show_table(df: pd.DataFrame, cols: list[str], title: str):
 
     # de-dupe requested cols while preserving order
     cols = list(dict.fromkeys(cols))
+
+    # Ensure Time column is displayed right next to Game (if available)
+    if "Game" in cols and "Time" in df.columns:
+        if "Time" not in cols:
+            gi = cols.index("Game")
+            cols.insert(gi + 1, "Time")
+        else:
+            gi = cols.index("Game")
+            ti = cols.index("Time")
+            if abs(ti - gi) != 1:
+                cols.pop(ti)
+                gi = cols.index("Game")
+                cols.insert(gi + 1, "Time")
+
 
     existing = [c for c in cols if c in df.columns]
     missing = [c for c in cols if c not in df.columns]
@@ -920,18 +1522,23 @@ st.markdown(
 # Data source (no more forced uploads)
 # -------------------------
 # Optional manual upload (still supported)
-uploaded = st.sidebar.file_uploader("Upload tracker CSV (optional)", type=["csv"])
+uploaded = st.sidebar.file_uploader("Upload tracker CSV (optional)", type=["csv"], key="uploader_tracker_csv_sidebar")
 
 # Preferred stable path written by nhl_edge.py
 latest_stable = os.path.join(OUTPUT_DIR, "tracker_latest.csv")
 latest_path = latest_stable if os.path.exists(latest_stable) else find_latest_tracker_csv(OUTPUT_DIR)
+# If we ran the model this session, prefer that exact path (prevents reverting to yesterday on rerun)
+if "latest_path_override" in st.session_state:
+    _p = st.session_state.get("latest_path_override")
+    if _p and os.path.exists(str(_p)):
+        latest_path = str(_p)
+
 
 # Quick-run inside Streamlit (works on Streamlit Cloud)
 st.sidebar.markdown("---")
-slate_date = st.sidebar.date_input("Slate date", value=datetime.now().date())
-run_now = st.sidebar.button("Run / Refresh slate", help="Runs nhl_edge.py for the selected date and loads the fresh tracker.")
+slate_date = st.sidebar.date_input("Slate date", value=datetime.now().date(), key="date_slate_date")
+run_now = st.sidebar.button("Run / Refresh slate", help="Runs nhl_edge.py for the selected date and loads the fresh tracker.", key="btn_run_refresh_slate")
 
-@st.cache_data(show_spinner=False)
 def _run_model_cached(d: date, code_stamp: float) -> str:
     # Import + reload so Streamlit Cloud picks up new engine code
     import importlib
@@ -955,6 +1562,7 @@ else:
                 except Exception:
                     code_stamp = 0.0
                 latest_path = _run_model_cached(slate_date, code_stamp)
+                st.session_state["latest_path_override"] = str(latest_path)
             except Exception as e:
                 st.error(f"Model run failed: {e}")
                 st.stop()
@@ -1002,13 +1610,7 @@ if "Talent_Tier" not in df.columns:
 if "Tier_Tag" not in df.columns:
     df["Tier_Tag"] = ""
 
-# Build Tier_Tag from Talent_Tier (always overwrite so it stays correct)
-tt = df["Talent_Tier"].astype(str).str.upper().fillna("NONE")
-df["Tier_Tag"] = np.where(
-    tt.eq("ELITE"),
-    "👑 ELITE",
-    np.where(tt.eq("STAR"), "⭐ STAR", "")
-)
+# (Removed global Tier_Tag overwrite — keep tracker Tier_Tag as-is)
 
 # -------------------------
 # Ensure TEAM GF gate columns exist (older CSV safe)
@@ -1226,6 +1828,7 @@ for c in [
     "iXG%", "iXA%",
     "Med10_SOG", "Avg5_SOG",
     "Goalie_Weak", "Opp_DefWeak",
+        "Opp_SA_Avg_L10", "Opp_GA_Avg_L10",
     "team_5v5_xGF60_pct",
     "Reg_Gap_P10", "Drought_P",
     "TOI_Pct",
@@ -1417,12 +2020,14 @@ with st.expander("Debug: loaded columns"):
 # Navigation
 page = st.sidebar.radio(
     "Page",
-    ["Board", "Points", "Assists", "SOG", "GOAL (1+)", "Power Play", "Guide", "Ledger", "Raw CSV", "📟 Calculator", "🧾 Log Bet"],
+    ["Board", "Points", "Assists", "SOG", "GOAL (1+)", "Power Play", "🧪 Dagger Lab", "🪜 Ladder Alerts", "Guide", "Ledger", "Raw CSV", "📟 Calculator", "🧾 Log Bet"],
     index=0
 )
 
 df_f = filter_common(df)
 
+# NOTE: Board gating is applied ONLY inside the Board page.
+# We do not shrink the global dataframe for other pages.
 # Show slate times table
 show_games_times(df_f)
 
@@ -1431,7 +2036,55 @@ show_games_times(df_f)
 # BOARD
 # =========================
 if page == "Board":
-    df_b = sort_board(df_f)
+
+    # -------------------------
+    # Board-only gating (does NOT affect other pages)
+    # -------------------------
+    thr_conf = int(st.sidebar.number_input("Smash min Confidence", min_value=0, max_value=100, value=int(THR_CONF_DEFAULT), step=1, key="board_thr_conf"))
+    thr_ev = float(st.sidebar.number_input("Smash min EV%", value=float(THR_EV_DEFAULT), step=0.5, key="board_thr_ev"))
+    thr_drought = int(st.sidebar.number_input("Smash min Drought", min_value=0, max_value=20, value=int(THR_DROUGHT_DEFAULT), step=1, key="board_thr_drought"))
+    thr_gap = float(st.sidebar.number_input("Smash min Reg Gap", value=float(THR_REG_GAP_DEFAULT), step=0.5, key="board_thr_gap"))
+    thr_heat = float(st.sidebar.number_input("Smash min Reg Heat", value=float(THR_REG_HEAT_DEFAULT), step=0.5, key="board_thr_heat"))
+
+    df_board_src = df_f.copy()
+
+    # Tier gate: STAR/ELITE only (robust; fall back if Tier_Tag is blank)
+    _mask = None
+    if "Tier_Tag" in df_board_src.columns:
+        _t = df_board_src["Tier_Tag"].astype(str).str.upper()
+        _mask = _t.str.contains("STAR") | _t.str.contains("ELITE")
+
+    if (_mask is None or int(_mask.sum()) == 0) and "Talent_Tier" in df_board_src.columns:
+        _t2 = df_board_src["Talent_Tier"].astype(str).str.upper()
+        _mask = _t2.str.contains("STAR") | _t2.str.contains("ELITE")
+
+    if (_mask is None or int(_mask.sum()) == 0) and "Tier" in df_board_src.columns:
+        _t3 = df_board_src["Tier"].astype(str).str.upper()
+        _mask = _t3.str.contains("STAR") | _t3.str.contains("ELITE")
+
+    if _mask is not None:
+        df_board_src = df_board_src[_mask].copy()
+
+    best_rows = []
+
+    for _, _r in df_board_src.iterrows():
+        passing = select_all_market_rows(_r, thr_conf, thr_ev, thr_drought, thr_gap, thr_heat)
+        if not passing:
+            continue
+        for b in passing:
+            rr = _r.copy()
+            rr["Best_Market"] = b["label"]
+            rr["Best_Conf"] = b["conf"]
+            rr["Best_EV%"] = b["ev"]
+            rr["Best_Model%"] = b["model"]
+            rr["Best_Line"] = b["line"]
+            rr["Best_Drought"] = b["drought"]
+            rr["Best_Reg_Gap10"] = b["reg_gap"]
+            rr["Best_Reg_Heat10"] = b["reg_heat"]
+            best_rows.append(rr)
+
+    df_board = pd.DataFrame(best_rows) if best_rows else df_board_src.iloc[0:0]
+    df_b = sort_board(df_board)
 
     board_cols = [
         "Game",
@@ -1464,19 +2117,182 @@ if page == "Board":
     
 
     _ev_lock = df_b.apply(board_best_market_ev, axis=1, result_type="expand")
+    # Robustly normalize apply() output across pandas versions / empty / 1-row cases
+    if isinstance(_ev_lock, pd.DataFrame):
+        _c0 = _ev_lock.iloc[:, 0] if _ev_lock.shape[1] > 0 else ""
+        _c1 = _ev_lock.iloc[:, 1] if _ev_lock.shape[1] > 1 else ""
+    elif isinstance(_ev_lock, pd.Series):
+        _c0 = _ev_lock.apply(lambda x: x[0] if isinstance(x, (list, tuple)) and len(x) > 0 else "")
+        _c1 = _ev_lock.apply(lambda x: x[1] if isinstance(x, (list, tuple)) and len(x) > 1 else "")
+    else:
+        _c0, _c1 = "", ""
+    
+    df_b["EV_Signal"] = _c0
+    df_b["EV_Source"] = _c1
+    df_b["LOCK"] = _c1
 
     
 
-    df_b["EV_Signal"] = _ev_lock[0]
 
     
 
-    df_b["LOCK"] = _ev_lock[1]
 
+    # === PICK SHEET (UI ONLY) ===
+    st.subheader("🧾 Pick Sheet — signals-first")
+    cA, cB, cC, cD = st.columns(4)
+    with cA:
+        st.metric("Players", int(len(df_b)))
+    with cB:
+        st.metric("Locks", int((df_b["LOCK"].astype(str).str.len() > 0).sum()) if "LOCK" in df_b.columns else 0)
+    with cC:
+        st.metric("+EV", int((df_b["EV_Signal"].astype(str).str.contains("💰")).sum()) if "EV_Signal" in df_b.columns else 0)
+    with cD:
+        st.metric("Top Conf", float(df_b["Best_Conf"].max()) if "Best_Conf" in df_b.columns else 0.0)
 
-    
+    # Top candidates: prefer locks, then EV signal, then confidence (presentation-only)
+    _rank = df_b.copy()
+    _rank["_is_lock"] = _rank["LOCK"].astype(str).str.len().fillna(0).astype(int) if "LOCK" in _rank.columns else 0
+    _rank["_is_ev"] = _rank["EV_Signal"].astype(str).str.contains("💰").fillna(False).astype(int) if "EV_Signal" in _rank.columns else 0
+    _rank["_bc"] = pd.to_numeric(_rank.get("Best_Conf", 0), errors="coerce").fillna(0)
+    _rank = _rank.sort_values(["_is_lock","_is_ev","_bc"], ascending=[False, False, False])
 
-    show_table(df_b, board_cols, "Board (sorted by Best_Conf)")
+    top_n = st.slider("Show top plays", 5, 30, 12, 1, key="board_topn")
+    top = _rank.head(int(top_n)).copy()
+
+    def _best_why(r: pd.Series) -> str:
+        # UI-only: tracker exports a unified 'Why' column
+        return str(r.get("Why", "") or "")
+    # Render as cards (two-column grid)
+    grid_left, grid_right = st.columns(2)
+    for i, (_, r) in enumerate(top.iterrows()):
+        side = grid_left if i % 2 == 0 else grid_right
+        with side:
+            player = r.get("Player","")
+            game = r.get("Game","")
+            tier = r.get("Tier_Tag","")
+            bm = r.get("Best_Market","")
+            bc = r.get("Best_Conf","")
+            evsig = r.get("EV_Signal","")
+            lock = r.get("LOCK","")
+            markets = r.get("Markets","")
+            why = _best_why(r)
+
+            headline = f"**{player}** — {game}  ·  **{bm}**  ·  Conf **{bc}**"
+            mb = calc_ev_per_dollar(_to_float(_get(r, "Model%", "Model_Prob", default="")), _to_float(_get(r, "Odds", "Odds_Amer", default="")))
+            mb_txt = f"↩ {mb:+.2f}/$1" if mb is not None else ""
+            badges = " ".join([str(x) for x in [lock, evsig, mb_txt] if str(x).strip()])
+            st.markdown(f"<div class='wl-card'>"
+                        f"<div style='display:flex;justify-content:space-between;gap:10px;'>"
+                        f"<div style='font-size:16px;line-height:1.2;'>{headline}</div>"
+                        f"<div style='font-size:16px;white-space:nowrap;'>{badges}</div>"
+                        f"</div>"
+                        f"<div style='margin-top:6px;opacity:0.95;'>{markets}</div>"
+                        f"</div>", unsafe_allow_html=True)
+
+            with st.expander("🔥 Why it fires", expanded=False):
+                # Positive-only WHY (signals-first, then 2-layer regression, then optional enhancers only if good)
+                reasons = []
+                
+                # Market inferred from Best_Market
+                market = str(bm or "").upper()
+                
+                # Signals
+                if str(evsig).strip() == "💰":
+                    reasons.append("💰 EV signal")
+                # Earned green per market if column exists
+                _green_ok = False
+                if market.startswith("SOG") and "Green_SOG" in df_b.columns:
+                    _green_ok = bool(r.get("Green_SOG"))
+                elif market.startswith("POINT") and "Green_Points" in df_b.columns:
+                    _green_ok = bool(r.get("Green_Points"))
+                elif market.startswith("ASSIST") and "Green_Assists" in df_b.columns:
+                    _green_ok = bool(r.get("Green_Assists"))
+                elif (market.startswith("GOAL") or market.startswith("ATG")):
+                    if "Green_Goal" in df_b.columns:
+                        _green_ok = bool(r.get("Green_Goal"))
+                    elif "Green_ATG" in df_b.columns:
+                        _green_ok = bool(r.get("Green_ATG"))
+                if _green_ok:
+                    reasons.append("🟢 Earned Green")
+                
+                # Tier / Conf
+                if str(tier).strip().upper() in ("STAR","ELITE"):
+                    reasons.append(f"⭐ {str(tier).strip().upper()} tier")
+                try:
+                    _conf = float(bc)
+                except Exception:
+                    _conf = None
+                if _conf is not None and _conf >= 80:
+                    reasons.append(f"🧠 Conf {_conf:.0f} (≥80)")
+                
+                # 2-layer regression (at least one must be true to show as a reason)
+                # Drought (market-specific)
+                drought_val = None
+                if market.startswith("SOG") and "Drought_SOG" in df_b.columns:
+                    drought_val = r.get("Drought_SOG", None)
+                elif market.startswith("POINT") and "Drought_P" in df_b.columns:
+                    drought_val = r.get("Drought_P", None)
+                elif market.startswith("ASSIST") and "Drought_A" in df_b.columns:
+                    drought_val = r.get("Drought_A", None)
+                elif (market.startswith("GOAL") or market.startswith("ATG")) and "Drought_G" in df_b.columns:
+                    drought_val = r.get("Drought_G", None)
+                try:
+                    drought_num = float(drought_val) if drought_val is not None else None
+                except Exception:
+                    drought_num = None
+                
+                drought_ok = (drought_num is not None and drought_num >= 2)
+                
+                # HOT regression (market-specific)
+                reg_val = None
+                if market.startswith("SOG") and "Reg_Heat_S" in df_b.columns:
+                    reg_val = r.get("Reg_Heat_S", "")
+                elif market.startswith("POINT") and "Reg_Heat_P" in df_b.columns:
+                    reg_val = r.get("Reg_Heat_P", "")
+                elif market.startswith("ASSIST") and "Reg_Heat_A" in df_b.columns:
+                    reg_val = r.get("Reg_Heat_A", "")
+                elif (market.startswith("GOAL") or market.startswith("ATG")) and "Reg_Heat_G" in df_b.columns:
+                    reg_val = r.get("Reg_Heat_G", "")
+                reg_s = str(reg_val or "").lower()
+                reg_ok = ("hot" in reg_s) or ("due" in reg_s) or ("overdue" in reg_s) or ("very hot" in reg_s)
+                
+                # Require at least one: drought or regression
+                if not (drought_ok or reg_ok):
+                    continue
+
+                if drought_ok:
+                    reasons.append(f"⏳ Drought {drought_num:.0f} (≥2)")
+                if reg_ok:
+                    reasons.append("🔥 HOT regression")
+                
+                # Optional enhancers ONLY if good (never show bad)
+                def _show_if_good(label, value, thr):
+                    try:
+                        v = float(value)
+                    except Exception:
+                        return
+                    if v >= thr:
+                        reasons.append(f"➕ {label} {v:.1f}")
+                
+                # Only show these if they are GOOD
+                _show_if_good("PP_Matchup", r.get("PP_Matchup", None), 60.0)
+                _show_if_good("Goalie_Weak", r.get("Goalie_Weak", None), 65.0)
+                _show_if_good("Opp_DefWeak", r.get("Opp_DefWeak", None), 60.0)
+                
+                # For SOG, show shots-allowed environment if present and strong
+                if market.startswith("SOG"):
+                    _show_if_good("OppSOG_L10", r.get("OppSOG_L10", None), 30.0)
+                
+                # Render
+                if reasons:
+                    st.markdown("\n".join([f"- {x}" for x in reasons]))
+                else:
+                    st.caption("")
+
+    st.divider()
+    with st.expander("Full Board Table (all rows)", expanded=False):
+        show_table(df_b, board_cols, "Board (sorted by Best_Conf)")
+
 
 
 # =========================
@@ -1626,14 +2442,34 @@ elif page == "Assists":
 
     df_a["Green"] = df_a.get("Green_Assists", False).map(lambda x: "🟢" if bool(x) else "")
 
-    # 🗡️ Dagger indicator (PP assist edge)
-    if "🗡️" not in df_a.columns:
-        if "Assist_PP_Proof" in df_a.columns:
-            df_a["🗡️"] = df_a["Assist_PP_Proof"].map(lambda x: "🗡️" if bool(x) else "")
-        else:
-            df_a["🗡️"] = ""
+    # 🗡️ Dagger indicator (PP assist edge) — HARD GATE (recomputed every time)
+    # Goal: daggers are rare and meaningful (PP1/proof-level assist edges only).
+    df_a["🗡️"] = ""
+
+    # Safe pulls
+    proof_col = "Assist_PP_Proof" if "Assist_PP_Proof" in df_a.columns else None
+    proof = df_a[proof_col].astype(bool) if proof_col else False
+
+    apc = pd.to_numeric(df_a.get("Assist_ProofCount", 0), errors="coerce").fillna(0)
+    adg = pd.to_numeric(df_a.get("Assist_Dagger", 0), errors="coerce").fillna(0)
+    ppt = df_a.get("PP_Tier", "").astype(str).str.upper()
+
+    # HARD gate:
+    # 1) Explicit proof, OR
+    # 2) 4-of-4 assist proofs, OR
+    # 3) Elite dagger score (>=85), OR
+    # 4) PP A/B + strong proof (>=3) + decent dagger (>=70)
+    mask = (
+        (proof if isinstance(proof, pd.Series) else False)
+        | (apc >= 4)
+        | (adg >= 82)
+        | ((ppt.isin(["A", "B"])) & (apc >= 3) & (adg >= 60))
+    )
+
+    df_a.loc[mask, "🗡️"] = "🗡️"
 
     assists_cols = [
+
         "Game",
         "Player", "Pos",
         "Tier_Tag",
@@ -1654,8 +2490,13 @@ elif page == "Assists":
 
         "Assists_Call",
         "Drought_A","Best_Drought",
-        "Assist_ProofCount", "Assist_Why", "🗡️", "Assist_Dagger", "PP_TOI_Pct_Game", "PP_iXA60", "PP_Matchup",
+        "Assist_ProofCount", "Assist_Why", "🗡️", "Assist_Dagger",
+        
         "Reg_Heat_A", "Reg_Gap_A10", "Exp_A_10", "L10_A",
+        "PP_Tier", "PP_Path", "PP_BOOST",
+        "PP_TOI_Pct_Game", "PP_iXA60", "PP_Matchup",
+
+        
         "iXA%","iXG%", "v2_player_stability",
         "Opp_Goalie", "Opp_SV",
         "Goalie_Weak", "Opp_DefWeak",
@@ -1908,6 +2749,11 @@ elif page == "Power Play":
     unit_sel = st.sidebar.multiselect("PP Unit", ["PP1", "PP2"], default=["PP1", "PP2"], key="pp_unit_sel")
     min_pp_toi = st.sidebar.slider("Min PP TOI / game", 0.0, 10.0, 1.0, 0.25, key="pp_min_toi")
     min_ppp_drought = st.sidebar.slider("Min PPP Drought (games)", 0, 12, 0, 1, key="pp_min_ppp_drought")
+    tier_opts = ["A","B","C"] if "PP_Tier" in df_f.columns else []
+    tier_sel = st.sidebar.multiselect("PP Tier", tier_opts, default=tier_opts, key="pp_tier_sel") if tier_opts else []
+    path_opts = ["Shooter","Distributor","Hybrid","Passenger"] if "PP_Path" in df_f.columns else []
+    path_sel = st.sidebar.multiselect("PP Path", path_opts, default=path_opts, key="pp_path_sel") if path_opts else []
+
 
     df_pp = df_f.copy()
     if "PP_UnitTag" in df_pp.columns:
@@ -1918,9 +2764,14 @@ elif page == "Power Play":
 
     if "Drought_PPP" in df_pp.columns:
         df_pp = df_pp[pd.to_numeric(df_pp["Drought_PPP"], errors="coerce").fillna(0).astype(int) >= int(min_ppp_drought)]
+    if "PP_Tier" in df_pp.columns and tier_sel:
+        df_pp = df_pp[df_pp["PP_Tier"].astype(str).str.upper().isin([t.upper() for t in tier_sel])]
+    if "PP_Path" in df_pp.columns and path_sel:
+        df_pp = df_pp[df_pp["PP_Path"].astype(str).isin(path_sel)]
+
 
     # Sort best-first (only by columns that exist)
-    sort_cols = [c for c in ["PP_Matchup", "PP_Points60", "PP_TOI_PG", "Drought_PPP"] if c in df_pp.columns]
+    sort_cols = [c for c in ["PP_Matchup", "PP_BOOST", "PP_Points60", "PP_TOI_PG", "Drought_PPP"] if c in df_pp.columns]
     if sort_cols:
         df_pp = df_pp.sort_values(sort_cols, ascending=[False] * len(sort_cols))
 
@@ -1930,18 +2781,432 @@ elif page == "Power Play":
         "Tier_Tag",
         "PP_Unit",
         "PP_TOI_PG",
+        "PP_TeamShare_pct",
+        "PP_TOI_stability",
+        "PP_Tier",
+        "PP_Path",
+        "PP_BOOST",
         "PP_TOI_Pct",
         "PP_Points60",
         "PP_iXG60",
         "PP_iXA60",
         "Team_PP_xGF60",
         "Opp_PK_xGA60",
+
+        # Opportunity context (season-to-date team rates)
+        "Team_PPO_PG",
+        "Opp_TSH_PG",
+        "Team_PP_Eff",
+        "PP_Opps_Score",
+        "Opp_Penalty_Score",
+        "PP_Opportunity",
+
         "PP_Matchup",
         "PPP10_total",
         "Drought_PPP",
     ]
 
     show_table(df_pp, pp_cols, "Power Play (5v4) — Usage, creation, matchup, PPP drought")
+
+
+elif page == "🧪 Dagger Lab":
+    st.subheader("🧪 Dagger Lab")
+    st.caption("Explain *why* the 🗡️ shows up — role, stability, environment, and creation. This page is diagnostic only (does not change EV).")
+
+    # Focus on players with any dagger context available
+    df_lab = df_f.copy()
+
+    # Build dagger icon (HARD GATE) — recompute every time (ignore any 🗡️ column in CSV)
+    df_lab["🗡️"] = ""
+
+    proof_col = "Assist_PP_Proof" if "Assist_PP_Proof" in df_lab.columns else None
+    proof = df_lab[proof_col].astype(bool) if proof_col else pd.Series(False, index=df_lab.index)
+
+    apc = pd.to_numeric(df_lab.get("Assist_ProofCount", 0), errors="coerce").fillna(0)
+    adg = pd.to_numeric(df_lab.get("Assist_Dagger", 0), errors="coerce").fillna(0)
+    ppt = df_lab.get("PP_Tier", "").astype(str).str.upper()
+
+    # HARD gate:
+    # 1) Explicit proof, OR
+    # 2) 4-of-4 assist proofs, OR
+    # 3) Elite dagger score (>=82), OR
+    # 4) PP A/B + strong proof (>=3) + decent dagger (>=60)
+    mask = (proof | (apc >= 4) | (adg >= 82) | ((ppt.isin(["A","B"])) & (apc >= 3) & (adg >= 60)))
+    df_lab.loc[mask, "🗡️"] = "🗡️"
+
+    # Prefer listing dagger candidates first
+    sort_cols = []
+    if "🗡️" in df_lab.columns: sort_cols.append("🗡️")
+    if "Assist_Dagger" in df_lab.columns: sort_cols.append("Assist_Dagger")
+    if "PP_BOOST" in df_lab.columns: sort_cols.append("PP_BOOST")
+    if sort_cols:
+        df_lab = df_lab.sort_values(by=[c for c in sort_cols if c in df_lab.columns], ascending=[False]*len(sort_cols))
+
+    # Player selector (Game context helps)
+    label_col = "Player" if "Player" in df_lab.columns else df_lab.columns[0]
+    game_col = "Game" if "Game" in df_lab.columns else None
+    def _lab_label(r):
+        name = str(r.get(label_col, "")).strip()
+        game = str(r.get(game_col, "")).strip() if game_col else ""
+        pp_tier = str(r.get("PP_Tier", "")).upper().strip()
+
+        tier_tag = f"[PP {pp_tier}]" if pp_tier and pp_tier not in {"NAN", "NONE"} else  "[PP ?]"
+
+        if game_col:
+            return f"{name} {tier_tag}  —  {game}"
+        return f"{name} {tier_tag}"
+
+
+    options = df_lab.apply(_lab_label, axis=1).tolist()
+    if not options:
+        st.warning("No rows loaded.")
+    else:
+        pick = st.selectbox("Select a player", options, index=0)
+        idx = options.index(pick)
+        r = df_lab.iloc[idx]
+
+        # Core fields (safe pulls)
+        def g(col, default=None):
+            return r.get(col, default) if col in r.index else default
+
+        # Display helpers: convert numpy types / NaN to clean primitives for UI
+        def _disp(v):
+            if v is None:
+                return ""
+            try:
+                if pd.isna(v):
+                    return ""
+            except Exception:
+                pass
+            try:
+                import numpy as _np
+                if isinstance(v, _np.generic):
+                    v = v.item()
+            except Exception:
+                pass
+            return v
+
+        # Back-compat: derive PP fields if missing from the tracker
+        if "PP_Tier" not in df_lab.columns and "PP_Role" in df_lab.columns:
+            def _pp_tier(v):
+                try:
+                    x = int(float(v))
+                except Exception:
+                    return ""
+                return "A" if x >= 2 else ("B" if x == 1 else "C")
+            df_lab["PP_Tier"] = df_lab["PP_Role"].apply(_pp_tier)
+
+        if "PP_Path" not in df_lab.columns and ("PP_iXG60" in df_lab.columns or "PP_iXA60" in df_lab.columns):
+            def _pp_path_row(rr):
+                try:
+                    role = int(float(rr.get("PP_Role", 0) or 0))
+                except Exception:
+                    role = 0
+                if role <= 0:
+                    return "Passenger"
+                ixg = pd.to_numeric(rr.get("PP_iXG60", np.nan), errors="coerce")
+                ixa = pd.to_numeric(rr.get("PP_iXA60", np.nan), errors="coerce")
+                tot = (0.0 if pd.isna(ixg) else float(ixg)) + (0.0 if pd.isna(ixa) else float(ixa))
+                if tot <= 0:
+                    return "Passenger"
+                share = (ixg / tot)
+                if share >= 0.60:
+                    return "Shooter"
+                if share <= 0.40:
+                    return "Passer"
+                return "Balanced"
+            df_lab["PP_Path"] = df_lab.apply(_pp_path_row, axis=1)
+
+        if "PP_TeamShare_pct" not in df_lab.columns and "PP_TOI_Pct_Game" in df_lab.columns:
+            df_lab["PP_TeamShare_pct"] = pd.to_numeric(df_lab["PP_TOI_Pct_Game"], errors="coerce")
+
+        if "PP_TOI_stability" not in df_lab.columns and "PP_TOI" in df_lab.columns and "PP_TOI_min" in df_lab.columns:
+            toi = pd.to_numeric(df_lab["PP_TOI"], errors="coerce")
+            toi_min = pd.to_numeric(df_lab["PP_TOI_min"], errors="coerce")
+            with np.errstate(divide="ignore", invalid="ignore"):
+                df_lab["PP_TOI_stability"] = (100.0 * (toi_min / toi)).clip(lower=0.0, upper=100.0)
+
+        if "PP_Env_Score" not in df_lab.columns and "PP_Matchup" in df_lab.columns:
+            df_lab["PP_Env_Score"] = pd.to_numeric(df_lab["PP_Matchup"], errors="coerce").fillna(50.0)
+
+        if "PP_BOOST" not in df_lab.columns and ("PP_Tier" in df_lab.columns):
+            def _boost(rr):
+                t = str(rr.get("PP_Tier","")).upper().strip()
+                s = pd.to_numeric(rr.get("PP_TeamShare_pct", np.nan), errors="coerce")
+                e = pd.to_numeric(rr.get("PP_Env_Score", np.nan), errors="coerce")
+                if t == "A" and pd.notna(s) and pd.notna(e) and s >= 20.0 and e >= 60.0:
+                    return "ON"
+                if t == "B" and pd.notna(s) and pd.notna(e) and s >= 17.5 and e >= 62.0:
+                    return "ON"
+                return ""
+            df_lab["PP_BOOST"] = df_lab.apply(_boost, axis=1)
+
+        # Re-pull the picked row after back-compat mutations
+        r = df_lab.iloc[idx]
+
+        st.markdown(f"### {g('Player','(player)')}  {g('Team','')} vs {g('Opp','')}  —  {g('Game','')}")
+        cols = st.columns(5)
+        cols[0].metric("🗡️", g("🗡️",""))
+        cols[1].metric("Assist Dagger", g("Assist_Dagger", None))
+        cols[2].metric("PP Tier", g("PP_Tier", ""))
+        cols[3].metric("PP Path", g("PP_Path", ""))
+        cols[4].metric("PP Boost", g("PP_BOOST", None))
+
+        # Build a non-binding "Dagger Strength" explainer score (0–100)
+        base_conf = float(g("Conf_Assists", 0) or 0)
+        pp_env = float(g("PP_Env_Score", 50) or 50)
+        stab = float(g("PP_TOI_stability", 50) or 50)
+        share = float(g("PP_TeamShare_pct", g("PP_TOI_Pct_Game", 0)) or 0)
+        tier = str(g("PP_Tier","C") or "C").upper().strip()
+
+        tier_bonus = {"A": 20.0, "B": 10.0, "C": 0.0}.get(tier, 0.0)
+        # Normalize base_conf roughly 0–100 (your confs are already 0–100)
+        strength = 0.40*base_conf + 0.20*pp_env + 0.15*stab + 0.15*min(100.0, share*4.0) + 0.10*tier_bonus
+        strength = max(0.0, min(100.0, round(strength, 1)))
+
+        st.markdown("#### Dagger Strength (explain-only)")
+        st.progress(float(strength)/100.0)
+        st.caption(f"Strength: **{strength}/100** — for explanation only (does not feed EV).")
+
+        # Breakdown cards
+        c1, c2 = st.columns(2)
+        with c1:
+            st.markdown("#### Base Proof")
+            st.write({
+                "Conf_Assists": _disp(g("Conf_Assists")),
+                "Matrix_Assists": _disp(g("Matrix_Assists")),
+                "Assist_ProofCount": _disp(g("Assist_ProofCount")),
+                "Assist_Why": _disp(g("Assist_Why")),
+            })
+        with c2:
+            st.markdown("#### PP Layer")
+            st.write({
+                "PP_Tier": _disp(g("PP_Tier")),
+                "PP_Path": _disp(g("PP_Path")),
+                "PP_TeamShare_pct": _disp(g("PP_TeamShare_pct")),
+                "PP_TOI_Pct_Game": _disp(g("PP_TOI_Pct_Game")),
+                "PP_TOI_stability": _disp(g("PP_TOI_stability")),
+                "PP_Env_Score": _disp(g("PP_Env_Score")),
+                "PP_Matchup": _disp(g("PP_Matchup")),
+                "PP_iXA60": _disp(g("PP_iXA60")),
+                "PP_BOOST": _disp(g("PP_BOOST")),
+            })
+
+        st.markdown("#### Quick read")
+        msgs = []
+        if tier in ("A","B"):
+            msgs.append(f"PP role: **Tier {tier}** (real contributor).")
+        else:
+            msgs.append("PP role: **Tier C** (passenger / cosmetic).")
+
+        path = str(g("PP_Path","Passenger") or "Passenger")
+        if path == "Shooter":
+            msgs.append("PP Path: **Shooter** (goals/SOG skew).")
+        elif path == "Distributor":
+            msgs.append("PP Path: **Distributor** (assists skew).")
+        elif path == "Hybrid":
+            msgs.append("PP Path: **Hybrid** (assists + goals).")
+        else:
+            msgs.append("PP Path: **Passenger** (low PP usage impact).")
+        if pp_env >= 65:
+            msgs.append("Environment: **high PP volume** expected.")
+        elif pp_env <= 40:
+            msgs.append("Environment: **low PP volume** — beware empty whistles.")
+        else:
+            msgs.append("Environment: **neutral**.")
+        if stab >= 65:
+            msgs.append("Deployment: **stable PP minutes**.")
+        elif stab <= 40:
+            msgs.append("Deployment: **coach blender risk**.")
+        if bool(g("Assist_PP_Proof", False)):
+            msgs.append("🗡️ Trigger: **ON** (PP assist proof passed).")
+        else:
+            msgs.append("🗡️ Trigger: **OFF** (didn't meet proof gates).")
+        st.write(" ".join(msgs))
+
+
+
+elif page == "🪜 Ladder Alerts":
+    st.subheader("🪜 Ladder Alerts")
+    st.caption("Scan Top-K alt lines (BDL) starting from each player’s baseline line. Use presets to go from normal ladders (2.5→3.5) to rare ‘nuclear’ rungs.")
+    legend_signals()
+
+    # Use the filtered slate (sidebar filters apply)
+    df_calc = df_f.copy()
+
+    # Market first (so presets can set sane defaults)
+    cA, cB, cC, cD, cE = st.columns([1.0, 1.0, 1.0, 1.2, 1.0])
+    with cA:
+        ladder_market = st.selectbox("Market", ["SOG", "Points", "Assists", "Goal"], index=0, key="ladder_market")
+
+    preset = st.selectbox(
+        "Preset",
+        ["Baseline+", "Standard", "Elite Volume", "Nuclear"],
+        index=1,
+        key="ladder_preset",
+        help="Baseline+ starts at the player's mainline. Standard/Elite/Nuclear are higher-rung scans (rare-volume modes).",
+    )
+
+    # Per-market baseline defaults (most of the slate lives here)
+    base_defaults = {"SOG": 2.5, "Points": 1.5, "Assists": 0.5, "Goal": 0.5}
+    base_line_default = float(base_defaults.get(ladder_market, 1.5))
+
+    # Preset thresholds
+    if preset == "Baseline+":
+        _min_line, _min_ev, _min_model = base_line_default, 6.0, 10.0
+    elif preset == "Standard":
+        _min_line, _min_ev, _min_model = max(base_line_default, 3.5 if ladder_market == "SOG" else base_line_default), 8.0, 12.0
+    elif preset == "Elite Volume":
+        _min_line, _min_ev, _min_model = max(base_line_default, 5.5), 10.0, 10.0
+    else:
+        _min_line, _min_ev, _min_model = max(base_line_default, 7.5), 6.0, 10.0
+
+    with cB:
+        min_line = st.number_input("Min line", value=float(_min_line), step=0.5, key="ladder_min_line")
+    with cC:
+        min_ev = st.number_input("Min EV%", value=float(_min_ev), step=0.5, key="ladder_min_ev")
+    with cD:
+        min_model = st.number_input("Min Model%", value=float(_min_model), step=0.5, key="ladder_min_model")
+    with cE:
+        start_from_baseline = st.checkbox("Start at baseline", value=True, key="ladder_start_baseline")
+
+    # Detect how many ladders we actually have (up to 8)
+    max_k = 0
+    for k in range(8, 0, -1):
+        if f"BDL_{ladder_market}_Line_{k}" in df_calc.columns:
+            max_k = k
+            break
+    if max_k == 0:
+        st.info("No BDL alt lines found in this CSV (BDL_*_Line_i columns missing).")
+    else:
+        ladd = build_ladder_alerts(
+            df_calc,
+            market=ladder_market,
+            min_line=float(min_line),
+            min_ev=float(min_ev),
+            min_model_pct=float(min_model),
+            top_k=int(max_k),
+            start_from_baseline=bool(start_from_baseline),
+        )
+        if ladd.empty:
+            st.write("No ladder alerts met your thresholds.")
+        else:
+            st.caption(f"Showing {len(ladd)} alerts (Top-K={max_k}).")
+
+            # --- UI signals (no math changes) ---
+            try:
+                # Basic KPIs
+                best_ev = pd.to_numeric(ladd.get("EV%", pd.Series(dtype=float)), errors="coerce").max()
+                best_model = pd.to_numeric(ladd.get("Model%", pd.Series(dtype=float)), errors="coerce").max()
+                uniq_players = ladd["Player"].nunique() if "Player" in ladd.columns else len(ladd)
+                uniq_games = ladd["Game"].nunique() if "Game" in ladd.columns else None
+
+                k1, k2, k3, k4 = st.columns(4)
+                with k1:
+                    st.markdown(f'<div class="wl-card"><h4>Alerts</h4><div class="wl-big">{len(ladd)}</div></div>', unsafe_allow_html=True)
+                with k2:
+                    st.markdown(f'<div class="wl-card"><h4>Players</h4><div class="wl-big">{int(uniq_players)}</div></div>', unsafe_allow_html=True)
+                with k3:
+                    be = "" if pd.isna(best_ev) else f"{best_ev:.1f}%"
+                    st.markdown(f'<div class="wl-card"><h4>Best EV%</h4><div class="wl-big">{be}</div></div>', unsafe_allow_html=True)
+                with k4:
+                    bm = "" if pd.isna(best_model) else f"{best_model:.1f}%"
+                    st.markdown(f'<div class="wl-card"><h4>Best Model%</h4><div class="wl-big">{bm}</div></div>', unsafe_allow_html=True)
+
+                # Quick explain (Why + key drivers) for a selected rung
+                if {"Player","Market","Line","Why"}.issubset(set(ladd.columns)):
+                    st.markdown("#### 🔥 Why this is fire")
+                    ladd["_pick_label"] = (
+                        ladd["Player"].astype(str) + " — " +
+                        ladd["Market"].astype(str) + " " +
+                        ladd["Line"].astype(str) + " (" +
+                        ladd.get("Book", "").astype(str) + " " +
+                        ladd.get("Odds", "").astype(str) + ")"
+                    )
+                    pick = st.selectbox("Pick an alert to inspect", options=ladd["_pick_label"].tolist(), index=0, key="ladder_pick")
+                    row = ladd[ladd["_pick_label"] == pick].iloc[0]
+
+                    # --- UI-only Earned / Tail verdict (no math changes) ---
+                    def _num(x):
+                        try:
+                            if x is None: return None
+                            s = str(x).strip()
+                            if s == "" or s.lower() == "none" or s.lower() == "nan": return None
+                            return float(s)
+                        except Exception:
+                            return None
+
+                    evv = _num(row.get("EV%"))
+                    mod = _num(row.get("Model%"))
+                    rung = _num(row.get("Rung"))
+                    defweak = _num(row.get("Opp_DefWeak"))
+                    proof = str(row.get("Proof","") or "")
+                    alert = str(row.get("Alert","") or "")
+
+                    big3 = 0
+                    for k in ["OppSOG_L10","OppSOG_L50","5v5Share%","DefV"]:
+                        if _num(row.get(k)) is not None:
+                            big3 += 1
+
+                    is_star = ("STAR" in proof.upper()) or ("ELITE" in proof.upper())
+                    strong_def = (defweak is not None and defweak <= 25)
+
+                    earned_ui = (("GREAT" in alert.upper()) or
+                                 (evv is not None and evv >= 8 and mod is not None and mod >= 55 and is_star and (rung is None or rung <= 1.0) and (big3 >= 2)))
+
+                    tail_ui = (not earned_ui) and (
+                                (rung is not None and rung >= 2.0) or
+                                (mod is not None and mod < 52 and strong_def) or
+                                (evv is not None and evv >= 20 and mod is not None and mod < 55)
+                              )
+
+                    verdict = "🪜 EARNED LADDER" if earned_ui else ("⚠️ TAIL LADDER (sprinkle only)" if tail_ui else "👀 WORTH A LOOK")
+                    vcls = "wl-pill-green" if earned_ui else ("wl-pill-muted" if tail_ui else "wl-pill-yellow")
+
+                    st.markdown(
+                        f"<div class='wl-card { 'wl-card-earned' if earned_ui else ('wl-card-tail' if tail_ui else '') }'>"
+                        f"<span class='wl-pill {vcls}'>{verdict}</span>"
+                        f"<span class='wl-pill wl-pill-blue'>Model {'' if mod is None else f'{mod:.1f}%'} </span>"
+                        f"<span class='wl-pill wl-pill-green'>EV {'' if evv is None else f'{evv:.1f}%'} </span>"
+                        f"<span class='wl-pill wl-pill-muted'>Rung {'' if rung is None else f'{rung:.1f}'} </span>"
+                        f"</div>",
+                        unsafe_allow_html=True
+                    )
+
+
+                    # Pills summarizing the drivers (already computed columns)
+                    pills = []
+                    if "DefV" in row.index and str(row.get("DefV","")).strip():
+                        pills.append(("DefV " + str(row.get("DefV")), "wl-pill-red"))
+                    if "SlotSA60" in row.index and str(row.get("SlotSA60","")).strip():
+                        pills.append(("SlotSA60 " + str(row.get("SlotSA60")), "wl-pill-blue"))
+                    if "5v5Share%" in row.index and str(row.get("5v5Share%","")).strip():
+                        pills.append(("5v5 Share " + str(row.get("5v5Share%")) + "%", "wl-pill-green"))
+                    if "OppSOG_L10" in row.index and str(row.get("OppSOG_L10","")).strip():
+                        pills.append(("Opp SOG L10 " + str(row.get("OppSOG_L10")), "wl-pill-yellow"))
+                    if "OppSOG_L50" in row.index and str(row.get("OppSOG_L50","")).strip():
+                        pills.append(("Opp SOG L50 " + str(row.get("OppSOG_L50")), "wl-pill-yellow"))
+
+                    pill_html = "".join([f'<span class="wl-pill {cls}">{lab}</span>' for lab, cls in pills]) or '<span class="wl-pill wl-neutral">No drivers found</span>'
+                    st.markdown(
+                        f'''
+<div class="wl-card">
+  <div style="margin-bottom:8px;">{pill_html}</div>
+  <div style="font-size:14px;line-height:1.35;opacity:0.95;"><b>Why:</b> {str(row.get("Why",""))}</div>
+</div>
+                        ''',
+                        unsafe_allow_html=True,
+                    )
+                    # Cleanup helper col so it doesn't leak into the table below
+                    ladd = ladd.drop(columns=["_pick_label"], errors="ignore")
+            except Exception:
+                pass
+
+            cols = ["Player","Team","Game","Market","Line","Odds","Book","Model%","EV%","Rung","DefV","SlotSA60","5v5Share%","OppSOG_L10","OppSOG_L50","Why"]
+            cols = [c for c in cols if c in ladd.columns]
+            cfg = build_column_config(ladd, cols)
+            st.dataframe(ladd[cols], width="stretch", hide_index=True, column_config=cfg)
+
 
 elif page == "📟 Calculator":
     st.subheader("📟 EV + Stake Calculator")
@@ -1965,6 +3230,15 @@ elif page == "📟 Calculator":
         bankroll = st.number_input("Bankroll ($)", min_value=0.0, value=1000.0, step=50.0, key="calc_bankroll")
 
     mcfg = _calc_market_map(market)
+
+    # -------------------------
+    # 🚨 Ladder Alerts (UI only)
+    # -------------------------
+    
+    # -------------------------
+    # Ladder Alerts (UI only)
+    # -------------------------
+    st.info("Ladders moved: use the **🪜 Ladder Alerts** page for full ladder scanning.")
 
     # Pull row for the selected player (first match)
     row = None
@@ -1995,21 +3269,32 @@ elif page == "📟 Calculator":
             return None
 
     # Helper: pick from Alt-line columns if present
-    def _resolve_alt_cols(prefix: str, idx: int) -> tuple[float | None, float | None, float | None]:
-        """Return (line, odds, p_model) for alt index idx (1..K) if present."""
+    def _resolve_alt_cols(market_name: str, idx: int) -> tuple[float | None, float | None, float | None]:
+        """Return (line, odds, p_model) for alt index idx (1..K) if present.
+
+        Tracker schema (from odds_ev_bdl.py):
+          - line/odds: BDL_{M}_Line_{i}, BDL_{M}_Odds_{i}
+          - model prob: {M}_p_model_over_{i}  (or {M}_Model%_{i})
+        """
         if row is None:
             return (None, None, None)
-        lc = f"{prefix}_Line_{idx}"
-        oc = f"{prefix}_Odds_Over_{idx}"
-        pc = f"{prefix}_p_model_over_{idx}"
-        mp = f"{prefix}_Model%_{idx}"
+
+        M = str(market_name).strip()
+
+        lc = f"BDL_{M}_Line_{idx}"
+        oc = f"BDL_{M}_Odds_{idx}"
+        pc = f"{M}_p_model_over_{idx}"
+        mp = f"{M}_Model%_{idx}"
+
         l = _get_num_from_row(row, lc)
         o = _get_num_from_row(row, oc)
+
         p = _get_num_from_row(row, pc)
         if p is None:
             mpp = _get_num_from_row(row, mp)
             if mpp is not None:
                 p = float(mpp) / 100.0
+
         return (l, o, p)
 
     if row is not None:
@@ -2042,11 +3327,12 @@ elif page == "📟 Calculator":
     key_prefix = "calc_" + hashlib.md5(f"{str(player_sel)}|{market}".encode()).hexdigest()
 
     # If alt lines exist for this market, allow selecting which line to cash-check
-    prefix = str(mcfg.get("line_col", "")).split("_Line")[0]
     alt_labels = ["Mainline"]
-    if row is not None and prefix:
+    if row is not None:
+        M = str(market).strip()
+        # show only available BDL alt lines for this market
         for i in range(1, 7):
-            lc = f"{prefix}_Line_{i}"
+            lc = f"BDL_{M}_Line_{i}"
             if lc in df_calc.columns:
                 lv = _get_num_from_row(row, lc)
                 if lv is not None:
@@ -2060,7 +3346,7 @@ elif page == "📟 Calculator":
             except Exception:
                 idx = None
             if idx:
-                l2, o2, p2 = _resolve_alt_cols(prefix, idx)
+                l2, o2, p2 = _resolve_alt_cols(market, idx)
                 if l2 is not None:
                     auto_line = l2
                 if o2 is not None:
@@ -2516,10 +3802,4 @@ elif page == "Ledger":
 else:
     st.subheader("Raw CSV (all columns)")
     st.dataframe(df_f, width="stretch", hide_index=True)
-
-
-
-
-
-
 
