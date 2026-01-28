@@ -743,12 +743,12 @@ def inject_warlord_css():
       }
       .wl-pill{
         display:inline-block;
-        padding: 6px 12px;
+        padding: 4px 10px;
         border-radius: 999px;
         border: 1px solid rgba(255,255,255,0.12);
-        font-size: 20px;
+        font-size: 12px;
         font-weight: 800;
-        letter-spacing: .3px;
+        letter-spacing: .2px;
       }
 
       /* market pills */
@@ -762,7 +762,15 @@ def inject_warlord_css():
       .wl-accent-blue{ background: rgba(59,130,246,0.18); border-left: 5px solid #3b82f6; }
       .wl-accent-orange{ background: rgba(245,158,11,0.18); }{ border-left: 5px solid #f59e0b; }
       .wl-accent-red{ background: rgba(239,68,68,0.18); }{    border-left: 5px solid #ef4444; }
-    </style>
+    /* Top market legend (Assists / Points / SOG / Goals) */
+.market-legend {
+  font-size: 18px;
+  font-weight: 700;
+}
+.market-legend span {
+  margin-right: 14px;
+}
+</style>
     """, unsafe_allow_html=True)
 
 inject_warlord_css()
@@ -3908,6 +3916,4 @@ elif page == "Ledger":
 else:
     st.subheader("Raw CSV (all columns)")
     st.dataframe(df_f, width="stretch", hide_index=True)
-
-
 
