@@ -732,6 +732,20 @@ st.set_page_config(layout='wide', page_title="The Warlord's NHL Prop Tool")
 
 
 
+
+
+# --- Warlord Points (Blue) final shade — SAFE injection ---
+import streamlit as st
+st.markdown("""
+<style>
+.wl-bg-blue {
+  background: rgba(11, 27, 58, 0.65);
+  color: #e5e7eb;
+}
+</style>
+""", unsafe_allow_html=True)
+# --- end Points blue injection ---
+
 # -----------------------------
 
 
@@ -3803,11 +3817,3 @@ else:
     st.subheader("Raw CSV (all columns)")
     st.dataframe(df_f, width="stretch", hide_index=True)
 
-
-
-<style>
-.wl-bg-blue {
-  background: rgba(11, 27, 58, 0.65);
-  color: #e5e7eb;
-}
-</style>
