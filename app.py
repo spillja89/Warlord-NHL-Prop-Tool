@@ -759,7 +759,7 @@ def inject_warlord_css():
 
       /* accent stripe */
       .wl-accent-purple{ background: rgba(168,85,247,0.18); }{ border-left: 5px solid #a855f7; }
-      .wl-accent-blue{ background: rgba(11,27,58,0.45); }{   border-left: 5px solid #0b1b3a; }
+      .wl-accent-blue{ background: #0b1b3a; }{   border-left: 5px solid #0b1b3a; }
       .wl-accent-orange{ background: rgba(245,158,11,0.18); }{ border-left: 5px solid #f59e0b; }
       .wl-accent-red{ background: rgba(239,68,68,0.18); }{    border-left: 5px solid #ef4444; }
     </style>
@@ -2115,7 +2115,7 @@ if page == "Board":
         box-shadow: 0 10px 25px rgba(0,0,0,0.35);
       }
       .wl-accent-purple{ background: rgba(168,85,247,0.18); }{ border-left: 5px solid #a855f7; }
-      .wl-accent-blue{ background: rgba(11,27,58,0.45); }  { border-left: 5px solid #0b1b3a; }
+      .wl-accent-blue{ background: #0b1b3a; }  { border-left: 5px solid #0b1b3a; }
       .wl-accent-orange{ background: rgba(245,158,11,0.18); }{ border-left: 5px solid #f59e0b; }
       .wl-accent-red{ background: rgba(239,68,68,0.18); }   { border-left: 5px solid #ef4444; }
     </style>
