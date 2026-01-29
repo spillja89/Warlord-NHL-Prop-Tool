@@ -2937,6 +2937,129 @@ elif page == "Assists":
 
 
 
+    
+    # === SMASH PLAYS (ASSISTS) ===
+    st.subheader("⭐ Smash Plays — Assists")
+    st.markdown(
+        """
+        <div style="padding:14px 16px;border-radius:14px;border:2px solid #000;background:#fff;">
+          <div style="font-size:24px;font-weight:900;color:#000;margin-bottom:6px;">
+            Top candidates for this market
+          </div>
+          <div style="font-size:18px;font-weight:800;color:#000;margin-bottom:10px;">
+            Ranked by 🔒 Locks &nbsp;&gt;&nbsp; 💰 +EV &nbsp;&gt;&nbsp; Conf
+          </div>
+          <div style="font-size:18px;font-weight:800;color:#000;line-height:1.45;">
+            Why these fire:
+          </div>
+          <div style="font-size:17px;font-weight:700;color:#000;line-height:1.45;margin-top:4px;">
+            <b>PLY</b> = primary playmaker / distributor &nbsp;&nbsp;•&nbsp;&nbsp;
+            <b>ENV</b> = matchup + teammates convert &nbsp;&nbsp;•&nbsp;&nbsp;
+            <b>DUE</b> = drought / regression pressure
+          </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    _rank = df_a[df_a.get("Plays_Assists", False)].copy()
+
+    try:
+        _rank["_is_lock"] = (_rank["LOCK"].astype(str).str.strip() == "🔒").astype(int)
+    except Exception:
+        _rank["_is_lock"] = 0
+
+    try:
+        if "EV_Signal" in _rank.columns:
+            _rank["_is_ev"] = _rank["EV_Signal"].astype(str).str.contains("💰", na=False).astype(int)
+        elif "Plays_EV_Assists" in _rank.columns:
+            _rank["_is_ev"] = (_rank["Plays_EV_Assists"].astype(str).str.strip() == "💰").astype(int)
+        else:
+            _rank["_is_ev"] = 0
+    except Exception:
+        _rank["_is_ev"] = 0
+
+    _rank["_conf"] = pd.to_numeric(_rank.get("Conf_Assists", 0), errors="coerce").fillna(0)
+    _rank = _rank.sort_values(["_is_lock", "_is_ev", "_conf"], ascending=[False, False, False], kind="mergesort")
+
+    top_n = st.slider("Show top plays (Assists)", 3, 25, 10, 1, key="ast_smash_topn")
+    top = _rank.head(int(top_n))
+
+    for _, r in top.iterrows():
+        player = str(r.get("Player", "") or "").strip()
+        game = str(r.get("Game", "") or "").strip()
+
+        line = r.get("Assists_Line", "")
+        odds = r.get("Assists_Odds_Over", "")
+        call = str(r.get("Assists_Call", "") or "").strip()
+
+        conf = r.get("Conf_Assists", "")
+        matrix = str(r.get("Matrix_Assists", "") or "").strip()
+        badges = f"{str(r.get('EV_Signal','') or '').strip()} {str(r.get('LOCK','') or '').strip()}".strip()
+
+        headline = f"<b>{player}</b> — {game}" if game else f"<b>{player}</b>"
+        betline = f"AST {line} @ {odds}" if (line or odds) else ""
+
+        meta = []
+        if matrix:
+            meta.append(matrix)
+        if conf != "" and conf is not None:
+            try:
+                meta.append(f"Conf {float(conf):.0f}")
+            except Exception:
+                meta.append(f"Conf {conf}")
+        if call:
+            meta.append(call)
+        meta_s = " | ".join([m for m in meta if m])
+
+        st.markdown(
+            f"""
+    <div class="wl-card wl-accent-blue">
+      <div style="display:flex;justify-content:space-between;gap:10px;">
+        <div style="font-size:16px;line-height:1.2;">
+          {headline}
+          <div style="opacity:0.9;margin-top:4px;">{betline}</div>
+        </div>
+        <div style="font-size:16px;white-space:nowrap;">{badges}</div>
+      </div>
+      <div style="margin-top:6px;font-size:12px;opacity:0.92;line-height:1.2;">{meta_s}</div>
+    </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+        _why_tags = str(r.get("Assist_Why", "") or "").strip()
+        with st.expander("Why it fires", expanded=False):
+            st.write(_why_tags if _why_tags else "—")
+            try:
+                _rg = r.get("Reg_Gap_A10", None)
+                _dr = r.get("Drought_A", None)
+                _ht = str(r.get("Reg_Heat_A", "") or "").strip()
+                _mx = str(r.get("Matrix_Assists", "") or "").strip()
+                _cp = r.get("Conf_Assists", None)
+                _ev = r.get("Assists_EV%", None)
+                ctx = []
+                if _mx: ctx.append(f"Matrix: {_mx}")
+                if _cp is not None and _cp != "":
+                    try: ctx.append(f"Conf: {float(_cp):.0f}")
+                    except Exception: ctx.append(f"Conf: {_cp}")
+                if _ev is not None and _ev != "":
+                    try: ctx.append(f"EV%: {float(_ev):.1f}")
+                    except Exception: ctx.append(f"EV%: {_ev}")
+                if _ht: ctx.append(f"Heat: {_ht}")
+                if _rg is not None and _rg != "" and not (isinstance(_rg, float) and math.isnan(_rg)):
+                    try: ctx.append(f"Gap10: {float(_rg):.2f}")
+                    except Exception: ctx.append(f"Gap10: {_rg}")
+                if _dr is not None and _dr != "" and not (isinstance(_dr, float) and math.isnan(_dr)):
+                    try: ctx.append(f"Drought: {int(float(_dr))}")
+                    except Exception: ctx.append(f"Drought: {_dr}")
+                if ctx:
+                    st.caption(" | ".join(ctx))
+            except Exception:
+                pass
+
+    st.markdown("---")
+
     show_table(df_a, assists_cols, "Assists View")
 
 
@@ -3031,122 +3154,6 @@ elif page == "SOG":
 
 
 
-
-    
-    # === SMASH PLAYS (SOG) ===
-    st.subheader("⭐ Smash Plays — SOG")
-    st.markdown(
-        """
-        <div style="padding:14px 16px;border-radius:14px;border:2px solid #000;background:#fff;">
-          <div style="font-size:24px;font-weight:900;color:#000;margin-bottom:6px;">
-            Top candidates for this market
-          </div>
-          <div style="font-size:18px;font-weight:800;color:#000;margin-bottom:10px;">
-            Ranked by 🔒 Locks &nbsp;&gt;&nbsp; 💰 +EV &nbsp;&gt;&nbsp; Conf
-          </div>
-          <div style="font-size:18px;font-weight:800;color:#000;line-height:1.45;">
-            Why these fire:
-          </div>
-          <div style="font-size:17px;font-weight:700;color:#000;line-height:1.45;margin-top:4px;">
-            <b>VOL</b> = shot volume / μ edge &nbsp;&nbsp;•&nbsp;&nbsp;
-            <b>USG</b> = usage & shot share &nbsp;&nbsp;•&nbsp;&nbsp;
-            <b>ENV</b> = pace & shots allowed &nbsp;&nbsp;•&nbsp;&nbsp;
-            <b>DUE</b> = volume regression
-          </div>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
-
-    _rank = df_s[df_s.get("Green_SOG", False)].copy()
-
-    try:
-        _rank["_is_lock"] = (_rank["LOCK"].astype(str).str.strip() == "🔒").astype(int)
-    except Exception:
-        _rank["_is_lock"] = 0
-
-    try:
-        if "EV_Signal" in _rank.columns:
-            _rank["_is_ev"] = _rank["EV_Signal"].astype(str).str.contains("💰", na=False).astype(int)
-        else:
-            _rank["_is_ev"] = 0
-    except Exception:
-        _rank["_is_ev"] = 0
-
-    _rank["_conf"] = pd.to_numeric(_rank.get("Conf_SOG", 0), errors="coerce").fillna(0)
-    _rank = _rank.sort_values(["_is_lock", "_is_ev", "_conf"], ascending=[False, False, False], kind="mergesort")
-
-    top_n = st.slider("Show top plays (SOG)", 3, 25, 10, 1, key="sog_smash_topn")
-    top = _rank.head(int(top_n))
-
-    for _, r in top.iterrows():
-        player = str(r.get("Player", "") or "").strip()
-        game = str(r.get("Game", "") or "").strip()
-
-        line = r.get("SOG_Line", "")
-        odds = r.get("SOG_Odds_Over", "")
-        mu = r.get("SOG_mu", None) or r.get("Exp_SOG", None)
-
-        conf = r.get("Conf_SOG", "")
-        matrix = str(r.get("Matrix_SOG", "") or "").strip()
-        badges = f"{str(r.get('EV_Signal','') or '').strip()} {str(r.get('LOCK','') or '').strip()}".strip()
-
-        headline = f"<b>{player}</b> — {game}" if game else f"<b>{player}</b>"
-        betline = f"SOG {line} @ {odds}" if (line or odds) else ""
-
-        meta = []
-        if matrix:
-            meta.append(matrix)
-        if conf not in ("", None):
-            try:
-                meta.append(f"Conf {float(conf):.0f}")
-            except Exception:
-                meta.append(f"Conf {conf}")
-        if mu not in ("", None):
-            try:
-                meta.append(f"μ {float(mu):.2f}")
-            except Exception:
-                meta.append(f"μ {mu}")
-        meta_s = " | ".join([m for m in meta if m])
-
-        st.markdown(
-            f"""
-    <div class="wl-card wl-accent-orange">
-      <div style="display:flex;justify-content:space-between;gap:10px;">
-        <div style="font-size:16px;line-height:1.2;">
-          {headline}
-          <div style="opacity:0.9;margin-top:4px;">{betline}</div>
-        </div>
-        <div style="font-size:16px;white-space:nowrap;">{badges}</div>
-      </div>
-      <div style="margin-top:6px;font-size:12px;opacity:0.92;line-height:1.2;">{meta_s}</div>
-    </div>
-            """,
-            unsafe_allow_html=True,
-        )
-
-        _why_tags = str(r.get("SOG_Why", "") or "").strip()
-        with st.expander("Why it fires", expanded=False):
-            st.write(_why_tags if _why_tags else "—")
-            try:
-                ctx = []
-                if mu not in ("", None):
-                    try: ctx.append(f"μ: {float(mu):.2f}")
-                    except Exception: ctx.append(f"μ: {mu}")
-                share = r.get("Player_5v5_SOG_Share", None)
-                if share not in ("", None):
-                    try: ctx.append(f"ShotShare: {float(share)*100:.1f}%")
-                    except Exception: ctx.append(f"ShotShare: {share}")
-                opp = r.get("Opp_SOG_Against_L10", None)
-                if opp not in ("", None):
-                    try: ctx.append(f"Opp SA L10: {float(opp):.1f}")
-                    except Exception: ctx.append(f"Opp SA L10: {opp}")
-                if ctx:
-                    st.caption(" | ".join(ctx))
-            except Exception:
-                pass
-
-    st.markdown("---")
 
     show_table(df_s, sog_cols, "SOG View")
 
