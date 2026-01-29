@@ -2657,7 +2657,10 @@ elif page == "Assists":
     df_a["_ca"] = safe_num(df_a, "Conf_Assists", 0)
     df_a = df_a.sort_values(["_ca"], ascending=[False]).drop(columns=["_ca"], errors="ignore")
 
-    st.sidebar.subheader("Assists Filters")
+
+    st.subheader("🅰️ Assists Smash")
+
+    st.sidebar.subheader("Assists Smash Filters")
     show_all = st.sidebar.checkbox("Show all players (ignore filters)", value=False, key="show_all_assists")
     min_conf = st.sidebar.slider("Min Conf (Assists)", 0, 100, 77, 1)
     color_pick = st.sidebar.multiselect(
@@ -2765,7 +2768,7 @@ elif page == "Assists":
 
 
 
-    show_table(df_a, assists_cols, "Assists View")
+    show_table(df_a, assists_cols, "Assists Smash")
 
 
 # =========================
