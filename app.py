@@ -762,15 +762,7 @@ def inject_warlord_css():
       .wl-accent-blue{ background: rgba(59,130,246,0.18); border-left: 5px solid #3b82f6; }
       .wl-accent-orange{ background: rgba(245,158,11,0.18); }{ border-left: 5px solid #f59e0b; }
       .wl-accent-red{ background: rgba(239,68,68,0.18); }{    border-left: 5px solid #ef4444; }
-    /* Top market legend (Assists / Points / SOG / Goals) */
-.market-legend {
-  font-size: 18px;
-  font-weight: 700;
-}
-.market-legend span {
-  margin-right: 14px;
-}
-</style>
+    </style>
     """, unsafe_allow_html=True)
 
 inject_warlord_css()
@@ -1131,36 +1123,6 @@ def load_csv(path: str) -> pd.DataFrame:
         df["Time"] = dt.dt.strftime("%I:%M %p").astype(str).str.lstrip("0")
         df.loc[dt.isna(), "Time"] = ""
 
-
-    # -------------------------
-    # Market-specific Tier Tags (UI)
-    # -------------------------
-    # Engine may output:
-    #   Tier_Tag_Points / Tier_Tag_SOG / Tier_Tag_Assists / Tier_Tag_Goal
-    # plus a generic Tier/Tier_Tag which can be blank. For the board + views,
-    # we want the tier tag to reflect the player's **Best_Market**.
-    if "Tier_Tag" not in df.columns and "Tier" in df.columns:
-        df["Tier_Tag"] = df["Tier"]
-
-    # Build a best-market tier tag (safe even if the per-market cols are missing)
-    if "Tier_Tag_Best" not in df.columns:
-        def _best_tier_tag(r):
-            bm = str(r.get("Best_Market", "")).upper()
-            if "POINT" in bm:
-                return r.get("Tier_Tag_Points", "") or r.get("Tier_Tag", "") or r.get("Tier", "")
-            if "SOG" in bm or "SHOT" in bm:
-                return r.get("Tier_Tag_SOG", "") or r.get("Tier_Tag", "") or r.get("Tier", "")
-            if "ASSIST" in bm:
-                return r.get("Tier_Tag_Assists", "") or r.get("Tier_Tag", "") or r.get("Tier", "")
-            if "GOAL" in bm or bm == "G":
-                return r.get("Tier_Tag_Goal", "") or r.get("Tier_Tag", "") or r.get("Tier", "")
-            return r.get("Tier_Tag", "") or r.get("Tier", "")
-        df["Tier_Tag_Best"] = df.apply(_best_tier_tag, axis=1)
-
-    # If Tier_Tag is empty/blank, fall back to Tier_Tag_Best
-    if "Tier_Tag" in df.columns:
-        _t = df["Tier_Tag"].astype(str).fillna("").str.strip()
-        df.loc[_t.eq("") | _t.str.upper().isin(["NAN", "NONE"]), "Tier_Tag"] = df["Tier_Tag_Best"].astype(str).fillna("")
     return df
 def filter_common(df: pd.DataFrame) -> pd.DataFrame:
     out = df.copy()
@@ -1275,9 +1237,13 @@ def show_games_times(df: pd.DataFrame):
 # ---------------------------------
 THR_CONF_DEFAULT = 70
 THR_EV_DEFAULT = 0.0
-THR_DROUGHT_DEFAULT = 2
-THR_REG_GAP_DEFAULT = 1.0   # Reg_Gap_*10
-THR_REG_HEAT_DEFAULT = 1.0  # Reg_Heat_*10
+THR_DROUGHT_DEFAULT = 0
+THR_REG_GAP_DEFAULT = 0.0   # Reg_Gap_*10
+THR_REG_HEAT_DEFAULT = 0.0  # Reg_Heat_*10
+
+# HARD Board Auth Gate (do NOT override with UI sliders)
+HARD_BOARD_DROUGHT_GATE = 2  # must be >=2 games drought
+HARD_BOARD_HEAT_LEVELS = ("HOT", "DUE", "OVERDUE")  # at least HOT
 
 def _num(v, default=0.0):
     try:
@@ -1480,24 +1446,22 @@ def _passes_smash(b: dict, thr_conf: int, thr_ev: float, thr_drought: int, thr_g
     if ev < float(thr_ev):
         return False
 
-    # SECONDARY: Drought OR Regression
+    # SECONDARY: Drought OR Regression Heat (tight gate)
+    # Rule: player must satisfy ONE of:
+    #   - drought >= thr_drought
+    #   - reg_heat in {HOT, DUE, OVERDUE} (enabled when thr_heat >= 1)
     try:
         drought = int(float(b.get("drought", 0) or 0))
     except Exception:
         drought = 0
 
-    try:
-        reg_gap = float(b.get("reg_gap", 0.0) or 0.0)
-    except Exception:
-        reg_gap = 0.0
-
     reg_heat = str(b.get("reg_heat", "") or "").strip().upper()
-    # treat HOT/OVERDUE/DUE as heat signals; thr_heat acts as on/off (>=1 means require heat keyword)
-    heat_ok = reg_heat in ("HOT", "OVERDUE", "DUE")
-    reg_ok = (reg_gap >= float(thr_gap)) or (heat_ok and float(thr_heat) >= 1.0)
+    heat_ok = reg_heat in HARD_BOARD_HEAT_LEVELS
 
-    return (drought >= int(thr_drought)) or reg_ok
+    drought_ok = drought >= int(HARD_BOARD_DROUGHT_GATE)
+    heat_pass = heat_ok  # at least HOT
 
+    return drought_ok or heat_pass
 
 
 def select_all_market_rows(row, thr_conf: int, thr_ev: float, thr_drought: int, thr_gap: float, thr_heat: float) -> list[dict]:
@@ -1525,6 +1489,44 @@ def select_best_market_row(row, thr_conf: int, thr_ev: float, thr_drought: int, 
         return None
     elig.sort(key=lambda x: (x["ev"], x["conf"], x["model"]), reverse=True)
     return elig[0]
+
+def _flames_from_heat(heat: str) -> str:
+    h = str(heat or "").strip().upper()
+    if h in ("OVERDUE", "BONKERS", "NUCLEAR"):
+        return "🔥🔥🔥"
+    if h in ("HOT", "DUE"):
+        return "🔥🔥"
+    return ""
+
+def _count_markets_from_pills(html: str) -> int:
+    s = str(html or "")
+    hits = set()
+    for key, tag in [("SOG", "SOG"), ("PTS", "PTS"), ("POINT", "PTS"), ("ASSIST", "AST"), ("AST", "AST"), ("GOAL", "G"), ("ATG", "G")]:
+        if key in s.upper():
+            hits.add(tag)
+    return len(hits)
+
+def _derive_badges(row: dict) -> tuple[str, str]:
+    """Return (explosion_badge, critical_badge) based on *visible* multi-market signals.
+    We intentionally avoid changing gates/math here; this is presentation only.
+    """
+    markets_html = row.get("Markets","")
+    mcount = _count_markets_from_pills(markets_html)
+    explosion = "🧨" if mcount >= 2 else ""
+    tier = str(row.get("Tier_Tag","") or "")
+    # Critical Strike: multi-market + STAR/ELITE + strong confidence on best market OR bonkers heat somewhere
+    best_conf = 0
+    try:
+        best_conf = int(float(row.get("Best_Conf", 0) or 0))
+    except Exception:
+        best_conf = 0
+    # bonkers if any heat column says OVERDUE
+    heats = " ".join([str(row.get(c,"") or "") for c in ["Reg_Heat_P","Reg_Heat_S","Reg_Heat_A","Reg_Heat_G"]]).upper()
+    bonkers = ("OVERDUE" in heats) or ("BONKERS" in heats)
+    critical = "⚔️" if (mcount >= 2 and ("ELITE" in tier.upper() or "STAR" in tier.upper()) and (best_conf >= 85 or bonkers)) else ""
+    return explosion, critical
+
+
 
 
 
@@ -1893,6 +1895,37 @@ df["Green_SOG"] = (
         | sog_volume_proof
     )
 )
+
+
+
+# Make SOG usable everywhere (market views + smash picks)
+df["Plays_SOG"] = df["Green_SOG"].fillna(False)
+
+# Optional: why string (helps debugging + "Why it fires" on SOG)
+def _sog_why(r):
+    reasons = []
+    # Always call out when it is an earned/matrix green
+    if str(_get(r, "Matrix_SOG", "")).strip().lower() == "green":
+        reasons.append("MATRIX")
+    if _get(r, "ShotIntent_Pct", 0) >= 90:
+        reasons.append("INT")
+    if _get(r, "Med10_SOG", 0) >= 3.0 or _get(r, "Avg5_SOG", 0) >= 3.0:
+        reasons.append("VOL")
+    if _get(r, "iXG%", 0) >= 90:
+        reasons.append("iXG")
+    if _get(r, "Goalie_Weak", 0) >= 70 or _get(r, "Opp_DefWeak", 0) >= 70:
+        reasons.append("ENV")
+    if _get(r, "Reg_Gap_S10", 0) >= 1.0 or str(_get(r, "Reg_Heat_S", "")).upper() in ["HOT", "DUE"]:
+        reasons.append("REG")
+    if _get(r, "Drought_SOG", 0) >= 3:
+        reasons.append("DRT")
+    return ",".join(reasons)
+
+# Preserve any existing SOG_Why from tracker, but backfill when blank (common for earned greens)
+if "SOG_Why" not in df.columns:
+    df["SOG_Why"] = ""
+m = df["Green_SOG"].fillna(False) & (df["SOG_Why"].isna() | (df["SOG_Why"].astype(str).str.strip() == ""))
+df.loc[m, "SOG_Why"] = df.loc[m].apply(_sog_why, axis=1)
 
 
 # =========================
@@ -2321,7 +2354,20 @@ if page == "Board":
             markets = r.get("Markets","")
             why = _best_why(r)
 
-            headline = f"**{player}** — {game}  ·  **{bm}**  ·  Conf **{bc}**"
+            expl, crit = _derive_badges(r)
+            # Flames are best-market regression heat (visual only; logic already exists upstream)
+            bm_heat = ""
+            if str(bm or "").upper().startswith("SOG"):
+                bm_heat = r.get("Reg_Heat_S","")
+            elif str(bm or "").upper().startswith("ASS"):
+                bm_heat = r.get("Reg_Heat_A","")
+            elif str(bm or "").upper().startswith("POI") or str(bm or "").upper().startswith("PTS"):
+                bm_heat = r.get("Reg_Heat_P","")
+            else:
+                bm_heat = r.get("Reg_Heat_G","")
+            flames = _flames_from_heat(bm_heat)
+
+            headline = f"**{player}** — {game}  ·  {expl}{crit} **{bm}** {flames} ·  Conf **{bc}**"
             mb = calc_ev_per_dollar(_to_float(_get(r, "Model%", "Model_Prob", default="")), _to_float(_get(r, "Odds", "Odds_Amer", default="")))
             mb_txt = f"↩ {mb:+.2f}/$1" if mb is not None else ""
             badges = " ".join([str(x) for x in [lock, evsig, mb_txt] if str(x).strip()])
@@ -2334,106 +2380,178 @@ if page == "Board":
                         f"</div>", unsafe_allow_html=True)
 
             with st.expander("🔥 Why it fires", expanded=False):
-                # Positive-only WHY (signals-first, then 2-layer regression, then optional enhancers only if good)
-                reasons = []
-                
-                # Market inferred from Best_Market
-                market = str(bm or "").upper()
-                
-                # Signals
-                if str(evsig).strip() == "💰":
-                    reasons.append("💰 EV signal")
-                # Earned green per market if column exists
-                _green_ok = False
-                if market.startswith("SOG") and "Green_SOG" in df_b.columns:
-                    _green_ok = bool(r.get("Green_SOG"))
-                elif market.startswith("POINT") and "Green_Points" in df_b.columns:
-                    _green_ok = bool(r.get("Green_Points"))
-                elif market.startswith("ASSIST") and "Green_Assists" in df_b.columns:
-                    _green_ok = bool(r.get("Green_Assists"))
-                elif (market.startswith("GOAL") or market.startswith("ATG")):
-                    if "Green_Goal" in df_b.columns:
-                        _green_ok = bool(r.get("Green_Goal"))
-                    elif "Green_ATG" in df_b.columns:
-                        _green_ok = bool(r.get("Green_ATG"))
-                if _green_ok:
-                    reasons.append("🟢 Earned Green")
-                
-                # Tier / Conf
-                if str(tier).strip().upper() in ("STAR","ELITE"):
-                    reasons.append(f"⭐ {str(tier).strip().upper()} tier")
-                try:
-                    _conf = float(bc)
-                except Exception:
-                    _conf = None
-                if _conf is not None and _conf >= 80:
-                    reasons.append(f"🧠 Conf {_conf:.0f} (≥80)")
-                
-                # 2-layer regression (at least one must be true to show as a reason)
-                # Drought (market-specific)
-                drought_val = None
-                if market.startswith("SOG") and "Drought_SOG" in df_b.columns:
-                    drought_val = r.get("Drought_SOG", None)
-                elif market.startswith("POINT") and "Drought_P" in df_b.columns:
-                    drought_val = r.get("Drought_P", None)
-                elif market.startswith("ASSIST") and "Drought_A" in df_b.columns:
-                    drought_val = r.get("Drought_A", None)
-                elif (market.startswith("GOAL") or market.startswith("ATG")) and "Drought_G" in df_b.columns:
-                    drought_val = r.get("Drought_G", None)
-                try:
-                    drought_num = float(drought_val) if drought_val is not None else None
-                except Exception:
-                    drought_num = None
-                
-                drought_ok = (drought_num is not None and drought_num >= 2)
-                
-                # HOT regression (market-specific)
-                reg_val = None
-                if market.startswith("SOG") and "Reg_Heat_S" in df_b.columns:
-                    reg_val = r.get("Reg_Heat_S", "")
-                elif market.startswith("POINT") and "Reg_Heat_P" in df_b.columns:
-                    reg_val = r.get("Reg_Heat_P", "")
-                elif market.startswith("ASSIST") and "Reg_Heat_A" in df_b.columns:
-                    reg_val = r.get("Reg_Heat_A", "")
-                elif (market.startswith("GOAL") or market.startswith("ATG")) and "Reg_Heat_G" in df_b.columns:
-                    reg_val = r.get("Reg_Heat_G", "")
-                reg_s = str(reg_val or "").lower()
-                reg_ok = ("hot" in reg_s) or ("due" in reg_s) or ("overdue" in reg_s) or ("very hot" in reg_s)
-                
-                # Require at least one: drought or regression
-                if not (drought_ok or reg_ok):
-                    continue
-
-                if drought_ok:
-                    reasons.append(f"⏳ Drought {drought_num:.0f} (≥2)")
-                if reg_ok:
-                    reasons.append("🔥 HOT regression")
-                
-                # Optional enhancers ONLY if good (never show bad)
-                def _show_if_good(label, value, thr):
-                    try:
-                        v = float(value)
-                    except Exception:
-                        return
-                    if v >= thr:
-                        reasons.append(f"➕ {label} {v:.1f}")
-                
-                # Only show these if they are GOOD
-                _show_if_good("PP_Matchup", r.get("PP_Matchup", None), 60.0)
-                _show_if_good("Goalie_Weak", r.get("Goalie_Weak", None), 65.0)
-                _show_if_good("Opp_DefWeak", r.get("Opp_DefWeak", None), 60.0)
-                
-                # For SOG, show shots-allowed environment if present and strong
-                if market.startswith("SOG"):
-                    _show_if_good("OppSOG_L10", r.get("OppSOG_L10", None), 30.0)
-                
-                # Render
-                if reasons:
-                    st.markdown("\n".join([f"- {x}" for x in reasons]))
+                # Market-aware WHY renderer (MAIN / SUPPORT / TONIGHT)
+                mkt_raw = str(bm or "").strip().upper()
+                if mkt_raw.startswith("SOG"):
+                    mkt = "SOG"
+                elif mkt_raw.startswith("POINT"):
+                    mkt = "POINTS"
+                elif mkt_raw.startswith("ASSIST"):
+                    mkt = "ASSISTS"
+                elif mkt_raw.startswith("ATG"):
+                    mkt = "ATG"
+                elif mkt_raw.startswith("GOAL"):
+                    mkt = "GOALS"
                 else:
-                    st.caption("")
+                    mkt = mkt_raw or "UNKNOWN"
 
-    st.divider()
+                def _f(x, default=None):
+                    try:
+                        if pd.isna(x):
+                            return default
+                        return float(x)
+                    except Exception:
+                        return default
+
+                def _s(x):
+                    return str(x).strip() if x is not None and not pd.isna(x) else ""
+
+                def _heat_to_flames(h: str) -> str:
+                    h = _s(h).upper()
+                    if "OVERDUE" in h:
+                        return "🔥🔥🔥"
+                    if h in ("HOT","DUE"):
+                        return "🔥🔥"
+                    return ""
+
+                mu = line = None
+                heat = ""
+                gap = None
+                drought = None
+                proof = None
+
+                if mkt == "SOG":
+                    mu = _f(r.get("SOG_mu"))
+                    line = _f(r.get("SOG_Line"))
+                    heat = _s(r.get("Reg_Heat_S"))
+                    gap = _f(r.get("Reg_Gap_S10"))
+                    drought = _f(r.get("Drought_SOG"))
+                    proof = _f(r.get("SOG_ProofCount"))
+                elif mkt == "POINTS":
+                    mu = _f(r.get("Points_mu"))
+                    line = _f(r.get("Points_Line"))
+                    heat = _s(r.get("Reg_Heat_P"))
+                    gap = _f(r.get("Reg_Gap_P10"))
+                    drought = _f(r.get("Drought_P"))
+                    proof = _f(r.get("Points_ProofCount"))
+                elif mkt == "ASSISTS":
+                    mu = _f(r.get("Assists_mu"))
+                    line = _f(r.get("Assists_Line"), 0.5)
+                    heat = _s(r.get("Reg_Heat_A"))
+                    gap = _f(r.get("Reg_Gap_A10"))
+                    drought = _f(r.get("Drought_A"))
+                    proof = _f(r.get("Assist_ProofCount"))
+                elif mkt in ("GOALS","ATG"):
+                    if mkt == "ATG":
+                        mu = _f(r.get("ATG_mu"))
+                        line = _f(r.get("ATG_Line"), 0.5)
+                    else:
+                        mu = _f(r.get("Goal_mu"))
+                        line = _f(r.get("Goal_Line"), 0.5)
+                    heat = _s(r.get("Reg_Heat_G"))
+                    gap = _f(r.get("Reg_Gap_G10"))
+                    drought = _f(r.get("Drought_G"))
+                    proof = _f(r.get("Goal_ProofCount"))
+
+                flames = _heat_to_flames(heat)
+                med10_sog = _f(r.get("Med10_SOG"))
+                avg5_sog = _f(r.get("Avg5_SOG"))
+                share_sog = _f(r.get("Player_5v5_SOG_Share"))
+                toi = _f(r.get("TOI_per_game"))
+                pp_role = _s(r.get("PP_Role"))
+                pp_match = _f(r.get("PP_Matchup"))
+                opp_def = _f(r.get("Opp_DefWeak"))
+                gk_weak = _f(r.get("Goalie_Weak"))
+                opp_sog_l10 = _f(r.get("Opp_SOG_Against_L10"))
+                team_sf60 = _f(r.get("team_5v5_SF60"))
+                tier_raw = (r.get('Tier_Tag_Best') or r.get('Tier_Tag') or r.get('Tier') or r.get('TierTag') or r.get('Tier_Class') or '')
+                tier_u = _s(tier_raw).upper()
+
+                main = ""
+                if mkt == "SOG":
+                    if (med10_sog is not None and line is not None and med10_sog >= max(4.0, line + 1.0)) or (avg5_sog is not None and line is not None and avg5_sog >= max(4.0, line + 1.0)):
+                        main = "High Shot Volume"
+                    elif (mu is not None and line is not None and mu >= line + 1.5):
+                        main = "μ Expectation (High)"
+                    elif (toi is not None and toi >= 18) or (share_sog is not None and share_sog >= 0.12):
+                        main = "Usage Dominance"
+                elif mkt == "POINTS":
+                    if (mu is not None and line is not None and mu >= line + 1.5):
+                        main = "μ Expectation (High)"
+                    elif flames == "🔥🔥🔥":
+                        main = "Bonkers Regression 🔥🔥🔥"
+                    elif (gk_weak is not None and gk_weak >= 65) and (opp_def is not None and opp_def >= 60) and (mu is not None and line is not None and mu >= line + 0.75):
+                        main = "Scoring Environment"
+                elif mkt == "ASSISTS":
+                    if (proof is not None and proof >= 4):
+                        main = "🗡️ Assist Proof (4/6)"
+                    elif (mu is not None and line is not None and mu >= line + 1.5) and (proof is not None and proof >= 4):
+                        main = "μ Expectation (High)"
+                    elif flames == "🔥🔥🔥" and (proof is not None and proof >= 4):
+                        main = "Bonkers Regression 🔥🔥🔥"
+                elif mkt in ("GOALS","ATG"):
+                    if (mu is not None and line is not None and mu >= line + 0.35):
+                        main = "μ Expectation (High)"
+                    elif flames == "🔥🔥🔥" and ((gk_weak is not None and gk_weak >= 65) or (opp_def is not None and opp_def >= 60)):
+                        main = "Conversion Regression 🔥🔥🔥"
+                    elif (gk_weak is not None and gk_weak >= 70) and ((med10_sog is not None and med10_sog >= 3.5) or (avg5_sog is not None and avg5_sog >= 3.5)):
+                        main = "Finishing Matchup"
+
+                supports = []
+                def _add_support(label: str, ok: bool):
+                    supports.append((label, bool(ok)))
+
+                if mkt == "SOG":
+                    _add_support("μ Moderate+", (mu is not None and line is not None and mu >= line + 0.75))
+                    _add_support("Stable Usage", (toi is not None and toi >= 16))
+                    _add_support("STAR/ELITE", ("ELITE" in tier_u) or ("STAR" in tier_u))
+                    _add_support("Shot Environment", (opp_sog_l10 is not None and opp_sog_l10 >= 30) or (opp_def is not None and opp_def >= 60))
+                    _add_support("Pace", (team_sf60 is not None and team_sf60 >= 58))
+                elif mkt == "POINTS":
+                    _add_support("μ Moderate+", (mu is not None and line is not None and mu >= line + 0.75))
+                    _add_support("Regression 🔥🔥", flames in ("🔥🔥","🔥🔥🔥"))
+                    _add_support("STAR/ELITE", ("ELITE" in tier_u) or ("STAR" in tier_u))
+                    _add_support("Usage Stability", (toi is not None and toi >= 16))
+                    _add_support("PP Role", pp_role != "" and pp_role.upper() not in ("NONE","0","N/A"))
+                elif mkt == "ASSISTS":
+                    _add_support("μ Moderate+", (mu is not None and line is not None and mu >= line + 0.75))
+                    _add_support("Regression 🔥🔥", flames in ("🔥🔥","🔥🔥🔥"))
+                    _add_support("PP Distributor", bool(r.get("Assist_PP_Proof")) or (pp_role != "" and (("PP1" in pp_role.upper()) or ("PP2" in pp_role.upper()) or pp_role.strip() in ("1","2"))))
+                    _add_support("STAR/ELITE", ("ELITE" in tier_u) or ("STAR" in tier_u))
+                    _add_support("Linemate Finishing", (opp_def is not None and opp_def >= 60) or (gk_weak is not None and gk_weak >= 65))
+                elif mkt in ("GOALS","ATG"):
+                    _add_support("μ Moderate+", (mu is not None and line is not None and mu >= line + 0.20))
+                    _add_support("Regression 🔥🔥", flames in ("🔥🔥","🔥🔥🔥"))
+                    _add_support("Shooter Identity", (med10_sog is not None and med10_sog >= 3.5) or (avg5_sog is not None and avg5_sog >= 3.5))
+                    _add_support("STAR/ELITE", ("ELITE" in tier_u) or ("STAR" in tier_u))
+                    _add_support("PP Role", pp_role != "" and pp_role.upper() not in ("NONE","0","N/A"))
+
+                support_on = [lab for lab, ok in supports if ok]
+                support_score = sum(1 for _, ok in supports if ok)
+                support_total = len(supports)
+
+                tonight = []
+                if opp_def is not None and opp_def >= 60:
+                    tonight.append("Weak Defense")
+                if gk_weak is not None and gk_weak >= 65:
+                    tonight.append("Weak Goalie")
+                if pp_match is not None and pp_match >= 60:
+                    tonight.append("PP Matchup")
+                if mkt == "SOG" and opp_sog_l10 is not None and opp_sog_l10 >= 30:
+                    tonight.append("Shot-Friendly Opponent")
+                if team_sf60 is not None and team_sf60 >= 60:
+                    tonight.append("Pace")
+
+                st.markdown(f"**MAIN:** {main if main else '—'}")
+                st.markdown(f"**SUPPORT:** {support_score} / {support_total}")
+                st.caption(" • ".join(support_on) if support_on else "—")
+                st.markdown(f"**TONIGHT:** {' • '.join(tonight) if tonight else '—'}")
+                if flames:
+                    st.caption(f"Regression: {flames} ({heat})")
+                if gap is not None or drought is not None:
+                    _gap_s = f"{gap:.2f}" if gap is not None else "—"
+                    _dr_s = str(int(drought)) if drought is not None and not pd.isna(drought) else "—"
+                    st.caption(f"Reg gap: {_gap_s}  |  Drought: {_dr_s}")
     with st.expander("Full Board Table (all rows)", expanded=False):
         show_table(df_b, board_cols, "Board (sorted by Best_Conf)")
 
@@ -2558,6 +2676,87 @@ elif page == "Points":
 
 
 
+
+    # === SMASH PLAYS (POINTS) ===
+    st.subheader("⭐ Smash Plays — Points")
+    st.caption("Top candidates for this market (🔒 Locks > 💰 +EV > Conf).")
+
+    _rank = df_p.copy()
+    try:
+        _rank["_is_lock"] = (_rank["LOCK"].astype(str).str.strip() == "🔒").astype(int) if "LOCK" in _rank.columns else 0
+    except Exception:
+        _rank["_is_lock"] = 0
+
+    try:
+        if "EV_Signal" in _rank.columns:
+            _rank["_is_ev"] = _rank["EV_Signal"].astype(str).str.contains("💰", na=False).astype(int)
+        elif "Plays_EV_Points" in _rank.columns:
+            _rank["_is_ev"] = (_rank["Plays_EV_Points"].astype(str).str.strip() == "💰").astype(int)
+        else:
+            _rank["_is_ev"] = 0
+    except Exception:
+        _rank["_is_ev"] = 0
+
+    _rank["_conf"] = pd.to_numeric(_rank.get("Conf_Points", 0), errors="coerce").fillna(0)
+    _rank = _rank.sort_values(["_is_lock", "_is_ev", "_conf"], ascending=[False, False, False], kind="mergesort")
+
+    top_n = st.slider("Show top plays (Points)", 3, 25, 10, 1, key="pts_smash_topn")
+    top = _rank.head(int(top_n))
+
+    for _, r in top.iterrows():
+        player = str(r.get("Player", "") or "").strip()
+        game = str(r.get("Game", "") or "").strip()
+
+        line = r.get("Points_Line", "")
+        odds = r.get("Points_Odds_Over", "")
+        call = str(r.get("Points_Call", "") or "").strip()
+
+        conf = r.get("Conf_Points", "")
+        matrix = str(r.get("Matrix_Points", "") or "").strip()
+        badges = f"{str(r.get('EV_Signal','') or '').strip()} {str(r.get('LOCK','') or '').strip()}".strip()
+
+        # Pretty line/odds strings
+        try:
+            l_str = "" if line is None or (isinstance(line, float) and math.isnan(line)) else f"{float(line):.1f}"
+        except Exception:
+            l_str = str(line) if line is not None else ""
+        try:
+            o_str = "" if odds is None or (isinstance(odds, float) and math.isnan(odds)) else f"{int(round(float(odds)))}"
+        except Exception:
+            o_str = str(odds) if odds is not None else ""
+
+        headline = f"<b>{player}</b> — {game}" if game else f"<b>{player}</b>"
+        betline = f"PTS {l_str} @ {o_str}" if (l_str or o_str) else ""
+
+        meta = []
+        if matrix:
+            meta.append(matrix)
+        if conf != "" and conf is not None:
+            try:
+                meta.append(f"Conf {float(conf):.0f}")
+            except Exception:
+                meta.append(f"Conf {conf}")
+        if call:
+            meta.append(call)
+        meta_s = " | ".join([m for m in meta if m])
+
+        st.markdown(
+            f"""
+    <div class="wl-card wl-accent-blue">
+      <div style="display:flex;justify-content:space-between;gap:10px;">
+        <div style="font-size:16px;line-height:1.2;">
+          {headline}
+          <div style="opacity:0.9;margin-top:4px;">{betline}</div>
+        </div>
+        <div style="font-size:16px;white-space:nowrap;">{badges}</div>
+      </div>
+      <div style="margin-top:6px;font-size:12px;opacity:0.92;line-height:1.2;">{meta_s}</div>
+    </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+    st.markdown("---")
 
     show_table(df_p, points_cols, "Points View")
 
@@ -2725,6 +2924,7 @@ elif page == "SOG":
         "Plays_EV_SOG",
 
         "SOG_Call",
+        "SOG_Why",
         "Drought_SOG", "Best_Drought",
         "Reg_Heat_S", "Reg_Gap_S10", "Exp_S_10", "L10_S",
         "Med10_SOG", "Avg5_SOG", "ShotIntent", "ShotIntent_Pct",
