@@ -30,8 +30,6 @@ from statistics import median
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from zoneinfo import ZoneInfo
 
-
-
 import numpy as np
 import pandas as pd
 import requests
@@ -4673,4 +4671,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-
