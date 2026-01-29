@@ -3158,41 +3158,7 @@ elif page == "SOG":
             unsafe_allow_html=True,
         )
 
-                _why_tags = str(r.get("SOG_Why", "") or "").strip()
-        # Gate-aware WHY labels for SOG Smash (DUE vs SHOT ANCHOR vs BOTH)
-        try:
-            reg_gap = float(r.get("Reg_Gap_SOG", 0) or 0)
-            drought = float(r.get("Drought_SOG", 0) or 0)
-            line = float(r.get("SOG_Line", 0) or 0)
-            med10 = float(r.get("Med10_SOG", 0) or 0)
-            mu = float(r.get("SOG_mu", r.get("Exp_SOG", 0)) or 0)
-            share = float(r.get("Player_5v5_SOG_Share", 0) or 0)
-            share = share if share > 1 else share * 100
-            evp = r.get("SOG_EV%", r.get("Shots_EV%", None))
-
-            due_ok = (reg_gap >= 2.0) or (drought >= 2)
-            anchor_ok = (med10 >= max(line + 1.0, 4.0)) or (mu >= line + 1.5 and share >= 12)
-
-            # Normalize WHY tags
-            _why_tags = _why_tags.replace("REG", "").replace("DUE", "").replace("ANCHOR", "").strip(", ")
-
-            if due_ok and anchor_ok:
-                # Passed BOTH gates
-                try:
-                    ev_s = f"{float(evp):.1f}%" if evp not in (None, "") else ""
-                except Exception:
-                    ev_s = str(evp) if evp not in (None, "") else ""
-                both = "SHOT ANCHOR + DUE"
-                if ev_s:
-                    both = f"{both} (EV {ev_s})"
-                _why_tags = f"{both}, {_why_tags}".strip(", ")
-            elif anchor_ok:
-                _why_tags = f"SHOT ANCHOR, {_why_tags}".strip(", ")
-            elif due_ok:
-                _why_tags = f"DUE, {_why_tags}".strip(", ")
-        except Exception:
-            pass
-
+        _why_tags = str(r.get("SOG_Why", "") or "").strip()
         # Suppress REG unless DUE gate truly passed
         try:
             reg_gap = float(r.get("Reg_Gap_SOG", 0) or 0)
