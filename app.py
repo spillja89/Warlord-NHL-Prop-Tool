@@ -3076,14 +3076,9 @@ elif page == "SOG":
         try:
             line = float(r.get("SOG_Line", 0) or 0)
             med10 = float(r.get("Med10_SOG", 0) or 0)
-            mu = float(r.get("SOG_mu", r.get("Exp_SOG", 0)) or 0)
             share = float(r.get("Player_5v5_SOG_Share", 0) or 0)
             share = share if share > 1 else share * 100
-
-            # Allow anchor via Med10 OR via μ + share dominance
-            if med10 >= max(line + 1.0, 4.0):
-                return True
-            if mu >= line + 1.5 and share >= 12:
+            if med10 >= max(line + 1.5, 4.5) and share >= 14:
                 return True
         except Exception:
             pass
