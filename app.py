@@ -3058,35 +3058,7 @@ elif page == "SOG":
         unsafe_allow_html=True,
     )
 
-    
-    # Smash-only gate: require DUE or true ANCHOR volume
-    _base = df_s[df_s.get("Green_SOG", False)].copy()
-
-    def _sog_smash_gate(r):
-        # DUE path
-        try:
-            if float(r.get("Drought_SOG", 0) or 0) >= 2:
-                return True
-            if float(r.get("Reg_Gap_SOG", 0) or 0) >= 2.0:
-                return True
-        except Exception:
-            pass
-
-        # ANCHOR path (elite sustained volume)
-        try:
-            line = float(r.get("SOG_Line", 0) or 0)
-            med10 = float(r.get("Med10_SOG", 0) or 0)
-            share = float(r.get("Player_5v5_SOG_Share", 0) or 0)
-            share = share if share > 1 else share * 100
-            if med10 >= max(line + 1.5, 4.5) and share >= 14:
-                return True
-        except Exception:
-            pass
-
-        return False
-
-    _rank = _base[_base.apply(_sog_smash_gate, axis=1)].copy()
-
+    _rank = df_s[df_s.get("Green_SOG", False)].copy()
 
     try:
         _rank["_is_lock"] = (_rank["LOCK"].astype(str).str.strip() == "🔒").astype(int)
@@ -3163,12 +3135,8 @@ elif page == "SOG":
                     except Exception: ctx.append(f"μ: {mu}")
                 share = r.get("Player_5v5_SOG_Share", None)
                 if share not in ("", None):
-                    try:
-                        s = float(share)
-                        s = s if s > 1 else s * 100
-                        ctx.append(f"ShotShare: {s:.1f}%")
-                    except Exception:
-                        ctx.append(f"ShotShare: {share}")
+                    try: ctx.append(f"ShotShare: {float(share)*100:.1f}%")
+                    except Exception: ctx.append(f"ShotShare: {share}")
                 opp = r.get("Opp_SOG_Against_L10", None)
                 if opp not in ("", None):
                     try: ctx.append(f"Opp SA L10: {float(opp):.1f}")
@@ -3462,7 +3430,7 @@ elif page == "🧪 Dagger Lab":
                 if tot <= 0:
                     return "Passenger"
                 share = (ixg / tot)
-                if share >= 2.00:
+                if share >= 0.60:
                     return "Shooter"
                 if share <= 0.40:
                     return "Passer"
