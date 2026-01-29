@@ -3159,15 +3159,6 @@ elif page == "SOG":
         )
 
         _why_tags = str(r.get("SOG_Why", "") or "").strip()
-        # Suppress REG unless DUE gate truly passed
-        try:
-            reg_gap = float(r.get("Reg_Gap_SOG", 0) or 0)
-            drought = float(r.get("Drought_SOG", 0) or 0)
-            if reg_gap < 2.0 and drought < 2:
-                _why_tags = _why_tags.replace("REG", "").replace("  ", " ").strip(", ")
-        except Exception:
-            pass
-
         with st.expander("Why it fires", expanded=False):
             st.write(_why_tags if _why_tags else "—")
             try:
