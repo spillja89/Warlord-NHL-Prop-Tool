@@ -2322,6 +2322,20 @@ show_games_times(df_f)
 # =========================
 if page == "Board":
 
+    st.markdown(
+        """
+        <div style="padding:10px 14px;border-radius:12px;
+                    background:#f8f8f8;border:1px solid #ddd;
+                    margin-bottom:12px;font-size:14px;">
+          <b>Board Signals</b><br>
+          🧨 <b>Dynamite</b> — explosive ceiling edge (high-impact, volatile)<br>
+          ⚔️ <b>Critical Strike</b> — precision edge with multiple proofs aligned
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+
     # -------------------------
     # Board market color theme (Ninja palette)
     # Purple = Assists, Dark Blue = Points, Orange = SOG, Red = Goals
@@ -2553,48 +2567,178 @@ if page == "Board":
                         f"</div>", unsafe_allow_html=True)
 
             with st.expander("🔥 Why it fires", expanded=False):
-                # Presentation-only: use the same unified WHY renderer as the market pages
+                # Market-aware WHY renderer (MAIN / SUPPORT / TONIGHT)
                 mkt_raw = str(bm or "").strip().upper()
                 if mkt_raw.startswith("SOG"):
                     mkt = "SOG"
-                elif mkt_raw.startswith("POINT") or mkt_raw.startswith("PTS"):
+                elif mkt_raw.startswith("POINT"):
                     mkt = "POINTS"
-                elif mkt_raw.startswith("ASSIST") or mkt_raw.startswith("AST"):
+                elif mkt_raw.startswith("ASSIST"):
                     mkt = "ASSISTS"
                 elif mkt_raw.startswith("ATG"):
                     mkt = "ATG"
                 elif mkt_raw.startswith("GOAL"):
                     mkt = "GOALS"
                 else:
-                    mkt = mkt_raw or "POINTS"
+                    mkt = mkt_raw or "UNKNOWN"
 
-                _why_tags = ""
-                try:
-                    if mkt == "POINTS":
-                        _why_tags = str(r.get("Points_Why", "") or "").strip()
-                        if not _why_tags:
-                            try:
-                                _why_tags = _points_why(r)
-                            except Exception:
-                                _why_tags = ""
-                    elif mkt == "ASSISTS":
-                        _why_tags = str(r.get("Assist_Why", "") or "").strip()
-                    elif mkt == "SOG":
-                        _v = r.get("SOG_Why", "")
-                        _why_tags = "" if (_v is None or (isinstance(_v, float) and math.isnan(_v))) else str(_v).strip()
-                        if not _why_tags:
-                            try:
-                                _why_tags = _sog_why(r)
-                            except Exception:
-                                _why_tags = ""
-                    elif mkt in ("GOALS", "ATG"):
-                        _why_tags = str(r.get("ATG_Why", "") or r.get("Goal_Why", "") or "").strip()
+                def _f(x, default=None):
+                    try:
+                        if pd.isna(x):
+                            return default
+                        return float(x)
+                    except Exception:
+                        return default
+
+                def _s(x):
+                    return str(x).strip() if x is not None and not pd.isna(x) else ""
+
+                def _heat_to_flames(h: str) -> str:
+                    h = _s(h).upper()
+                    if "OVERDUE" in h:
+                        return "🔥🔥🔥"
+                    if h in ("HOT","DUE"):
+                        return "🔥🔥"
+                    return ""
+
+                mu = line = None
+                heat = ""
+                gap = None
+                drought = None
+                proof = None
+
+                if mkt == "SOG":
+                    mu = _f(r.get("SOG_mu"))
+                    line = _f(r.get("SOG_Line"))
+                    heat = _s(r.get("Reg_Heat_S"))
+                    gap = _f(r.get("Reg_Gap_S10"))
+                    drought = _f(r.get("Drought_SOG"))
+                    proof = _f(r.get("SOG_ProofCount"))
+                elif mkt == "POINTS":
+                    mu = _f(r.get("Points_mu"))
+                    line = _f(r.get("Points_Line"))
+                    heat = _s(r.get("Reg_Heat_P"))
+                    gap = _f(r.get("Reg_Gap_P10"))
+                    drought = _f(r.get("Drought_P"))
+                    proof = _f(r.get("Points_ProofCount"))
+                elif mkt == "ASSISTS":
+                    mu = _f(r.get("Assists_mu"))
+                    line = _f(r.get("Assists_Line"), 0.5)
+                    heat = _s(r.get("Reg_Heat_A"))
+                    gap = _f(r.get("Reg_Gap_A10"))
+                    drought = _f(r.get("Drought_A"))
+                    proof = _f(r.get("Assist_ProofCount"))
+                elif mkt in ("GOALS","ATG"):
+                    if mkt == "ATG":
+                        mu = _f(r.get("ATG_mu"))
+                        line = _f(r.get("ATG_Line"), 0.5)
                     else:
-                        _why_tags = str(why or "").strip()
-                except Exception:
-                    _why_tags = str(why or "").strip()
+                        mu = _f(r.get("Goal_mu"))
+                        line = _f(r.get("Goal_Line"), 0.5)
+                    heat = _s(r.get("Reg_Heat_G"))
+                    gap = _f(r.get("Reg_Gap_G10"))
+                    drought = _f(r.get("Drought_G"))
+                    proof = _f(r.get("Goal_ProofCount"))
 
-                _render_why_it_fires_rich(mkt, r, _why_tags)
+                flames = _heat_to_flames(heat)
+                med10_sog = _f(r.get("Med10_SOG"))
+                avg5_sog = _f(r.get("Avg5_SOG"))
+                share_sog = _f(r.get("Player_5v5_SOG_Share"))
+                toi = _f(r.get("TOI_per_game"))
+                pp_role = _s(r.get("PP_Role"))
+                pp_match = _f(r.get("PP_Matchup"))
+                opp_def = _f(r.get("Opp_DefWeak"))
+                gk_weak = _f(r.get("Goalie_Weak"))
+                opp_sog_l10 = _f(r.get("Opp_SOG_Against_L10"))
+                team_sf60 = _f(r.get("team_5v5_SF60"))
+                tier_raw = (r.get('Tier_Tag_Best') or r.get('Tier_Tag') or r.get('Tier') or r.get('TierTag') or r.get('Tier_Class') or '')
+                tier_u = _s(tier_raw).upper()
+
+                main = ""
+                if mkt == "SOG":
+                    if (med10_sog is not None and line is not None and med10_sog >= max(4.0, line + 1.0)) or (avg5_sog is not None and line is not None and avg5_sog >= max(4.0, line + 1.0)):
+                        main = "High Shot Volume"
+                    elif (mu is not None and line is not None and mu >= line + 1.5):
+                        main = "μ Expectation (High)"
+                    elif (toi is not None and toi >= 18) or (share_sog is not None and share_sog >= 0.12):
+                        main = "Usage Dominance"
+                elif mkt == "POINTS":
+                    if (mu is not None and line is not None and mu >= line + 1.5):
+                        main = "μ Expectation (High)"
+                    elif flames == "🔥🔥🔥":
+                        main = "Bonkers Regression 🔥🔥🔥"
+                    elif (gk_weak is not None and gk_weak >= 65) and (opp_def is not None and opp_def >= 60) and (mu is not None and line is not None and mu >= line + 0.75):
+                        main = "Scoring Environment"
+                elif mkt == "ASSISTS":
+                    if (proof is not None and proof >= 4):
+                        main = "🗡️ Assist Proof (4/6)"
+                    elif (mu is not None and line is not None and mu >= line + 1.5) and (proof is not None and proof >= 4):
+                        main = "μ Expectation (High)"
+                    elif flames == "🔥🔥🔥" and (proof is not None and proof >= 4):
+                        main = "Bonkers Regression 🔥🔥🔥"
+                elif mkt in ("GOALS","ATG"):
+                    if (mu is not None and line is not None and mu >= line + 0.35):
+                        main = "μ Expectation (High)"
+                    elif flames == "🔥🔥🔥" and ((gk_weak is not None and gk_weak >= 65) or (opp_def is not None and opp_def >= 60)):
+                        main = "Conversion Regression 🔥🔥🔥"
+                    elif (gk_weak is not None and gk_weak >= 70) and ((med10_sog is not None and med10_sog >= 3.5) or (avg5_sog is not None and avg5_sog >= 3.5)):
+                        main = "Finishing Matchup"
+
+                supports = []
+                def _add_support(label: str, ok: bool):
+                    supports.append((label, bool(ok)))
+
+                if mkt == "SOG":
+                    _add_support("μ Moderate+", (mu is not None and line is not None and mu >= line + 0.75))
+                    _add_support("Stable Usage", (toi is not None and toi >= 16))
+                    _add_support("STAR/ELITE", ("ELITE" in tier_u) or ("STAR" in tier_u))
+                    _add_support("Shot Environment", (opp_sog_l10 is not None and opp_sog_l10 >= 30) or (opp_def is not None and opp_def >= 60))
+                    _add_support("Pace", (team_sf60 is not None and team_sf60 >= 58))
+                elif mkt == "POINTS":
+                    _add_support("μ Moderate+", (mu is not None and line is not None and mu >= line + 0.75))
+                    _add_support("Regression 🔥🔥", flames in ("🔥🔥","🔥🔥🔥"))
+                    _add_support("STAR/ELITE", ("ELITE" in tier_u) or ("STAR" in tier_u))
+                    _add_support("Usage Stability", (toi is not None and toi >= 16))
+                    _add_support("PP Role", pp_role != "" and pp_role.upper() not in ("NONE","0","N/A"))
+                elif mkt == "ASSISTS":
+                    _add_support("μ Moderate+", (mu is not None and line is not None and mu >= line + 0.75))
+                    _add_support("Regression 🔥🔥", flames in ("🔥🔥","🔥🔥🔥"))
+                    _add_support("PP Distributor", bool(r.get("Assist_PP_Proof")) or (pp_role != "" and (("PP1" in pp_role.upper()) or ("PP2" in pp_role.upper()) or pp_role.strip() in ("1","2"))))
+                    _add_support("STAR/ELITE", ("ELITE" in tier_u) or ("STAR" in tier_u))
+                    _add_support("Linemate Finishing", (opp_def is not None and opp_def >= 60) or (gk_weak is not None and gk_weak >= 65))
+                elif mkt in ("GOALS","ATG"):
+                    _add_support("μ Moderate+", (mu is not None and line is not None and mu >= line + 0.20))
+                    _add_support("Regression 🔥🔥", flames in ("🔥🔥","🔥🔥🔥"))
+                    _add_support("Shooter Identity", (med10_sog is not None and med10_sog >= 3.5) or (avg5_sog is not None and avg5_sog >= 3.5))
+                    _add_support("STAR/ELITE", ("ELITE" in tier_u) or ("STAR" in tier_u))
+                    _add_support("PP Role", pp_role != "" and pp_role.upper() not in ("NONE","0","N/A"))
+
+                support_on = [lab for lab, ok in supports if ok]
+                support_score = sum(1 for _, ok in supports if ok)
+                support_total = len(supports)
+
+                tonight = []
+                if opp_def is not None and opp_def >= 60:
+                    tonight.append("Weak Defense")
+                if gk_weak is not None and gk_weak >= 65:
+                    tonight.append("Weak Goalie")
+                if pp_match is not None and pp_match >= 60:
+                    tonight.append("PP Matchup")
+                if mkt == "SOG" and opp_sog_l10 is not None and opp_sog_l10 >= 30:
+                    tonight.append("Shot-Friendly Opponent")
+                if team_sf60 is not None and team_sf60 >= 60:
+                    tonight.append("Pace")
+
+                st.markdown(f"**MAIN:** {main if main else '—'}")
+                st.markdown(f"**SUPPORT:** {support_score} / {support_total}")
+                st.caption(" • ".join(support_on) if support_on else "—")
+                st.markdown(f"**TONIGHT:** {' • '.join(tonight) if tonight else '—'}")
+                if flames:
+                    st.caption(f"Regression: {flames} ({heat})")
+                if gap is not None or drought is not None:
+                    _gap_s = f"{gap:.2f}" if gap is not None else "—"
+                    _dr_s = str(int(drought)) if drought is not None and not pd.isna(drought) else "—"
+                    st.caption(f"Reg gap: {_gap_s}  |  Drought: {_dr_s}")
     with st.expander("Full Board Table (all rows)", expanded=False):
         show_table(df_b, board_cols, "Board (sorted by Best_Conf)")
 
@@ -2722,6 +2866,20 @@ elif page == "Points":
 
     # === SMASH PLAYS (POINTS) ===
     st.subheader("⭐ Smash Plays — Points")
+
+    st.markdown(
+        '''
+        <div style="padding:10px 14px;border-radius:12px;
+                    background:#eef5ff;border:1px solid #cfe2ff;
+                    margin:8px 0 12px 0;font-size:14px;">
+          <b>Board Signals</b><br>
+          🧨 <b>Dynamite</b> — explosive ceiling edge (high-impact, volatile)<br>
+          🗡️ <b>Critical Strike</b> — precision edge with multiple proofs aligned
+        </div>
+        ''',
+        unsafe_allow_html=True,
+    )
+
     st.markdown(
         """
         <div style="padding:14px 16px;border-radius:14px;border:2px solid #000;background:#fff;">
@@ -2955,6 +3113,20 @@ elif page == "Assists":
     
     # === SMASH PLAYS (ASSISTS) ===
     st.subheader("⭐ Smash Plays — Assists")
+
+    st.markdown(
+        '''
+        <div style="padding:10px 14px;border-radius:12px;
+                    background:#f3e8ff;border:1px solid #dcc5ff;
+                    margin:8px 0 12px 0;font-size:14px;">
+          <b>Board Signals</b><br>
+          🧨 <b>Dynamite</b> — explosive ceiling edge (high-impact, volatile)<br>
+          🗡️ <b>Critical Strike</b> — precision edge with multiple proofs aligned
+        </div>
+        ''',
+        unsafe_allow_html=True,
+    )
+
     st.markdown(
         """
         <div style="padding:14px 16px;border-radius:14px;border:2px solid #000;background:#fff;">
@@ -3051,6 +3223,7 @@ elif page == "Assists":
 
         _why_tags = str(r.get("Assist_Why", "") or "").strip()
         with st.expander("Why it fires", expanded=False):
+            st.markdown("**Board Signals** — 🧨 Dynamite = explosive ceiling edge • 🗡️ Critical Strike = multi‑proof precision edge")
             _render_why_it_fires_rich("ASSISTS", r, _why_tags)
 
     st.markdown("---")
@@ -3062,6 +3235,19 @@ elif page == "Assists":
 # SOG
 # =========================
 elif page == "SOG":
+    st.markdown(
+        """
+        <div style="padding:10px 14px;border-radius:12px;
+                    background:#ecfdf3;border:1px solid #b7efcf;
+                    margin:8px 0 12px 0;font-size:14px;">
+          <b>Board Signals</b><br>
+          🧨 <b>Dynamite</b> — explosive ceiling edge (high-impact, volatile)<br>
+          🗡️ <b>Critical Strike</b> — precision edge with multiple proofs aligned
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
     df_s = df_f.copy()
     df_s["_cs"] = safe_num(df_s, "Conf_SOG", 0)
     df_s = df_s.sort_values(["_cs"], ascending=[False]).drop(columns=["_cs"], errors="ignore")
