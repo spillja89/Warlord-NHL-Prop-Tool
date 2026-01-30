@@ -160,153 +160,6 @@ def legend_signals():
             unsafe_allow_html=True,
         )
 
-
-def _why_sections_header(mkt: str = ""):
-    """Presentation-only ledger for MAIN / SUPPORT / TONIGHT (no gates/logic)."""
-    mk = str(mkt or "").strip().upper()
-    # Market color matching (same palette used by pills)
-    if "ASSIST" in mk:
-        bg = "rgba(168,85,247,0.14)"
-        border = "#a855f7"
-    elif "SOG" in mk or "SHOT" in mk:
-        bg = "rgba(245,158,11,0.14)"
-        border = "#f59e0b"
-    elif "GOAL" in mk or "ATG" in mk:
-        bg = "rgba(239,68,68,0.14)"
-        border = "#ef4444"
-    else:  # POINTS default
-        bg = "rgba(59,130,246,0.14)"
-        border = "#3b82f6"
-
-    st.markdown(
-        f"""
-        <div style="padding:12px 14px;border-radius:14px;border:1px solid rgba(0,0,0,0.10);background:{bg};border-left:6px solid {border};margin-bottom:10px;">
-          <div style="font-size:18px;font-weight:900;color:#000;margin-bottom:6px;">Why it fires — legend</div>
-          <div style="font-size:14px;font-weight:800;color:#000;line-height:1.45;">
-            <b>MAIN</b>: primary trigger(s) for this market<br/>
-            <b>SUPPORT</b>: independent proofs backing the MAIN trigger (X / 5)<br/>
-            <b>TONIGHT</b>: matchup context (goalie / defense / PP env / pace)
-          </div>
-          <div style="margin-top:10px;font-size:13px;font-weight:800;color:#000;">SUPPORT proofs (max 5)</div>
-          <ul style="margin:6px 0 0 18px;padding:0;font-size:13px;line-height:1.35;color:#000;">
-            <li><b>Regression pressure</b> (HOT / DUE / OVERDUE, gap)</li>
-            <li><b>PP role / distributor</b> (PP1 share, involvement)</li>
-            <li><b>Talent tier</b> (STAR / ELITE)</li>
-            <li><b>Volume / involvement</b> (TOI, touches/attempts/usage)</li>
-            <li><b>Linemate / stack quality</b> (line context helps conversion)</li>
-          </ul>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
-
-
-def _render_why_it_fires_rich(mkt: str, r, tags: str = "") -> None:
-    """Presentation-only rich WHY block. Does not change any gates/logic."""
-    try:
-        _why_sections_header(mkt)
-    except Exception:
-        pass
-
-    tags_s = str(tags or "").strip()
-    if tags_s:
-        st.markdown(f"**Tags:** {tags_s}")
-    else:
-        st.markdown("**Tags:** —")
-
-    # MAIN: for now, show the market tags (human reads them as primary triggers)
-    st.markdown(f"**MAIN:** {tags_s if tags_s else '—'}")
-
-    # SUPPORT: show the compact model context line (matrix/conf/ev/heat/gap/drought) if present
-    try:
-        ctx = []
-        # generic picks, market-specific keys are passed via r already
-        # (caller provides the right row for the market page)
-        # We'll try common fields used across the app; missing cols are fine.
-        # Matrix / Conf / EV / Heat
-        _mx = None
-        _cp = None
-        _ev = None
-        _ht = None
-        _rg = None
-        _dr = None
-
-        if mkt.upper() == "POINTS":
-            _mx = str(r.get("Matrix_Points", "") or "").strip()
-            _cp = r.get("Conf_Points", None)
-            _ev = r.get("Points_EV%", None)
-            _ht = str(r.get("Reg_Heat_P", "") or "").strip()
-            _rg = r.get("Reg_Gap_P10", None)
-            _dr = r.get("Drought_P", None)
-
-        elif mkt.upper() == "ASSISTS":
-            _mx = str(r.get("Matrix_Assists", "") or "").strip()
-            _cp = r.get("Conf_Assists", None)
-            _ev = r.get("Assists_EV%", None)
-            _ht = str(r.get("Reg_Heat_A", "") or "").strip()
-            _rg = r.get("Reg_Gap_A10", None)
-            _dr = r.get("Drought_A", None)
-        elif mkt.upper() in ("SOG", "SHOTS"):
-            _mx = str(r.get("Matrix_SOG", "") or "").strip()
-            _cp = r.get("Conf_SOG", None)
-            _ev = r.get("SOG_EV%", None)
-            _ht = str(r.get("Reg_Heat_S", "") or "").strip()
-            _rg = r.get("Reg_Gap_S10", None)
-            _dr = r.get("Drought_SOG", None)
-            if _dr is None or _dr == "":
-                _dr = r.get("Drought_S", None)
-
-        if _mx:
-            ctx.append(f"Matrix: {_mx}")
-        if _cp is not None and _cp != "":
-            try:
-                ctx.append(f"Conf: {float(_cp):.0f}")
-            except Exception:
-                ctx.append(f"Conf: {_cp}")
-        if _ev is not None and _ev != "":
-            try:
-                ctx.append(f"EV%: {float(_ev):.1f}")
-            except Exception:
-                ctx.append(f"EV%: {_ev}")
-        if _ht:
-            ctx.append(f"Heat: {_ht}")
-        if _rg is not None and _rg != "" and not (isinstance(_rg, float) and math.isnan(_rg)):
-            try:
-                ctx.append(f"Gap10: {float(_rg):.2f}")
-            except Exception:
-                ctx.append(f"Gap10: {_rg}")
-        if _dr is not None and _dr != "" and not (isinstance(_dr, float) and math.isnan(_dr)):
-            try:
-                ctx.append(f"Drought: {int(float(_dr))}")
-            except Exception:
-                ctx.append(f"Drought: {_dr}")
-
-        st.markdown("**SUPPORT:**")
-        st.caption(" | ".join(ctx) if ctx else "—")
-    except Exception:
-        st.markdown("**SUPPORT:**")
-        st.caption("—")
-
-    # TONIGHT: surface matchup context if present (non-breaking)
-    try:
-        tonight = []
-        if bool(r.get("Opp_DefWeak", False)):
-            tonight.append("Weak Defense")
-        _gw = r.get("Goalie_Weak", None)
-        try:
-            if _gw is not None and float(_gw) >= 65:
-                tonight.append("Weak Goalie")
-        except Exception:
-            pass
-        _ppm = r.get("PP_Matchup", None)
-        try:
-            if _ppm is not None and float(_ppm) >= 60:
-                tonight.append("PP Matchup")
-        except Exception:
-            pass
-        st.markdown(f"**TONIGHT:** {' • '.join(tonight) if tonight else '—'}")
-    except Exception:
-        st.markdown("**TONIGHT:** —")
 def _calc_market_map(market: str) -> dict:
     """
     Maps calculator market -> relevant df columns.
@@ -602,21 +455,7 @@ def warlord_call(ev_pct: float, kelly: float) -> tuple[str, str, str]:
 # -------------------------
 
 def _icon_is_money(v) -> bool:
-    """
-    Treat either the literal icon "💰" OR boolean-ish values as +EV.
-    This keeps compatibility whether the tracker writes icons or True/False.
-    """
-    try:
-        if isinstance(v, bool):
-            return v
-        if isinstance(v, (int, float)) and not (isinstance(v, float) and math.isnan(v)):
-            return float(v) >= 1.0
-        s = str(v).strip()
-        if s == "💰":
-            return True
-        return s.lower() in ("true", "1", "yes", "y", "t")
-    except Exception:
-        return False
+    return str(v).strip() == "💰"
 
 def _col_bool(df: pd.DataFrame, col: str) -> pd.Series:
     if col not in df.columns:
@@ -919,7 +758,7 @@ def inject_warlord_css():
       .wl-red   { background: rgba(239,68,68,0.14);  border-color: rgba(239,68,68,0.35);}  /* Goals */
 
       /* accent stripe */
-      .wl-accent-purple{ background: rgba(168,85,247,0.18); border-left: 5px solid #a855f7; }
+      .wl-accent-purple{ background: rgba(168,85,247,0.18); }{ border-left: 5px solid #a855f7; }
       .wl-accent-blue{ background: rgba(59,130,246,0.18); border-left: 5px solid #3b82f6; }
       .wl-accent-orange{ background: rgba(245,158,11,0.18); }{ border-left: 5px solid #f59e0b; }
       .wl-accent-red{ background: rgba(239,68,68,0.18); }{    border-left: 5px solid #ef4444; }
@@ -970,8 +809,7 @@ def safe_num(df: pd.DataFrame, col: str, default=0.0) -> pd.Series:
 # Signals-first helpers
 # -------------------------
 def _is_money(x) -> bool:
-    return _icon_is_money(x)
-
+    return str(x).strip() == "💰"
 def _fmt_ev_pct(x) -> str:
     try:
         if x is None or (isinstance(x, float) and math.isnan(x)):
@@ -1256,17 +1094,6 @@ def add_ui_columns(df: pd.DataFrame) -> pd.DataFrame:
     return out
 def load_csv(path: str) -> pd.DataFrame:
     df = pd.read_csv(path)
-
-    # -------------------------
-    # Tier alias (schema drift guard)
-    # -------------------------
-    if "Tier_Tag" not in df.columns:
-        if "Tier" in df.columns:
-            df["Tier_Tag"] = df["Tier"]
-        elif "Talent_Tier" in df.columns:
-            df["Tier_Tag"] = df["Talent_Tier"]
-        else:
-            df["Tier_Tag"] = ""
 
     # --- SNAP BETTING LINES AFTER df EXISTS (fix NameError) ---
     def snap_half_down_sog(x):
@@ -2322,20 +2149,6 @@ show_games_times(df_f)
 # =========================
 if page == "Board":
 
-    st.markdown(
-        """
-        <div style="padding:10px 14px;border-radius:12px;
-                    background:#f8f8f8;border:1px solid #ddd;
-                    margin-bottom:12px;font-size:14px;">
-          <b>Board Signals</b><br>
-          🧨 <b>Dynamite</b> — explosive ceiling edge (high-impact, volatile)<br>
-          ⚔️ <b>Critical Strike</b> — precision edge with multiple proofs aligned
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
-
-
     # -------------------------
     # Board market color theme (Ninja palette)
     # Purple = Assists, Dark Blue = Points, Orange = SOG, Red = Goals
@@ -2372,7 +2185,7 @@ if page == "Board":
         margin-bottom: 10px;
         box-shadow: 0 10px 25px rgba(0,0,0,0.35);
       }
-      .wl-accent-purple{ background: rgba(168,85,247,0.18); border-left: 5px solid #a855f7; }
+      .wl-accent-purple{ background: rgba(168,85,247,0.18); }{ border-left: 5px solid #a855f7; }
       .wl-accent-blue{ background: rgba(59,130,246,0.18); border-left: 5px solid #3b82f6; }  { border-left: 5px solid #0b1b3a; }
       .wl-accent-orange{ background: rgba(245,158,11,0.18); }{ border-left: 5px solid #f59e0b; }
       .wl-accent-red{ background: rgba(239,68,68,0.18); }   { border-left: 5px solid #ef4444; }
@@ -2866,20 +2679,6 @@ elif page == "Points":
 
     # === SMASH PLAYS (POINTS) ===
     st.subheader("⭐ Smash Plays — Points")
-
-    st.markdown(
-        '''
-        <div style="padding:10px 14px;border-radius:12px;
-                    background:#eef5ff;border:1px solid #cfe2ff;
-                    margin:8px 0 12px 0;font-size:14px;">
-          <b>Board Signals</b><br>
-          🧨 <b>Dynamite</b> — explosive ceiling edge (high-impact, volatile)<br>
-          🗡️ <b>Critical Strike</b> — precision edge with multiple proofs aligned
-        </div>
-        ''',
-        unsafe_allow_html=True,
-    )
-
     st.markdown(
         """
         <div style="padding:14px 16px;border-radius:14px;border:2px solid #000;background:#fff;">
@@ -2987,7 +2786,35 @@ elif page == "Points":
             except Exception:
                 _why_tags = ""
         with st.expander("Why it fires", expanded=False):  # key removed
-            _render_why_it_fires_rich("POINTS", r, _why_tags)
+#f"pts_why_{player}_{game}_{_}"):
+            st.write(_why_tags if _why_tags else "—")
+            # Quick context (non-breaking if cols missing)
+            try:
+                _rg = r.get("Reg_Gap_P10", None)
+                _dr = r.get("Drought_P", None)
+                _ht = str(r.get("Reg_Heat_P", "") or "").strip()
+                _mx = str(r.get("Matrix_Points", "") or "").strip()
+                _cp = r.get("Conf_Points", None)
+                _ev = r.get("Points_EV%", None)
+                ctx = []
+                if _mx: ctx.append(f"Matrix: {_mx}")
+                if _cp is not None and _cp != "": 
+                    try: ctx.append(f"Conf: {float(_cp):.0f}")
+                    except Exception: ctx.append(f"Conf: {_cp}")
+                if _ev is not None and _ev != "":
+                    try: ctx.append(f"EV%: {float(_ev):.1f}")
+                    except Exception: ctx.append(f"EV%: {_ev}")
+                if _ht: ctx.append(f"Heat: {_ht}")
+                if _rg is not None and _rg != "" and not (isinstance(_rg, float) and math.isnan(_rg)):
+                    try: ctx.append(f"Gap10: {float(_rg):.2f}")
+                    except Exception: ctx.append(f"Gap10: {_rg}")
+                if _dr is not None and _dr != "" and not (isinstance(_dr, float) and math.isnan(_dr)):
+                    try: ctx.append(f"Drought: {int(float(_dr))}")
+                    except Exception: ctx.append(f"Drought: {_dr}")
+                if ctx:
+                    st.caption(" | ".join(ctx))
+            except Exception:
+                pass
 
     st.markdown("---")
 
@@ -3113,20 +2940,6 @@ elif page == "Assists":
     
     # === SMASH PLAYS (ASSISTS) ===
     st.subheader("⭐ Smash Plays — Assists")
-
-    st.markdown(
-        '''
-        <div style="padding:10px 14px;border-radius:12px;
-                    background:#f3e8ff;border:1px solid #dcc5ff;
-                    margin:8px 0 12px 0;font-size:14px;">
-          <b>Board Signals</b><br>
-          🧨 <b>Dynamite</b> — explosive ceiling edge (high-impact, volatile)<br>
-          🗡️ <b>Critical Strike</b> — precision edge with multiple proofs aligned
-        </div>
-        ''',
-        unsafe_allow_html=True,
-    )
-
     st.markdown(
         """
         <div style="padding:14px 16px;border-radius:14px;border:2px solid #000;background:#fff;">
@@ -3150,12 +2963,6 @@ elif page == "Assists":
     )
 
     _rank = df_a[df_a.get("Plays_Assists", False)].copy()
-
-    # HARD FAIL (Assists): require Assist-specific Drought OR Assist-specific Reg Heat
-    _drought_a = pd.to_numeric(_rank.get("Drought_A", 0), errors="coerce").fillna(0).astype(int)
-    _heat_a = _rank.get("Reg_Heat_A", "").astype(str).str.strip().str.upper()
-    _rank = _rank[(_drought_a >= int(HARD_BOARD_DROUGHT_GATE)) | (_heat_a.isin(HARD_BOARD_HEAT_LEVELS))].copy()
-
 
     try:
         _rank["_is_lock"] = (_rank["LOCK"].astype(str).str.strip() == "🔒").astype(int)
@@ -3223,8 +3030,33 @@ elif page == "Assists":
 
         _why_tags = str(r.get("Assist_Why", "") or "").strip()
         with st.expander("Why it fires", expanded=False):
-            st.markdown("**Board Signals** — 🧨 Dynamite = explosive ceiling edge • 🗡️ Critical Strike = multi‑proof precision edge")
-            _render_why_it_fires_rich("ASSISTS", r, _why_tags)
+            st.write(_why_tags if _why_tags else "—")
+            try:
+                _rg = r.get("Reg_Gap_A10", None)
+                _dr = r.get("Drought_A", None)
+                _ht = str(r.get("Reg_Heat_A", "") or "").strip()
+                _mx = str(r.get("Matrix_Assists", "") or "").strip()
+                _cp = r.get("Conf_Assists", None)
+                _ev = r.get("Assists_EV%", None)
+                ctx = []
+                if _mx: ctx.append(f"Matrix: {_mx}")
+                if _cp is not None and _cp != "":
+                    try: ctx.append(f"Conf: {float(_cp):.0f}")
+                    except Exception: ctx.append(f"Conf: {_cp}")
+                if _ev is not None and _ev != "":
+                    try: ctx.append(f"EV%: {float(_ev):.1f}")
+                    except Exception: ctx.append(f"EV%: {_ev}")
+                if _ht: ctx.append(f"Heat: {_ht}")
+                if _rg is not None and _rg != "" and not (isinstance(_rg, float) and math.isnan(_rg)):
+                    try: ctx.append(f"Gap10: {float(_rg):.2f}")
+                    except Exception: ctx.append(f"Gap10: {_rg}")
+                if _dr is not None and _dr != "" and not (isinstance(_dr, float) and math.isnan(_dr)):
+                    try: ctx.append(f"Drought: {int(float(_dr))}")
+                    except Exception: ctx.append(f"Drought: {_dr}")
+                if ctx:
+                    st.caption(" | ".join(ctx))
+            except Exception:
+                pass
 
     st.markdown("---")
 
@@ -3235,19 +3067,6 @@ elif page == "Assists":
 # SOG
 # =========================
 elif page == "SOG":
-    st.markdown(
-        """
-        <div style="padding:10px 14px;border-radius:12px;
-                    background:#ecfdf3;border:1px solid #b7efcf;
-                    margin:8px 0 12px 0;font-size:14px;">
-          <b>Board Signals</b><br>
-          🧨 <b>Dynamite</b> — explosive ceiling edge (high-impact, volatile)<br>
-          🗡️ <b>Critical Strike</b> — precision edge with multiple proofs aligned
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
-
     df_s = df_f.copy()
     df_s["_cs"] = safe_num(df_s, "Conf_SOG", 0)
     df_s = df_s.sort_values(["_cs"], ascending=[False]).drop(columns=["_cs"], errors="ignore")
@@ -3349,75 +3168,68 @@ elif page == "SOG":
         top_n = st.slider("Show top plays (SOG)", 3, 25, 10, 1, key="sog_smash_topn")
         top = _rank.head(int(top_n))
 
-        if "Plays_SOG" in top.columns:
-            top = top[_col_bool(top, "Plays_SOG")]
+        for _, r in top.iterrows():
+            player = str(r.get("Player", "") or "").strip()
+            game = str(r.get("Game", "") or "").strip()
 
-        if top.empty:
-            st.info("No smash plays available for SOG on this slate.")
-        else:
-            for _, r in top.iterrows():
-                player = str(r.get("Player", "") or "").strip()
-                game = str(r.get("Game", "") or "").strip()
+            line = r.get("SOG_Line", "")
+            odds = r.get("SOG_Odds_Over", "")
+            call = str(r.get("SOG_Call", "") or "").strip()
 
-                line = r.get("SOG_Line", "")
-                odds = r.get("SOG_Odds_Over", "")
-                call = str(r.get("SOG_Call", "") or "").strip()
+            conf = r.get("Conf_SOG", "")
+            matrix = str(r.get("Matrix_SOG", "") or "").strip()
+            badges = f"{str(r.get('EV_Signal','') or '').strip()} {str(r.get('LOCK','') or '').strip()}".strip()
 
-                conf = r.get("Conf_SOG", "")
-                matrix = str(r.get("Matrix_SOG", "") or "").strip()
-                badges = f"{str(r.get('EV_Signal','') or '').strip()} {str(r.get('LOCK','') or '').strip()}".strip()
+            # Pretty line/odds strings
+            try:
+                l_str = "" if line is None or (isinstance(line, float) and math.isnan(line)) else f"{float(line):.1f}"
+            except Exception:
+                l_str = str(line)
+            try:
+                o_str = "" if odds is None or (isinstance(odds, float) and math.isnan(odds)) else f"{int(round(float(odds))):d}"
+            except Exception:
+                o_str = str(odds)
 
-                # Pretty line/odds strings
+            headline = f"**{player}** — {game}"
+            betline = f"SOG {l_str}+  ({o_str})" if (l_str or o_str) else "SOG"
+
+            meta = []
+            if matrix:
+                meta.append(matrix)
+            if conf != "" and conf is not None:
                 try:
-                    l_str = "" if line is None or (isinstance(line, float) and math.isnan(line)) else f"{float(line):.1f}"
+                    meta.append(f"Conf {float(conf):.0f}")
                 except Exception:
-                    l_str = str(line)
-                try:
-                    o_str = "" if odds is None or (isinstance(odds, float) and math.isnan(odds)) else f"{int(round(float(odds))):d}"
-                except Exception:
-                    o_str = str(odds)
+                    meta.append(f"Conf {conf}")
+            if call:
+                meta.append(call)  # includes Shot Anchor / DUE labels when present
+            meta_s = " | ".join([m for m in meta if m])
 
-                headline = f"**{player}** — {game}"
-                betline = f"SOG {l_str}+  ({o_str})" if (l_str or o_str) else "SOG"
-
-                meta = []
-                if matrix:
-                    meta.append(matrix)
-                if conf != "" and conf is not None:
-                    try:
-                        meta.append(f"Conf {float(conf):.0f}")
-                    except Exception:
-                        meta.append(f"Conf {conf}")
-                if call:
-                    meta.append(call)  # includes Shot Anchor / DUE labels when present
-                meta_s = " | ".join([m for m in meta if m])
-
-                st.markdown(
-                    f"""
-        <div class="wl-card wl-accent-orange">
-          <div style="display:flex;justify-content:space-between;gap:10px;">
-            <div style="font-size:16px;line-height:1.2;">
-              {headline}
-              <div style="opacity:0.9;margin-top:4px;">{betline}</div>
-            </div>
-            <div style="font-size:16px;white-space:nowrap;">{badges}</div>
-          </div>
-          <div style="margin-top:6px;font-size:12px;opacity:0.92;line-height:1.2;">{meta_s}</div>
+            st.markdown(
+                f"""
+    <div class="wl-card wl-accent-orange">
+      <div style="display:flex;justify-content:space-between;gap:10px;">
+        <div style="font-size:16px;line-height:1.2;">
+          {headline}
+          <div style="opacity:0.9;margin-top:4px;">{betline}</div>
         </div>
-                    """,
-                    unsafe_allow_html=True,
-                )
+        <div style="font-size:16px;white-space:nowrap;">{badges}</div>
+      </div>
+      <div style="margin-top:6px;font-size:12px;opacity:0.92;line-height:1.2;">{meta_s}</div>
+    </div>
+                """,
+                unsafe_allow_html=True,
+            )
 
-                # Why it fires (SOG)
-                _v = r.get("SOG_Why", "")
-                _why_tags = "" if (_v is None or (isinstance(_v, float) and math.isnan(_v))) else str(_v).strip()
-                if not _why_tags:
-                    try:
-                        _why_tags = _sog_why(r)
-                    except Exception:
-                        _why_tags = ""
-                with st.expander("Why it fires", expanded=False):
-                    st.write(_why_tags if _why_tags else "—")
+            # Why it fires (SOG)
+            _why_tags = str(r.get("SOG_Why", "") or "").strip()
+            if not _why_tags:
+                try:
+                    _why_tags = _sog_why(r)
+                except Exception:
+                    _why_tags = ""
+            with st.expander("Why it fires", expanded=False):
+                st.write(_why_tags if _why_tags else "—")
 
     except Exception:
         pass
@@ -4598,3 +4410,4 @@ elif page == "Ledger":
 else:
     st.subheader("Raw CSV (all columns)")
     st.dataframe(df_f, width="stretch", hide_index=True)
+
