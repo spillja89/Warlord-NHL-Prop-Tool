@@ -201,6 +201,91 @@ def _why_sections_header(mkt: str = ""):
     )
 
 
+
+def _trend_badge_score(mkt: str, d10, d20, d40):
+    """
+    Presentation-only: derive a compact Window Signal from L10/L20/L40 diffs vs line.
+
+    Returns (badge, score_int_0_100, trend_word).
+      - badge: STABLE / DUE / HEATER / VOLATILE / DECLINE / NEUTRAL
+      - trend_word: HEATING / COOLING / FLAT
+
+    NOTE (accuracy-first):
+      - Treat NaN/blank as missing (do NOT silently coerce to 0).
+      - If any of the three diffs are missing, return ("", 0, "") so the UI doesn't lie.
+    """
+    mk = str(mkt or "").upper().strip()
+
+    # market epsilon: "material" diff threshold (per game)
+    eps_map = {"POINTS": 0.15, "ASSISTS": 0.12, "SOG": 0.30, "SHOTS": 0.30}
+    eps = float(eps_map.get(mk, 0.20))
+
+    def _num_or_none(v):
+        try:
+            if v is None:
+                return None
+            if isinstance(v, str) and not v.strip():
+                return None
+            x = float(v)
+            if math.isnan(x):
+                return None
+            return x
+        except Exception:
+            return None
+
+    d10 = _num_or_none(d10)
+    d20 = _num_or_none(d20)
+    d40 = _num_or_none(d40)
+    if d10 is None or d20 is None or d40 is None:
+        return "", 0, ""
+
+    def _sgn(x: float) -> int:
+        if x > eps:
+            return 1
+        if x < -eps:
+            return -1
+        return 0
+
+    s10, s20, s40 = _sgn(d10), _sgn(d20), _sgn(d40)
+
+    # dispersion / stability: how much the window diffs move around
+    disp = max(abs(d10 - d20), abs(d20 - d40))
+
+    # score: 100 when windows align tightly; penalize sign flips and dispersion
+    # scale dispersion by eps so the score feels comparable per market
+    score = 100.0 - 25.0 * (disp / eps) if eps > 0 else 50.0
+    if (s10 != s20) or (s20 != s40):
+        score -= 15.0
+    score = max(0.0, min(100.0, score))
+    score_i = int(round(score))
+
+    # trend vs baseline (L10 compared to L40)
+    if (d10 - d40) > eps:
+        trend = "HEATING"
+    elif (d10 - d40) < -eps:
+        trend = "COOLING"
+    else:
+        trend = "FLAT"
+
+    # badge classification (tight + readable)
+    if (d10 < -eps) and (d20 < -eps) and (d40 >= 0.0):
+        badge = "DUE"
+    elif (d10 > eps) and (d20 > eps) and (d40 < 0.0):
+        badge = "HEATER"
+    elif (d10 >= 0.0) and (d20 >= 0.0) and (d40 >= 0.0) and (disp <= 2.0 * eps):
+        badge = "STABLE"
+    elif (d40 < -eps) and (d10 < -eps):
+        badge = "DECLINE"
+    elif (s10 != s20) or (s20 != s40) or (disp > 3.0 * eps):
+        badge = "VOLATILE"
+    else:
+        badge = "NEUTRAL"
+
+    return badge, score_i, trend
+
+
+
+
 def _render_why_it_fires_rich(mkt: str, r, tags: str = "") -> None:
     """Presentation-only rich WHY block. Does not change any gates/logic."""
 
@@ -321,10 +406,37 @@ def _render_why_it_fires_rich(mkt: str, r, tags: str = "") -> None:
 
                 # Window Signal: stability + trend across diffs
                 try:
-                    _d10 = r.get(f"L10_Diff_{_suffix}", None)
-                    _d20 = r.get(f"L20_Diff_{_suffix}", None)
-                    _d40 = r.get(f"L40_Diff_{_suffix}", None)
+                    def _num_or_none(v):
+                        try:
+                            if v is None:
+                                return None
+                            if isinstance(v, str) and not v.strip():
+                                return None
+                            x = float(v)
+                            if math.isnan(x):
+                                return None
+                            return x
+                        except Exception:
+                            return None
+
+                    def _calc_diff_from_rate(_w: int):
+                        # Prefer explicit Diff column; otherwise derive from Rate - Line (accuracy-first).
+                        d = _num_or_none(r.get(f"L{_w}_Diff_{_suffix}", None))
+                        if d is not None:
+                            return d
+                        rate = _num_or_none(r.get(f"L{_w}_Rate_{_suffix}", None))
+                        line_col = {"Points": "Points_Line", "Assists": "Assists_Line", "SOG": "SOG_Line"}.get(_suffix, "")
+                        line = _num_or_none(r.get(line_col, None)) if line_col else None
+                        if rate is None or line is None:
+                            return None
+                        return float(rate) - float(line)
+
+                    _d10 = _calc_diff_from_rate(10)
+                    _d20 = _calc_diff_from_rate(20)
+                    _d40 = _calc_diff_from_rate(40)
+
                     _badge, _score, _trend = _trend_badge_score(mkt, _d10, _d20, _d40)
+
                     if _badge:
                         if _trend:
                             st.caption(f"Window Signal: {_badge} ({_score}/100) • Trend: {_trend}")
