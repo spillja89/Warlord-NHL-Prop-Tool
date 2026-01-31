@@ -1243,6 +1243,7 @@ THR_REG_HEAT_DEFAULT = 0.0  # Reg_Heat_*10
 
 # HARD Board Auth Gate (do NOT override with UI sliders)
 HARD_BOARD_DROUGHT_GATE = 2  # must be >=2 games drought
+HARD_BOARD_REG_GAP_GATE = 1.0  # regression gap must be >= 1.0 (market-specific)
 HARD_BOARD_HEAT_LEVELS = ("HOT", "DUE", "OVERDUE")  # at least HOT
 
 def _num(v, default=0.0):
@@ -1458,10 +1459,16 @@ def _passes_smash(b: dict, thr_conf: int, thr_ev: float, thr_drought: int, thr_g
     reg_heat = str(b.get("reg_heat", "") or "").strip().upper()
     heat_ok = reg_heat in HARD_BOARD_HEAT_LEVELS
 
-    drought_ok = drought >= int(HARD_BOARD_DROUGHT_GATE)
-    heat_pass = heat_ok  # at least HOT
+    # optional: allow regression via gap (market-specific)
+    try:
+        reg_gap = float(b.get("reg_gap", 0.0) or 0.0)
+    except Exception:
+        reg_gap = 0.0
+    gap_ok = reg_gap >= float(HARD_BOARD_REG_GAP_GATE)
 
-    return drought_ok or heat_pass
+    drought_ok = drought >= int(HARD_BOARD_DROUGHT_GATE)
+
+    return drought_ok or heat_ok or gap_ok
 
 
 def select_all_market_rows(row, thr_conf: int, thr_ev: float, thr_drought: int, thr_gap: float, thr_heat: float) -> list[dict]:
@@ -2729,6 +2736,13 @@ elif page == "Points":
         player = str(r.get("Player", "") or "").strip()
         game = str(r.get("Game", "") or "").strip()
 
+        # Presentation-only badges (match Board)
+        try:
+            expl, crit = _derive_badges(r)
+        except Exception:
+            expl, crit = "", ""
+        flames = _flames_from_heat(r.get("Reg_Heat_P", ""))
+
         line = r.get("Points_Line", "")
         odds = r.get("Points_Odds_Over", "")
         call = str(r.get("Points_Call", "") or "").strip()
@@ -2747,10 +2761,17 @@ elif page == "Points":
         except Exception:
             o_str = str(odds) if odds is not None else ""
 
-        headline = f"<b>{player}</b> — {game}" if game else f"<b>{player}</b>"
+        _hx = f"{expl}{crit} {flames}".strip()
+        headline = (
+            f"<b>{player}</b> — {game}  ·  {_hx}" if (game and _hx) else
+            (f"<b>{player}</b> — {game}" if game else (f"<b>{player}</b>  ·  {_hx}" if _hx else f"<b>{player}</b>"))
+        )
         betline = f"PTS {l_str} @ {o_str}" if (l_str or o_str) else ""
 
         meta = []
+        bc = (f"{expl}{crit} {flames}").strip()
+        if bc:
+            meta.append(bc)
         if matrix:
             meta.append(matrix)
         if conf != "" and conf is not None:
@@ -2786,6 +2807,8 @@ elif page == "Points":
             except Exception:
                 _why_tags = ""
         with st.expander("Why it fires", expanded=False):  # key removed
+            if _hx:
+                st.caption(_hx)
 #f"pts_why_{player}_{game}_{_}"):
             st.write(_why_tags if _why_tags else "—")
             # Quick context (non-breaking if cols missing)
@@ -2989,6 +3012,13 @@ elif page == "Assists":
         player = str(r.get("Player", "") or "").strip()
         game = str(r.get("Game", "") or "").strip()
 
+        # Presentation-only badges (match Board)
+        try:
+            expl, crit = _derive_badges(r)
+        except Exception:
+            expl, crit = "", ""
+        flames = _flames_from_heat(r.get("Reg_Heat_A", ""))
+
         line = r.get("Assists_Line", "")
         odds = r.get("Assists_Odds_Over", "")
         call = str(r.get("Assists_Call", "") or "").strip()
@@ -2997,10 +3027,16 @@ elif page == "Assists":
         matrix = str(r.get("Matrix_Assists", "") or "").strip()
         badges = f"{str(r.get('EV_Signal','') or '').strip()} {str(r.get('LOCK','') or '').strip()}".strip()
 
-        headline = f"<b>{player}</b> — {game}" if game else f"<b>{player}</b>"
+        _hx = f"{expl}{crit} {flames}".strip()
+        headline = (
+            f"<b>{player}</b> — {game}  ·  {_hx}" if (game and _hx) else
+            (f"<b>{player}</b> — {game}" if game else (f"<b>{player}</b>  ·  {_hx}" if _hx else f"<b>{player}</b>"))
+        )
         betline = f"AST {line} @ {odds}" if (line or odds) else ""
 
         meta = []
+        if _hx:
+            meta.append(_hx)
         if matrix:
             meta.append(matrix)
         if conf != "" and conf is not None:
@@ -3030,6 +3066,8 @@ elif page == "Assists":
 
         _why_tags = str(r.get("Assist_Why", "") or "").strip()
         with st.expander("Why it fires", expanded=False):
+            if _hx:
+                st.caption(_hx)
             st.write(_why_tags if _why_tags else "—")
             try:
                 _rg = r.get("Reg_Gap_A10", None)
@@ -3151,8 +3189,12 @@ elif page == "SOG":
     except Exception:
         pass
 
+
+
+
+
     # === SMASH PLAYS (SOG) ===
-    st.subheader("⭐ Smash Plays — Shots on Goal")
+    st.subheader("⭐ Smash Plays — SOG")
     st.markdown(
         """
         <div style="padding:14px 16px;border-radius:14px;border:2px solid #000;background:#fff;">
@@ -3166,22 +3208,120 @@ elif page == "SOG":
             Why these fire:
           </div>
           <div style="font-size:17px;font-weight:700;color:#000;line-height:1.45;margin-top:4px;">
-            <b>SHOT</b> = shot volume / involvement &nbsp;&nbsp;•&nbsp;&nbsp;
+            <b>SHOTS</b> = volume / shot role &nbsp;&nbsp;•&nbsp;&nbsp;
             <b>ENV</b> = matchup environment &nbsp;&nbsp;•&nbsp;&nbsp;
-            <b>DUE</b> = due / regression pressure
-          </div>
-          <div style="font-size:16px;font-weight:800;color:#000;line-height:1.45;margin-top:10px;">
-            Smash Plays are not available for SOG yet.
+            <b>DUE</b> = drought / regression pressure
           </div>
         </div>
-        """
-        ,
+        """,
         unsafe_allow_html=True,
     )
-    st.info("No Smash Plays available for SOG yet — use the full table below.")
+
+    try:
+        if "Plays_SOG" in df_s.columns:
+            _rank = df_s[df_s["Plays_SOG"].astype(bool)].copy()
+        else:
+            # User note: we may have days with *no* SOG smash plays.
+            _rank = df_s.iloc[0:0].copy()
+
+        if _rank.empty:
+            st.info("No Smash Plays available for SOG today.")
+        else:
+            _rank["_is_lock"] = (_rank.get("LOCK", "").astype(str).str.strip() == "🔒").astype(int)
+            _rank["_is_ev"] = (
+                _rank.get("EV_Signal", "").astype(str).str.contains("💰", na=False).astype(int)
+                if "EV_Signal" in _rank.columns
+                else (_rank.get("Plays_EV_SOG", "").astype(str).str.strip().eq("💰").astype(int) if "Plays_EV_SOG" in _rank.columns else 0)
+            )
+            _rank["_conf"] = pd.to_numeric(_rank.get("Conf_SOG", 0), errors="coerce").fillna(0)
+            _rank = _rank.sort_values(["_is_lock", "_is_ev", "_conf"], ascending=[False, False, False], kind="mergesort")
+
+            top_n = st.slider("Show top plays (SOG)", 3, 25, 10, 1, key="sog_smash_topn")
+            top = _rank.head(int(top_n))
+
+            for _, r in top.iterrows():
+                player = str(r.get("Player", "") or "").strip()
+                game = str(r.get("Game", "") or "").strip()
+
+                # Presentation-only badges (match Board)
+                try:
+                    expl, crit = _derive_badges(r)
+                except Exception:
+                    expl, crit = "", ""
+                flames = _flames_from_heat(r.get("Reg_Heat_S", ""))
+
+                line = r.get("SOG_Line", "")
+                odds = r.get("SOG_Odds_Over", "")
+                call = str(r.get("SOG_Call", "") or "").strip()
+
+                conf = r.get("Conf_SOG", "")
+                matrix = str(r.get("Matrix_SOG", "") or "").strip()
+                badges = f"{str(r.get('EV_Signal','') or '').strip()} {str(r.get('LOCK','') or '').strip()}".strip()
+
+                # Pretty line/odds strings
+                try:
+                    l_str = "" if line is None or (isinstance(line, float) and math.isnan(line)) else f"{float(line):.1f}"
+                except Exception:
+                    l_str = str(line)
+                try:
+                    o_str = "" if odds is None or (isinstance(odds, float) and math.isnan(odds)) else f"{int(round(float(odds))):d}"
+                except Exception:
+                    o_str = str(odds)
+
+                _hx = f"{expl}{crit} {flames}".strip()
+                headline = (
+                    f"<b>{player}</b> — {game}  ·  {_hx}" if (game and _hx) else
+                    (f"<b>{player}</b> — {game}" if game else (f"<b>{player}</b>  ·  {_hx}" if _hx else f"<b>{player}</b>"))
+                )
+                betline = f"SOG {l_str}+ @ {o_str}" if (l_str or o_str) else "SOG"
+
+                meta = []
+                if _hx:
+                    meta.append(_hx)
+                if matrix:
+                    meta.append(matrix)
+                if conf != "" and conf is not None:
+                    try:
+                        meta.append(f"Conf {float(conf):.0f}")
+                    except Exception:
+                        meta.append(f"Conf {conf}")
+                if call:
+                    meta.append(call)  # includes Shot Anchor / DUE labels when present
+                meta_s = " | ".join([m for m in meta if m])
+
+                st.markdown(
+                    f"""
+        <div class="wl-card wl-accent-orange">
+          <div style="display:flex;justify-content:space-between;gap:10px;">
+            <div style="font-size:16px;line-height:1.2;">
+              {headline}
+              <div style="opacity:0.9;margin-top:4px;">{betline}</div>
+            </div>
+            <div style="font-size:16px;white-space:nowrap;">{badges}</div>
+          </div>
+          <div style="margin-top:6px;font-size:12px;opacity:0.92;line-height:1.2;">{meta_s}</div>
+        </div>
+                    """,
+                    unsafe_allow_html=True,
+                )
+
+                # Why it fires (SOG)
+                _why_tags = str(r.get("SOG_Why", "") or "").strip()
+                if not _why_tags:
+                    try:
+                        _why_tags = _sog_why(r)
+                    except Exception:
+                        _why_tags = ""
+                with st.expander("Why it fires", expanded=False):
+                    if _hx:
+                        st.caption(_hx)
+                    st.write(_why_tags if _why_tags else "—")
+
+    except Exception:
+        # fail soft; never block the page
+        st.info("No Smash Plays available for SOG today.")
 
     st.markdown("---")
-
 
     show_table(df_s, sog_cols, "SOG View")
 
