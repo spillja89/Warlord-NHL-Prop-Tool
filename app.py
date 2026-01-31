@@ -2,6 +2,29 @@ import os
 import glob
 import math
 import re
+
+
+def render_badge_legend_inline(bg="#eef5ff"):
+    """Static inline legend for Dynamite / Critical Strike (presentation-only)."""
+    try:
+        st.markdown(
+            f"""
+            <div style="padding:8px 12px;
+                        border-radius:10px;
+                        background:{bg};
+                        border:1px solid rgba(0,0,0,0.12);
+                        margin:6px 0 10px 0;
+                        font-size:13px;">
+              <b>Board Signals</b><br>
+              🧨 <b>Dynamite</b> — explosive ceiling edge (high-impact, volatile)<br>
+              🗡️ <b>Critical Strike</b> — precision edge with multiple proofs aligned
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+    except Exception:
+        pass
+
 from datetime import datetime, date
 
 import numpy as np
@@ -203,10 +226,6 @@ def _why_sections_header(mkt: str = ""):
 
 def _render_why_it_fires_rich(mkt: str, r, tags: str = "") -> None:
     """Presentation-only rich WHY block. Does not change any gates/logic."""
-    try:
-        _why_sections_header(mkt)
-    except Exception:
-        pass
 
     tags_s = str(tags or "").strip()
     if tags_s:
@@ -238,6 +257,23 @@ def _render_why_it_fires_rich(mkt: str, r, tags: str = "") -> None:
             _ht = str(r.get("Reg_Heat_P", "") or "").strip()
             _rg = r.get("Reg_Gap_P10", None)
             _dr = r.get("Drought_P", None)
+
+        elif mkt.upper() == "ASSISTS":
+            _mx = str(r.get("Matrix_Assists", "") or "").strip()
+            _cp = r.get("Conf_Assists", None)
+            _ev = r.get("Assists_EV%", None)
+            _ht = str(r.get("Reg_Heat_A", "") or "").strip()
+            _rg = r.get("Reg_Gap_A10", None)
+            _dr = r.get("Drought_A", None)
+        elif mkt.upper() in ("SOG", "SHOTS"):
+            _mx = str(r.get("Matrix_SOG", "") or "").strip()
+            _cp = r.get("Conf_SOG", None)
+            _ev = r.get("SOG_EV%", None)
+            _ht = str(r.get("Reg_Heat_S", "") or "").strip()
+            _rg = r.get("Reg_Gap_S10", None)
+            _dr = r.get("Drought_SOG", None)
+            if _dr is None or _dr == "":
+                _dr = r.get("Drought_S", None)
 
         if _mx:
             ctx.append(f"Matrix: {_mx}")
@@ -1684,27 +1720,6 @@ def _derive_badges(row: dict) -> tuple[str, str]:
 
 
 
-def _badge_legend_inline() -> None:
-    """Inline legend for 🧨 / ⚔️ (presentation only)."""
-    st.markdown(
-        """
-        <div style="padding:10px 12px;border-radius:14px;border:2px solid #000;background:rgba(243,232,255,0.85);">
-          <div style="font-size:16px;font-weight:900;color:#000;line-height:1.2;margin-bottom:6px;">
-            🧨 Dynamite &nbsp;&nbsp;|&nbsp;&nbsp; ⚔️ Critical Strike
-          </div>
-          <div style="font-size:13px;font-weight:700;color:#000;line-height:1.35;">
-            <b>🧨 Dynamite</b> = 2+ markets showing signal (multi-market edge) &nbsp;&nbsp;•&nbsp;&nbsp;
-            <b>⚔️ Critical Strike</b> = multi-market + <b>STAR/ELITE</b> + strong confidence (or BONKERS / OVERDUE heat)
-          </div>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
-
-
-
-
-
 
 
 def show_table(df: pd.DataFrame, cols: list[str], title: str):
@@ -2326,6 +2341,20 @@ show_games_times(df_f)
 # =========================
 if page == "Board":
 
+    st.markdown(
+        """
+        <div style="padding:10px 14px;border-radius:12px;
+                    background:#f8f8f8;border:1px solid #ddd;
+                    margin-bottom:12px;font-size:14px;">
+          <b>Board Signals</b><br>
+          🧨 <b>Dynamite</b> — explosive ceiling edge (high-impact, volatile)<br>
+          ⚔️ <b>Critical Strike</b> — precision edge with multiple proofs aligned
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+
     # -------------------------
     # Board market color theme (Ninja palette)
     # Purple = Assists, Dark Blue = Points, Orange = SOG, Red = Goals
@@ -2377,20 +2406,6 @@ if page == "Board":
         <span class="wl-board-pill"><span class="wl-board-dot" style="background:#ef4444"></span> Goals</span>
       </div>
     """, unsafe_allow_html=True)
-
-    # Board Signals legend (presentation-only)
-    st.markdown(
-        """
-        <div style="padding:10px 14px;border-radius:12px;
-                    background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.12);
-                    margin:0 0 12px 0;font-size:14px;">
-          <b>Board Signals</b><br>
-          🧨 <b>Dynamite</b> — explosive ceiling edge (high-impact, volatile)<br>
-          ⚔️ <b>Critical Strike</b> — precision edge with multiple proofs aligned
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
 
     def _board_market_accent(best_market: str) -> str:
         bm0 = str(best_market or "").lower()
@@ -2571,15 +2586,6 @@ if page == "Board":
                         f"</div>", unsafe_allow_html=True)
 
             with st.expander("🔥 Why it fires", expanded=False):
-                # Badge signals (presentation-only)
-                try:
-                    _expl, _crit = _derive_badges(r)
-                    _b = (str(_expl or '') + str(_crit or '')).strip()
-                    if _b:
-                        st.markdown(f"**Badges:** {_b}")
-                except Exception:
-                    pass
-
                 # Market-aware WHY renderer (MAIN / SUPPORT / TONIGHT)
                 mkt_raw = str(bm or "").strip().upper()
                 if mkt_raw.startswith("SOG"):
@@ -2878,8 +2884,6 @@ elif page == "Points":
 
 
     # === SMASH PLAYS (POINTS) ===
-    _badge_legend_inline()
-
     st.subheader("⭐ Smash Plays — Points")
     st.markdown(
         """
@@ -2937,9 +2941,9 @@ elif page == "Points":
 
         conf = r.get("Conf_Points", "")
         matrix = str(r.get("Matrix_Points", "") or "").strip()
-        # Include 🧨 / ⚔️ badges (presentation-only)
-        _expl, _crit = _derive_badges(r)
-        badges = f"{str(r.get('EV_Signal','') or '').strip()} {str(r.get('LOCK','') or '').strip()} {_expl}{_crit}".strip()
+        expl, crit = _derive_badges(r)
+        badges = f"{str(r.get('EV_Signal','') or '').strip()} {str(r.get('LOCK','') or '').strip()} {expl} {crit}".strip()
+
         # Pretty line/odds strings
         try:
             l_str = "" if line is None or (isinstance(line, float) and math.isnan(line)) else f"{float(line):.1f}"
@@ -2989,9 +2993,8 @@ elif page == "Points":
             except Exception:
                 _why_tags = ""
         with st.expander("Why it fires", expanded=False):  # key removed
-            _expl, _crit = _derive_badges(r)
-            if (_expl or _crit):
-                st.caption(f"Badges: {_expl} {_crit}".strip())
+            render_badge_legend_inline()
+            _why_sections_header("POINTS")
             _render_why_it_fires_rich("POINTS", r, _why_tags)
 
     st.markdown("---")
@@ -3117,8 +3120,6 @@ elif page == "Assists":
 
     
     # === SMASH PLAYS (ASSISTS) ===
-    _badge_legend_inline()
-
     st.subheader("⭐ Smash Plays — Assists")
     st.markdown(
         """
@@ -3181,9 +3182,9 @@ elif page == "Assists":
 
         conf = r.get("Conf_Assists", "")
         matrix = str(r.get("Matrix_Assists", "") or "").strip()
-        # Include 🧨 / ⚔️ badges (presentation-only)
-        _expl, _crit = _derive_badges(r)
-        badges = f"{str(r.get('EV_Signal','') or '').strip()} {str(r.get('LOCK','') or '').strip()} {_expl}{_crit}".strip()
+        expl, crit = _derive_badges(r)
+        badges = f"{str(r.get('EV_Signal','') or '').strip()} {str(r.get('LOCK','') or '').strip()} {expl} {crit}".strip()
+
         headline = f"<b>{player}</b> — {game}" if game else f"<b>{player}</b>"
         betline = f"AST {line} @ {odds}" if (line or odds) else ""
 
@@ -3217,41 +3218,9 @@ elif page == "Assists":
 
         _why_tags = str(r.get("Assist_Why", "") or "").strip()
         with st.expander("Why it fires", expanded=False):
-            # Badge signals (presentation-only)
-            try:
-                _expl, _crit = _derive_badges(r)
-                _b = (str(_expl or '') + str(_crit or '')).strip()
-                if _b:
-                    st.markdown(f"**Badges:** {_b}")
-            except Exception:
-                pass
-            st.write(_why_tags if _why_tags else "—")
-            try:
-                _rg = r.get("Reg_Gap_A10", None)
-                _dr = r.get("Drought_A", None)
-                _ht = str(r.get("Reg_Heat_A", "") or "").strip()
-                _mx = str(r.get("Matrix_Assists", "") or "").strip()
-                _cp = r.get("Conf_Assists", None)
-                _ev = r.get("Assists_EV%", None)
-                ctx = []
-                if _mx: ctx.append(f"Matrix: {_mx}")
-                if _cp is not None and _cp != "":
-                    try: ctx.append(f"Conf: {float(_cp):.0f}")
-                    except Exception: ctx.append(f"Conf: {_cp}")
-                if _ev is not None and _ev != "":
-                    try: ctx.append(f"EV%: {float(_ev):.1f}")
-                    except Exception: ctx.append(f"EV%: {_ev}")
-                if _ht: ctx.append(f"Heat: {_ht}")
-                if _rg is not None and _rg != "" and not (isinstance(_rg, float) and math.isnan(_rg)):
-                    try: ctx.append(f"Gap10: {float(_rg):.2f}")
-                    except Exception: ctx.append(f"Gap10: {_rg}")
-                if _dr is not None and _dr != "" and not (isinstance(_dr, float) and math.isnan(_dr)):
-                    try: ctx.append(f"Drought: {int(float(_dr))}")
-                    except Exception: ctx.append(f"Drought: {_dr}")
-                if ctx:
-                    st.caption(" | ".join(ctx))
-            except Exception:
-                pass
+            render_badge_legend_inline()
+            _why_sections_header("ASSISTS")
+            _render_why_it_fires_rich("ASSISTS", r, _why_tags)
 
     st.markdown("---")
 
@@ -3262,7 +3231,6 @@ elif page == "Assists":
 # SOG
 # =========================
 elif page == "SOG":
-    _badge_legend_inline()
     df_s = df_f.copy()
     df_s["_cs"] = safe_num(df_s, "Conf_SOG", 0)
     df_s = df_s.sort_values(["_cs"], ascending=[False]).drop(columns=["_cs"], errors="ignore")
@@ -3380,7 +3348,8 @@ elif page == "SOG":
 
                 conf = r.get("Conf_SOG", "")
                 matrix = str(r.get("Matrix_SOG", "") or "").strip()
-                badges = f"{str(r.get('EV_Signal','') or '').strip()} {str(r.get('LOCK','') or '').strip()}".strip()
+                expl, crit = _derive_badges(r)
+                badges = f"{str(r.get('EV_Signal','') or '').strip()} {str(r.get('LOCK','') or '').strip()} {expl} {crit}".strip()
 
                 # Pretty line/odds strings
                 try:
@@ -3432,6 +3401,7 @@ elif page == "SOG":
                     except Exception:
                         _why_tags = ""
                 with st.expander("Why it fires", expanded=False):
+                    render_badge_legend_inline()
                     st.write(_why_tags if _why_tags else "—")
 
     except Exception:
