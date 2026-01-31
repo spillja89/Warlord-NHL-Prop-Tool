@@ -3151,90 +3151,37 @@ elif page == "SOG":
     except Exception:
         pass
 
-
-
-
-
-    # -------------------------
-    # SOG Smash (cards)
-    # -------------------------
-    try:
-        _rank = df_s.copy()
-        _rank["_is_lock"] = (_rank.get("LOCK", "").astype(str).str.strip() == "🔒").astype(int)
-        _rank["_is_ev"] = _rank.get("Plays_EV_SOG", "").astype(str).str.strip().eq("💰").astype(int) if "Plays_EV_SOG" in _rank.columns else 0
-        _rank["_conf"] = pd.to_numeric(_rank.get("Conf_SOG", 0), errors="coerce").fillna(0)
-        _rank = _rank.sort_values(["_is_lock", "_is_ev", "_conf"], ascending=[False, False, False], kind="mergesort")
-
-        top_n = st.slider("Show top plays (SOG)", 3, 25, 10, 1, key="sog_smash_topn")
-        top = _rank.head(int(top_n))
-
-        for _, r in top.iterrows():
-            player = str(r.get("Player", "") or "").strip()
-            game = str(r.get("Game", "") or "").strip()
-
-            line = r.get("SOG_Line", "")
-            odds = r.get("SOG_Odds_Over", "")
-            call = str(r.get("SOG_Call", "") or "").strip()
-
-            conf = r.get("Conf_SOG", "")
-            matrix = str(r.get("Matrix_SOG", "") or "").strip()
-            badges = f"{str(r.get('EV_Signal','') or '').strip()} {str(r.get('LOCK','') or '').strip()}".strip()
-
-            # Pretty line/odds strings
-            try:
-                l_str = "" if line is None or (isinstance(line, float) and math.isnan(line)) else f"{float(line):.1f}"
-            except Exception:
-                l_str = str(line)
-            try:
-                o_str = "" if odds is None or (isinstance(odds, float) and math.isnan(odds)) else f"{int(round(float(odds))):d}"
-            except Exception:
-                o_str = str(odds)
-
-            headline = f"**{player}** — {game}"
-            betline = f"SOG {l_str}+  ({o_str})" if (l_str or o_str) else "SOG"
-
-            meta = []
-            if matrix:
-                meta.append(matrix)
-            if conf != "" and conf is not None:
-                try:
-                    meta.append(f"Conf {float(conf):.0f}")
-                except Exception:
-                    meta.append(f"Conf {conf}")
-            if call:
-                meta.append(call)  # includes Shot Anchor / DUE labels when present
-            meta_s = " | ".join([m for m in meta if m])
-
-            st.markdown(
-                f"""
-    <div class="wl-card wl-accent-orange">
-      <div style="display:flex;justify-content:space-between;gap:10px;">
-        <div style="font-size:16px;line-height:1.2;">
-          {headline}
-          <div style="opacity:0.9;margin-top:4px;">{betline}</div>
+    # === SMASH PLAYS (SOG) ===
+    st.subheader("⭐ Smash Plays — Shots on Goal")
+    st.markdown(
+        """
+        <div style="padding:14px 16px;border-radius:14px;border:2px solid #000;background:#fff;">
+          <div style="font-size:24px;font-weight:900;color:#000;margin-bottom:6px;">
+            Top candidates for this market
+          </div>
+          <div style="font-size:18px;font-weight:800;color:#000;margin-bottom:10px;">
+            Ranked by 🔒 Locks &nbsp;&gt;&nbsp; 💰 +EV &nbsp;&gt;&nbsp; Conf
+          </div>
+          <div style="font-size:18px;font-weight:800;color:#000;line-height:1.45;">
+            Why these fire:
+          </div>
+          <div style="font-size:17px;font-weight:700;color:#000;line-height:1.45;margin-top:4px;">
+            <b>SHOT</b> = shot volume / involvement &nbsp;&nbsp;•&nbsp;&nbsp;
+            <b>ENV</b> = matchup environment &nbsp;&nbsp;•&nbsp;&nbsp;
+            <b>DUE</b> = due / regression pressure
+          </div>
+          <div style="font-size:16px;font-weight:800;color:#000;line-height:1.45;margin-top:10px;">
+            Smash Plays are not available for SOG yet.
+          </div>
         </div>
-        <div style="font-size:16px;white-space:nowrap;">{badges}</div>
-      </div>
-      <div style="margin-top:6px;font-size:12px;opacity:0.92;line-height:1.2;">{meta_s}</div>
-    </div>
-                """,
-                unsafe_allow_html=True,
-            )
-
-            # Why it fires (SOG)
-            _why_tags = str(r.get("SOG_Why", "") or "").strip()
-            if not _why_tags:
-                try:
-                    _why_tags = _sog_why(r)
-                except Exception:
-                    _why_tags = ""
-            with st.expander("Why it fires", expanded=False):
-                st.write(_why_tags if _why_tags else "—")
-
-    except Exception:
-        pass
+        """
+        ,
+        unsafe_allow_html=True,
+    )
+    st.info("No Smash Plays available for SOG yet — use the full table below.")
 
     st.markdown("---")
+
 
     show_table(df_s, sog_cols, "SOG View")
 
