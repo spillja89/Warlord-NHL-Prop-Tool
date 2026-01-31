@@ -2,29 +2,6 @@ import os
 import glob
 import math
 import re
-
-
-def render_badge_legend_inline(bg="#eef5ff"):
-    """Static inline legend for Dynamite / Critical Strike (presentation-only)."""
-    try:
-        st.markdown(
-            f"""
-            <div style="padding:8px 12px;
-                        border-radius:10px;
-                        background:{bg};
-                        border:1px solid rgba(0,0,0,0.12);
-                        margin:6px 0 10px 0;
-                        font-size:13px;">
-              <b>Board Signals</b><br>
-              🧨 <b>Dynamite</b> — explosive ceiling edge (high-impact, volatile)<br>
-              🗡️ <b>Critical Strike</b> — precision edge with multiple proofs aligned
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
-    except Exception:
-        pass
-
 from datetime import datetime, date
 
 import numpy as np
@@ -233,14 +210,25 @@ def _render_why_it_fires_rich(mkt: str, r, tags: str = "") -> None:
     else:
         st.markdown("**Tags:** —")
 
-    # MAIN: for now, show the market tags (human reads them as primary triggers)
+    
+    # Badges (presentation-only)
+    try:
+        _expl, _crit = _derive_badges(r)
+    except Exception:
+        _expl, _crit = "", ""
+    if _expl or _crit:
+        st.markdown(
+            f"**Badges:** {_expl} {'Dynamite' if _expl else ''} &nbsp;&nbsp; {_crit} {'Critical Strike' if _crit else ''}".strip()
+        )
+
+# MAIN: for now, show the mkt tags (human reads them as primary triggers)
     st.markdown(f"**MAIN:** {tags_s if tags_s else '—'}")
 
     # SUPPORT: show the compact model context line (matrix/conf/ev/heat/gap/drought) if present
     try:
         ctx = []
-        # generic picks, market-specific keys are passed via r already
-        # (caller provides the right row for the market page)
+        # generic picks, mkt-specific keys are passed via r already
+        # (caller provides the right row for the mkt page)
         # We'll try common fields used across the app; missing cols are fine.
         # Matrix / Conf / EV / Heat
         _mx = None
@@ -1722,6 +1710,22 @@ def _derive_badges(row: dict) -> tuple[str, str]:
 
 
 
+
+
+def _render_badge_legend_inline() -> None:
+    """Inline legend for 🧨 / ⚔️. Presentation-only."""
+    st.markdown(
+        """
+        <div style="padding:10px 14px;border-radius:12px;
+                    background:#f8f8f8;border:1px solid #ddd;
+                    margin:6px 0 12px 0;font-size:14px;line-height:1.35;">
+          <b>Badges</b><br>
+          🧨 <b>Dynamite</b> — explosive ceiling edge (multi-market signal)<br>
+          ⚔️ <b>Critical Strike</b> — STAR/ELITE + multi-market + strong confidence/heat alignment
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
 def show_table(df: pd.DataFrame, cols: list[str], title: str):
     st.subheader(title)
 
@@ -2884,6 +2888,8 @@ elif page == "Points":
 
 
     # === SMASH PLAYS (POINTS) ===
+    _render_badge_legend_inline()
+
     st.subheader("⭐ Smash Plays — Points")
     st.markdown(
         """
@@ -2993,7 +2999,6 @@ elif page == "Points":
             except Exception:
                 _why_tags = ""
         with st.expander("Why it fires", expanded=False):  # key removed
-            render_badge_legend_inline()
             _why_sections_header("POINTS")
             _render_why_it_fires_rich("POINTS", r, _why_tags)
 
@@ -3120,6 +3125,8 @@ elif page == "Assists":
 
     
     # === SMASH PLAYS (ASSISTS) ===
+    _render_badge_legend_inline()
+
     st.subheader("⭐ Smash Plays — Assists")
     st.markdown(
         """
@@ -3218,7 +3225,6 @@ elif page == "Assists":
 
         _why_tags = str(r.get("Assist_Why", "") or "").strip()
         with st.expander("Why it fires", expanded=False):
-            render_badge_legend_inline()
             _why_sections_header("ASSISTS")
             _render_why_it_fires_rich("ASSISTS", r, _why_tags)
 
@@ -3322,6 +3328,33 @@ elif page == "SOG":
     # -------------------------
     # SOG Smash (cards)
     # -------------------------
+
+    _render_badge_legend_inline()
+
+    st.subheader("⭐ Smash Plays — SOG")
+    st.markdown(
+        """
+        <div style="padding:14px 16px;border-radius:14px;border:2px solid #000;background:#fff;">
+          <div style="font-size:24px;font-weight:900;color:#000;margin-bottom:6px;">
+            Top candidates for this market
+          </div>
+          <div style="font-size:18px;font-weight:800;color:#000;margin-bottom:10px;">
+            Ranked by 🔒 Locks &nbsp;&gt;&nbsp; 💰 +EV &nbsp;&gt;&nbsp; Conf
+          </div>
+          <div style="font-size:18px;font-weight:800;color:#000;line-height:1.45;">
+            Why these fire:
+          </div>
+          <div style="font-size:17px;font-weight:700;color:#000;line-height:1.45;margin-top:4px;">
+            <b>VOL</b> = shot volume / intent &nbsp;&nbsp;•&nbsp;&nbsp;
+            <b>ROLE</b> = TOI / line / PP usage &nbsp;&nbsp;•&nbsp;&nbsp;
+            <b>ENV</b> = matchup pace + shot-against &nbsp;&nbsp;•&nbsp;&nbsp;
+            <b>DUE</b> = due / regression pressure
+          </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
     try:
         _rank = df_s.copy()
         _rank["_is_lock"] = (_rank.get("LOCK", "").astype(str).str.strip() == "🔒").astype(int)
@@ -3401,8 +3434,7 @@ elif page == "SOG":
                     except Exception:
                         _why_tags = ""
                 with st.expander("Why it fires", expanded=False):
-                    render_badge_legend_inline()
-                    st.write(_why_tags if _why_tags else "—")
+                    _render_why_it_fires_rich("SOG", r, _why_tags)
 
     except Exception:
         pass
