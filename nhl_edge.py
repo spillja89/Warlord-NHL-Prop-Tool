@@ -2186,15 +2186,18 @@ def compute_lastN_features(payload: Dict[str, Any], n10: int = 10, n5: int = 5) 
     v10_goals = goals[:n10]
     v10_assists = assists[:n10]
     v10_ppp = ppp[:n10]
-    # Extended windows (for trend tracking)
-    v20_shots = shots[:20]
-    v20_goals = goals[:20]
-    v20_assists = assists[:20]
-    v20_ppp = ppp[:20]
-    v40_shots = shots[:40]
-    v40_goals = goals[:40]
-    v40_assists = assists[:40]
-    v40_ppp = ppp[:40]
+
+    # Also compute wider windows for stability/trend (L20/L40)
+    n20 = 20
+    n40 = 40
+    v20_shots = shots[:n20]
+    v20_goals = goals[:n20]
+    v20_assists = assists[:n20]
+    v20_ppp = ppp[:n20]
+    v40_shots = shots[:n40]
+    v40_goals = goals[:n40]
+    v40_assists = assists[:n40]
+    v40_ppp = ppp[:n40]
 
     v5_shots = shots[:n5]
     v5_goals = goals[:n5]
@@ -2226,21 +2229,20 @@ def compute_lastN_features(payload: Dict[str, Any], n10: int = 10, n5: int = 5) 
     a10_total = sum(v10_assists) if v10_assists else None
     ppp10_total = sum(v10_ppp) if v10_ppp else None
 
+    # Wider-window totals (best-effort; if fewer games exist, uses what we have)
+    a20_total = sum(v20_assists) if v20_assists else None
+    a40_total = sum(v40_assists) if v40_assists else None
+    ppp20_total = sum(v20_ppp) if v20_ppp else None
+    ppp40_total = sum(v40_ppp) if v40_ppp else None
+
     p10_total = (sum(v10_goals) + sum(v10_assists)) if (v10_goals or v10_assists) else None
     g10_total = sum(v10_goals) if v10_goals else None
     s10_total = sum(v10_shots) if v10_shots else None
 
-    # L20 / L40 totals (best-effort; None if no games)
-    a20_total = sum(v20_assists) if v20_assists else None
-    ppp20_total = sum(v20_ppp) if v20_ppp else None
     p20_total = (sum(v20_goals) + sum(v20_assists)) if (v20_goals or v20_assists) else None
-    g20_total = sum(v20_goals) if v20_goals else None
     s20_total = sum(v20_shots) if v20_shots else None
 
-    a40_total = sum(v40_assists) if v40_assists else None
-    ppp40_total = sum(v40_ppp) if v40_ppp else None
     p40_total = (sum(v40_goals) + sum(v40_assists)) if (v40_goals or v40_assists) else None
-    g40_total = sum(v40_goals) if v40_goals else None
     s40_total = sum(v40_shots) if v40_shots else None
 
     p10 = [(g + a) for g, a in zip(v10_goals, v10_assists)]
@@ -2261,17 +2263,14 @@ def compute_lastN_features(payload: Dict[str, Any], n10: int = 10, n5: int = 5) 
         "G10_total": g10_total,
         "S10_total": s10_total,
         "N_games_found": len(shots),
-        "A10_total": a10_total,
-        "PPP10_total": ppp10_total,
-        "A20_total": a20_total,
+        "A10_total": a10_total,        "PPP10_total": ppp10_total,
         "P20_total": p20_total,
-        "G20_total": g20_total,
         "S20_total": s20_total,
+        "A20_total": a20_total,
         "PPP20_total": ppp20_total,
-        "A40_total": a40_total,
         "P40_total": p40_total,
-        "G40_total": g40_total,
         "S40_total": s40_total,
+        "A40_total": a40_total,
         "PPP40_total": ppp40_total,
         "Drought_P": drought_p,
         "Drought_A": drought_a,
@@ -3668,18 +3667,65 @@ def build_tracker(today_local: date, debug: bool = False) -> str:
     sk["L10_S"] = pd.to_numeric(sk.get("S10_total", np.nan), errors="coerce")
     sk["L10_A"] = pd.to_numeric(sk.get("A10_total", np.nan), errors="coerce")
 
-    # L20 / L40 window totals (for trend tracking)
+    # Wider windows (totals)
     sk["L20_P"] = pd.to_numeric(sk.get("P20_total", np.nan), errors="coerce")
-    sk["L20_G"] = pd.to_numeric(sk.get("G20_total", np.nan), errors="coerce")
     sk["L20_S"] = pd.to_numeric(sk.get("S20_total", np.nan), errors="coerce")
     sk["L20_A"] = pd.to_numeric(sk.get("A20_total", np.nan), errors="coerce")
+
     sk["L40_P"] = pd.to_numeric(sk.get("P40_total", np.nan), errors="coerce")
-    sk["L40_G"] = pd.to_numeric(sk.get("G40_total", np.nan), errors="coerce")
     sk["L40_S"] = pd.to_numeric(sk.get("S40_total", np.nan), errors="coerce")
     sk["L40_A"] = pd.to_numeric(sk.get("A40_total", np.nan), errors="coerce")
 
     # -------------------------
-    # Assist Volume (MUST be AFTER L10_A exists)
+    # L10/L20/L40 support tiers (Points/Assists/SOG)
+    # These are presentation-only "support" signals used on market pages.
+    # -------------------------
+    def _tier_label(market: str, rate: float) -> str:
+        # Simple, readable buckets. (Tune anytime; doesn't affect model math.)
+        m = (market or "").strip().upper()
+        if rate is None or (isinstance(rate, float) and math.isnan(rate)):
+            return ""
+        try:
+            r = float(rate)
+        except Exception:
+            return ""
+
+        if m == "POINTS":
+            if r >= 1.25: return "ELITE"
+            if r >= 1.00: return "STRONG"
+            if r >= 0.80: return "GOOD"
+            if r >= 0.60: return "OK"
+            return "LOW"
+        if m == "ASSISTS":
+            if r >= 0.95: return "ELITE"
+            if r >= 0.75: return "STRONG"
+            if r >= 0.60: return "GOOD"
+            if r >= 0.45: return "OK"
+            return "LOW"
+        # SOG/SHOTS
+        if r >= 4.00: return "ELITE"
+        if r >= 3.50: return "STRONG"
+        if r >= 3.00: return "GOOD"
+        if r >= 2.50: return "OK"
+        return "LOW"
+
+    def _add_window_support(prefix: str, line_col: str, total_cols: dict) -> None:
+        # total_cols: {10:"L10_X", 20:"L20_X", 40:"L40_X"} where X is P/A/S
+        for w in (10, 20, 40):
+            tot = pd.to_numeric(sk.get(total_cols[w], np.nan), errors="coerce")
+            rate = (tot / float(w)).round(3)
+            linev = pd.to_numeric(sk.get(line_col, np.nan), errors="coerce")
+            diff = (rate - linev).round(3)
+            sk[f"L{w}_Rate_{prefix}"] = rate
+            sk[f"L{w}_Diff_{prefix}"] = diff
+            sk[f"L{w}_Tier_{prefix}"] = rate.apply(lambda x: _tier_label(prefix, safe_float(x)))
+
+    _add_window_support("Points", "Points_Line", {10:"L10_P", 20:"L20_P", 40:"L40_P"})
+    _add_window_support("Assists", "Assists_Line", {10:"L10_A", 20:"L20_A", 40:"L40_A"})
+    _add_window_support("SOG", "SOG_Line", {10:"L10_S", 20:"L20_S", 40:"L40_S"})
+
+    # -------------------------
+    # Assist Volume (MUST be AFTER L10_A exists) (MUST be AFTER L10_A exists)
     # -------------------------
     # Primary source: 5v5 shot-assists/60 * 12 (per-game-ish volume)
     # Fallback: tracker totals (last-10 assists) so we never flatline to 0 just because
@@ -4117,16 +4163,46 @@ def build_tracker(today_local: date, debug: bool = False) -> str:
         "L10_G": sk.get("L10_G"),
         "L10_S": sk.get("L10_S"),
         "L5_G": sk.get("G5_total"),
-        "L5_A": sk.get("A5_total"),
-        "L10_A": sk.get("L10_A"),
+        "L5_A": sk.get("A5_total"),        "L10_A": sk.get("L10_A"),
+
+        # Wider window totals
         "L20_P": sk.get("L20_P"),
-        "L20_G": sk.get("L20_G"),
-        "L20_S": sk.get("L20_S"),
-        "L20_A": sk.get("L20_A"),
         "L40_P": sk.get("L40_P"),
-        "L40_G": sk.get("L40_G"),
-        "L40_S": sk.get("L40_S"),
+        "L20_A": sk.get("L20_A"),
         "L40_A": sk.get("L40_A"),
+        "L20_S": sk.get("L20_S"),
+        "L40_S": sk.get("L40_S"),
+
+        # Support tiers/rates/diffs (used by market pages "Why it fires")
+        "L10_Tier_Points": sk.get("L10_Tier_Points"),
+        "L10_Rate_Points": sk.get("L10_Rate_Points"),
+        "L10_Diff_Points": sk.get("L10_Diff_Points"),
+        "L20_Tier_Points": sk.get("L20_Tier_Points"),
+        "L20_Rate_Points": sk.get("L20_Rate_Points"),
+        "L20_Diff_Points": sk.get("L20_Diff_Points"),
+        "L40_Tier_Points": sk.get("L40_Tier_Points"),
+        "L40_Rate_Points": sk.get("L40_Rate_Points"),
+        "L40_Diff_Points": sk.get("L40_Diff_Points"),
+
+        "L10_Tier_Assists": sk.get("L10_Tier_Assists"),
+        "L10_Rate_Assists": sk.get("L10_Rate_Assists"),
+        "L10_Diff_Assists": sk.get("L10_Diff_Assists"),
+        "L20_Tier_Assists": sk.get("L20_Tier_Assists"),
+        "L20_Rate_Assists": sk.get("L20_Rate_Assists"),
+        "L20_Diff_Assists": sk.get("L20_Diff_Assists"),
+        "L40_Tier_Assists": sk.get("L40_Tier_Assists"),
+        "L40_Rate_Assists": sk.get("L40_Rate_Assists"),
+        "L40_Diff_Assists": sk.get("L40_Diff_Assists"),
+
+        "L10_Tier_SOG": sk.get("L10_Tier_SOG"),
+        "L10_Rate_SOG": sk.get("L10_Rate_SOG"),
+        "L10_Diff_SOG": sk.get("L10_Diff_SOG"),
+        "L20_Tier_SOG": sk.get("L20_Tier_SOG"),
+        "L20_Rate_SOG": sk.get("L20_Rate_SOG"),
+        "L20_Diff_SOG": sk.get("L20_Diff_SOG"),
+        "L40_Tier_SOG": sk.get("L40_Tier_SOG"),
+        "L40_Rate_SOG": sk.get("L40_Rate_SOG"),
+        "L40_Diff_SOG": sk.get("L40_Diff_SOG"),
 
         "i5v5_points60": sk.get("i5v5_points60"),
         "i5v5_primaryAssists60": sk.get("i5v5_primaryAssists60"),
@@ -4620,32 +4696,22 @@ def build_tracker(today_local: date, debug: bool = False) -> str:
 
                 return out
 
-            for _m, _stat_col_base in [("Points", "P"), ("Assists", "A"), ("SOG", "S")]:
+            for _m, _l10col in [("Points", "L10_P"), ("Assists", "L10_A"), ("SOG", "L10_S")]:
                 _line_col = f"{_m}_Line"
-                if _line_col not in tracker.columns:
-                    # create blank cols for all windows so UI code is stable
-                    for _w in (10, 20, 40):
-                        tracker[f"L{_w}_Rate_{_m}"] = np.nan
-                        tracker[f"L{_w}_Diff_{_m}"] = np.nan
-                        tracker[f"L{_w}_Tier_{_m}"] = ""
-                    continue
+                if _l10col in tracker.columns and _line_col in tracker.columns:
+                    _rate = pd.to_numeric(tracker[_l10col], errors="coerce") / 10.0
+                    _line = pd.to_numeric(tracker[_line_col], errors="coerce")
+                    _diff = (_rate - _line)
 
-                for _w in (10, 20, 40):
-                    _stat_col = f"L{_w}_{_stat_col_base}"
-                    if _stat_col in tracker.columns:
-                        _rate = pd.to_numeric(tracker[_stat_col], errors="coerce") / float(_w)
-                        _line = pd.to_numeric(tracker[_line_col], errors="coerce")
-                        _diff = (_rate - _line)
-
-                        # Only meaningful when the prop line exists
-                        _mask = _rate.notna() & _line.notna()
-                        tracker[f"L{_w}_Rate_{_m}"] = _rate.round(2)
-                        tracker[f"L{_w}_Diff_{_m}"] = np.where(_mask, _diff.round(2), np.nan)
-                        tracker[f"L{_w}_Tier_{_m}"] = _tier_from_diff(np.where(_mask, _diff, np.nan), _m)
-                    else:
-                        tracker[f"L{_w}_Rate_{_m}"] = np.nan
-                        tracker[f"L{_w}_Diff_{_m}"] = np.nan
-                        tracker[f"L{_w}_Tier_{_m}"] = ""
+                    # Only meaningful when the prop line exists
+                    _mask = _rate.notna() & _line.notna()
+                    tracker[f"L10_Rate_{_m}"] = _rate.round(2)
+                    tracker[f"L10_Diff_{_m}"] = np.where(_mask, _diff.round(2), np.nan)
+                    tracker[f"L10_Tier_{_m}"] = _tier_from_diff(np.where(_mask, _diff, np.nan), _m)
+                else:
+                    tracker[f"L10_Rate_{_m}"] = np.nan
+                    tracker[f"L10_Diff_{_m}"] = np.nan
+                    tracker[f"L10_Tier_{_m}"] = ""
         except Exception:
             # Never fail tracker build for UI-only columns
             pass

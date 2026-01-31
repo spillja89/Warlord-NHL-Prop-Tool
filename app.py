@@ -290,10 +290,11 @@ def _render_why_it_fires_rich(mkt: str, r, tags: str = "") -> None:
 
         st.markdown("**SUPPORT:**")
         st.caption(" | ".join(ctx) if ctx else "—")
-        # L10 support tier (presentation-only; columns come from tracker)
+        # Support windows (presentation-only; columns come from tracker)
         try:
             _suffix = {"POINTS":"Points","ASSISTS":"Assists","SOG":"SOG","SHOTS":"SOG"}.get(mkt.upper(), "")
             if _suffix:
+                # L10 / L20 / L40 tier + rate + diff
                 for _w in (10, 20, 40):
                     _tier = str(r.get(f"L{_w}_Tier_{_suffix}", "") or "").strip()
                     _rate = r.get(f"L{_w}_Rate_{_suffix}", None)
@@ -317,9 +318,22 @@ def _render_why_it_fires_rich(mkt: str, r, tags: str = "") -> None:
 
                     if parts:
                         st.caption(f"L{_w}: " + " | ".join(parts))
+
+                # Window Signal: stability + trend across diffs
+                try:
+                    _d10 = r.get(f"L10_Diff_{_suffix}", None)
+                    _d20 = r.get(f"L20_Diff_{_suffix}", None)
+                    _d40 = r.get(f"L40_Diff_{_suffix}", None)
+                    _badge, _score, _trend = _trend_badge_score(mkt, _d10, _d20, _d40)
+                    if _badge:
+                        if _trend:
+                            st.caption(f"Window Signal: {_badge} ({_score}/100) • Trend: {_trend}")
+                        else:
+                            st.caption(f"Window Signal: {_badge} ({_score}/100)")
+                except Exception:
+                    pass
         except Exception:
             pass
-
 
     except Exception:
         st.markdown("**SUPPORT:**")
@@ -705,86 +719,6 @@ def apply_market_filters(
         tmp = tmp.sort_values(by=sort_cols, ascending=[False]*len(sort_cols), kind="mergesort")
         tmp = tmp.drop(columns=[c for c in ["_lock_sort","_ev_sort"] if c in tmp.columns])
         df = tmp
-
-    # -------------------------
-    # Support windows (L10/L20/L40) - presentation-only
-    # -------------------------
-    # The tracker always includes window totals like L10_P / L10_A / L10_S.
-    # We derive Rate/Diff/Tier columns here if they are missing so the UI
-    # never depends on a specific engine version for these labels.
-    try:
-        import numpy as _np
-
-        def _tier_points(diff_s):
-            d = pd.to_numeric(diff_s, errors="coerce")
-            out = _np.full(len(d), "", dtype=object)
-            m = d.notna()
-            if not m.any():
-                return out
-            out[m & (d >= 0.15)] = "STRONG"
-            out[m & (d >= -0.10) & (d < 0.15)] = "MEET"
-            out[m & (d >= -0.35) & (d < -0.10)] = "WEAK"
-            out[m & (d < -0.35)] = "FADE"
-            return out
-
-        def _tier_assists(diff_s):
-            d = pd.to_numeric(diff_s, errors="coerce")
-            out = _np.full(len(d), "", dtype=object)
-            m = d.notna()
-            if not m.any():
-                return out
-            out[m & (d >= 0.20)] = "ELITE"
-            out[m & (d >= 0.10) & (d < 0.20)] = "STRONG"
-            out[m & (d >= 0.03) & (d < 0.10)] = "GOOD"
-            out[m & (d >= -0.05) & (d < 0.03)] = "MEET"
-            out[m & (d >= -0.15) & (d < -0.05)] = "WEAK"
-            out[m & (d < -0.15)] = "FADE"
-            return out
-
-        def _tier_sog(diff_s):
-            d = pd.to_numeric(diff_s, errors="coerce")
-            out = _np.full(len(d), "", dtype=object)
-            m = d.notna()
-            if not m.any():
-                return out
-            out[m & (d >= 0.40)] = "ELITE"
-            out[m & (d >= 0.20) & (d < 0.40)] = "STRONG"
-            out[m & (d >= 0.05) & (d < 0.20)] = "GOOD"
-            out[m & (d >= -0.10) & (d < 0.05)] = "MEET"
-            out[m & (d >= -0.30) & (d < -0.10)] = "WEAK"
-            out[m & (d < -0.30)] = "FADE"
-            return out
-
-        _support_specs = [
-            ("Points", "Points_Line", "P", _tier_points),
-            ("Assists", "Assists_Line", "A", _tier_assists),
-            ("SOG", "SOG_Line", "S", _tier_sog),
-        ]
-
-        for _suffix, _line_col, _tot_key, _tier_fn in _support_specs:
-            if _line_col not in df.columns:
-                continue
-            for _w in (10, 20, 40):
-                _tot_col = f"L{_w}_{_tot_key}"
-                _rate_col = f"L{_w}_Rate_{_suffix}"
-                _diff_col = f"L{_w}_Diff_{_suffix}"
-                _tier_col = f"L{_w}_Tier_{_suffix}"
-
-                if _tot_col not in df.columns:
-                    continue
-
-                if _rate_col not in df.columns:
-                    df[_rate_col] = pd.to_numeric(df[_tot_col], errors="coerce") / float(_w)
-
-                if _diff_col not in df.columns:
-                    df[_diff_col] = pd.to_numeric(df[_rate_col], errors="coerce") - pd.to_numeric(df[_line_col], errors="coerce")
-
-                if _tier_col not in df.columns:
-                    df[_tier_col] = _tier_fn(df[_diff_col])
-
-    except Exception:
-        # never break app load if support windows fail
-        pass
 
     return df
 
@@ -1413,86 +1347,6 @@ def load_csv(path: str) -> pd.DataFrame:
         # Use a portable format and strip leading zero (07:00 PM -> 7:00 PM)
         df["Time"] = dt.dt.strftime("%I:%M %p").astype(str).str.lstrip("0")
         df.loc[dt.isna(), "Time"] = ""
-
-    # -------------------------
-    # Support windows (L10/L20/L40) - presentation-only
-    # -------------------------
-    # The tracker always includes window totals like L10_P / L10_A / L10_S.
-    # We derive Rate/Diff/Tier columns here if they are missing so the UI
-    # never depends on a specific engine version for these labels.
-    try:
-        import numpy as _np
-
-        def _tier_points(diff_s):
-            d = pd.to_numeric(diff_s, errors="coerce")
-            out = _np.full(len(d), "", dtype=object)
-            m = d.notna()
-            if not m.any():
-                return out
-            out[m & (d >= 0.15)] = "STRONG"
-            out[m & (d >= -0.10) & (d < 0.15)] = "MEET"
-            out[m & (d >= -0.35) & (d < -0.10)] = "WEAK"
-            out[m & (d < -0.35)] = "FADE"
-            return out
-
-        def _tier_assists(diff_s):
-            d = pd.to_numeric(diff_s, errors="coerce")
-            out = _np.full(len(d), "", dtype=object)
-            m = d.notna()
-            if not m.any():
-                return out
-            out[m & (d >= 0.20)] = "ELITE"
-            out[m & (d >= 0.10) & (d < 0.20)] = "STRONG"
-            out[m & (d >= 0.03) & (d < 0.10)] = "GOOD"
-            out[m & (d >= -0.05) & (d < 0.03)] = "MEET"
-            out[m & (d >= -0.15) & (d < -0.05)] = "WEAK"
-            out[m & (d < -0.15)] = "FADE"
-            return out
-
-        def _tier_sog(diff_s):
-            d = pd.to_numeric(diff_s, errors="coerce")
-            out = _np.full(len(d), "", dtype=object)
-            m = d.notna()
-            if not m.any():
-                return out
-            out[m & (d >= 0.40)] = "ELITE"
-            out[m & (d >= 0.20) & (d < 0.40)] = "STRONG"
-            out[m & (d >= 0.05) & (d < 0.20)] = "GOOD"
-            out[m & (d >= -0.10) & (d < 0.05)] = "MEET"
-            out[m & (d >= -0.30) & (d < -0.10)] = "WEAK"
-            out[m & (d < -0.30)] = "FADE"
-            return out
-
-        _support_specs = [
-            ("Points", "Points_Line", "P", _tier_points),
-            ("Assists", "Assists_Line", "A", _tier_assists),
-            ("SOG", "SOG_Line", "S", _tier_sog),
-        ]
-
-        for _suffix, _line_col, _tot_key, _tier_fn in _support_specs:
-            if _line_col not in df.columns:
-                continue
-            for _w in (10, 20, 40):
-                _tot_col = f"L{_w}_{_tot_key}"
-                _rate_col = f"L{_w}_Rate_{_suffix}"
-                _diff_col = f"L{_w}_Diff_{_suffix}"
-                _tier_col = f"L{_w}_Tier_{_suffix}"
-
-                if _tot_col not in df.columns:
-                    continue
-
-                if _rate_col not in df.columns:
-                    df[_rate_col] = pd.to_numeric(df[_tot_col], errors="coerce") / float(_w)
-
-                if _diff_col not in df.columns:
-                    df[_diff_col] = pd.to_numeric(df[_rate_col], errors="coerce") - pd.to_numeric(df[_line_col], errors="coerce")
-
-                if _tier_col not in df.columns:
-                    df[_tier_col] = _tier_fn(df[_diff_col])
-
-    except Exception:
-        # never break app load if support windows fail
-        pass
 
     return df
 def filter_common(df: pd.DataFrame) -> pd.DataFrame:
