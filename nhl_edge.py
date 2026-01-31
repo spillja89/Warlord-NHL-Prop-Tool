@@ -2186,6 +2186,16 @@ def compute_lastN_features(payload: Dict[str, Any], n10: int = 10, n5: int = 5) 
     v10_goals = goals[:n10]
     v10_assists = assists[:n10]
     v10_ppp = ppp[:n10]
+    # Extended windows (for trend tracking)
+    v20_shots = shots[:20]
+    v20_goals = goals[:20]
+    v20_assists = assists[:20]
+    v20_ppp = ppp[:20]
+    v40_shots = shots[:40]
+    v40_goals = goals[:40]
+    v40_assists = assists[:40]
+    v40_ppp = ppp[:40]
+
     v5_shots = shots[:n5]
     v5_goals = goals[:n5]
     v5_assists = assists[:n5]
@@ -2220,6 +2230,19 @@ def compute_lastN_features(payload: Dict[str, Any], n10: int = 10, n5: int = 5) 
     g10_total = sum(v10_goals) if v10_goals else None
     s10_total = sum(v10_shots) if v10_shots else None
 
+    # L20 / L40 totals (best-effort; None if no games)
+    a20_total = sum(v20_assists) if v20_assists else None
+    ppp20_total = sum(v20_ppp) if v20_ppp else None
+    p20_total = (sum(v20_goals) + sum(v20_assists)) if (v20_goals or v20_assists) else None
+    g20_total = sum(v20_goals) if v20_goals else None
+    s20_total = sum(v20_shots) if v20_shots else None
+
+    a40_total = sum(v40_assists) if v40_assists else None
+    ppp40_total = sum(v40_ppp) if v40_ppp else None
+    p40_total = (sum(v40_goals) + sum(v40_assists)) if (v40_goals or v40_assists) else None
+    g40_total = sum(v40_goals) if v40_goals else None
+    s40_total = sum(v40_shots) if v40_shots else None
+
     p10 = [(g + a) for g, a in zip(v10_goals, v10_assists)]
     drought_p = drought_since(p10, 1)
     drought_a = drought_since(v10_assists, 1)
@@ -2240,6 +2263,16 @@ def compute_lastN_features(payload: Dict[str, Any], n10: int = 10, n5: int = 5) 
         "N_games_found": len(shots),
         "A10_total": a10_total,
         "PPP10_total": ppp10_total,
+        "A20_total": a20_total,
+        "P20_total": p20_total,
+        "G20_total": g20_total,
+        "S20_total": s20_total,
+        "PPP20_total": ppp20_total,
+        "A40_total": a40_total,
+        "P40_total": p40_total,
+        "G40_total": g40_total,
+        "S40_total": s40_total,
+        "PPP40_total": ppp40_total,
         "Drought_P": drought_p,
         "Drought_A": drought_a,
         "Drought_G": drought_g,
@@ -3635,6 +3668,16 @@ def build_tracker(today_local: date, debug: bool = False) -> str:
     sk["L10_S"] = pd.to_numeric(sk.get("S10_total", np.nan), errors="coerce")
     sk["L10_A"] = pd.to_numeric(sk.get("A10_total", np.nan), errors="coerce")
 
+    # L20 / L40 window totals (for trend tracking)
+    sk["L20_P"] = pd.to_numeric(sk.get("P20_total", np.nan), errors="coerce")
+    sk["L20_G"] = pd.to_numeric(sk.get("G20_total", np.nan), errors="coerce")
+    sk["L20_S"] = pd.to_numeric(sk.get("S20_total", np.nan), errors="coerce")
+    sk["L20_A"] = pd.to_numeric(sk.get("A20_total", np.nan), errors="coerce")
+    sk["L40_P"] = pd.to_numeric(sk.get("P40_total", np.nan), errors="coerce")
+    sk["L40_G"] = pd.to_numeric(sk.get("G40_total", np.nan), errors="coerce")
+    sk["L40_S"] = pd.to_numeric(sk.get("S40_total", np.nan), errors="coerce")
+    sk["L40_A"] = pd.to_numeric(sk.get("A40_total", np.nan), errors="coerce")
+
     # -------------------------
     # Assist Volume (MUST be AFTER L10_A exists)
     # -------------------------
@@ -4076,6 +4119,14 @@ def build_tracker(today_local: date, debug: bool = False) -> str:
         "L5_G": sk.get("G5_total"),
         "L5_A": sk.get("A5_total"),
         "L10_A": sk.get("L10_A"),
+        "L20_P": sk.get("L20_P"),
+        "L20_G": sk.get("L20_G"),
+        "L20_S": sk.get("L20_S"),
+        "L20_A": sk.get("L20_A"),
+        "L40_P": sk.get("L40_P"),
+        "L40_G": sk.get("L40_G"),
+        "L40_S": sk.get("L40_S"),
+        "L40_A": sk.get("L40_A"),
 
         "i5v5_points60": sk.get("i5v5_points60"),
         "i5v5_primaryAssists60": sk.get("i5v5_primaryAssists60"),
@@ -4544,73 +4595,57 @@ def build_tracker(today_local: date, debug: bool = False) -> str:
         # They compare last-10 production rate (per game) to the selected main line.
         try:
             def _tier_from_diff(_d, _mname: str):
-                """Return tier labels for L10 support. Blank if line/diff missing.
-
-                Robust to scalar/array inputs so UI-only columns never fail.
-                """
+                """Return tier labels for L10 support. Blank if line/diff missing."""
                 _m = str(_mname).strip().upper()
+                _d = pd.to_numeric(_d, errors="coerce")
+                out = np.full(len(_d), "", dtype=object)
 
-                # Ensure 1D array-like
-                _arr = np.asarray(_d)
-                if _arr.ndim == 0:
-                    _arr = _arr.reshape(1)
-                else:
-                    _arr = _arr.ravel()
-
-                _arr = pd.to_numeric(_arr, errors="coerce")
-                out = np.full(_arr.shape[0], "", dtype=object)
-
-                mask = pd.notna(_arr)
-                if not bool(mask.any()):
+                mask = _d.notna()
+                if not mask.any():
                     return out
 
                 # Market-specific thresholds (NOT gates)
                 if _m == "POINTS":
                     # tuned for points (more regression-tolerant)
-                    out[mask & (_arr >= 0.15)] = "STRONG"
-                    out[mask & (_arr >= -0.10) & (_arr < 0.15)] = "MEET"
-                    out[mask & (_arr >= -0.35) & (_arr < -0.10)] = "WEAK"
-                    out[mask & (_arr < -0.35)] = "FADE"
-                elif _m == "ASSISTS":
-                    # tuned for assists (0.5 line is common; differentiate true setup men)
-                    out[mask & (_arr >= 0.35)] = "ELITE"
-                    out[mask & (_arr >= 0.20) & (_arr < 0.35)] = "STRONG"
-                    out[mask & (_arr >= 0.05) & (_arr < 0.20)] = "MEET"
-                    out[mask & (_arr >= -0.10) & (_arr < 0.05)] = "WEAK"
-                    out[mask & (_arr < -0.10)] = "FADE"
-                elif _m in ("SOG","SHOTS"):
-                    # tuned for shots on goal (diff = L10 SOG per game - line)
-                    out[mask & (_arr >= 0.40)] = "ELITE"
-                    out[mask & (_arr >= 0.20) & (_arr < 0.40)] = "STRONG"
-                    out[mask & (_arr >= 0.05) & (_arr < 0.20)] = "GOOD"
-                    out[mask & (_arr >= -0.10) & (_arr < 0.05)] = "MEET"
-                    out[mask & (_arr >= -0.30) & (_arr < -0.10)] = "WEAK"
-                    out[mask & (_arr < -0.30)] = "FADE"
+                    out[mask & (_d >= 0.15)] = "STRONG"
+                    out[mask & (_d >= -0.10) & (_d < 0.15)] = "MEET"
+                    out[mask & (_d >= -0.35) & (_d < -0.10)] = "WEAK"
+                    out[mask & (_d < -0.35)] = "FADE"
                 else:
                     # default symmetric tiers (can tune later per market)
-                    out[mask & (_arr >= 0.25)] = "STRONG"
-                    out[mask & (_arr >= 0.00) & (_arr < 0.25)] = "MEET"
-                    out[mask & (_arr >= -0.25) & (_arr < 0.00)] = "WEAK"
-                    out[mask & (_arr < -0.25)] = "FADE"
+                    out[mask & (_d >= 0.25)] = "STRONG"
+                    out[mask & (_d >= 0.00) & (_d < 0.25)] = "MEET"
+                    out[mask & (_d >= -0.25) & (_d < 0.00)] = "WEAK"
+                    out[mask & (_d < -0.25)] = "FADE"
 
                 return out
 
-            for _m, _l10col in [("Points", "L10_P"), ("Assists", "L10_A"), ("SOG", "L10_S")]:
+            for _m, _stat_col_base in [("Points", "P"), ("Assists", "A"), ("SOG", "S")]:
                 _line_col = f"{_m}_Line"
-                if _l10col in tracker.columns and _line_col in tracker.columns:
-                    _rate = pd.to_numeric(tracker[_l10col], errors="coerce") / 10.0
-                    _line = pd.to_numeric(tracker[_line_col], errors="coerce")
-                    _diff = (_rate - _line)
+                if _line_col not in tracker.columns:
+                    # create blank cols for all windows so UI code is stable
+                    for _w in (10, 20, 40):
+                        tracker[f"L{_w}_Rate_{_m}"] = np.nan
+                        tracker[f"L{_w}_Diff_{_m}"] = np.nan
+                        tracker[f"L{_w}_Tier_{_m}"] = ""
+                    continue
 
-                    # Only meaningful when the prop line exists
-                    _mask = _rate.notna() & _line.notna()
-                    tracker[f"L10_Rate_{_m}"] = _rate.round(2)
-                    tracker[f"L10_Diff_{_m}"] = np.where(_mask, _diff.round(2), np.nan)
-                    tracker[f"L10_Tier_{_m}"] = _tier_from_diff(np.where(_mask, _diff, np.nan), _m)
-                else:
-                    tracker[f"L10_Rate_{_m}"] = np.nan
-                    tracker[f"L10_Diff_{_m}"] = np.nan
-                    tracker[f"L10_Tier_{_m}"] = ""
+                for _w in (10, 20, 40):
+                    _stat_col = f"L{_w}_{_stat_col_base}"
+                    if _stat_col in tracker.columns:
+                        _rate = pd.to_numeric(tracker[_stat_col], errors="coerce") / float(_w)
+                        _line = pd.to_numeric(tracker[_line_col], errors="coerce")
+                        _diff = (_rate - _line)
+
+                        # Only meaningful when the prop line exists
+                        _mask = _rate.notna() & _line.notna()
+                        tracker[f"L{_w}_Rate_{_m}"] = _rate.round(2)
+                        tracker[f"L{_w}_Diff_{_m}"] = np.where(_mask, _diff.round(2), np.nan)
+                        tracker[f"L{_w}_Tier_{_m}"] = _tier_from_diff(np.where(_mask, _diff, np.nan), _m)
+                    else:
+                        tracker[f"L{_w}_Rate_{_m}"] = np.nan
+                        tracker[f"L{_w}_Diff_{_m}"] = np.nan
+                        tracker[f"L{_w}_Tier_{_m}"] = ""
         except Exception:
             # Never fail tracker build for UI-only columns
             pass
