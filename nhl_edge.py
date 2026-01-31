@@ -4537,6 +4537,85 @@ def build_tracker(today_local: date, debug: bool = False) -> str:
             debug=bool(debug),
         )
         tracker = add_bdl_ev_all(tracker)
+        # -------------------------------
+        # L10 Support Tiers (presentation helper columns)
+        # -------------------------------
+        # These columns are NOT gates. They are explainability helpers for UI.
+        # They compare last-10 production rate (per game) to the selected main line.
+        try:
+            def _tier_from_diff(_d, _mname: str):
+                """Return tier labels for L10 support. Blank if line/diff missing.
+
+                Robust to scalar/array inputs so UI-only columns never fail.
+                """
+                _m = str(_mname).strip().upper()
+
+                # Ensure 1D array-like
+                _arr = np.asarray(_d)
+                if _arr.ndim == 0:
+                    _arr = _arr.reshape(1)
+                else:
+                    _arr = _arr.ravel()
+
+                _arr = pd.to_numeric(_arr, errors="coerce")
+                out = np.full(_arr.shape[0], "", dtype=object)
+
+                mask = pd.notna(_arr)
+                if not bool(mask.any()):
+                    return out
+
+                # Market-specific thresholds (NOT gates)
+                if _m == "POINTS":
+                    # tuned for points (more regression-tolerant)
+                    out[mask & (_arr >= 0.15)] = "STRONG"
+                    out[mask & (_arr >= -0.10) & (_arr < 0.15)] = "MEET"
+                    out[mask & (_arr >= -0.35) & (_arr < -0.10)] = "WEAK"
+                    out[mask & (_arr < -0.35)] = "FADE"
+                elif _m == "ASSISTS":
+                    # tuned for assists (0.5 line is common; differentiate true setup men)
+                    out[mask & (_arr >= 0.35)] = "ELITE"
+                    out[mask & (_arr >= 0.20) & (_arr < 0.35)] = "STRONG"
+                    out[mask & (_arr >= 0.05) & (_arr < 0.20)] = "MEET"
+                    out[mask & (_arr >= -0.10) & (_arr < 0.05)] = "WEAK"
+                    out[mask & (_arr < -0.10)] = "FADE"
+                elif _m in ("SOG","SHOTS"):
+                    # tuned for shots on goal (diff = L10 SOG per game - line)
+                    out[mask & (_arr >= 0.40)] = "ELITE"
+                    out[mask & (_arr >= 0.20) & (_arr < 0.40)] = "STRONG"
+                    out[mask & (_arr >= 0.05) & (_arr < 0.20)] = "GOOD"
+                    out[mask & (_arr >= -0.10) & (_arr < 0.05)] = "MEET"
+                    out[mask & (_arr >= -0.30) & (_arr < -0.10)] = "WEAK"
+                    out[mask & (_arr < -0.30)] = "FADE"
+                else:
+                    # default symmetric tiers (can tune later per market)
+                    out[mask & (_arr >= 0.25)] = "STRONG"
+                    out[mask & (_arr >= 0.00) & (_arr < 0.25)] = "MEET"
+                    out[mask & (_arr >= -0.25) & (_arr < 0.00)] = "WEAK"
+                    out[mask & (_arr < -0.25)] = "FADE"
+
+                return out
+
+            for _m, _l10col in [("Points", "L10_P"), ("Assists", "L10_A"), ("SOG", "L10_S")]:
+                _line_col = f"{_m}_Line"
+                if _l10col in tracker.columns and _line_col in tracker.columns:
+                    _rate = pd.to_numeric(tracker[_l10col], errors="coerce") / 10.0
+                    _line = pd.to_numeric(tracker[_line_col], errors="coerce")
+                    _diff = (_rate - _line)
+
+                    # Only meaningful when the prop line exists
+                    _mask = _rate.notna() & _line.notna()
+                    tracker[f"L10_Rate_{_m}"] = _rate.round(2)
+                    tracker[f"L10_Diff_{_m}"] = np.where(_mask, _diff.round(2), np.nan)
+                    tracker[f"L10_Tier_{_m}"] = _tier_from_diff(np.where(_mask, _diff, np.nan), _m)
+                else:
+                    tracker[f"L10_Rate_{_m}"] = np.nan
+                    tracker[f"L10_Diff_{_m}"] = np.nan
+                    tracker[f"L10_Tier_{_m}"] = ""
+        except Exception:
+            # Never fail tracker build for UI-only columns
+            pass
+
+
 
         # Hard guard: if API key is present, require meaningful coverage across at least one market
         if (os.getenv("BALLDONTLIE_API_KEY", "") or os.getenv("BDL_API_KEY", "")).strip():

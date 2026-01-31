@@ -290,6 +290,35 @@ def _render_why_it_fires_rich(mkt: str, r, tags: str = "") -> None:
 
         st.markdown("**SUPPORT:**")
         st.caption(" | ".join(ctx) if ctx else "—")
+        # L10 support tier (presentation-only; columns come from tracker)
+        try:
+            _suffix = {"POINTS":"Points","ASSISTS":"Assists","SOG":"SOG","SHOTS":"SOG"}.get(mkt.upper(), "")
+            if _suffix:
+                _tier = str(r.get(f"L10_Tier_{_suffix}", "") or "").strip()
+                _rate = r.get(f"L10_Rate_{_suffix}", None)
+                _diff = r.get(f"L10_Diff_{_suffix}", None)
+
+                parts = []
+                if _tier:
+                    parts.append(f"Tier {_tier}")
+
+                try:
+                    if _rate is not None and _rate != "" and not (isinstance(_rate, float) and math.isnan(_rate)):
+                        parts.append(f"Rate {float(_rate):.2f}")
+                except Exception:
+                    pass
+
+                try:
+                    if _diff is not None and _diff != "" and not (isinstance(_diff, float) and math.isnan(_diff)):
+                        parts.append(f"Diff {float(_diff):+.2f}")
+                except Exception:
+                    pass
+
+                if parts:
+                    st.caption("L10: " + " | ".join(parts))
+        except Exception:
+            pass
+
     except Exception:
         st.markdown("**SUPPORT:**")
         st.caption("—")
