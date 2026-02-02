@@ -2186,6 +2186,19 @@ def compute_lastN_features(payload: Dict[str, Any], n10: int = 10, n5: int = 5) 
     v10_goals = goals[:n10]
     v10_assists = assists[:n10]
     v10_ppp = ppp[:n10]
+
+    # Also compute wider windows for stability/trend (L20/L40)
+    n20 = 20
+    n40 = 40
+    v20_shots = shots[:n20]
+    v20_goals = goals[:n20]
+    v20_assists = assists[:n20]
+    v20_ppp = ppp[:n20]
+    v40_shots = shots[:n40]
+    v40_goals = goals[:n40]
+    v40_assists = assists[:n40]
+    v40_ppp = ppp[:n40]
+
     v5_shots = shots[:n5]
     v5_goals = goals[:n5]
     v5_assists = assists[:n5]
@@ -2216,9 +2229,21 @@ def compute_lastN_features(payload: Dict[str, Any], n10: int = 10, n5: int = 5) 
     a10_total = sum(v10_assists) if v10_assists else None
     ppp10_total = sum(v10_ppp) if v10_ppp else None
 
+    # Wider-window totals (best-effort; if fewer games exist, uses what we have)
+    a20_total = sum(v20_assists) if v20_assists else None
+    a40_total = sum(v40_assists) if v40_assists else None
+    ppp20_total = sum(v20_ppp) if v20_ppp else None
+    ppp40_total = sum(v40_ppp) if v40_ppp else None
+
     p10_total = (sum(v10_goals) + sum(v10_assists)) if (v10_goals or v10_assists) else None
     g10_total = sum(v10_goals) if v10_goals else None
     s10_total = sum(v10_shots) if v10_shots else None
+
+    p20_total = (sum(v20_goals) + sum(v20_assists)) if (v20_goals or v20_assists) else None
+    s20_total = sum(v20_shots) if v20_shots else None
+
+    p40_total = (sum(v40_goals) + sum(v40_assists)) if (v40_goals or v40_assists) else None
+    s40_total = sum(v40_shots) if v40_shots else None
 
     p10 = [(g + a) for g, a in zip(v10_goals, v10_assists)]
     drought_p = drought_since(p10, 1)
@@ -2238,8 +2263,15 @@ def compute_lastN_features(payload: Dict[str, Any], n10: int = 10, n5: int = 5) 
         "G10_total": g10_total,
         "S10_total": s10_total,
         "N_games_found": len(shots),
-        "A10_total": a10_total,
-        "PPP10_total": ppp10_total,
+        "A10_total": a10_total,        "PPP10_total": ppp10_total,
+        "P20_total": p20_total,
+        "S20_total": s20_total,
+        "A20_total": a20_total,
+        "PPP20_total": ppp20_total,
+        "P40_total": p40_total,
+        "S40_total": s40_total,
+        "A40_total": a40_total,
+        "PPP40_total": ppp40_total,
         "Drought_P": drought_p,
         "Drought_A": drought_a,
         "Drought_G": drought_g,
@@ -3635,8 +3667,65 @@ def build_tracker(today_local: date, debug: bool = False) -> str:
     sk["L10_S"] = pd.to_numeric(sk.get("S10_total", np.nan), errors="coerce")
     sk["L10_A"] = pd.to_numeric(sk.get("A10_total", np.nan), errors="coerce")
 
+    # Wider windows (totals)
+    sk["L20_P"] = pd.to_numeric(sk.get("P20_total", np.nan), errors="coerce")
+    sk["L20_S"] = pd.to_numeric(sk.get("S20_total", np.nan), errors="coerce")
+    sk["L20_A"] = pd.to_numeric(sk.get("A20_total", np.nan), errors="coerce")
+
+    sk["L40_P"] = pd.to_numeric(sk.get("P40_total", np.nan), errors="coerce")
+    sk["L40_S"] = pd.to_numeric(sk.get("S40_total", np.nan), errors="coerce")
+    sk["L40_A"] = pd.to_numeric(sk.get("A40_total", np.nan), errors="coerce")
+
     # -------------------------
-    # Assist Volume (MUST be AFTER L10_A exists)
+    # L10/L20/L40 support tiers (Points/Assists/SOG)
+    # These are presentation-only "support" signals used on market pages.
+    # -------------------------
+    def _tier_label(market: str, rate: float) -> str:
+        # Simple, readable buckets. (Tune anytime; doesn't affect model math.)
+        m = (market or "").strip().upper()
+        if rate is None or (isinstance(rate, float) and math.isnan(rate)):
+            return ""
+        try:
+            r = float(rate)
+        except Exception:
+            return ""
+
+        if m == "POINTS":
+            if r >= 1.25: return "ELITE"
+            if r >= 1.00: return "STRONG"
+            if r >= 0.80: return "GOOD"
+            if r >= 0.60: return "OK"
+            return "LOW"
+        if m == "ASSISTS":
+            if r >= 0.95: return "ELITE"
+            if r >= 0.75: return "STRONG"
+            if r >= 0.60: return "GOOD"
+            if r >= 0.45: return "OK"
+            return "LOW"
+        # SOG/SHOTS
+        if r >= 4.00: return "ELITE"
+        if r >= 3.50: return "STRONG"
+        if r >= 3.00: return "GOOD"
+        if r >= 2.50: return "OK"
+        return "LOW"
+
+    def _add_window_support(prefix: str, line_col: str, total_cols: dict) -> None:
+        # total_cols: {10:"L10_X", 20:"L20_X", 40:"L40_X"} where X is P/A/S
+        for w in (10, 20, 40):
+            tot = pd.to_numeric(sk.get(total_cols[w], np.nan), errors="coerce")
+            rate = (tot / float(w)).round(3)
+            linev = pd.to_numeric(sk.get(line_col, np.nan), errors="coerce")
+            diff = (rate - linev).round(3)
+            sk[f"L{w}_Rate_{prefix}"] = rate
+            sk[f"L{w}_Diff_{prefix}"] = diff
+            sk[f"L{w}_Tier_{prefix}"] = rate.apply(lambda x: _tier_label(prefix, safe_float(x)))
+
+    _add_window_support("Points", "Points_Line", {10:"L10_P", 20:"L20_P", 40:"L40_P"})
+    _add_window_support("Assists", "Assists_Line", {10:"L10_A", 20:"L20_A", 40:"L40_A"})
+    _add_window_support("SOG", "SOG_Line", {10:"L10_S", 20:"L20_S", 40:"L40_S"})
+
+    # -------------------------
+    # Assist Volume (MUST be AFTER L10_A exists) (MUST be AFTER L10_A exists)
     # -------------------------
     # Primary source: 5v5 shot-assists/60 * 12 (per-game-ish volume)
     # Fallback: tracker totals (last-10 assists) so we never flatline to 0 just because
@@ -3990,6 +4079,50 @@ def build_tracker(today_local: date, debug: bool = False) -> str:
     # Best market
     # -------------------------
     def choose_best(r: pd.Series) -> Tuple[str, int]:
+        """Pick best market for the Board.
+        Prefer engine-qualified markets first (market-pure), then sort by EV%, then confidence.
+        """
+        def _is_green(x) -> bool:
+            s = str(x or "").strip().upper()
+            return s in ("GREEN", "🟢")
+
+        def _truthy(v) -> bool:
+            s = str(v).strip().lower()
+            return s in ("1","true","t","yes","y","💰","✅")
+
+        # Engine eligibility (Feb 2026)
+        eng_assists = (
+            _truthy(r.get("Plays_EV_Assists", False)) and
+            _is_green(r.get("Matrix_Assists", "")) and
+            float(r.get("Assists_Line", 0) or 0) == 0.5 and
+            _truthy(r.get("Assist_PP_Proof", False))
+        )
+        eng_points = (
+            _truthy(r.get("Plays_EV_Points", False)) and
+            _is_green(r.get("Matrix_Points", "")) and
+            float(r.get("Points_Line", 0) or 0) == 0.5 and
+            float(r.get("Reg_Gap_P10", 0) or 0) >= 2.5
+        )
+        eng_sog = (
+            _truthy(r.get("Plays_EV_SOG", False)) and
+            _is_green(r.get("Matrix_SOG", "")) and
+            0 < float(r.get("SOG_Line", 0) or 0) <= 2.5 and
+            2.6 <= float(r.get("Reg_Gap_S10", 0) or 0) <= 4.3
+        )
+
+        candidates = []
+        if eng_assists:
+            candidates.append(("ASSISTS", float(r.get("Assists_EV%", 0) or 0), int(r.get("Conf_Assists", 0) or 0)))
+        if eng_points:
+            candidates.append(("POINTS", float(r.get("Points_EV%", 0) or 0), int(r.get("Conf_Points", 0) or 0)))
+        if eng_sog:
+            candidates.append(("SOG", float(r.get("SOG_EV%", 0) or 0), int(r.get("Conf_SOG", 0) or 0)))
+
+        if candidates:
+            candidates.sort(key=lambda x: (x[1], x[2]), reverse=True)  # EV%, then Conf
+            return candidates[0][0], candidates[0][2]
+
+        # fallback: legacy (highest confidence)
         opts = [
             ("ASSISTS", int(r.get("Conf_Assists", 0) or 0)),
             ("POINTS",  int(r.get("Conf_Points", 0) or 0)),
@@ -4074,8 +4207,46 @@ def build_tracker(today_local: date, debug: bool = False) -> str:
         "L10_G": sk.get("L10_G"),
         "L10_S": sk.get("L10_S"),
         "L5_G": sk.get("G5_total"),
-        "L5_A": sk.get("A5_total"),
-        "L10_A": sk.get("L10_A"),
+        "L5_A": sk.get("A5_total"),        "L10_A": sk.get("L10_A"),
+
+        # Wider window totals
+        "L20_P": sk.get("L20_P"),
+        "L40_P": sk.get("L40_P"),
+        "L20_A": sk.get("L20_A"),
+        "L40_A": sk.get("L40_A"),
+        "L20_S": sk.get("L20_S"),
+        "L40_S": sk.get("L40_S"),
+
+        # Support tiers/rates/diffs (used by market pages "Why it fires")
+        "L10_Tier_Points": sk.get("L10_Tier_Points"),
+        "L10_Rate_Points": sk.get("L10_Rate_Points"),
+        "L10_Diff_Points": sk.get("L10_Diff_Points"),
+        "L20_Tier_Points": sk.get("L20_Tier_Points"),
+        "L20_Rate_Points": sk.get("L20_Rate_Points"),
+        "L20_Diff_Points": sk.get("L20_Diff_Points"),
+        "L40_Tier_Points": sk.get("L40_Tier_Points"),
+        "L40_Rate_Points": sk.get("L40_Rate_Points"),
+        "L40_Diff_Points": sk.get("L40_Diff_Points"),
+
+        "L10_Tier_Assists": sk.get("L10_Tier_Assists"),
+        "L10_Rate_Assists": sk.get("L10_Rate_Assists"),
+        "L10_Diff_Assists": sk.get("L10_Diff_Assists"),
+        "L20_Tier_Assists": sk.get("L20_Tier_Assists"),
+        "L20_Rate_Assists": sk.get("L20_Rate_Assists"),
+        "L20_Diff_Assists": sk.get("L20_Diff_Assists"),
+        "L40_Tier_Assists": sk.get("L40_Tier_Assists"),
+        "L40_Rate_Assists": sk.get("L40_Rate_Assists"),
+        "L40_Diff_Assists": sk.get("L40_Diff_Assists"),
+
+        "L10_Tier_SOG": sk.get("L10_Tier_SOG"),
+        "L10_Rate_SOG": sk.get("L10_Rate_SOG"),
+        "L10_Diff_SOG": sk.get("L10_Diff_SOG"),
+        "L20_Tier_SOG": sk.get("L20_Tier_SOG"),
+        "L20_Rate_SOG": sk.get("L20_Rate_SOG"),
+        "L20_Diff_SOG": sk.get("L20_Diff_SOG"),
+        "L40_Tier_SOG": sk.get("L40_Tier_SOG"),
+        "L40_Rate_SOG": sk.get("L40_Rate_SOG"),
+        "L40_Diff_SOG": sk.get("L40_Diff_SOG"),
 
         "i5v5_points60": sk.get("i5v5_points60"),
         "i5v5_primaryAssists60": sk.get("i5v5_primaryAssists60"),
@@ -4209,19 +4380,30 @@ def build_tracker(today_local: date, debug: bool = False) -> str:
 
     
 
+    # ---- helper: safe numeric column fetch (handles missing columns) ----
+    def _num_col(df, col, default=0.0):
+        if col in df.columns:
+            s = df[col]
+        else:
+            s = pd.Series([default] * len(df), index=df.index)
+        return pd.to_numeric(s, errors="coerce").fillna(default)
+
 
     # Play tags (Points)
-    tracker["Conf_Points"] = pd.to_numeric(tracker.get("Conf_Points"), errors="coerce")
+    tracker["Conf_Points"] = _num_col(tracker, "Conf_Points", default=np.nan)
     tracker["Play_Tag"] = ""
     tracker["Plays_Points"] = False
 
-    hot_points = (
-        (tracker["Matrix_Points"] == "Green") &
-        (tracker["Reg_Heat_P"] == "HOT") &
-        (tracker["Conf_Points"] >= 77)
-    )
-    tracker.loc[hot_points, "Play_Tag"] = "🔥"
-    tracker.loc[hot_points, "Plays_Points"] = True
+    # POINTS engine (Feb 2026): EV-only + Matrix Green + line=0.5 + strong regression Reg_Gap_P10 >= 2.5
+    eng_points = (
+        (tracker.get("Plays_EV_Points", False) == True) &
+        (tracker["Matrix_Points"].astype(str).str.strip().str.upper().isin(["GREEN","🟢"])) &
+        (_num_col(tracker, "Points_Line", default=0.0) == 0.5) &
+        (_num_col(tracker, "Reg_Gap_P10", default=0.0) >= 2.5)
+    ).fillna(False)
+
+    tracker.loc[eng_points, "Play_Tag"] = "🔥"
+    tracker.loc[eng_points, "Plays_Points"] = True
 
 
         # -------------------------
@@ -4335,155 +4517,95 @@ def build_tracker(today_local: date, debug: bool = False) -> str:
 
     if "Plays_Assists" not in tracker.columns:
         tracker["Plays_Assists"] = False
+
+    # ASSISTS engine (Feb 2026): EV-only + Matrix Green + line=0.5 + Assist_PP_Proof
+    # NOTE: Assist_ProofCount is deprecated (kept for back-compat / UI only).
     tracker["Assist_ProofCount"] = 0
     tracker["Assist_Why"] = ""
 
-    proof_ixA  = (tracker["iXA%"] >= 92)
-    proof_v2   = (tracker["v2_player_stability"] >= 65)
-    proof_team = (tracker["team_5v5_xGF60_pct"] >= 60)
-    proof_vol  = (
-        (tracker["Assist_Volume"] >= 6) |
-        (tracker["i5v5_primaryAssists60"] >= 0.45)
-    )
-
-    proofs = pd.concat([proof_ixA, proof_v2, proof_team, proof_vol], axis=1).fillna(False)
-    tracker["Assist_ProofCount"] = proofs.sum(axis=1)
-
-    tier = tracker.get("Talent_Tier", "").astype(str).str.upper()
-    is_star = tier.isin(["ELITE", "STAR"])
-
-    earned_gate = (
-        (tracker["Assist_ProofCount"] >= 3) |
-        (is_star & (tracker["Assist_ProofCount"] >= 2))
-    )
-
-    assists_green_earned = (
-        (tracker["Matrix_Assists"] == "Green") &
-        (tracker["Conf_Assists"] >= 77) &
-        earned_gate
+    _line = _num_col(tracker, "Assists_Line", default=0.0)
+    eng_assists = (
+        (tracker.get("Plays_EV_Assists", False) == True) &
+        (tracker["Matrix_Assists"].astype(str).str.strip().str.upper().isin(["GREEN","🟢"])) &
+        (_line == 0.5) &
+        (tracker.get("Assist_PP_Proof", False) == True)
     ).fillna(False)
 
-    tracker["Plays_Assists"] = assists_green_earned
+    tracker["Plays_Assists"] = eng_assists
 
     def _assist_why(r):
         reasons = []
-        if float(r.get("iXA%", 0) or 0) >= 90: reasons.append("iXA")
-        if float(r.get("v2_player_stability", 0) or 0) >= 60: reasons.append("v2")
-        if float(r.get("team_5v5_xGF60_pct", 0) or 0) >= 60: reasons.append("xGF")
-        if (float(r.get("Assist_Volume", 0) or 0) >= 6 or float(r.get("i5v5_primaryAssists60", 0) or 0) >= 0.45):
-            reasons.append("VOL")
+        if bool(r.get("Assist_PP_Proof", False)):
+            reasons.append("PP")
+        # descriptive only (not a gate)
+        if float(r.get("iXA%", 0) or 0) >= 97.5:
+            reasons.append("iXA+")
         return ",".join(reasons)
 
-    tracker.loc[assists_green_earned, "Assist_Why"] = tracker.loc[assists_green_earned].apply(_assist_why, axis=1)
+    tracker.loc[eng_assists, "Assist_Why"] = tracker.loc[eng_assists].apply(_assist_why, axis=1)
 
-    mask = assists_green_earned & ~tracker["Play_Tag"].fillna("").str.contains("ASSISTS EARNED", regex=False)
-
-    tracker.loc[mask, "Play_Tag"] = np.where(
-    tracker.loc[mask, "Play_Tag"].fillna("").astype(str).str.len() > 0,
-    tracker.loc[mask, "Play_Tag"].fillna("").astype(str) + " | 🅰️ ASSISTS EARNED",
-    "🅰️ ASSISTS EARNED"
-)
-    
-    # -------------------------
-    # SOG earned rule (shot profile playable)
-    # Purpose:
-    # - Keep CONF tight (>=77)
-    # - Promote elite shot profiles even if Matrix_SOG is Yellow
-    # - Require alignment of the TOP 4 SOG categories
-    # -------------------------
-
-    # Ensure numeric safety
-    for c in [
-        "Conf_SOG",
-        "ShotIntent_Pct",
-        "Goalie_Weak",
-        "Med10_SOG",
-        "Avg5_SOG",
-        "Reg_Gap_S10",
-        "Drought_SOG"
-    ]:
-        if c in tracker.columns:
-            tracker[c] = pd.to_numeric(tracker[c], errors="coerce")
+    # Tag (presentation)
+    try:
+        tracker.loc[eng_assists, "Play_Tag"] = np.where(
+            tracker.loc[eng_assists, "Play_Tag"].fillna("").astype(str).str.len() > 0,
+            tracker.loc[eng_assists, "Play_Tag"].fillna("").astype(str) + " | ASSISTS ENG",
+            "ASSISTS ENG",
+        )
+    except Exception:
+        pass
 
     if "Plays_SOG" not in tracker.columns:
         tracker["Plays_SOG"] = False
 
+    # SOG engine (Feb 2026): EV-only + Matrix Green + line<=2.5 + Reg_Gap_S10 sweet spot [2.6, 4.3]
+    # NOTE: SOG_ProofCount is deprecated (kept for back-compat / UI only).
     tracker["SOG_ProofCount"] = 0
     tracker["SOG_Why"] = ""
 
-    # ---- TOP 4 SOG PROOFS (NO GOALIE) ----
+    _rg = _num_col(tracker, "Reg_Gap_S10", default=0.0)
+    _line = _num_col(tracker, "SOG_Line", default=0.0)
 
-    # 1) ShotIntent (elite intent, not noisy volume)
-    proof_si = (tracker["ShotIntent_Pct"] >= 95)
-
-    # 2) Regression / timing
-    proof_reg = (
-        tracker["Reg_Heat_S"].astype(str).str.upper().isin(["HOT", "WARM"]) |
-        (tracker["Reg_Gap_S10"] >= 1.5) |
-        (tracker["Drought_SOG"] >= 1.5)
-    )
-
-    # 3) Volume floor (true shooter)
-    proof_vol = (
-        (tracker["Med10_SOG"] >= 3.5) |
-        (tracker["Avg5_SOG"] >= 3.5)
-    )
-
-    # 4) Team shot environment (pace + pressure)
-    proof_team = (tracker["team_5v5_SF60_pct"] >= 60)
-
-    proofs = pd.concat(
-        [proof_si, proof_reg, proof_vol, proof_team],
-        axis=1
+    eng_sog = (
+        (tracker.get("Plays_EV_SOG", False) == True) &
+        (tracker["Matrix_SOG"].astype(str).str.strip().str.upper().isin(["GREEN","🟢"])) &
+        (_line > 0) & (_line <= 2.5) &
+        (_rg >= 2.6) & (_rg <= 4.3)
     ).fillna(False)
 
-    tracker["SOG_ProofCount"] = proofs.sum(axis=1)
+    tracker["Plays_SOG"] = eng_sog
 
-    # ---- HARD CONFIDENCE GATE (DO NOT LOOSEN) ----
-    conf_gate = (tracker["Conf_SOG"] >= 77)
-
-    # ---- EARNED SOG PLAY ----
-    # Require:
-    # - Confidence gate
-    # - At least 3 of the 4 SOG proofs
-    sog_earned = (
-        conf_gate &
-        (tracker["SOG_ProofCount"] >= 3)
-    )
-
-    tracker.loc[sog_earned, "Plays_SOG"] = True
-
-    # Optional explanation tag
     def _sog_why(r):
         reasons = []
-        if r.get("ShotIntent_Pct", 0) >= 95: reasons.append("SI")
-        if (
-            str(r.get("Reg_Heat_S", "")).upper() in {"HOT", "WARM"} or
-            (r.get("Reg_Gap_S10", 0) >= 1.5) or
-            (r.get("Drought_SOG", 0) >= 1)
-        ): reasons.append("REG")
-        if (r.get("Med10_SOG", 0) >= 3.5 or r.get("Avg5_SOG", 0) >= 3.5): reasons.append("VOL")
-        if r.get("Goalie_Weak", 0) >= 70: reasons.append("G")
+        try:
+            rg = float(r.get("Reg_Gap_S10", 0) or 0)
+        except Exception:
+            rg = 0.0
+        if 2.6 <= rg <= 4.3:
+            reasons.append("REGQ3")
+        # descriptive only: elite intent confirm
+        try:
+            si = float(r.get("ShotIntent_Pct", 0) or 0)
+        except Exception:
+            si = 0.0
+        try:
+            exp10 = float(r.get("Exp_S_10", 0) or 0)
+        except Exception:
+            exp10 = 0.0
+        if (si >= 97.5) or (exp10 >= 52):
+            reasons.append("ELITE_INTENT")
         return ",".join(reasons)
 
-    tracker.loc[sog_earned, "SOG_Why"] = tracker.loc[sog_earned].apply(_sog_why, axis=1)
+    tracker.loc[eng_sog, "SOG_Why"] = tracker.loc[eng_sog].apply(_sog_why, axis=1)
 
-    # Optional UI tag (does NOT override other tags)
-    mask = sog_earned & ~tracker["Play_Tag"].fillna("").str.contains("SOG EARNED", regex=False)
-
-    tracker.loc[mask, "Play_Tag"] = np.where(
-        tracker.loc[mask, "Play_Tag"].fillna("").astype(str).str.len() > 0,
-        tracker.loc[mask, "Play_Tag"].fillna("").astype(str) + " | 🎯 SOG EARNED",
-        "🎯 SOG EARNED"
-    )
-
-    
-
-    # Sort
-    tracker["_bc"] = pd.to_numeric(tracker["Best_Conf"], errors="coerce").fillna(0)
-    tracker["_gw"] = pd.to_numeric(tracker["Goalie_Weak"], errors="coerce").fillna(50)
-    tracker["_dw"] = pd.to_numeric(tracker["Opp_DefWeak"], errors="coerce").fillna(50)
-    tracker = tracker.sort_values(["_bc", "_gw", "_dw"], ascending=[False, False, False]).drop(columns=["_bc", "_gw", "_dw"])
+    # Tag (presentation)
+    try:
+        tracker.loc[eng_sog, "Play_Tag"] = np.where(
+            tracker.loc[eng_sog, "Play_Tag"].fillna("").astype(str).str.len() > 0,
+            tracker.loc[eng_sog, "Play_Tag"].fillna("").astype(str) + " | SOG ENG",
+            "SOG ENG",
+        )
+    except Exception:
+        pass
 
     # -------------------------
     # FORCE rounding right before write (for Streamlit display consistency)
@@ -4544,54 +4666,28 @@ def build_tracker(today_local: date, debug: bool = False) -> str:
         # They compare last-10 production rate (per game) to the selected main line.
         try:
             def _tier_from_diff(_d, _mname: str):
-                """Return tier labels for L10 support. Blank if line/diff missing.
-
-                Robust to scalar/array inputs so UI-only columns never fail.
-                """
+                """Return tier labels for L10 support. Blank if line/diff missing."""
                 _m = str(_mname).strip().upper()
+                _d = pd.to_numeric(_d, errors="coerce")
+                out = np.full(len(_d), "", dtype=object)
 
-                # Ensure 1D array-like
-                _arr = np.asarray(_d)
-                if _arr.ndim == 0:
-                    _arr = _arr.reshape(1)
-                else:
-                    _arr = _arr.ravel()
-
-                _arr = pd.to_numeric(_arr, errors="coerce")
-                out = np.full(_arr.shape[0], "", dtype=object)
-
-                mask = pd.notna(_arr)
-                if not bool(mask.any()):
+                mask = _d.notna()
+                if not mask.any():
                     return out
 
                 # Market-specific thresholds (NOT gates)
                 if _m == "POINTS":
                     # tuned for points (more regression-tolerant)
-                    out[mask & (_arr >= 0.15)] = "STRONG"
-                    out[mask & (_arr >= -0.10) & (_arr < 0.15)] = "MEET"
-                    out[mask & (_arr >= -0.35) & (_arr < -0.10)] = "WEAK"
-                    out[mask & (_arr < -0.35)] = "FADE"
-                elif _m == "ASSISTS":
-                    # tuned for assists (0.5 line is common; differentiate true setup men)
-                    out[mask & (_arr >= 0.35)] = "ELITE"
-                    out[mask & (_arr >= 0.20) & (_arr < 0.35)] = "STRONG"
-                    out[mask & (_arr >= 0.05) & (_arr < 0.20)] = "MEET"
-                    out[mask & (_arr >= -0.10) & (_arr < 0.05)] = "WEAK"
-                    out[mask & (_arr < -0.10)] = "FADE"
-                elif _m in ("SOG","SHOTS"):
-                    # tuned for shots on goal (diff = L10 SOG per game - line)
-                    out[mask & (_arr >= 0.40)] = "ELITE"
-                    out[mask & (_arr >= 0.20) & (_arr < 0.40)] = "STRONG"
-                    out[mask & (_arr >= 0.05) & (_arr < 0.20)] = "GOOD"
-                    out[mask & (_arr >= -0.10) & (_arr < 0.05)] = "MEET"
-                    out[mask & (_arr >= -0.30) & (_arr < -0.10)] = "WEAK"
-                    out[mask & (_arr < -0.30)] = "FADE"
+                    out[mask & (_d >= 0.15)] = "STRONG"
+                    out[mask & (_d >= -0.10) & (_d < 0.15)] = "MEET"
+                    out[mask & (_d >= -0.35) & (_d < -0.10)] = "WEAK"
+                    out[mask & (_d < -0.35)] = "FADE"
                 else:
                     # default symmetric tiers (can tune later per market)
-                    out[mask & (_arr >= 0.25)] = "STRONG"
-                    out[mask & (_arr >= 0.00) & (_arr < 0.25)] = "MEET"
-                    out[mask & (_arr >= -0.25) & (_arr < 0.00)] = "WEAK"
-                    out[mask & (_arr < -0.25)] = "FADE"
+                    out[mask & (_d >= 0.25)] = "STRONG"
+                    out[mask & (_d >= 0.00) & (_d < 0.25)] = "MEET"
+                    out[mask & (_d >= -0.25) & (_d < 0.00)] = "WEAK"
+                    out[mask & (_d < -0.25)] = "FADE"
 
                 return out
 
@@ -4719,6 +4815,11 @@ def build_tracker(today_local: date, debug: bool = False) -> str:
                 tracker["Player_5v5_SOG_Share"] = pd.to_numeric(tracker["Player_5v5_SOG_Share"], errors="coerce").fillna(proxy)
         except Exception:
             tracker["Player_SOG_Share_Proxy"] = np.nan
+
+    # Outcome placeholder (filled later from your bet history / ledger).
+    # Keeping it in the tracker makes post-slate audits (hit-rate, tag efficacy) trivial.
+    if "Outcome" not in tracker.columns:
+        tracker["Outcome"] = ""
 
     out_path = os.path.join(OUTPUT_DIR, f"tracker_{today_local.isoformat()}_{stamp}.csv")
     tracker.to_csv(out_path, index=False)
