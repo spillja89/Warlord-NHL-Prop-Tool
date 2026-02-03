@@ -202,6 +202,60 @@ def _why_sections_header(mkt: str = ""):
 
 
 
+def render_jackpot_meter_ui(reg_gap: float, reg_threshold: float, tier_clean: str) -> None:
+    """🎰 Jackpot Meter (UI only).
+    Jackpot reflects how strongly current conditions favor regression resolution.
+    Talent (ELITE) increases confidence only when regression is already valid.
+
+    NOTE: presentation-only — no gates, no EV logic.
+    """
+    try:
+        rg = float(reg_gap)
+    except Exception:
+        rg = 0.0
+    try:
+        thr = float(reg_threshold)
+    except Exception:
+        thr = 0.0
+
+    reg_valid = (thr > 0) and (rg >= thr)
+    tier_u = str(tier_clean or "").strip().upper()
+    elite_active = reg_valid and (tier_u == "ELITE")
+
+    # normalize 0-100 for display
+    pct = 0.0
+    if thr > 0:
+        pct = max(0.0, min(100.0, (rg / thr) * 100.0))
+
+    bar_color = "#f5c542" if reg_valid else "#9ca3af"
+    glow = "box-shadow: 0 0 14px rgba(245,197,66,0.85);" if elite_active else ""
+
+    st.markdown(
+        f"""
+        <div class="wl-card" style="margin-top:8px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;">
+            <div style="font-size:18px;font-weight:900;">🎰 Jackpot Meter</div>
+            <div style="font-size:13px;font-weight:800;opacity:0.85;">
+              Reg_Gap {rg:.2f} / {thr:.2f}
+            </div>
+          </div>
+
+          <div style="margin-top:8px;background:#111;border-radius:10px;overflow:hidden;">
+            <div style="width:{pct:.0f}%;height:14px;background:{bar_color};{glow}transition:width 0.35s ease;"></div>
+          </div>
+
+          <div style="margin-top:8px;font-size:13px;line-height:1.35;">
+            <b>Jackpot reflects how strongly current conditions favor regression resolution.</b><br/>
+            <span style="opacity:0.85;">
+              Talent (ELITE) increases confidence only when regression is already valid.
+            </span>
+          </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
 def _trend_badge_score(mkt: str, d10, d20, d40):
     """
     Presentation-only: derive a compact Window Signal from L10/L20/L40 diffs vs line.
@@ -306,8 +360,149 @@ def _render_why_it_fires_rich(mkt: str, r, tags: str = "") -> None:
             f"**Badges:** {_expl} {'Dynamite' if _expl else ''} &nbsp;&nbsp; {_crit} {'Critical Strike' if _crit else ''}".strip()
         )
 
+
+    # --- Engine checklist (market-pure; presentation only) ---
+    mk = str(mkt or "").strip().upper()
+
+    if mk == "ASSISTS":
+        pp_proof = bool(r.get("Assist_PP_Proof", False))
+        ev_ok = bool(r.get("Plays_EV_Assists", False))
+        try:
+            line = float(r.get("Assists_Line", 0) or 0)
+        except Exception:
+            line = 0.0
+        try:
+            conf = float(r.get("Conf_Assists", 0) or 0)
+        except Exception:
+            conf = 0.0
+
+        # tiering (NOT a gate)
+        if conf >= 88:
+            tier = "A (ladder OK)"
+        elif conf >= 85:
+            tier = "B (normal)"
+        else:
+            tier = "C (caution)"
+
+        # warnings (loss-avoidance only)
+        try:
+            hdca = float(r.get("opp_5v5_HDCA60", 0) or 0)
+        except Exception:
+            hdca = 0.0
+        try:
+            opp_sv = float(r.get("Opp_SV", 0) or 0)
+        except Exception:
+            opp_sv = 0.0
+        try:
+            opp_gaa = float(r.get("Opp_GAA", 0) or 0)
+        except Exception:
+            opp_gaa = 0.0
+
+        warn_hdca = hdca >= 2.56  # Q4-ish cutoff from forensics
+        warn_goalie = (opp_sv >= 0.908) or (opp_gaa <= 2.56)
+
+        st.markdown("**ENGINE CHECKLIST (Assists):**")
+        st.markdown(
+            "\n".join([
+                f"- {'✅' if ev_ok else '❌'} EV-only",
+                f"- {'✅' if _is_matrix_green(str(r.get('Matrix_Assists','') or '')) else '❌'} Matrix Green",
+                f"- {'✅' if abs(line-0.5) < 1e-6 else '❌'} Line 0.5",
+                f"- {'✅' if pp_proof else '❌'} PP Proof",
+                f"- ⭐ Confidence tier: {tier}",
+                f"- {'⚠️' if warn_hdca else '✅'} HDCA context: {hdca:.3f}",
+                f"- {'⚠️' if warn_goalie else '✅'} Goalie context: SV {opp_sv:.3f} | GAA {opp_gaa:.3f}",
+            ])
+        )
+        st.markdown("""<div style="height:8px;"></div>""", unsafe_allow_html=True)
+
+
+    if mk == "POINTS":
+        ev_ok = bool(r.get("Plays_EV_Points", False))
+        try:
+            line = float(r.get("Points_Line", 0) or 0)
+        except Exception:
+            line = 0.0
+        try:
+            rg = float(r.get("Reg_Gap_P10", 0) or 0)
+        except Exception:
+            rg = 0.0
+
+        st.markdown("**ENGINE CHECKLIST (Points):**")
+        st.markdown(
+            "\n".join([
+                f"- {'✅' if ev_ok else '❌'} EV-only",
+                f"- {'✅' if _is_matrix_green(str(r.get('Matrix_Points','') or '')) else '❌'} Matrix Green",
+                f"- {'✅' if abs(line-0.5) < 1e-6 else '❌'} Line 0.5",
+                f"- {'✅' if rg >= float(POINTS_ENGINE_REG_GAP) else '❌'} Strong regression: Reg_Gap_P10 {rg:.2f} (>= {POINTS_ENGINE_REG_GAP})",
+                "- ℹ️ Confidence is display-only for Points (no gate, no boost)",
+            ])
+        )
+        
+        # 🎰 Jackpot Meter (Points) — presentation-only
+        tier_raw = (r.get('Tier_Tag_Best') or r.get('Tier_Tag') or r.get('Tier') or r.get('TierTag') or r.get('Tier_Class') or '')
+        render_jackpot_meter_ui(reg_gap=rg, reg_threshold=float(POINTS_ENGINE_REG_GAP), tier_clean=str(tier_raw).upper())
+
+        st.markdown("<div style=\"height:8px;\"></div>", unsafe_allow_html=True)
+
+
+    if mk == "SOG":
+        ev_ok = bool(r.get("Plays_EV_SOG", False))
+        try:
+            line = float(r.get("SOG_Line", 0) or 0)
+        except Exception:
+            line = 0.0
+        try:
+            rg = float(r.get("Reg_Gap_S10", 0) or 0)
+        except Exception:
+            rg = 0.0
+        try:
+            xga = float(r.get("opp_5v5_xGA60", 0) or 0)
+        except Exception:
+            xga = 0.0
+
+        env_bad = (xga > 0) and (xga <= 2.40)
+
+        st.markdown("**ENGINE CHECKLIST (SOG):**")
+        st.markdown(
+            "\n".join([
+                f"- {'✅' if ev_ok else '❌'} EV-only",
+                f"- {'✅' if _is_matrix_green(str(r.get('Matrix_SOG','') or '')) else '❌'} Matrix Green",
+                f"- {'✅' if (line > 0 and line <= float(SOG_ENGINE_LINE_MAX)) else '❌'} Line ≤ {SOG_ENGINE_LINE_MAX} (line={line})",
+                f"- {'✅' if (rg >= float(SOG_ENGINE_REG_GAP_MIN) and rg <= float(SOG_ENGINE_REG_GAP_MAX)) else '❌'} Reg_Gap_S10 sweet spot: {rg:.2f} (2.6–4.3)",
+                f"- {'⚠️' if env_bad else '✅'} ENV_BAD if opp xGA60 ≤ 2.40 (xGA60={xga:.2f})",
+            ])
+        )
+        st.markdown("<div style=\"height:8px;\"></div>", unsafe_allow_html=True)
+
 # MAIN: for now, show the mkt tags (human reads them as primary triggers)
-    st.markdown(f"**MAIN:** {tags_s if tags_s else '—'}")
+    mk = str(mkt or "").strip().upper()
+    if mk == "ASSISTS":
+        st.markdown("**MAIN:** ✅ PP PROOF")
+        if tags_s:
+            st.markdown(f"**Tags:** {tags_s}")
+    elif mk == "POINTS":
+        try:
+            rg = float(r.get('Reg_Gap_P10', 0) or 0)
+        except Exception:
+            rg = 0.0
+        st.markdown(f"**MAIN:** 🔥 REG GAP 2.5+ (Reg_Gap_P10 {rg:.2f})")
+        if tags_s:
+            st.markdown(f"**Tags:** {tags_s}")
+    elif mk == "SOG":
+        try:
+            rg = float(r.get('Reg_Gap_S10', 0) or 0)
+        except Exception:
+            rg = 0.0
+        try:
+            line = float(r.get('SOG_Line', 0) or 0)
+        except Exception:
+            line = 0.0
+        st.markdown(f"**MAIN:** 🎯 REG GAP SWEET SPOT (Reg_Gap_S10 {rg:.2f})")
+        st.markdown(f"**Line:** {line}")
+        if tags_s:
+            st.markdown(f"**Tags:** {tags_s}")
+    else:
+        st.markdown(f"**MAIN:** {tags_s if tags_s else '—'}")
 
     # SUPPORT: show the compact model context line (matrix/conf/ev/heat/gap/drought) if present
     try:
@@ -974,30 +1169,58 @@ COLUMN_WIDTHS = {
     "EV_Signal": "medium",
     "LOCK": "small",
 }
+
+
+# Column tooltips (market engines & key signals)
+COLUMN_HELP = {
+    # Assists
+    "PP_PROOF": "PP Proof = PP usage + PP iXA creation + matchup aligned. Required for Assists engine (EV+Green+0.5).",
+    # Points
+    "Reg_Gap_P10": "Points engine: Reg_Gap_P10 ≥ 2.5 is the verified regression cliff (EV+Green+0.5).",
+    # SOG
+    "Reg_Gap_S10": "SOG engine sweet spot: Reg_Gap_S10 in [2.6, 4.3] (EV+Green+Line≤2.5).",
+    # Points (UI)
+    "REG_LABEL": "Regression status label for Points (NO REG / BUILDING / READY).",
+    "REG_PRESSURE": "Visual pressure meter from Reg_Gap_P10 (text bar). Pops when >=2.5.",
+    "REG_DROUGHT": "🎰 Jackpot badge when Points engine is READY and Drought_P ≥ 2 (amplifier; not a gate).",
+}
 def build_column_config(df: pd.DataFrame, cols: list[str]) -> dict:
     cfg = {}
 
     for c in cols:
         width = COLUMN_WIDTHS.get(c, "small")
+        help_txt = COLUMN_HELP.get(c)
 
         if c not in df.columns:
-            cfg[c] = st.column_config.TextColumn(width=width)
+            cfg[c] = st.column_config.TextColumn(width=width, help=help_txt)
             continue
 
         if pd.api.types.is_numeric_dtype(df[c]):
             # Betting-friendly numeric formats
             if c.endswith("_Line") or c == "Line":
-                cfg[c] = st.column_config.NumberColumn(width=width, format="%.1f")
+                cfg[c] = st.column_config.NumberColumn(width=width, format="%.1f", help=help_txt)
             elif c.endswith("_Odds_Over") or c == "Odds":
-                cfg[c] = st.column_config.NumberColumn(width=width, format="%.0f")
+                cfg[c] = st.column_config.NumberColumn(width=width, format="%.0f", help=help_txt)
             elif c.endswith("_Model%") or c.endswith("_Imp%") or c.endswith("_EV%"):
-                cfg[c] = st.column_config.NumberColumn(width=width, format="%.1f")
+                cfg[c] = st.column_config.NumberColumn(width=width, format="%.1f", help=help_txt)
             else:
-                cfg[c] = st.column_config.NumberColumn(width=width)
+                cfg[c] = st.column_config.NumberColumn(width=width, help=help_txt)
         else:
-            cfg[c] = st.column_config.TextColumn(width=width)
+            cfg[c] = st.column_config.TextColumn(width=width, help=help_txt)
 
     return cfg
+
+
+def _text_bar(value: float, vmin: float = 0.0, vmax: float = 8.0, width: int = 10) -> str:
+    """Text-only progress bar for st.dataframe (emoji/blocks)."""
+    try:
+        v = float(value)
+    except Exception:
+        v = 0.0
+    v = max(vmin, min(vmax, v))
+    filled = int(round((v - vmin) / (vmax - vmin) * width)) if vmax > vmin else 0
+    filled = max(0, min(width, filled))
+    return ("█" * filled) + ("░" * (width - filled))
 
 
 
@@ -1582,6 +1805,18 @@ THR_REG_HEAT_DEFAULT = 0.0  # Reg_Heat_*10
 HARD_BOARD_DROUGHT_GATE = 2  # must be >=2 games drought
 HARD_BOARD_HEAT_LEVELS = ("HOT", "DUE", "OVERDUE")  # at least HOT
 
+# --- Market engines (data-verified Feb 2026) ---
+POINTS_ENGINE_REG_GAP = 2.5  # Reg_Gap_P10
+SOG_ENGINE_LINE_MAX = 2.5
+SOG_ENGINE_REG_GAP_MIN = 2.6
+SOG_ENGINE_REG_GAP_MAX = 4.3
+ASSISTS_ENGINE_LINE = 0.5
+
+def _truthy(v) -> bool:
+    s = str(v).strip().lower()
+    return s in ("1","true","t","yes","y","💰","✅")
+
+
 def _num(v, default=0.0):
     try:
         if v is None:
@@ -1660,6 +1895,11 @@ def _bundle_for_market(row, market_key: str) -> dict:
             "mu": _first_num("SOG_mu", "MU_SOG", "U_SOG", "U", "MU", default=0),
             "share_5v5": _first_num("5v5_Share", "Share_5v5", "ShotShare_5v5", default=0),
             "lsa10": _first_num("L10_Team_SA", "L10SA", "TeamSA10", "LSA10", default=0),
+            "plays_ev": _truthy(_get_first(row, "Plays_EV_SOG", "Plays_EV_Shots", "Plays_EV_S", default=False)),
+            "env_hdca": _first_num("opp_5v5_HDCA60", default=0),
+            "opp_gaa": _first_num("Opp_GAA", default=0),
+            "opp_sv": _first_num("Opp_SV", default=0),
+
         }
 
     if mk in ("assists", "a"):
@@ -1679,12 +1919,23 @@ def _bundle_for_market(row, market_key: str) -> dict:
             "model": model,
             "odds": odds,
             "line": _first_num("Assists_Line", "Line_Assists", default=0),
+            "ppixa": _first_num("PP_iXA60", "PP_iXA_60", default=0),
+            "ppshare": _first_num("PP_TeamShare_pct", "PP_TeamShare%", default=0),
+            "xga": _first_num("opp_5v5_xGA60", default=0),
+            "goalie_weak": _first_num("Goalie_Weak", default=0),
+            "opp_sv": _first_num("Opp_SV", default=0),
             "drought": _first_num("Drought_A", "Drought_Assists", default=0),
             "reg_gap": _first_num("Reg_Gap_A10", "Reg_Gap_A", default=0),
             "reg_heat": _first_str("Reg_Heat_A", default=""),
             "mu": _first_num("Assists_mu", "MU_Assists", "U_Assists", "U", "MU", default=0),
             "share_5v5": _first_num("5v5_Share", "Share_5v5", default=0),
             "lsa10": _first_num("L10_Team_SA", "L10SA", "TeamSA10", default=0),
+            "plays_ev": _truthy(_get_first(row, "Plays_EV_Assists", "Plays_EV_A", default=False)),
+            "pp_proof": int(_truthy(_get_first(row, "Assist_PP_Proof", default=False))),
+            "env_hdca": _first_num("opp_5v5_HDCA60", default=0),
+            "opp_gaa": _first_num("Opp_GAA", default=0),
+            "opp_sv": _first_num("Opp_SV", default=0),
+
         }
 
     if mk in ("points", "pts", "p"):
@@ -1704,12 +1955,21 @@ def _bundle_for_market(row, market_key: str) -> dict:
             "model": model,
             "odds": odds,
             "line": _first_num("Points_Line", "Line_Points", default=0),
+            "l10_rate": _first_num("L10_Rate_Points", default=0),
+            "l10_diff": _first_num("L10_Diff_Points", default=0),
+            "xga": _first_num("opp_5v5_xGA60", default=0),
+            "hdca": _first_num("opp_5v5_HDCA60", default=0),
             "drought": _first_num("Drought_P", "Drought_Points", default=0),
             "reg_gap": _first_num("Reg_Gap_P10", "Reg_Gap_P", default=0),
             "reg_heat": _first_str("Reg_Heat_P", default=""),
             "mu": _first_num("Points_mu", "MU_Points", "U_Points", "U", "MU", default=0),
             "share_5v5": _first_num("5v5_Share", "Share_5v5", default=0),
             "lsa10": _first_num("L10_Team_SA", "L10SA", "TeamSA10", default=0),
+            "plays_ev": _truthy(_get_first(row, "Plays_EV_Points", "Plays_EV_P", default=False)),
+            "env_hdca": _first_num("opp_5v5_HDCA60", default=0),
+            "opp_gaa": _first_num("Opp_GAA", default=0),
+            "opp_sv": _first_num("Opp_SV", default=0),
+
         }
 
     if mk in ("goals", "goal", "g"):
@@ -1728,7 +1988,11 @@ def _bundle_for_market(row, market_key: str) -> dict:
             "ev": ev,
             "model": model,
             "odds": odds,
-            "line": _first_num("Goals_Line", "Line_Goal", "Line_Goals", default=0),
+            "line": _first_num("Goal_Line","Goals_Line","ATG_Line","Line_Goal","Line_Goals", default=0),
+            "avg5_sog": _first_num("Avg5_SOG", "Avg5_Shots", default=0),
+            "shotintent": _first_num("ShotIntent", default=0),
+            "shotintent_pct": _first_num("ShotIntent_Pct", default=0),
+            "xga": _first_num("opp_5v5_xGA60", default=0),
             "drought": _first_num("Drought_G", "Drought_Goal", "Drought_Goals", default=0),
             "reg_gap": _first_num("Reg_Gap_G10", "Reg_Gap_G", default=0),
             "reg_heat": _first_str("Reg_Heat_G", default=""),
@@ -1801,6 +2065,82 @@ def _passes_smash(b: dict, thr_conf: int, thr_ev: float, thr_drought: int, thr_g
     return drought_ok or heat_pass
 
 
+def _passes_engine(b: dict) -> bool:
+    """Market-pure Valhalla gates (IGNORE EV everywhere).
+
+    These gates are intentionally strict. Anything not listed here is display-only.
+    """
+    label = str(b.get("label", "") or "").upper().strip()
+
+    # MATRIX (hard for all Valhalla gates)
+    if not _is_matrix_green(str(b.get("matrix", "") or "").strip()):
+        return False
+
+    # -------------------------
+    # ASSISTS (0.5)
+    # -------------------------
+    if label == "ASSISTS":
+        line = _num(b.get("line", 0), 0)
+        conf = _num(b.get("conf", 0), 0)
+        if abs(line - 0.5) > 1e-6:
+            return False
+        if conf < 80:
+            return False
+        return True
+
+    # -------------------------
+    # POINTS (0.5)
+    # -------------------------
+    if label == "POINTS":
+        line = _num(b.get("line", 0), 0)
+        if abs(line - 0.5) > 1e-6:
+            return False
+
+        # Reg-valid (your tested definition)
+        heat = str(b.get("reg_heat", "") or "").strip().upper()
+        heat_ok = heat in ("HOT", "DUE", "OVERDUE")
+        gap_ok = _num(b.get("reg_gap", 0), 0) >= 2.5
+        drt_ok = _num(b.get("drought", 0), 0) >= 2
+
+        # Conf is supportive, but we keep a floor for Valhalla quality
+        conf = _num(b.get("conf", 0), 0)
+        if conf < 70:
+            return False
+
+        return bool(heat_ok or gap_ok or drt_ok)
+
+    # -------------------------
+    # GOALS (0.5)
+    # -------------------------
+    if label in ("GOALS","GOAL","ATG"):
+        line = _num(b.get("line", 0), 0)
+        conf = _num(b.get("conf", 0), 0)
+        avg5 = _num(b.get("avg5_sog", 0), 0)
+        if abs(line - 0.5) > 1e-6:
+            return False
+        if conf < 85:
+            return False
+        if avg5 < 3.4:
+            return False
+        return True
+
+    # -------------------------
+    # SOG (<=2.5) — keep conservative
+    # -------------------------
+    if label == "SOG":
+        line = _num(b.get("line", 0), 0)
+        if line > 2.5:
+            return False
+        # keep the proven sweet spot as the structural driver
+        rg = _num(b.get("reg_gap", 0), 0)
+        if not (SOG_REG_GAP_LO <= rg <= SOG_REG_GAP_HI):
+            return False
+        return True
+
+    return False
+
+
+
 def select_all_market_rows(row, thr_conf: int, thr_ev: float, thr_drought: int, thr_gap: float, thr_heat: float) -> list[dict]:
     """Return ALL market bundles that pass the hard gate (multi-market allowed)."""
     cands = [
@@ -1809,7 +2149,7 @@ def select_all_market_rows(row, thr_conf: int, thr_ev: float, thr_drought: int, 
         _bundle_for_market(row, "points"),
         _bundle_for_market(row, "goal"),
     ]
-    elig = [c for c in cands if _passes_smash(c, thr_conf, thr_ev, thr_drought, thr_gap, thr_heat)]
+    elig = [c for c in cands if _passes_engine(c)]
     # sort strongest first
     elig.sort(key=lambda x: (x.get("ev", 0.0), x.get("conf", 0), x.get("model", 0.0)), reverse=True)
     return elig
@@ -1821,7 +2161,7 @@ def select_best_market_row(row, thr_conf: int, thr_ev: float, thr_drought: int, 
         _bundle_for_market(row, "points"),
         _bundle_for_market(row, "goal"),
     ]
-    elig = [c for c in cands if _passes_smash(c, thr_conf, thr_ev, thr_drought, thr_gap, thr_heat)]
+    elig = [c for c in cands if _passes_engine(c)]
     if not elig:
         return None
     elig.sort(key=lambda x: (x["ev"], x["conf"], x["model"]), reverse=True)
@@ -1862,6 +2202,36 @@ def _derive_badges(row: dict) -> tuple[str, str]:
     bonkers = ("OVERDUE" in heats) or ("BONKERS" in heats)
     critical = "⚔️" if (mcount >= 2 and ("ELITE" in tier.upper() or "STAR" in tier.upper()) and (best_conf >= 85 or bonkers)) else ""
     return explosion, critical
+
+
+def _engine_badge(mkt: str, r: dict) -> str:
+    """Return an engine badge (✅ENG) if the market-specific engine criteria are met."""
+    mk = str(mkt or "").strip().upper()
+    try:
+        if mk == "ASSISTS":
+            ev_ok = bool(r.get("Plays_EV_Assists", False))
+            line = float(r.get("Assists_Line", 0) or 0)
+            mx = _is_matrix_green(str(r.get("Matrix_Assists", "") or ""))
+            pp = bool(r.get("Assist_PP_Proof", False))
+            return "✅ENG" if (ev_ok and mx and abs(line - 0.5) < 1e-6 and pp) else ""
+
+        if mk == "POINTS":
+            ev_ok = bool(r.get("Plays_EV_Points", False))
+            line = float(r.get("Points_Line", 0) or 0)
+            mx = _is_matrix_green(str(r.get("Matrix_Points", "") or ""))
+            rg = _num(r.get("Reg_Gap_P10", 0), 0.0)
+            return "✅ENG" if (ev_ok and mx and abs(line - 0.5) < 1e-6 and rg >= POINTS_ENGINE_REG_GAP) else ""
+
+        if mk == "SOG":
+            ev_ok = bool(r.get("Plays_EV_SOG", False))
+            line = _num(r.get("SOG_Line", 0), 0.0)
+            mx = _is_matrix_green(str(r.get("Matrix_SOG", "") or ""))
+            rg = _num(r.get("Reg_Gap_S10", 0), 0.0)
+            in_band = (rg >= SOG_ENGINE_REG_GAP_MIN) and (rg <= SOG_ENGINE_REG_GAP_MAX)
+            return "✅ENG" if (ev_ok and mx and line <= SOG_ENGINE_LINE_MAX and in_band) else ""
+    except Exception:
+        return ""
+    return ""
 
 
 
@@ -2615,6 +2985,14 @@ if page == "Board":
         if not passing:
             continue
         for b in passing:
+            # Defensive hard-enforcement (board safety net)
+            _lbl = str(b.get("label","") or "").upper().strip()
+            if _lbl in ("GOALS","GOAL","ATG"):
+                _conf = _num(b.get("conf",0), 0)
+                _avg5 = _num(b.get("avg5_sog",0), 0)
+                _line = _num(b.get("line",0), 0)
+                if abs(_line - 0.5) > 1e-6 or _conf < 85 or _avg5 < 3.4:
+                    continue
             rr = _r.copy()
             rr["Best_Market"] = b["label"]
             rr["Best_Conf"] = b["conf"]
@@ -2967,7 +3345,7 @@ elif page == "Points":
         "Plays_EV_Points",
 
         "Points_Call",
-        "Reg_Heat_P","Reg_Gap_P10","Exp_P_10","L10_P",
+        "Reg_Heat_P","Reg_Gap_P10","REG_LABEL","REG_PRESSURE","REG_DROUGHT","Exp_P_10","L10_P",
         "iXG%","iXA%",
         "Opp_Goalie","Opp_SV","Opp_GAA","Goalie_Weak","Opp_DefWeak",
         "Drought_P","Best_Drought",
@@ -3016,6 +3394,36 @@ elif page == "Points":
 
     df_p["EV_Signal"] = [build_ev_signal(gg, ee, pp) for gg, ee, pp in zip(g, e, p if hasattr(p, "__iter__") else [p]*len(df_p))]
 
+    # -------------------------
+    # 🎰 Points Regression UI (label + gauge + jackpot)
+    # -------------------------
+    try:
+        _rg = pd.to_numeric(df_p.get("Reg_Gap_P10", 0), errors="coerce").fillna(0.0)
+    except Exception:
+        _rg = pd.Series([0.0] * len(df_p), index=df_p.index)
+    try:
+        _dr = pd.to_numeric(df_p.get("Drought_P", 0), errors="coerce").fillna(0.0)
+    except Exception:
+        _dr = pd.Series([0.0] * len(df_p), index=df_p.index)
+
+    def _reg_label(v: float) -> str:
+        try:
+            x = float(v)
+        except Exception:
+            x = 0.0
+        if x >= float(POINTS_ENGINE_REG_GAP):
+            return "🔥 REG READY"
+        if x >= 1.5:
+            return "🟡 REG BUILD"
+        return "⚪ NO REG"
+
+    df_p["REG_LABEL"] = [_reg_label(v) for v in _rg]
+    df_p["REG_PRESSURE"] = [f"{_text_bar(v, 0.0, 8.0, 10)} {float(v):.2f}" for v in _rg]
+    df_p["REG_DROUGHT"] = [
+        "🎰🔥 REG+DROUGHT" if (float(rg) >= float(POINTS_ENGINE_REG_GAP) and float(dr) >= 2.0) else ""
+        for rg, dr in zip(_rg, _dr)
+    ]
+
 
 
 
@@ -3047,115 +3455,129 @@ elif page == "Points":
     # === SMASH PLAYS (POINTS) ===
     _render_badge_legend_inline()
 
+
     st.subheader("⭐ Smash Plays — Points")
     st.markdown(
         """
-        <div style="padding:14px 16px;border-radius:14px;border:2px solid #000;background:#fff;">
-          <div style="font-size:24px;font-weight:900;color:#000;margin-bottom:6px;">
-            Top candidates for this market
+        <div style="padding:16px 18px;border-radius:16px;border:3px solid #000;background:#fff;">
+          <div style="font-size:28px;font-weight:950;color:#000;margin-bottom:6px;">
+            THE WARLORD’S GATE TO VALHALLA — POINTS
           </div>
-          <div style="font-size:18px;font-weight:800;color:#000;margin-bottom:10px;">
-            Ranked by 🔒 Locks &nbsp;&gt;&nbsp; 💰 +EV &nbsp;&gt;&nbsp; Conf
+          <div style="font-size:18px;font-weight:850;color:#000;line-height:1.4;">
+            Regression is the drumbeat. Role decides who answers.
           </div>
-          <div style="font-size:18px;font-weight:800;color:#000;line-height:1.45;">
-            Why these fire:
-          </div>
-          <div style="font-size:17px;font-weight:700;color:#000;line-height:1.45;margin-top:4px;">
-            <b>FIN</b> = finishing / converts chances &nbsp;&nbsp;•&nbsp;&nbsp;
-            <b>PLY</b> = playmaking hub / involvement &nbsp;&nbsp;•&nbsp;&nbsp;
-            <b>ENV</b> = matchup environment &nbsp;&nbsp;•&nbsp;&nbsp;
-            <b>DUE</b> = due / regression pressure
+          <div style="margin-top:10px;font-size:16px;font-weight:800;color:#000;line-height:1.45;">
+            <b>Eligibility</b>: 🟢 Matrix + Line 0.5 + <b>Regression Valid</b> (EV ignored)
+            <br/>
+            <b>Regression Valid</b>: HOT/DUE/OVERDUE <b>OR</b> Reg_Gap_P10 ≥ 2.5 <b>OR</b> Drought_P ≥ 2
+            <br/>
+            <b>Support</b>: Conf (70+ improves) • L10_Rate_Points (≥0.80 strong) • L10_Diff_Points (≥0.25 strong)
+            <br/>
+            <b>ENV</b> (warnings only): opp xGA ≤ 2.43 or opp HDCA ≤ 2.33 (loss-avoidance only)
           </div>
         </div>
         """,
         unsafe_allow_html=True,
     )
 
-
-    _rank = df_p.copy()
+    _p = df_p.copy()
     try:
-        _rank["_is_lock"] = (_rank["LOCK"].astype(str).str.strip() == "🔒").astype(int) if "LOCK" in _rank.columns else 0
+        _p = _p[
+            (_p.get("Matrix_Points", "").astype(str).str.strip().str.upper().isin(["GREEN","🟢"])) &
+            (pd.to_numeric(_p.get("Points_Line", 0), errors="coerce") == 0.5) &
+            (_p.get("Outcome_Points", "").astype(str).str.upper().isin(["W","L"]) | (_p.get("Match_Status_Points", "").astype(str).str.upper().ne("GRADED")))
+        ].copy()
     except Exception:
-        _rank["_is_lock"] = 0
+        pass
 
-    try:
-        if "EV_Signal" in _rank.columns:
-            _rank["_is_ev"] = _rank["EV_Signal"].astype(str).str.contains("💰", na=False).astype(int)
-        elif "Plays_EV_Points" in _rank.columns:
-            _rank["_is_ev"] = (_rank["Plays_EV_Points"].astype(str).str.strip() == "💰").astype(int)
-        else:
-            _rank["_is_ev"] = 0
-    except Exception:
-        _rank["_is_ev"] = 0
+    heat = _p.get("Reg_Heat_P", "").astype(str).str.upper().isin(["HOT","DUE","OVERDUE"])
+    gap = pd.to_numeric(_p.get("Reg_Gap_P10", np.nan), errors="coerce").fillna(-999) >= 2.5
+    drt = pd.to_numeric(_p.get("Drought_P", np.nan), errors="coerce").fillna(-999) >= 2
+    reg_valid = heat | gap | drt
+    _p = _p[reg_valid].copy()
 
-    _rank["_conf"] = pd.to_numeric(_rank.get("Conf_Points", 0), errors="coerce").fillna(0)
-    _rank = _rank.sort_values(["_is_lock", "_is_ev", "_conf"], ascending=[False, False, False], kind="mergesort")
+    _p["_conf"] = pd.to_numeric(_p.get("Conf_Points", 0), errors="coerce").fillna(0)
+    _p["_l10r"] = pd.to_numeric(_p.get("L10_Rate_Points", np.nan), errors="coerce")
+    _p["_l10d"] = pd.to_numeric(_p.get("L10_Diff_Points", np.nan), errors="coerce")
+    _p["_gap"] = pd.to_numeric(_p.get("Reg_Gap_P10", np.nan), errors="coerce")
 
-    top_n = st.slider("Show top plays (Points)", 3, 25, 10, 1, key="pts_smash_topn")
-    top = _rank.head(int(top_n))
+    _p = _p.sort_values(["_conf","_l10r","_l10d","_gap"], ascending=[False, False, False, False], kind="mergesort")
 
-    for _, r in top.iterrows():
+    top_n_p = st.slider("Show top plays (Points)", 3, 30, 12, 1, key="points_smash_topn")
+    topp = _p.head(int(top_n_p))
+
+    for _, r in topp.iterrows():
         player = str(r.get("Player", "") or "").strip()
         game = str(r.get("Game", "") or "").strip()
-
         line = r.get("Points_Line", "")
-        odds = r.get("Points_Odds_Over", "")
-        call = str(r.get("Points_Call", "") or "").strip()
-
+        odds = r.get("Points_Odds_Over", r.get("Points_Odds", ""))
         conf = r.get("Conf_Points", "")
-        matrix = str(r.get("Matrix_Points", "") or "").strip()
-        expl, crit = _derive_badges(r)
-        badges = f"{str(r.get('EV_Signal','') or '').strip()} {str(r.get('LOCK','') or '').strip()} {expl} {crit}".strip()
+        gapv = r.get("Reg_Gap_P10", "")
+        heatv = str(r.get("Reg_Heat_P", "") or "").strip()
+        l10r = r.get("L10_Rate_Points", "")
+        l10d = r.get("L10_Diff_Points", "")
+        xga = r.get("opp_5v5_xGA60", "")
+        hdca = r.get("opp_5v5_HDCA60", "")
 
-        # Pretty line/odds strings
+        tags = []
         try:
-            l_str = "" if line is None or (isinstance(line, float) and math.isnan(line)) else f"{float(line):.1f}"
+            if float(conf) >= 80: tags.append("⚔️ Conf 80+")
+            elif float(conf) >= 70: tags.append("Conf 70+")
         except Exception:
-            l_str = str(line) if line is not None else ""
+            pass
         try:
-            o_str = "" if odds is None or (isinstance(odds, float) and math.isnan(odds)) else f"{int(round(float(odds)))}"
+            if float(l10r) >= 0.80: tags.append("🔥 L10 Rate ≥0.80")
+            elif float(l10r) >= 0.70: tags.append("L10 Rate ≥0.70")
         except Exception:
-            o_str = str(odds) if odds is not None else ""
+            pass
+        try:
+            if float(l10d) >= 0.25: tags.append("🧨 L10 Diff ≥0.25")
+        except Exception:
+            pass
 
-        headline = f"<b>{player}</b> — {game}" if game else f"<b>{player}</b>"
-        betline = f"PTS {l_str} @ {o_str}" if (l_str or o_str) else ""
+        warns = []
+        try:
+            if float(xga) <= 2.43: warns.append("⚠️ Suppressive xGA (≤2.43)")
+        except Exception:
+            pass
+        try:
+            if float(hdca) <= 2.33: warns.append("⚠️ Low HDCA (≤2.33)")
+        except Exception:
+            pass
 
         meta = []
-        if matrix:
-            meta.append(matrix)
-        if conf != "" and conf is not None:
-            try:
-                meta.append(f"Conf {float(conf):.0f}")
-            except Exception:
-                meta.append(f"Conf {conf}")
-        if call:
-            meta.append(call)
-        meta_s = " | ".join([m for m in meta if m])
+        if heatv: meta.append(f"Heat {heatv}")
+        try: meta.append(f"Gap {float(gapv):.2f}")
+        except Exception: pass
+        try: meta.append(f"Conf {float(conf):.0f}")
+        except Exception: pass
+        try: meta.append(f"L10Rate {float(l10r):.2f}")
+        except Exception: pass
+        try: meta.append(f"L10Diff {float(l10d):.2f}")
+        except Exception: pass
+
+        meta_s = " | ".join([m for m in (meta + tags + warns) if m])
+        betline = f"PTS {line} @ {odds}" if (line or odds) else ""
+        headline = f"<b>{player}</b> — {game}" if game else f"<b>{player}</b>"
 
         st.markdown(
             f"""
-    <div class="wl-card wl-accent-blue">
-      <div style="display:flex;justify-content:space-between;gap:10px;">
-        <div style="font-size:16px;line-height:1.2;">
-          {headline}
-          <div style="opacity:0.9;margin-top:4px;">{betline}</div>
-        </div>
-        <div style="font-size:16px;white-space:nowrap;">{badges}</div>
-      </div>
-      <div style="margin-top:6px;font-size:12px;opacity:0.92;line-height:1.2;">{meta_s}</div>
-    </div>
+ <div class=\"wl-card wl-accent-blue\">
+   <div style=\"display:flex;justify-content:space-between;gap:10px;\">
+     <div style=\"font-size:16px;line-height:1.2;\">
+       {headline}
+       <div style=\"opacity:0.9;margin-top:4px;\">{betline}</div>
+     </div>
+     <div style=\"font-size:16px;white-space:nowrap;\">{_engine_badge('POINTS', r)} {str(r.get('LOCK','') or '').strip()}</div>
+   </div>
+   <div style=\"margin-top:6px;font-size:12px;opacity:0.92;line-height:1.2;\">{meta_s}</div>
+ </div>
             """,
             unsafe_allow_html=True,
         )
 
-        # Why it fires (Points)
-        _why_tags = str(r.get("Points_Why", "") or "").strip()
-        if not _why_tags:
-            try:
-                _why_tags = _points_why(r)
-            except Exception:
-                _why_tags = ""
-        with st.expander("Why it fires", expanded=False):  # key removed
+        _why_tags = str(r.get("Points_Why", r.get("Why", "")) or "").strip()
+        with st.expander("Why it fires", expanded=False):
             _why_sections_header("POINTS")
             _render_why_it_fires_rich("POINTS", r, _why_tags)
 
@@ -3187,6 +3609,7 @@ elif page == "Assists":
             df_a = df_a[df_a["Color_Assists"].isin(color_pick)]
 
     df_a["Green"] = df_a.get("Green_Assists", False).map(lambda x: "🟢" if bool(x) else "")
+    df_a["PP_PROOF"] = df_a.get("Assist_PP_Proof", False).map(lambda x: "✅" if bool(x) else "")
 
     # 🗡️ Dagger indicator (PP assist edge) — HARD GATE (recomputed every time)
     # Goal: daggers are rare and meaningful (PP1/proof-level assist edges only).
@@ -3205,12 +3628,7 @@ elif page == "Assists":
     # 2) 4-of-4 assist proofs, OR
     # 3) Elite dagger score (>=85), OR
     # 4) PP A/B + strong proof (>=3) + decent dagger (>=70)
-    mask = (
-        (proof if isinstance(proof, pd.Series) else False)
-        | (apc >= 4)
-        | (adg >= 82)
-        | ((ppt.isin(["A", "B"])) & (apc >= 3) & (adg >= 60))
-    )
+    mask = (proof if isinstance(proof, pd.Series) else False)
 
     df_a.loc[mask, "🗡️"] = "🗡️"
 
@@ -3223,7 +3641,7 @@ elif page == "Assists":
         "Green",
         "EV_Signal",
         "LOCK",
-        "Conf_Assists", "Matrix_Assists",
+        "Conf_Assists", "Matrix_Assists", "PP_PROOF",
 
         # --- EV / Odds ---
         "Assists_Line",
@@ -3281,110 +3699,155 @@ elif page == "Assists":
 
 
     
-    # === SMASH PLAYS (ASSISTS) ===
-    _render_badge_legend_inline()
 
     st.subheader("⭐ Smash Plays — Assists")
     st.markdown(
         """
-        <div style="padding:14px 16px;border-radius:14px;border:2px solid #000;background:#fff;">
-          <div style="font-size:24px;font-weight:900;color:#000;margin-bottom:6px;">
-            Top candidates for this market
+        <div style="padding:16px 18px;border-radius:16px;border:3px solid #000;background:#fff;">
+          <div style="font-size:28px;font-weight:950;color:#000;margin-bottom:6px;">
+            THE WARLORD’S GATE TO VALHALLA — ASSISTS
           </div>
-          <div style="font-size:18px;font-weight:800;color:#000;margin-bottom:10px;">
-            Ranked by 🔒 Locks &nbsp;&gt;&nbsp; 💰 +EV &nbsp;&gt;&nbsp; Conf
+          <div style="font-size:18px;font-weight:850;color:#000;line-height:1.4;">
+            Creation, vision, and chaos decide who enters.
           </div>
-          <div style="font-size:18px;font-weight:800;color:#000;line-height:1.45;">
-            Why these fire:
-          </div>
-          <div style="font-size:17px;font-weight:700;color:#000;line-height:1.45;margin-top:4px;">
-            <b>PLY</b> = primary playmaker / distributor &nbsp;&nbsp;•&nbsp;&nbsp;
-            <b>ENV</b> = matchup + teammates convert &nbsp;&nbsp;•&nbsp;&nbsp;
-            <b>DUE</b> = drought / regression pressure
+          <div style="margin-top:10px;font-size:16px;font-weight:800;color:#000;line-height:1.45;">
+            <b>Eligibility</b>: 🟢 Matrix + Line 0.5 + Conf ≥ 80 (EV ignored)
+            <br/>
+            <b>Main</b>: Conf tier + PP creation (PP_iXA60) — <b>Strong</b> ≥ 3.0 • <b>Elite</b> ≥ 4.2
+            <br/>
+            <b>ENV</b> (warnings only): Opp SV ≥ .905 bad • Goalie_Weak ≤ 35 bad • opp xGA ≤ 2.40 bad • Goalie_Weak ≥ 82 good
           </div>
         </div>
         """,
         unsafe_allow_html=True,
     )
 
-    _rank = df_a[df_a.get("Plays_Assists", False)].copy()
-
-    # HARD FAIL (Assists): require Assist-specific Drought OR Assist-specific Reg Heat
-    _drought_a = pd.to_numeric(_rank.get("Drought_A", 0), errors="coerce").fillna(0).astype(int)
-    _heat_a = _rank.get("Reg_Heat_A", "").astype(str).str.strip().str.upper()
-    _rank = _rank[(_drought_a >= int(HARD_BOARD_DROUGHT_GATE)) | (_heat_a.isin(HARD_BOARD_HEAT_LEVELS))].copy()
-
-
+    # Eligibility (ignore EV): Green Matrix + Line 0.5 + Conf >= 80
+    _a = df_a.copy()
     try:
-        _rank["_is_lock"] = (_rank["LOCK"].astype(str).str.strip() == "🔒").astype(int)
+        _a = _a[
+            (_a.get("Matrix_Assists", "").astype(str).str.strip().str.upper().isin(["GREEN","🟢"])) &
+            (pd.to_numeric(_a.get("Assists_Line", 0), errors="coerce") == 0.5) &
+            (pd.to_numeric(_a.get("Conf_Assists", 0), errors="coerce").fillna(0) >= 80) &
+            (_a.get("Outcome_Assists", "").astype(str).str.upper().isin(["W","L"]) | (_a.get("Match_Status_Assists", "").astype(str).str.upper().ne("GRADED")))
+        ].copy()
     except Exception:
-        _rank["_is_lock"] = 0
+        pass
 
-    try:
-        if "EV_Signal" in _rank.columns:
-            _rank["_is_ev"] = _rank["EV_Signal"].astype(str).str.contains("💰", na=False).astype(int)
-        elif "Plays_EV_Assists" in _rank.columns:
-            _rank["_is_ev"] = (_rank["Plays_EV_Assists"].astype(str).str.strip() == "💰").astype(int)
-        else:
-            _rank["_is_ev"] = 0
-    except Exception:
-        _rank["_is_ev"] = 0
+    # Feature pulls (safe)
+    _a["_conf"] = pd.to_numeric(_a.get("Conf_Assists", 0), errors="coerce").fillna(0)
+    _a["_ppixa"] = pd.to_numeric(_a.get("PP_iXA60", _a.get("PP_iXA_60", np.nan)), errors="coerce")
+    _a["_ppshare"] = pd.to_numeric(_a.get("PP_TeamShare_pct", _a.get("PP_TeamShare%", np.nan)), errors="coerce")
+    _a["_xga"] = pd.to_numeric(_a.get("opp_5v5_xGA60", np.nan), errors="coerce")
+    _a["_sv"] = pd.to_numeric(_a.get("Opp_SV", _a.get("Opp_Goalie_SV", np.nan)), errors="coerce")
+    _a["_gweak"] = pd.to_numeric(_a.get("Goalie_Weak", np.nan), errors="coerce")
 
-    _rank["_conf"] = pd.to_numeric(_rank.get("Conf_Assists", 0), errors="coerce").fillna(0)
-    _rank = _rank.sort_values(["_is_lock", "_is_ev", "_conf"], ascending=[False, False, False], kind="mergesort")
+    # Sort: higher conf, higher PP_iXA60, then PP share
+    _a = _a.sort_values(["_conf","_ppixa","_ppshare"], ascending=[False, False, False], kind="mergesort")
 
-    top_n = st.slider("Show top plays (Assists)", 3, 25, 10, 1, key="ast_smash_topn")
-    top = _rank.head(int(top_n))
+    top_n_a = st.slider("Show top plays (Assists)", 3, 30, 12, 1, key="assist_smash_topn")
+    topa = _a.head(int(top_n_a))
 
-    for _, r in top.iterrows():
+    def _assist_conf_tier(c):
+        try:
+            c = float(c)
+        except Exception:
+            return ""
+        if c >= 90: return "VALHALLA"
+        if c >= 87: return "STRONG"
+        if c >= 84: return "SOLID"
+        return "FLOOR"
+
+    for _, r in topa.iterrows():
         player = str(r.get("Player", "") or "").strip()
         game = str(r.get("Game", "") or "").strip()
-
         line = r.get("Assists_Line", "")
-        odds = r.get("Assists_Odds_Over", "")
-        call = str(r.get("Assists_Call", "") or "").strip()
-
+        odds = r.get("Assists_Odds_Over", r.get("Assists_Odds", ""))
         conf = r.get("Conf_Assists", "")
-        matrix = str(r.get("Matrix_Assists", "") or "").strip()
-        expl, crit = _derive_badges(r)
-        badges = f"{str(r.get('EV_Signal','') or '').strip()} {str(r.get('LOCK','') or '').strip()} {expl} {crit}".strip()
 
-        headline = f"<b>{player}</b> — {game}" if game else f"<b>{player}</b>"
-        betline = f"AST {line} @ {odds}" if (line or odds) else ""
+        ppixa = r.get("PP_iXA60", r.get("PP_iXA_60", ""))
+        ppshare = r.get("PP_TeamShare_pct", r.get("PP_TeamShare%", ""))
+        xga = r.get("opp_5v5_xGA60", "")
+        sv = r.get("Opp_SV", r.get("Opp_Goalie_SV", ""))
+        gweak = r.get("Goalie_Weak", "")
+
+        # Tags (no gates)
+        tags = []
+        ct = _assist_conf_tier(conf)
+        if ct == "VALHALLA": tags.append("⚔️ Valhalla Conf")
+        elif ct: tags.append(f"Conf {ct}")
+
+        try:
+            v = float(ppixa)
+            if v >= 4.2: tags.append("🧨 PP_iXA60 ELITE (≥4.2)")
+            elif v >= 3.0: tags.append("🔥 PP_iXA60 STRONG (≥3.0)")
+        except Exception:
+            pass
+
+        try:
+            s = float(ppshare)
+            if s >= 18: tags.append("PP HUB (≥18%)")
+            elif s >= 15: tags.append("PP role (15–17%)")
+            elif s > 0: tags.append("PP passenger (<15%)")
+        except Exception:
+            pass
+
+        # ENV warnings (display only)
+        warns = []
+        try:
+            if float(sv) >= 0.905: warns.append("⚠️ Elite goalie (SV≥.905)")
+        except Exception:
+            pass
+        try:
+            if float(gweak) <= 35: warns.append("⚠️ Strong goalie (Goalie_Weak≤35)")
+            elif float(gweak) >= 82: warns.append("🟢 Weak goalie (Goalie_Weak≥82)")
+        except Exception:
+            pass
+        try:
+            if float(xga) <= 2.40: warns.append("⚠️ Suppressive defense (xGA≤2.40)")
+        except Exception:
+            pass
 
         meta = []
-        if matrix:
-            meta.append(matrix)
-        if conf != "" and conf is not None:
-            try:
-                meta.append(f"Conf {float(conf):.0f}")
-            except Exception:
-                meta.append(f"Conf {conf}")
-        if call:
-            meta.append(call)
-        meta_s = " | ".join([m for m in meta if m])
+        if conf != "":
+            try: meta.append(f"Conf {float(conf):.0f}")
+            except Exception: meta.append(f"Conf {conf}")
+        if ppixa != "":
+            try: meta.append(f"PP_iXA60 {float(ppixa):.2f}")
+            except Exception: pass
+        if ppshare != "":
+            try: meta.append(f"PP share {float(ppshare):.1f}%")
+            except Exception: pass
+        if xga != "":
+            try: meta.append(f"xGA {float(xga):.2f}")
+            except Exception: pass
+        if sv != "":
+            try: meta.append(f"SV {float(sv):.3f}")
+            except Exception: pass
+
+        meta_s = " | ".join(meta + tags + warns)
+        betline = f"AST {line} @ {odds}" if (line or odds) else ""
+        headline = f"<b>{player}</b> — {game}" if game else f"<b>{player}</b>"
 
         st.markdown(
             f"""
-    <div class="wl-card wl-accent-purple">
-      <div style="display:flex;justify-content:space-between;gap:10px;">
-        <div style="font-size:16px;line-height:1.2;">
-          {headline}
-          <div style="opacity:0.9;margin-top:4px;">{betline}</div>
-        </div>
-        <div style="font-size:16px;white-space:nowrap;">{badges}</div>
-      </div>
-      <div style="margin-top:6px;font-size:12px;opacity:0.92;line-height:1.2;">{meta_s}</div>
-    </div>
+ <div class=\"wl-card wl-accent-purple\">
+   <div style=\"display:flex;justify-content:space-between;gap:10px;\">
+     <div style=\"font-size:16px;line-height:1.2;\">
+       {headline}
+       <div style=\"opacity:0.9;margin-top:4px;\">{betline}</div>
+     </div>
+     <div style=\"font-size:16px;white-space:nowrap;\">{_engine_badge('ASSISTS', r)} {str(r.get('LOCK','') or '').strip()}</div>
+   </div>
+   <div style=\"margin-top:6px;font-size:12px;opacity:0.92;line-height:1.2;\">{meta_s}</div>
+ </div>
             """,
             unsafe_allow_html=True,
         )
 
         _why_tags = str(r.get("Assist_Why", "") or "").strip()
         with st.expander("Why it fires", expanded=False):
-            _why_sections_header("ASSISTS")
             _render_why_it_fires_rich("ASSISTS", r, _why_tags)
-
     st.markdown("---")
 
     show_table(df_a, assists_cols, "Assists View")
@@ -3502,10 +3965,9 @@ elif page == "SOG":
             Why these fire:
           </div>
           <div style="font-size:17px;font-weight:700;color:#000;line-height:1.45;margin-top:4px;">
-            <b>VOL</b> = shot volume / intent &nbsp;&nbsp;•&nbsp;&nbsp;
-            <b>ROLE</b> = TOI / line / PP usage &nbsp;&nbsp;•&nbsp;&nbsp;
-            <b>ENV</b> = matchup pace + shot-against &nbsp;&nbsp;•&nbsp;&nbsp;
-            <b>DUE</b> = due / regression pressure
+            <b>ENG</b> = 🎯 Reg_Gap_S10 sweet spot (2.6–4.3) &nbsp;&nbsp;•&nbsp;&nbsp;
+            <b>REQ</b> = EV-only + Green + line ≤ 2.5 &nbsp;&nbsp;•&nbsp;&nbsp;
+            <b>WARN</b> = ENV_BAD if opp xGA60 ≤ 2.40
           </div>
         </div>
         """,
@@ -3514,6 +3976,19 @@ elif page == "SOG":
 
     try:
         _rank = df_s.copy()
+        # ENGINE (SOG): EV-only + Green Matrix + line<=2.5 + Reg_Gap_S10 in sweet spot [2.6, 4.3]
+        try:
+            _rg = pd.to_numeric(_rank.get("Reg_Gap_S10", 0), errors="coerce").fillna(0)
+            _line = pd.to_numeric(_rank.get("SOG_Line", 0), errors="coerce").fillna(0)
+            _rank = _rank[
+                (_rank.get("Plays_EV_SOG", False) == True) &
+                (_rank.get("Matrix_SOG", "").astype(str).str.strip().str.upper().isin(["GREEN","🟢"])) &
+                (_line > 0) & (_line <= float(SOG_ENGINE_LINE_MAX)) &
+                (_rg >= float(SOG_ENGINE_REG_GAP_MIN)) & (_rg <= float(SOG_ENGINE_REG_GAP_MAX))
+            ].copy()
+        except Exception:
+            pass
+
         _rank["_is_lock"] = (_rank.get("LOCK", "").astype(str).str.strip() == "🔒").astype(int)
         _rank["_is_ev"] = _rank.get("Plays_EV_SOG", "").astype(str).str.strip().eq("💰").astype(int) if "Plays_EV_SOG" in _rank.columns else 0
         _rank["_conf"] = pd.to_numeric(_rank.get("Conf_SOG", 0), errors="coerce").fillna(0)
@@ -3539,7 +4014,8 @@ elif page == "SOG":
                 conf = r.get("Conf_SOG", "")
                 matrix = str(r.get("Matrix_SOG", "") or "").strip()
                 expl, crit = _derive_badges(r)
-                badges = f"{str(r.get('EV_Signal','') or '').strip()} {str(r.get('LOCK','') or '').strip()} {expl} {crit}".strip()
+                eng = _engine_badge("SOG", r)
+                badges = f"{eng} {str(r.get('EV_Signal','') or '').strip()} {str(r.get('LOCK','') or '').strip()} {expl} {crit}".strip()
 
                 # Pretty line/odds strings
                 try:
@@ -3679,6 +4155,136 @@ elif page == "GOAL (1+)":
 
 
 
+
+    # === SMASH PLAYS (GOALS) ===
+    _render_badge_legend_inline()
+    st.subheader("⭐ Smash Plays — Goals")
+
+    st.markdown(
+        """
+        <div style="padding:16px 18px;border-radius:16px;border:3px solid #000;background:#fff;">
+          <div style="font-size:28px;font-weight:950;color:#000;margin-bottom:6px;">
+            THE WARLORD’S GATE TO VALHALLA — GOALS
+          </div>
+          <div style="font-size:18px;font-weight:850;color:#000;line-height:1.4;">
+            Volume is the blade. The battlefield decides if it draws blood.
+          </div>
+          <div style="margin-top:10px;font-size:16px;font-weight:800;color:#000;line-height:1.45;">
+            <b>Eligibility</b>: 🟢 Matrix + Line 0.5 + Conf ≥ 85 (EV ignored)
+            <br/>
+            <b>Main</b>: Avg5_SOG ≥ 3.4
+            <br/>
+            <b>Valhalla</b>: opp 5v5 xGA60 > 2.50 (otherwise: ⚠️ warning only)
+          </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    _g = df_g.copy()
+
+    # Robust column picks (tracker schema varies)
+    line_col = None
+    for _c in ["ATG_Line", "Goal_Line", "Goals_Line"]:
+        if _c in _g.columns:
+            line_col = _c
+            break
+    if line_col is None:
+        line_col = "Goal_Line"  # fallback
+
+    matrix_col = None
+    for _c in ["Matrix_Goal", "Matrix_Goals", "Matrix_ATG", "ATG_Matrix", "Matrix"]:
+        if _c in _g.columns:
+            matrix_col = _c
+            break
+    if matrix_col is None:
+        matrix_col = "Matrix_Goal"
+
+    conf_col = None
+    for _c in ["Conf_Goal", "Conf_Goals", "Conf_ATG", "ATG_Conf", "Conf"]:
+        if _c in _g.columns:
+            conf_col = _c
+            break
+    if conf_col is None:
+        conf_col = "Conf_Goal"
+
+    # Hard gates (GOALS Valhalla)
+    m_matrix = _g[matrix_col].astype(str).str.strip().str.upper().isin(["GREEN", "🟢"])
+    m_line   = (pd.to_numeric(_g.get(line_col, 0), errors="coerce") == 0.5)
+    m_conf   = (pd.to_numeric(_g.get(conf_col, 0), errors="coerce").fillna(0) >= 85)
+    m_avg5   = (pd.to_numeric(_g.get("Avg5_SOG", np.nan), errors="coerce").fillna(0) >= 3.4)
+
+    # Keep ungraded for tonight, but only W/L for historical (schema-safe)
+    _out = _g.get("Outcome_Goals", pd.Series("", index=_g.index)).astype(str).str.upper()
+    _ms  = _g.get("Match_Status_Goals", pd.Series("", index=_g.index)).astype(str).str.upper()
+    m_grade = (_out.isin(["W", "L"]) | (_ms.ne("GRADED")))
+
+    _g = _g[m_matrix & m_line & m_conf & m_avg5 & m_grade].copy()
+
+    _g["_valhalla"] = (pd.to_numeric(_g.get("opp_5v5_xGA60", np.nan), errors="coerce").fillna(0) > 2.50).astype(int)
+    _g["_avg5"] = pd.to_numeric(_g.get("Avg5_SOG", 0), errors="coerce").fillna(0)
+    _g["_conf"] = pd.to_numeric(_g.get("Conf_Goal", 0), errors="coerce").fillna(0)
+    _g = _g.sort_values(["_valhalla","_avg5","_conf"], ascending=[False, False, False], kind="mergesort")
+
+    top_n_g = st.slider("Show top plays (Goals)", 3, 25, 10, 1, key="goal_smash_topn")
+    topg = _g.head(int(top_n_g))
+
+    for _, r in topg.iterrows():
+        player = str(r.get("Player", "") or "").strip()
+        game = str(r.get("Game", "") or "").strip()
+        line = r.get(line_col, r.get("Goals_Line", ""))
+        odds = r.get("ATG_Odds_Over", r.get("Goal_Odds_Over", r.get("Goals_Odds_Over", "")))
+        conf = r.get("Conf_Goal", "")
+        avg5 = r.get("Avg5_SOG", "")
+        xga = r.get("opp_5v5_xGA60", "")
+
+        # Support intent tags (NOT gates)
+        si = _num(r.get("ShotIntent", 0), 0.0)
+        sip = _num(r.get("ShotIntent_Pct", 0), 0.0)
+        intent_tags = []
+        if si >= 3.9: intent_tags.append("🧨 ShotIntent ELITE")
+        elif si >= 3.75: intent_tags.append("🔥 ShotIntent STRONG")
+        elif si >= 3.5: intent_tags.append("ShotIntent VOL")
+        if sip >= 97.5: intent_tags.append("🧨 Intent% ELITE")
+        elif sip >= 95: intent_tags.append("🔥 Intent% STRONG")
+
+        val = bool(pd.to_numeric(pd.Series([xga]), errors="coerce").fillna(0).iloc[0] > 2.50)
+        val_tag = "🟢 Valhalla xGA>2.50" if val else "⚠️ xGA≤2.50 (tough)"
+
+        meta = []
+        try: meta.append(f"Conf {float(conf):.0f}")
+        except Exception: pass
+        try: meta.append(f"Avg5 {float(avg5):.1f} SOG")
+        except Exception: pass
+        try: meta.append(f"xGA {float(xga):.2f}")
+        except Exception: pass
+        meta_s = " | ".join([m for m in (meta + intent_tags + [val_tag]) if m])
+
+        betline = f"GOAL {line} @ {odds}" if (line or odds) else ""
+        headline = f"<b>{player}</b> — {game}" if game else f"<b>{player}</b>"
+
+        st.markdown(
+            f"""
+ <div class=\"wl-card wl-accent-red\">
+   <div style=\"display:flex;justify-content:space-between;gap:10px;\">
+     <div style=\"font-size:16px;line-height:1.2;\">
+       {headline}
+       <div style=\"opacity:0.9;margin-top:4px;\">{betline}</div>
+     </div>
+     <div style=\"font-size:16px;white-space:nowrap;\">{_engine_badge('GOALS', r)} {str(r.get('LOCK','') or '').strip()}</div>
+   </div>
+   <div style=\"margin-top:6px;font-size:12px;opacity:0.92;line-height:1.2;\">{meta_s}</div>
+ </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+        _why_tags = str(r.get("Goal_Why", r.get("Why", "")) or "").strip()
+        with st.expander("Why it fires", expanded=False):
+            _why_sections_header("GOALS")
+            _render_why_it_fires_rich("GOALS", r, _why_tags)
+
+    st.markdown("---")
 
     show_table(df_g, goal_cols, "GOAL (1+) View")
 
