@@ -3803,7 +3803,7 @@ elif page == "Assists":
 
     _a = _a[
         (_mat.astype(str).str.strip().str.upper().isin(["GREEN", "🟢"])) &
-        (pd.to_numeric(_line, errors="coerce") == 0.5) &
+        ((pd.to_numeric(_line, errors="coerce") == 0.5) | (pd.to_numeric(_line, errors="coerce").isna())) &
         (pd.to_numeric(_conf, errors="coerce").fillna(0) >= 80) &
         (_out.astype(str).str.upper().isin(["W", "L"]) | (_ms.astype(str).str.upper().ne("GRADED")))
     ].copy()
