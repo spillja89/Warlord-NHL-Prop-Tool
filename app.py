@@ -3724,15 +3724,20 @@ elif page == "Assists":
 
     # Eligibility (ignore EV): Green Matrix + Line 0.5 + Conf >= 80
     _a = df_a.copy()
-    try:
-        _a = _a[
-            (_a.get("Matrix_Assists", "").astype(str).str.strip().str.upper().isin(["GREEN","🟢"])) &
-            (pd.to_numeric(_a.get("Assists_Line", 0), errors="coerce") == 0.5) &
-            (pd.to_numeric(_a.get("Conf_Assists", 0), errors="coerce").fillna(0) >= 80) &
-            (_a.get("Outcome_Assists", "").astype(str).str.upper().isin(["W","L"]) | (_a.get("Match_Status_Assists", "").astype(str).str.upper().ne("GRADED")))
-        ].copy()
-    except Exception:
-        pass
+
+    # Robust column fallbacks (do NOT silently skip gating)
+    _mat = _a["Matrix_Assists"] if "Matrix_Assists" in _a.columns else (_a["Matrix_A"] if "Matrix_A" in _a.columns else pd.Series("", index=_a.index))
+    _line = _a["Assists_Line"] if "Assists_Line" in _a.columns else (_a["Line_Assists"] if "Line_Assists" in _a.columns else 0)
+    _conf = _a["Conf_Assists"] if "Conf_Assists" in _a.columns else (_a["Conf_A"] if "Conf_A" in _a.columns else 0)
+    _out = _a["Outcome_Assists"] if "Outcome_Assists" in _a.columns else pd.Series("", index=_a.index)
+    _ms  = _a["Match_Status_Assists"] if "Match_Status_Assists" in _a.columns else pd.Series("", index=_a.index)
+
+    _a = _a[
+        (_mat.astype(str).str.strip().str.upper().isin(["GREEN", "🟢"])) &
+        (pd.to_numeric(_line, errors="coerce") == 0.5) &
+        (pd.to_numeric(_conf, errors="coerce").fillna(0) >= 80) &
+        (_out.astype(str).str.upper().isin(["W", "L"]) | (_ms.astype(str).str.upper().ne("GRADED")))
+    ].copy()
 
     # Feature pulls (safe)
     _a["_conf"] = pd.to_numeric(_a.get("Conf_Assists", 0), errors="coerce").fillna(0)
