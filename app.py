@@ -409,26 +409,47 @@ def _render_why_it_fires_rich(mkt: str, r, tags: str = "") -> None:
 
         # Warnings (loss-avoidance only; do not gate)
         warn_opp_sv = opp_sv >= 0.905
+        good_opp_sv = (opp_sv > 0) and (opp_sv < 0.885)   # SV% < 88.5% = weak goalie (good)
         warn_xga = (xga > 0) and (xga <= 2.40)
         warn_gweak_bad = (gweak > 0) and (gweak <= 35)
         good_gweak = gweak >= 82
 
+        lines = []
+        lines.append("- ℹ️ EV ignored for Assists (no gate)")
+        lines.append(f"- {'✅' if mx_green else '❌'} Matrix Green")
+        lines.append(f"- {'✅' if abs(line-0.5) < 1e-6 else '❌'} Line 0.5")
+        lines.append(f"- {'✅' if conf >= 80 else '❌'} Conf ≥ 80 (eligibility) • Conf {conf:.0f}")
+        lines.append(f"- {'✅' if pp_proof else '❌'} PP Proof (support only)")
+        lines.append(f"- 🎯 MAIN: {main_pp}")
+
+        # --- TONIGHT / warnings: only show what actually applies ---
+        # (No more "BAD rule" lines when not bad)
+        warn_lines = []
+
+        if warn_opp_sv:
+            warn_lines.append(f"- ⚠️ Opp SV is HIGH (≥ .905) • SV={opp_sv:.3f}")
+        elif good_opp_sv:
+            warn_lines.append(f"- ✅ Opp SV is LOW (< .885) • SV={opp_sv:.3f}")
+
+        if warn_xga:
+            warn_lines.append(f"- ⚠️ Opp xGA60 is LOW (≤ 2.40) • xGA60={xga:.2f}")
+
+        if warn_gweak_bad:
+            warn_lines.append(f"- ⚠️ Goalie looks STRONG (Goalie_Weak ≤ 35) • {gweak:.0f}")
+        elif good_gweak:
+            # Optional: show GOOD only when it fires
+            warn_lines.append(f"- ✅ Weak goalie boost (Goalie_Weak ≥ 82) • {gweak:.0f}")
+
+        # If nothing triggered, say so clearly
+        if not warn_lines:
+            warn_lines.append("- ✅ No matchup warnings triggered")
+
+        lines.extend(warn_lines)
+
+        lines.append(f"- {'✅' if elig_ok else '❌'} Valhalla eligibility overall")
+
         st.markdown("**ENGINE CHECKLIST (Assists):**")
-        st.markdown(
-            "\n".join([
-                "- ℹ️ EV ignored for Assists (no gate)",
-                f"- {'✅' if mx_green else '❌'} Matrix Green",
-                f"- {'✅' if abs(line-0.5) < 1e-6 else '❌'} Line 0.5",
-                f"- {'✅' if conf >= 80 else '❌'} Conf ≥ 80 (eligibility) • Conf {conf:.0f}",
-                f"- {'✅' if pp_proof else '❌'} PP Proof (support only)",
-                f"- 🎯 MAIN: {main_pp}",
-                f"- {'⚠️' if warn_opp_sv else '✅'} Opp SV ≥ .905 is BAD (SV={opp_sv:.3f})",
-                f"- {'⚠️' if warn_xga else '✅'} opp xGA60 ≤ 2.40 is BAD (xGA60={xga:.2f})",
-                f"- {'⚠️' if warn_gweak_bad else '✅'} Goalie_Weak ≤ 35 is BAD (Goalie_Weak={gweak:.0f})",
-                f"- {'✅' if good_gweak else 'ℹ️'} Goalie_Weak ≥ 82 is GOOD (Goalie_Weak={gweak:.0f})",
-                f"- {'✅' if elig_ok else '❌'} Valhalla eligibility overall",
-            ])
-        )
+        st.markdown("\n".join(lines))
         st.markdown("""<div style="height:8px;"></div>""", unsafe_allow_html=True)
 
 
@@ -3677,6 +3698,7 @@ elif page == "Assists":
     _gweak = pd.to_numeric(df_a.get("Goalie_Weak", 0), errors="coerce").fillna(0)
 
     df_a["ENV_BAD_OppSV"] = (_opp_sv >= 0.905).map(lambda x: "⚠️" if bool(x) else "")
+    df_a["ENV_GOOD_OppSV"] = ((_opp_sv > 0) & (_opp_sv < 0.885)).map(lambda x: "✅" if bool(x) else "")  # SV% < 88.5% = weak goalie (good for assists)
     df_a["ENV_BAD_xGA"] = ((_xga > 0) & (_xga <= 2.40)).map(lambda x: "⚠️" if bool(x) else "")
     df_a["ENV_BAD_GWeak"] = ((_gweak > 0) & (_gweak <= 35)).map(lambda x: "⚠️" if bool(x) else "")
     df_a["ENV_GOOD_GWeak"] = (_gweak >= 82).map(lambda x: "✅" if bool(x) else "")
@@ -3711,7 +3733,7 @@ elif page == "Assists":
         "Green",
         "EV_Signal",
         "LOCK",
-        "Conf_Assists", "Matrix_Assists", "Assists_Line", "Valhalla_OK", "PP_PROOF", "PP_iXA60", "PP_iXA60_Tier", "PP_TOI_Pct_Game", "PP_Matchup", "ENV_BAD_OppSV", "ENV_BAD_xGA", "ENV_BAD_GWeak", "ENV_GOOD_GWeak",
+        "Conf_Assists", "Matrix_Assists", "Assists_Line", "Valhalla_OK", "PP_PROOF", "PP_iXA60", "PP_iXA60_Tier", "PP_TOI_Pct_Game", "PP_Matchup", "ENV_BAD_OppSV", "ENV_GOOD_OppSV", "ENV_BAD_xGA", "ENV_BAD_GWeak", "ENV_GOOD_GWeak",
 
         # --- EV / Odds ---
         "Assists_Odds_Over",
@@ -3784,7 +3806,7 @@ elif page == "Assists":
             <br/>
             <b>Main</b>: Conf tier + PP creation (PP_iXA60) — <b>Strong</b> ≥ 3.0 • <b>Elite</b> ≥ 4.2
             <br/>
-            <b>ENV</b> (warnings only): Opp SV ≥ .905 bad • Goalie_Weak ≤ 35 bad • opp xGA ≤ 2.40 bad • Goalie_Weak ≥ 82 good
+            <b>ENV</b> (warnings only): Opp SV ≥ .905 bad • Opp SV < .885 good • Goalie_Weak ≤ 35 bad • opp xGA ≤ 2.40 bad • Goalie_Weak ≥ 82 good
           </div>
         </div>
         """,
@@ -3866,15 +3888,17 @@ elif page == "Assists":
         except Exception:
             pass
 
-        # ENV warnings (display only)
+        # ENV good/bad (all shown on card for quick signal)
         warns = []
         try:
-            if float(sv) >= 0.905: warns.append("⚠️ Elite goalie (SV≥.905)")
+            sv_f = float(sv)
+            if sv_f >= 0.905: warns.append("⚠️ Elite goalie (SV≥.905)")
+            elif sv_f > 0 and sv_f < 0.885: warns.append("✅ Weak goalie (SV<.885)")
         except Exception:
             pass
         try:
             if float(gweak) <= 35: warns.append("⚠️ Strong goalie (Goalie_Weak≤35)")
-            elif float(gweak) >= 82: warns.append("🟢 Weak goalie (Goalie_Weak≥82)")
+            elif float(gweak) >= 82: warns.append("✅ Weak goalie (Goalie_Weak≥82)")
         except Exception:
             pass
         try:
