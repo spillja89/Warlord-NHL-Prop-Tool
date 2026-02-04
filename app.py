@@ -364,9 +364,10 @@ def _render_why_it_fires_rich(mkt: str, r, tags: str = "") -> None:
     # --- Engine checklist (market-pure; presentation only) ---
     mk = str(mkt or "").strip().upper()
 
+    
     if mk == "ASSISTS":
+        # Assists Valhalla gate (per board spec): EV is ignored.
         pp_proof = bool(r.get("Assist_PP_Proof", False))
-        ev_ok = bool(r.get("Plays_EV_Assists", False))
         try:
             line = float(r.get("Assists_Line", 0) or 0)
         except Exception:
@@ -375,45 +376,61 @@ def _render_why_it_fires_rich(mkt: str, r, tags: str = "") -> None:
             conf = float(r.get("Conf_Assists", 0) or 0)
         except Exception:
             conf = 0.0
-
-        # tiering (NOT a gate)
-        if conf >= 88:
-            tier = "A (ladder OK)"
-        elif conf >= 85:
-            tier = "B (normal)"
-        else:
-            tier = "C (caution)"
-
-        # warnings (loss-avoidance only)
         try:
-            hdca = float(r.get("opp_5v5_HDCA60", 0) or 0)
+            pp_ix = float(r.get("PP_iXA60", 0) or 0)
         except Exception:
-            hdca = 0.0
+            pp_ix = 0.0
+        try:
+            xga = float(r.get("opp_5v5_xGA60", 0) or 0)
+        except Exception:
+            xga = 0.0
         try:
             opp_sv = float(r.get("Opp_SV", 0) or 0)
         except Exception:
             opp_sv = 0.0
         try:
-            opp_gaa = float(r.get("Opp_GAA", 0) or 0)
+            gweak = float(r.get("Goalie_Weak", 0) or 0)
         except Exception:
-            opp_gaa = 0.0
+            gweak = 0.0
 
-        warn_hdca = hdca >= 2.56  # Q4-ish cutoff from forensics
-        warn_goalie = (opp_sv >= 0.908) or (opp_gaa <= 2.56)
+        mx_green = _is_matrix_green(str(r.get("Matrix_Assists", "") or ""))
+
+        # Eligibility (board)
+        elig_ok = mx_green and (abs(line - 0.5) < 1e-6) and (conf >= 80)
+
+        # MAIN: PP creation tier from PP_iXA60
+        main_pp = "—"
+        if pp_ix >= 4.2:
+            main_pp = f"PP_iXA60 ELITE (≥4.2) • {pp_ix:.2f}"
+        elif pp_ix >= 3.0:
+            main_pp = f"PP_iXA60 STRONG (≥3.0) • {pp_ix:.2f}"
+        else:
+            main_pp = f"PP_iXA60 {pp_ix:.2f}"
+
+        # Warnings (loss-avoidance only; do not gate)
+        warn_opp_sv = opp_sv >= 0.905
+        warn_xga = (xga > 0) and (xga <= 2.40)
+        warn_gweak_bad = (gweak > 0) and (gweak <= 35)
+        good_gweak = gweak >= 82
 
         st.markdown("**ENGINE CHECKLIST (Assists):**")
         st.markdown(
             "\n".join([
-                f"- {'✅' if ev_ok else '❌'} EV-only",
-                f"- {'✅' if _is_matrix_green(str(r.get('Matrix_Assists','') or '')) else '❌'} Matrix Green",
+                "- ℹ️ EV ignored for Assists (no gate)",
+                f"- {'✅' if mx_green else '❌'} Matrix Green",
                 f"- {'✅' if abs(line-0.5) < 1e-6 else '❌'} Line 0.5",
-                f"- {'✅' if pp_proof else '❌'} PP Proof",
-                f"- ⭐ Confidence tier: {tier}",
-                f"- {'⚠️' if warn_hdca else '✅'} HDCA context: {hdca:.3f}",
-                f"- {'⚠️' if warn_goalie else '✅'} Goalie context: SV {opp_sv:.3f} | GAA {opp_gaa:.3f}",
+                f"- {'✅' if conf >= 80 else '❌'} Conf ≥ 80 (eligibility) • Conf {conf:.0f}",
+                f"- {'✅' if pp_proof else '❌'} PP Proof (support only)",
+                f"- 🎯 MAIN: {main_pp}",
+                f"- {'⚠️' if warn_opp_sv else '✅'} Opp SV ≥ .905 is BAD (SV={opp_sv:.3f})",
+                f"- {'⚠️' if warn_xga else '✅'} opp xGA60 ≤ 2.40 is BAD (xGA60={xga:.2f})",
+                f"- {'⚠️' if warn_gweak_bad else '✅'} Goalie_Weak ≤ 35 is BAD (Goalie_Weak={gweak:.0f})",
+                f"- {'✅' if good_gweak else 'ℹ️'} Goalie_Weak ≥ 82 is GOOD (Goalie_Weak={gweak:.0f})",
+                f"- {'✅' if elig_ok else '❌'} Valhalla eligibility overall",
             ])
         )
         st.markdown("""<div style="height:8px;"></div>""", unsafe_allow_html=True)
+
 
 
     if mk == "POINTS":
@@ -474,12 +491,36 @@ def _render_why_it_fires_rich(mkt: str, r, tags: str = "") -> None:
         )
         st.markdown("<div style=\"height:8px;\"></div>", unsafe_allow_html=True)
 
-# MAIN: for now, show the mkt tags (human reads them as primary triggers)
+    # MAIN: for now, show the mkt tags (human reads them as primary triggers)
     mk = str(mkt or "").strip().upper()
     if mk == "ASSISTS":
-        st.markdown("**MAIN:** ✅ PP PROOF")
+        try:
+            pp_ix = float(r.get("PP_iXA60", 0) or 0)
+        except Exception:
+            pp_ix = 0.0
+        try:
+            conf = float(r.get("Conf_Assists", 0) or 0)
+        except Exception:
+            conf = 0.0
+
+        _tier = "—"
+        if conf >= 90:
+            _tier = "VALHALLA (Conf≥90)"
+        elif conf >= 88:
+            _tier = "STRONG"
+        elif conf >= 80:
+            _tier = "OK"
+
+        if pp_ix >= 4.2:
+            st.markdown(f"**MAIN:** 🎯 Conf tier {_tier} + PP creation (PP_iXA60 ELITE {pp_ix:.2f})")
+        elif pp_ix >= 3.0:
+            st.markdown(f"**MAIN:** 🎯 Conf tier {_tier} + PP creation (PP_iXA60 STRONG {pp_ix:.2f})")
+        else:
+            st.markdown(f"**MAIN:** 🎯 Conf tier {_tier} + PP creation (PP_iXA60 {pp_ix:.2f})")
+
         if tags_s:
             st.markdown(f"**Tags:** {tags_s}")
+
     elif mk == "POINTS":
         try:
             rg = float(r.get('Reg_Gap_P10', 0) or 0)
@@ -499,30 +540,6 @@ def _render_why_it_fires_rich(mkt: str, r, tags: str = "") -> None:
             line = 0.0
         st.markdown(f"**MAIN:** 🎯 REG GAP SWEET SPOT (Reg_Gap_S10 {rg:.2f})")
         st.markdown(f"**Line:** {line}")
-        if tags_s:
-            st.markdown(f"**Tags:** {tags_s}")
-
-    elif mk in ("GOALS", "GOAL"):
-        try:
-            avg5 = float(r.get('Avg5_SOG', 0) or 0)
-        except Exception:
-            avg5 = 0.0
-        try:
-            si = float(r.get('ShotIntent', 0) or 0)
-        except Exception:
-            si = 0.0
-        try:
-            sip = float(r.get('ShotIntent_Pct', 0) or 0)
-        except Exception:
-            sip = 0.0
-        try:
-            xga = float(r.get('opp_5v5_xGA60', 0) or 0)
-        except Exception:
-            xga = 0.0
-
-        st.markdown(f"**MAIN:** 🗡️ AVG5_SOG ≥ 3.4 (Avg5_SOG {avg5:.1f})")
-        # Support that matters for Goals (presentation only)
-        st.caption(f"Support: ShotIntent {si:.2f} | Intent% {sip:.1f} | opp xGA60 {xga:.2f} {'🟢' if xga > 2.50 else '⚠️'}")
         if tags_s:
             st.markdown(f"**Tags:** {tags_s}")
     else:
@@ -567,15 +584,6 @@ def _render_why_it_fires_rich(mkt: str, r, tags: str = "") -> None:
             if _dr is None or _dr == "":
                 _dr = r.get("Drought_S", None)
 
-        elif mkt.upper() in ("GOALS", "GOAL"):
-            _mx = str(r.get("Matrix_Goal", "") or "").strip()
-            _cp = r.get("Conf_Goal", None)
-            # EV is display-only; show if present
-            _ev = (r.get("Goal_EV%", None) or r.get("Goals_EV%", None) or r.get("ATG_EV%", None))
-            _ht = str(r.get("Reg_Heat_G", "") or "").strip()
-            _rg = r.get("Reg_Gap_G10", None)
-            _dr = r.get("Drought_G", None)
-
         if _mx:
             ctx.append(f"Matrix: {_mx}")
         if _cp is not None and _cp != "":
@@ -601,34 +609,6 @@ def _render_why_it_fires_rich(mkt: str, r, tags: str = "") -> None:
             except Exception:
                 ctx.append(f"Drought: {_dr}")
 
-
-        # Extra market-specific context (presentation only)
-        if mkt.upper() in ("GOALS", "GOAL"):
-            try:
-                avg5 = float(r.get("Avg5_SOG", 0) or 0)
-            except Exception:
-                avg5 = 0.0
-            try:
-                si = float(r.get("ShotIntent", 0) or 0)
-            except Exception:
-                si = 0.0
-            try:
-                sip = float(r.get("ShotIntent_Pct", 0) or 0)
-            except Exception:
-                sip = 0.0
-            try:
-                xga = float(r.get("opp_5v5_xGA60", 0) or 0)
-            except Exception:
-                xga = 0.0
-
-            if avg5 > 0:
-                ctx.append(f"Avg5_SOG: {avg5:.1f}")
-            if si > 0:
-                ctx.append(f"ShotIntent: {si:.2f}")
-            if sip > 0:
-                ctx.append(f"Intent%: {sip:.1f}")
-            if xga > 0:
-                ctx.append(f"opp xGA60: {xga:.2f} {'🟢' if xga > 2.50 else '⚠️'}")
         st.markdown("**SUPPORT:**")
         st.caption(" | ".join(ctx) if ctx else "—")
         # Support windows (presentation-only; columns come from tracker)
@@ -2194,7 +2174,7 @@ def _passes_engine(b: dict) -> bool:
             return False
         # keep the proven sweet spot as the structural driver
         rg = _num(b.get("reg_gap", 0), 0)
-        if not (SOG_REG_GAP_LO <= rg <= SOG_REG_GAP_HI):
+        if not (float(SOG_ENGINE_REG_GAP_MIN) <= rg <= float(SOG_ENGINE_REG_GAP_MAX)):
             return False
         return True
 
@@ -3398,25 +3378,29 @@ elif page == "Points":
         "Points_Line",
         "Points_Odds_Over",
 
-        # --- EV / Odds ---
+        # --- MAIN (structure first) ---
+        "REG_LABEL","REG_PRESSURE",
+        "Reg_Heat_P","Reg_Gap_P10",
+        "Drought_P",
+        "Exp_P_10","L10_P",
+
+        # --- SUPPORT (what we tested) ---
+        "L10_Rate_Points","L10_Diff_Points",
+        "iXA%","PP_Points60","i5v5_points60",
+
+        # --- ENV (loss-avoidance only) ---
+        "opp_5v5_xGA60","opp_5v5_HDCA60",
+        "Opp_Goalie","Opp_SV","Opp_GAA","Goalie_Weak",
+
+        # --- EV / Odds (display-only) ---
         "Points_Book",
         "Points_Model%",
         "Points_Imp%",
         "Points_EV%",
         "Plays_EV_Points",
 
-        "Points_Call",
-        "Reg_Heat_P","Reg_Gap_P10","REG_LABEL","REG_PRESSURE","REG_DROUGHT","Exp_P_10","L10_P",
-        "iXG%","iXA%",
-        "Opp_Goalie","Opp_SV","Opp_GAA","Goalie_Weak","Opp_DefWeak",
-        "Drought_P","Best_Drought",
         "Line","Odds","Result",
-]
-
-
-
-
-
+    ]
 
     # Signals-first extras
 
@@ -3672,6 +3656,31 @@ elif page == "Assists":
     df_a["Green"] = df_a.get("Green_Assists", False).map(lambda x: "🟢" if bool(x) else "")
     df_a["PP_PROOF"] = df_a.get("Assist_PP_Proof", False).map(lambda x: "✅" if bool(x) else "")
 
+    # Valhalla gate columns (Assists) — matches board text
+    df_a["Valhalla_OK"] = (
+        (df_a.get("Matrix_Assists", "").astype(str).str.strip().str.lower() == "green")
+        & (pd.to_numeric(df_a.get("Assists_Line", 0), errors="coerce").fillna(0) == 0.5)
+        & (pd.to_numeric(df_a.get("Conf_Assists", 0), errors="coerce").fillna(0) >= 80)
+    ).map(lambda x: "✅" if bool(x) else "")
+
+    # MAIN tier from PP_iXA60 (display)
+    _pp_ix = pd.to_numeric(df_a.get("PP_iXA60", 0), errors="coerce").fillna(0)
+    df_a["PP_iXA60_Tier"] = np.select(
+        [_pp_ix >= 4.2, _pp_ix >= 3.0],
+        ["ELITE", "STRONG"],
+        default=""
+    )
+
+    # ENV warnings (display only)
+    _opp_sv = pd.to_numeric(df_a.get("Opp_SV", 0), errors="coerce").fillna(0)
+    _xga = pd.to_numeric(df_a.get("opp_5v5_xGA60", 0), errors="coerce").fillna(0)
+    _gweak = pd.to_numeric(df_a.get("Goalie_Weak", 0), errors="coerce").fillna(0)
+
+    df_a["ENV_BAD_OppSV"] = (_opp_sv >= 0.905).map(lambda x: "⚠️" if bool(x) else "")
+    df_a["ENV_BAD_xGA"] = ((_xga > 0) & (_xga <= 2.40)).map(lambda x: "⚠️" if bool(x) else "")
+    df_a["ENV_BAD_GWeak"] = ((_gweak > 0) & (_gweak <= 35)).map(lambda x: "⚠️" if bool(x) else "")
+    df_a["ENV_GOOD_GWeak"] = (_gweak >= 82).map(lambda x: "✅" if bool(x) else "")
+
     # 🗡️ Dagger indicator (PP assist edge) — HARD GATE (recomputed every time)
     # Goal: daggers are rare and meaningful (PP1/proof-level assist edges only).
     df_a["🗡️"] = ""
@@ -3702,10 +3711,9 @@ elif page == "Assists":
         "Green",
         "EV_Signal",
         "LOCK",
-        "Conf_Assists", "Matrix_Assists", "PP_PROOF",
+        "Conf_Assists", "Matrix_Assists", "Assists_Line", "Valhalla_OK", "PP_PROOF", "PP_iXA60", "PP_iXA60_Tier", "PP_TOI_Pct_Game", "PP_Matchup", "ENV_BAD_OppSV", "ENV_BAD_xGA", "ENV_BAD_GWeak", "ENV_GOOD_GWeak",
 
         # --- EV / Odds ---
-        "Assists_Line",
         "Assists_Odds_Over",
         "Assists_Book",
         "Assists_Model%",
@@ -3715,7 +3723,7 @@ elif page == "Assists":
 
         "Assists_Call",
         "Drought_A","Best_Drought",
-        "Assist_ProofCount", "Assist_Why", "🗡️", "Assist_Dagger",
+        "Assist_Why", "🗡️",
         
         "Reg_Heat_A", "Reg_Gap_A10", "Exp_A_10", "L10_A",
         "PP_Tier", "PP_Path", "PP_BOOST",
@@ -4175,22 +4183,33 @@ elif page == "GOAL (1+)":
         "Green",
         "EV_Signal",
         "LOCK",
-        "Conf_Goal", "Matrix_Goal",
 
-        # --- EV / Odds ---
-        "ATG_Line",
-        "ATG_Odds_Over",
+        # --- CORE ---
+        "Conf_Goal", "Matrix_Goal",
+        # line/odds (support both naming schemes)
+        "Goal_Line","ATG_Line",
+        "Goal_Odds_Over","ATG_Odds_Over",
+
+        # --- EV / Odds (display only) ---
         "ATG_Book",
         "ATG_Model%", "ATG_Imp%", "ATG_EV%", "Plays_EV_ATG",
 
+        # --- WHY IT FIRES (structure) ---
         "ATG_Call",
+        "Avg5_SOG","Med10_SOG",
+        "ShotIntent","ShotIntent_Pct",
         "Reg_Heat_G", "Reg_Gap_G10", "Exp_G_10", "L10_G",
-        "iXG%", "iXA%",
-        "Opp_Goalie", "Opp_SV", "Opp_GAA", "Goalie_Weak", "Opp_DefWeak",
         "Drought_G", "Best_Drought",
+
+        # --- ENV (battlefield) ---
+        "opp_5v5_xGA60",
+        "Opp_Goalie", "Opp_SV", "Opp_GAA", "Goalie_Weak", "Opp_DefWeak",
+
+        # --- result / bookkeeping ---
+        "Line", "Odds", "Result",
     ]
 
-    # Signals-first extras
+# Signals-first extras
 
     df_g["Markets"] = df_g.apply(build_markets_pills, axis=1)
 
