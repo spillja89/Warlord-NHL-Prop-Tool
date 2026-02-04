@@ -501,6 +501,30 @@ def _render_why_it_fires_rich(mkt: str, r, tags: str = "") -> None:
         st.markdown(f"**Line:** {line}")
         if tags_s:
             st.markdown(f"**Tags:** {tags_s}")
+
+    elif mk in ("GOALS", "GOAL"):
+        try:
+            avg5 = float(r.get('Avg5_SOG', 0) or 0)
+        except Exception:
+            avg5 = 0.0
+        try:
+            si = float(r.get('ShotIntent', 0) or 0)
+        except Exception:
+            si = 0.0
+        try:
+            sip = float(r.get('ShotIntent_Pct', 0) or 0)
+        except Exception:
+            sip = 0.0
+        try:
+            xga = float(r.get('opp_5v5_xGA60', 0) or 0)
+        except Exception:
+            xga = 0.0
+
+        st.markdown(f"**MAIN:** 🗡️ AVG5_SOG ≥ 3.4 (Avg5_SOG {avg5:.1f})")
+        # Support that matters for Goals (presentation only)
+        st.caption(f"Support: ShotIntent {si:.2f} | Intent% {sip:.1f} | opp xGA60 {xga:.2f} {'🟢' if xga > 2.50 else '⚠️'}")
+        if tags_s:
+            st.markdown(f"**Tags:** {tags_s}")
     else:
         st.markdown(f"**MAIN:** {tags_s if tags_s else '—'}")
 
@@ -543,6 +567,15 @@ def _render_why_it_fires_rich(mkt: str, r, tags: str = "") -> None:
             if _dr is None or _dr == "":
                 _dr = r.get("Drought_S", None)
 
+        elif mkt.upper() in ("GOALS", "GOAL"):
+            _mx = str(r.get("Matrix_Goal", "") or "").strip()
+            _cp = r.get("Conf_Goal", None)
+            # EV is display-only; show if present
+            _ev = (r.get("Goal_EV%", None) or r.get("Goals_EV%", None) or r.get("ATG_EV%", None))
+            _ht = str(r.get("Reg_Heat_G", "") or "").strip()
+            _rg = r.get("Reg_Gap_G10", None)
+            _dr = r.get("Drought_G", None)
+
         if _mx:
             ctx.append(f"Matrix: {_mx}")
         if _cp is not None and _cp != "":
@@ -568,6 +601,34 @@ def _render_why_it_fires_rich(mkt: str, r, tags: str = "") -> None:
             except Exception:
                 ctx.append(f"Drought: {_dr}")
 
+
+        # Extra market-specific context (presentation only)
+        if mkt.upper() in ("GOALS", "GOAL"):
+            try:
+                avg5 = float(r.get("Avg5_SOG", 0) or 0)
+            except Exception:
+                avg5 = 0.0
+            try:
+                si = float(r.get("ShotIntent", 0) or 0)
+            except Exception:
+                si = 0.0
+            try:
+                sip = float(r.get("ShotIntent_Pct", 0) or 0)
+            except Exception:
+                sip = 0.0
+            try:
+                xga = float(r.get("opp_5v5_xGA60", 0) or 0)
+            except Exception:
+                xga = 0.0
+
+            if avg5 > 0:
+                ctx.append(f"Avg5_SOG: {avg5:.1f}")
+            if si > 0:
+                ctx.append(f"ShotIntent: {si:.2f}")
+            if sip > 0:
+                ctx.append(f"Intent%: {sip:.1f}")
+            if xga > 0:
+                ctx.append(f"opp xGA60: {xga:.2f} {'🟢' if xga > 2.50 else '⚠️'}")
         st.markdown("**SUPPORT:**")
         st.caption(" | ".join(ctx) if ctx else "—")
         # Support windows (presentation-only; columns come from tracker)
