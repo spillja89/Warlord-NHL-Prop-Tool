@@ -3397,21 +3397,21 @@ elif page == "Points":
         "LOCK",
         "Conf_Points","Matrix_Points",
         "Points_Line",
-        "Points_Odds_Over","Plays_EV_Points",
+        "Points_Odds_Over","opp_5v5_xGA60","opp_5v5_HDCA60",
 
         # --- MAIN (structure first) ---
-        "REG_LABEL","REG_PRESSURE",
+        "REG_PRESSURE",
         "Reg_Heat_P","Reg_Gap_P10",
-        "Drought_P",
+        "Drought_P", "L10_Rate_Points","L10_Diff_Points","iXA%","PP_Points60","i5v5_points60",
         "Exp_P_10","L10_P",
 
          # --- ENV (loss-avoidance only) ---
-        "opp_5v5_xGA60","opp_5v5_HDCA60",
+      
         "Opp_Goalie","Opp_SV","Opp_GAA","Goalie_Weak",
 
-        # --- SUPPORT (what we tested) ---
-        "L10_Rate_Points","L10_Diff_Points",
-        "iXA%","PP_Points60","i5v5_points60",
+       
+       
+      
 
        
 
@@ -3736,18 +3736,13 @@ elif page == "Assists":
         "EV_Signal",
         "LOCK", "Assists_Odds_Over",
         "Assists_Book",
-        "Conf_Assists", "Matrix_Assists", "Assists_Line", "Valhalla_OK", "PP_PROOF", "PP_iXA60", "PP_iXA60_Tier", "PP_TOI_Pct_Game", "PP_Matchup", "ENV_BAD_OppSV", "ENV_GOOD_OppSV", "ENV_BAD_xGA", "ENV_BAD_GWeak", "ENV_GOOD_GWeak",
+        "Conf_Assists", "Matrix_Assists", "Assists_Line", "Valhalla_OK", "PP_iXA60", "PP_iXA60_Tier", "PP_TOI_Pct_Game", "PP_Matchup",
+        "opp_5v5_xGA60",      "ENV_BAD_OppSV", "ENV_GOOD_OppSV", "ENV_BAD_xGA", "ENV_BAD_GWeak", "ENV_GOOD_GWeak","PP_PROOF", 
 
-        # --- EV / Odds ---
        
-        "Assists_Model%",
-        "Assists_Imp%",
-        "Assists_EV%",
-        "Plays_EV_Assists",
-
-        "Assists_Call",
-        "Drought_A","Best_Drought",
-        "🗡️",
+       
+        "Drought_A",
+       
         
         "Reg_Heat_A", "Reg_Gap_A10", "Exp_A_10", "L10_A",
         "PP_Tier", "PP_Path", 
@@ -3757,6 +3752,14 @@ elif page == "Assists":
         "iXA%","iXG%", "v2_player_stability",
         "Opp_Goalie", "Opp_SV",
         "Goalie_Weak", "Opp_DefWeak",
+
+        # --- EV / Odds ---
+       
+        "Assists_Model%",
+        "Assists_Imp%",
+        "Assists_EV%",
+        "Plays_EV_Assists",
+
         "Line", "Odds", "Result",
     ]
 
@@ -4219,8 +4222,8 @@ elif page == "GOAL (1+)":
        
 
         # --- WHY IT FIRES (structure) ---
-        "ATG_Call",
-        "Avg5_SOG", "opp_5v5_xGA60",
+        "ATG_Call","opp_5v5_xGA60",
+        "Avg5_SOG", 
         "ShotIntent","ShotIntent_Pct",
         "Drought_G", "Best_Drought",
 
