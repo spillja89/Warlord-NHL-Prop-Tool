@@ -28,6 +28,10 @@ from typing import Optional, Dict, List, Any, Tuple
 from statistics import median
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from zoneinfo import ZoneInfo
+from dotenv import load_dotenv, find_dotenv
+import os
+
+load_dotenv(find_dotenv(), override=True)
 
 import numpy as np
 import pandas as pd

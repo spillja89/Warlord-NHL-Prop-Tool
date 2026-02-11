@@ -52,6 +52,11 @@ tatus
 .DS_Store
 Thumbs.db
 
+# Environment variables and secrets
+.env
+.env.local
+.env.*.local
+
 output/
 output/ledger/
 *.csv

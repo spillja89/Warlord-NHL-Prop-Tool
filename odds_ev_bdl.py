@@ -67,6 +67,17 @@ def _safe_float(x) -> float | None:
     except Exception:
         return None
 
+def _is_half_line(line: float) -> bool:
+    """
+    True only for .5 lines (0.5, 1.5, 2.5, etc).
+    Filters out 2.0 / 3.0 / 4.0 junk.
+    """
+    try:
+        return int(round(line * 2)) % 2 == 1
+    except Exception:
+        return False
+
+
 
 def _clamp(x: float, lo: float, hi: float) -> float:
     return lo if x < lo else hi if x > hi else x
@@ -683,8 +694,14 @@ def merge_bdl_props_altlines(
             continue
 
         # de-dupe + sort
+        # de-dupe + sort
         for k in list(lines_map.keys()):
-            lines_map[k] = sorted({float(x) for x in lines_map[k]})
+            lines_map[k] = sorted({
+                float(x) for x in lines_map[k]
+                if _is_half_line(x)
+            })
+
+
 
         # fill alt columns (Line_1..K etc)
         def _get_line_at(idx_key: Tuple[str, str], i: int) -> float | None:
