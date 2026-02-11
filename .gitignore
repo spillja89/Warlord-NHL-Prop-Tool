@@ -18,6 +18,31 @@ nhl_patch_*/
 nhl_prop_tool_sslfix/
 Nhl_Prop_Tool_fixed/
 
+# local docs / exports
+*.pdf
+*.txt
+
+# analysis outputs / notes
+TestResultsAnalysis.*
+analyze_graded.py
+
+# local test / scratch scripts
+test_*.py
+*_test.py
+*_sanity.py
+*_wombo.py
+*_sweep.py
+
+# one-off utilities
+build_baselines.py
+grade_tracker.py
+market_forensics.py
+tier_*.py
+
+# local asset experiments (ONLY if you don't want to track assets!)
+# assets/
+
+
 # Scratch / experiments
 apyp.py
 bdl_probe_nhl_props.py
@@ -30,4 +55,5 @@ Thumbs.db
 output/
 output/ledger/
 *.csv
+
 

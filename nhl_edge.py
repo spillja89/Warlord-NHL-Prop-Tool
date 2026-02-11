@@ -2341,19 +2341,49 @@ def matrix_sog(ixg_pct: float, med10: Optional[float], pos: str,
 
     return "Red"
 
-def matrix_goal_v2(ixg_pct: float, med10: Optional[float], pos: str,
-                   g5_total: Optional[int], goalie_weak: float) -> str:
-    if ixg_pct < 88:
+def matrix_goal_v2(
+    ixg_pct: float,
+    med10: Optional[float],
+    pos: str,
+    g5_total: Optional[int],
+    goalie_weak: float,
+    shotintent: Optional[float] = None,
+    avg5_sog: Optional[float] = None,
+) -> str:
+    """GOALS stance matrix (player-readiness).
+    Green stays 'stars aligned'. No goalie trigger.
+    - Red: iXG% < 80 OR (shot median far below need)
+    - Yellow: iXG% 80–88 band, missing data, or not fully aligned
+    - Green: meets shot baseline and either heater (L5_G>=2) or shooter-monster (SI+Avg5)
+    """
+    ixg = float(ixg_pct or 0.0)
+
+    # iXG banding: avoid nuking the slate into Red
+    if ixg < 80.0:
         return "Red"
+    if ixg < 88.0:
+        return "Yellow"
+
     if med10 is None:
         return "Yellow"
+
     need = 3.0 if not is_defense(pos) else 2.8
-    if med10 < (need - 0.5):
+
+    # Fail band (keep accurate, but not overly brutal)
+    if float(med10) < (need - 0.5):
         return "Red"
-    if med10 >= need and (g5_total or 0) >= 2:
+
+    g5 = int(g5_total or 0)
+    si = float(shotintent or 0.0)
+    a5 = float(avg5_sog or 0.0)
+
+    if float(med10) >= need and g5 >= 2:
         return "Green"
-    if med10 >= need and goalie_weak >= 70:
+
+    # Shooter monster route (no goalie involved)
+    if float(med10) >= need and si >= 3.4 and a5 >= 3.5:
         return "Green"
+
     return "Yellow"
 
 def matrix_points_v2(ixa_pct: float, v2_stab: Optional[float], reg_heat_p: str = "COOL",
@@ -2431,21 +2461,34 @@ def conf_goal(
     defweak: float,
     goalieweak: float,
     toi_pct: float,
+    shotintent: Optional[float] = None,
+    avg5_sog: Optional[float] = None,
 ) -> int:
-    g5s = 50.0 if g5 is None else clamp((g5 / 5.0) * 100.0)
+    """GOALS confidence (player-driven).
+    - No goalie / opponent def boosts (params kept for backward compatibility).
+    - Uses iXG%, ShotIntent (raw), Avg5_SOG, and last-5 goals.
+    """
+    ixg = 50.0 if ixg_pct is None else float(ixg_pct)
+    ixa = 50.0 if ixa_pct is None else float(ixa_pct)
+
+    # Scale helpers (cap at 0..100)
+    si = 50.0 if shotintent is None else clamp((float(shotintent) / 4.0) * 100.0)
+    a5 = 50.0 if avg5_sog is None else clamp((float(avg5_sog) / 4.0) * 100.0)
+    g5s = 50.0 if g5 is None else clamp((float(g5) / 3.0) * 100.0)
 
     base = (
-        0.60 * ixg_pct
-        + 0.18 * g5s
-        + 0.10 * defweak
-        + 0.12 * goalieweak
+        0.55 * ixg
+        + 0.20 * si
+        + 0.15 * a5
+        + 0.10 * g5s
     )
 
     # identity bias: shooter vs facilitator
-    goal_bias = 5 if (ixg_pct - ixa_pct) >= 20 else 0
-    base += goal_bias
+    base += 5.0 if (ixg - ixa) >= 20.0 else 0.0
 
-    base += 0.05 * (toi_pct - 50.0)
+    # very light usage nudge (avoid TOI model)
+    base += 0.03 * (float(toi_pct or 50.0) - 50.0)
+
     return int(round(clamp(base)))
 
 def conf_points(ixa_pct: float, p10_gap: Optional[float], stab: float, defweak: float, goalieweak: float, toi_pct: float) -> int:
@@ -3785,14 +3828,17 @@ def build_tracker(today_local: date, debug: bool = False) -> str:
 
     sk["Matrix_Goal"] = sk.apply(
         lambda r: matrix_goal_v2(
-            ixg_pct=float(r.get("iXG_pct", 50)),
+            ixg_pct=float(safe_float(r.get("iXG_pct")) or safe_float(r.get("iXG%")) or 50.0),
             med10=safe_float(r.get("Median10_SOG")),
             pos=str(r.get("Pos", "F")),
-            g5_total=safe_int(r.get("G5_total")),
-            goalie_weak=float(r.get("Goalie_Weak", 50)),
+            g5_total=safe_int(r.get("G5_total") if r.get("G5_total") is not None else r.get("L5_G")),
+            goalie_weak=float(safe_float(r.get("Goalie_Weak")) or 50.0),
+            shotintent=safe_float(r.get("ShotIntent")),
+            avg5_sog=safe_float(r.get("Avg5_SOG")),
         ),
         axis=1
     )
+
 
     sk["Matrix_Points"] = sk.apply(
         lambda r: matrix_points_v2(
@@ -3824,12 +3870,14 @@ def build_tracker(today_local: date, debug: bool = False) -> str:
     
     sk["Conf_Goal"] = sk.apply(
         lambda r: conf_goal(
-            float(r.get("iXG_pct", 50)),
-            float(r.get("iXA_pct", 50)),
-            r.get("G5_total", None),
-            float(r.get("Opp_DefWeak", 50)),
-            float(r.get("Goalie_Weak", 50)),
-            float(r.get("TOI_Pct", 50)),
+            float(safe_float(r.get("iXG_pct")) or safe_float(r.get("iXG%")) or 50.0),
+            float(safe_float(r.get("iXA_pct")) or safe_float(r.get("iXA%")) or 50.0),
+            safe_int(r.get("G5_total") if r.get("G5_total") is not None else r.get("L5_G")) if (r.get("G5_total") is not None or r.get("L5_G") is not None) else None,
+            float(safe_float(r.get("Opp_DefWeak")) or 50.0),
+            float(safe_float(r.get("Goalie_Weak")) or 50.0),
+            float(safe_float(r.get("TOI_Pct")) or 50.0),
+            shotintent=safe_float(r.get("ShotIntent")),
+            avg5_sog=safe_float(r.get("Avg5_SOG")),
        ),
        axis=1
     ) 

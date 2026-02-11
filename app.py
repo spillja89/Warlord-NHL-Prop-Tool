@@ -10,6 +10,7 @@ import pandas as pd
 import streamlit as st
 
 
+
 # =========================
 # Ledger helpers (append-only bet tracking)
 # =========================
@@ -414,6 +415,45 @@ def _wl_why_line(icon_svg: str, text: str) -> None:
         st.markdown(text)
 
 
+
+def _wl_market_color(mk: str) -> str:
+    mk = str(mk or "").strip().upper()
+    # Keep these in sync with your market colors
+    if mk == "GOALS":
+        return "#ef4444"  # red
+    if mk == "ASSISTS":
+        return "#a855f7"  # purple
+    if mk == "POINTS":
+        return "#2563eb"  # blue
+    if mk in ("SOG", "SHOTS", "SHOTS ON GOAL"):
+        return "#f97316"  # orange
+    return "#111827"      # slate
+
+def _wl_dps_bar(pct: float, mk: str, *, height_px: int = 8) -> None:
+    """Tiny progress bar under a WHY line to visually represent DPS (% win)."""
+    try:
+        p = float(pct)
+    except Exception:
+        return
+    if math.isnan(p):
+        return
+    p = max(0.0, min(100.0, p))
+    color = _wl_market_color(mk)
+
+    st.markdown(
+        f"""
+        <div style='margin-left:26px;margin-top:2px;margin-bottom:10px;'>
+          <div style='height:{height_px}px;max-width:280px;width:70%;
+                      background:rgba(17,24,39,0.10);
+                      border-radius:999px;overflow:hidden;'>
+            <div style='width:{p:.1f}%;height:{height_px}px;
+                        background:{color};
+                        border-radius:999px;'></div>
+          </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
 def _render_why_it_fires_rich(mkt: str, r, tags: str = "") -> None:
     """Presentation-only rich WHY block. Does not change any gates/logic."""
 
@@ -475,35 +515,23 @@ def _render_why_it_fires_rich(mkt: str, r, tags: str = "") -> None:
         # Special/Ultimate
         smash = (armor_shred and (fenrir_on or fury_on))
         valhalla = (armor_shred and fenrir_on and fury_on)
-
         # DPS table (Win% as DPS) — locked beta anchors
         DPS = {
-            "base": {"n": 30, "win": 53.3},
-            "armor_shred": {"n": 23, "win": 65.2},
-            "armor_buff": {"n": 7, "win": 14.3},
-            "fenrir_34": {"n": 19, "win": 68.4},
-            "fenrir_36": {"n": 15, "win": 73.3},
-            "fury_35": {"n": 16, "win": 75.0},
-            "fury_40": {"n": 13, "win": 84.6},
-            "smash": {"n": 15, "win": 86.7},
-            "valhalla": {"n": 13, "win": 92.3},
+            "base": {"n": 30, "win": 53.3},          # Conf>=85 (weapon skill)
+            "armor_shred": {"n": 23, "win": 65.2},   # opp xGA>=2.50
+            "armor_buff": {"n": 7, "win": 14.3},     # opp xGA<2.50 (suppression)
+            "fenrir_34": {"n": 19, "win": 68.4},     # ShotIntent>=3.4
+            "fenrir_36": {"n": 15, "win": 73.3},     # ShotIntent>=3.6
+            "fury_35": {"n": 16, "win": 75.0},       # Avg5>=3.5
+            "fury_40": {"n": 13, "win": 84.6},       # Avg5>=4.0
+            "smash": {"n": 15, "win": 86.7},         # (Fenrir OR Fury) + Armor Shred
+            "valhalla": {"n": 13, "win": 92.3},      # Fenrir + Fury + Armor Shred
+            "armor_annihilation": {"n": 15, "win": 86.7},  # Fenrir + Armor Shred (stack proc)
+            "fury_shredder": {"n": 15, "win": 80.0},        # Fenrir + Fury, no Armor Shred (stack proc)
         }
 
         base_win = DPS["base"]["win"]
 
-        st.markdown("**Combat HUD (GOALS):**")
-
-        # 1) Stance
-        if stance_ok:
-            _wl_why_line(
-                _svg_icon("base.svg", "Base Attack (Stance)", "wl-goals"),
-                f"Base Attack active — Conf≥85 / Green / 0.5  •  DPS {DPS['base']['win']}% (n={DPS['base']['n']})",
-            )
-        else:
-            _wl_why_line(
-                _svg_icon("base.svg", "Base Attack (Stance)", "wl-goals"),
-                f"Base Attack NOT active — needs Conf≥85 / Green / 0.5",
-            )
 
         # 2) Enemy armor state (always show if xGA known)
         if armor_buff:
@@ -511,11 +539,13 @@ def _render_why_it_fires_rich(mkt: str, r, tags: str = "") -> None:
                 _svg_icon("armor_buff.svg", "Enemy Fortified (Armor Buff)", "wl-goals wl-keep"),
                 f"Enemy Fortified — opp xGA {xga:.2f} < 2.50  •  DPS {DPS['armor_buff']['win']}% (n={DPS['armor_buff']['n']})  (Δ {DPS['armor_buff']['win']-base_win:+.1f})",
             )
+            _wl_dps_bar(DPS['armor_buff']['win'], 'GOALS')
         elif armor_shred:
             _wl_why_line(
                 _svg_icon("armor_shred.svg", "Armor Shred (Vulnerability)", "wl-goals"),
                 f"Armor Shred — opp xGA {xga:.2f} ≥ 2.50  •  DPS {DPS['armor_shred']['win']}% (n={DPS['armor_shred']['n']})  (Δ {DPS['armor_shred']['win']-base_win:+.1f})",
             )
+            _wl_dps_bar(DPS['armor_shred']['win'], 'GOALS')
         else:
             _wl_why_line(
                 _svg_icon("armor_buff.svg", "Enemy Armor Unknown", "wl-goals"),
@@ -529,11 +559,13 @@ def _render_why_it_fires_rich(mkt: str, r, tags: str = "") -> None:
                     _svg_icon("fenrir_claw.svg", "Fenrir’s Claw (Potent)", "wl-goals"),
                     f"Fenrir’s Claw (Potent) — ShotIntent {si:.2f} ≥ 3.6  •  DPS {DPS['fenrir_36']['win']}% (n={DPS['fenrir_36']['n']})  (Δ {DPS['fenrir_36']['win']-base_win:+.1f})",
                 )
+                _wl_dps_bar(DPS['fenrir_36']['win'], 'GOALS')
             else:
                 _wl_why_line(
                     _svg_icon("fenrir_claw.svg", "Fenrir’s Claw", "wl-goals"),
                     f"Fenrir’s Claw — ShotIntent {si:.2f} ≥ 3.4  •  DPS {DPS['fenrir_34']['win']}% (n={DPS['fenrir_34']['n']})  (Δ {DPS['fenrir_34']['win']-base_win:+.1f})",
                 )
+                _wl_dps_bar(DPS['fenrir_34']['win'], 'GOALS')
 
         if fury_on:
             if fury_potent:
@@ -541,26 +573,85 @@ def _render_why_it_fires_rich(mkt: str, r, tags: str = "") -> None:
                     _svg_icon("fury.svg", "Warlord Fury (Potent)", "wl-goals"),
                     f"Warlord Fury (Potent) — Avg5 {avg5:.2f} ≥ 4.0  •  DPS {DPS['fury_40']['win']}% (n={DPS['fury_40']['n']})  (Δ {DPS['fury_40']['win']-base_win:+.1f})",
                 )
+                _wl_dps_bar(DPS['fury_40']['win'], 'GOALS')
             else:
                 _wl_why_line(
                     _svg_icon("fury.svg", "Warlord Fury", "wl-goals"),
                     f"Warlord Fury — Avg5 {avg5:.2f} ≥ 3.5  •  DPS {DPS['fury_35']['win']}% (n={DPS['fury_35']['n']})  (Δ {DPS['fury_35']['win']-base_win:+.1f})",
                 )
-
+                _wl_dps_bar(DPS['fury_35']['win'], 'GOALS')
         # 4) Tiers (badges)
         if valhalla:
             _wl_why_line(
                 _svg_icon("valhalla.svg", "FOR VALHALLA! (Ultimate)", "wl-goals"),
                 f"FOR VALHALLA! — Burst + Fury + Armor Shred  •  DPS {DPS['valhalla']['win']}% (n={DPS['valhalla']['n']})",
             )
+            _wl_dps_bar(DPS['valhalla']['win'], 'GOALS')
         elif smash:
             _wl_why_line(
                 _svg_icon("smash.svg", "Warlord Smash Attack (Special)", "wl-goals"),
                 f"Warlord Smash Attack — (Fenrir OR Fury) + Armor Shred  •  DPS {DPS['smash']['win']}% (n={DPS['smash']['n']})  (Δ {DPS['smash']['win']-base_win:+.1f})",
             )
+            _wl_dps_bar(DPS['smash']['win'], 'GOALS')
 
+        # -------------------------
+        # STACK READOUT (display-only) — keep original tier names
+        # -------------------------
+        armor_annihilation = bool(armor_shred and fenrir_on)  # SI>=3.4 + xGA>=2.50
+        fury_shredder      = bool((fenrir_on and fury_on) and (not armor_shred))  # SI>=3.4 + Avg5>=3.5, no xGA
+
+        if armor_annihilation or fury_shredder:
+            st.markdown(
+                "<div style='margin-top:6px;font-size:13px;font-weight:900;opacity:0.85;'>⚡ STACK PROCS</div>",
+                unsafe_allow_html=True,
+            )
+
+        if armor_annihilation:
+            _wl_why_line(
+                _svg_icon(
+                    "stack_armor_annihilation.svg",
+                    "Armor Annihilation — Fenrir’s Claw + Armor Shred",
+                    "wl-goals",
+                ),
+                f"Armor Annihilation  •  DPS {DPS['armor_annihilation']['win']}% (n={DPS['armor_annihilation']['n']})  (Δ {DPS['armor_annihilation']['win']-base_win:+.1f})",
+            )
+            _wl_dps_bar(DPS['armor_annihilation']['win'], 'GOALS')
+            st.markdown(
+                "<div style='margin-left:26px;font-size:12px;opacity:0.75;'>"
+                f"{_svg_icon('fenrir_claw.svg', 'Fenrir’s Claw (ShotIntent ≥ 3.4)', 'wl-goals')}"
+                "<span style='margin-right:6px;'><b>Fenrir’s Claw</b></span>"
+                "<span style='opacity:0.65;margin:0 6px;'>+</span>"
+                f"{_svg_icon('armor_shred.svg', 'Armor Shred (opp xGA ≥ 2.50)', 'wl-goals')}"
+                "<span><b>Armor Shred</b></span>"
+                "</div>",
+                unsafe_allow_html=True,
+            )
+
+        if fury_shredder:
+            _wl_why_line(
+                _svg_icon(
+                    "stack_fury_shredder.svg",
+                    "Fury Shredder — Fenrir’s Claw + Warlord Fury (no Armor Shred)",
+                    "wl-goals",
+                ),
+                f"Fury Shredder  •  DPS {DPS['fury_shredder']['win']}% (n={DPS['fury_shredder']['n']})  (Δ {DPS['fury_shredder']['win']-base_win:+.1f})",
+            )
+            _wl_dps_bar(DPS['fury_shredder']['win'], 'GOALS')
+            st.markdown(
+                "<div style='margin-left:26px;font-size:12px;opacity:0.75;'>"
+                f"{_svg_icon('fenrir_claw.svg', 'Fenrir’s Claw (ShotIntent ≥ 3.4)', 'wl-goals')}"
+                "<span style='margin-right:6px;'><b>Fenrir’s Claw</b></span>"
+                "<span style='opacity:0.65;margin:0 6px;'>+</span>"
+                f"{_svg_icon('fury.svg', 'Warlord Fury (Avg5 ≥ 3.5)', 'wl-goals')}"
+                "<span><b>Warlord Fury</b></span>"
+                "<span style='opacity:0.65;margin-left:8px;'>(no Armor Shred)</span>"
+                "</div>",
+                unsafe_allow_html=True,
+            )
+            
         st.markdown("---")
         return
+
 
     if mk == "ASSISTS":
         # ASSISTS combat HUD (presentation-only). Uses canonical assets/icons/*.svg.
@@ -609,6 +700,43 @@ def _render_why_it_fires_rich(mkt: str, r, tags: str = "") -> None:
         except Exception:
             ixa_pct = float("nan")
         magic_on = odin_on and (not math.isnan(ixa_pct)) and (ixa_pct >= 97.5)
+        # Orbs (identity) — require stance + runic engine
+        try:
+            pa60 = float(r.get("i5v5_primaryAssists60", float("nan")))
+        except Exception:
+            pa60 = float("nan")
+        try:
+            stab = float(r.get("v2_player_stability", float("nan")))
+        except Exception:
+            stab = float("nan")
+
+        fire_orb_on = (
+            stance_ok and staff_on and (conf >= 82)
+            and runic_on
+            and (not math.isnan(pa60)) and (pa60 >= 0.97)
+            and (not math.isnan(stab)) and (stab >= 70.0)
+        )
+        ice_orb_on = (
+            stance_ok and staff_on and (conf >= 80)
+            and runic_on
+            and (not math.isnan(pa60)) and (pa60 >= 1.075)
+            and (not math.isnan(stab)) and (stab >= 72.3)
+        )
+        elemental_alignment_on = fire_orb_on and ice_orb_on and magic_on
+
+        # ENV (context only — never creates assists)
+        try:
+            goalie_weak = float(r.get("Goalie_Weak", float("nan")))
+        except Exception:
+            goalie_weak = float("nan")
+        try:
+            opp_sv = float(r.get("Opp_SV", float("nan")))
+        except Exception:
+            opp_sv = float("nan")
+
+        shattered_armor_on = stance_ok and staff_on and (not math.isnan(goalie_weak)) and (goalie_weak >= 90)
+        ymir_on = stance_ok and staff_on and (not math.isnan(opp_sv)) and (opp_sv <= 0.885)
+
 
         # Debuffs (warnings only)
         try:
@@ -626,16 +754,36 @@ def _render_why_it_fires_rich(mkt: str, r, tags: str = "") -> None:
 
         # DPS table (Win% as DPS) — locked beta anchors from Assists spec
         DPS = {
-            "staff": {"n": 120, "win": 50.5},
-            "odin": {"n": 53, "win": 56.6},
-            "arcane_4": {"n": 21, "win": 61.9},
-            "arcane_5": {"n": 17, "win": 64.7},
-            "arcane_6": {"n": 7, "win": 71.4},
-            "runic": {"n": 20, "win": 65.0},
-            "magic": {"n": 12, "win": 69.0},
-            "fort_staff": {"n": 36, "win": 50.0},
-            "fort_odin": {"n": 9, "win": 44.4},
-        }
+    # Core
+    "staff": {"n": 122, "win": 50.8},     # Conf>=80, line=0.5, Matrix=Green
+    "odin":  {"n": 53,  "win": 56.6},     # Conf>=85
+
+    # Arcane (PPP engine)
+    "arcane_4": {"n": 51, "win": 56.9},   # PPP>=4
+    "arcane_5": {"n": 35, "win": 60.0},   # PPP>=5
+    "arcane_6": {"n": 14, "win": 64.3},   # PPP>=6 (label-only)
+
+    # Runic / Mythic
+    "runic": {"n": 20, "win": 65.0},      # PP_iXA60>=4.0
+    "magic": {"n": 12, "win": 69.0},      # Conf>=85 & iXA%>=97.5
+
+    # Orbs
+    "fire_orb": {"n": 10, "win": 70.0},
+    "ice_orb":  {"n": 9,  "win": 66.7},
+
+    # Ultra-Mythic (Fire AND Ice AND Magic)
+    "elemental_alignment": {"n": 9, "win": 77.8},
+
+    # ENV (context-only)
+    "shattered_conf80": {"n": 18, "win": 66.7},
+    "shattered_conf85": {"n": 14, "win": 64.3},
+    "ymir_conf80":      {"n": 35, "win": 57.1},
+    "ymir_conf85":      {"n": 22, "win": 59.1},
+
+    # Warning context
+    "fort_staff": {"n": 36, "win": 50.0},
+    "fort_odin":  {"n": 9,  "win": 44.4},
+}
 
         base_win = DPS["staff"]["win"]
 
@@ -647,6 +795,7 @@ def _render_why_it_fires_rich(mkt: str, r, tags: str = "") -> None:
                 _svg_icon("staff.svg", "Staff (Base Attack)", "wl-assists"),
                 f"Stance active — Green / 0.5 line  •  EV ignored",
             )
+            _wl_dps_bar(DPS['staff']['win'], 'ASSISTS')
         else:
             _wl_why_line(
                 _svg_icon("staff.svg", "Staff (Base Attack)", "wl-assists"),
@@ -659,6 +808,7 @@ def _render_why_it_fires_rich(mkt: str, r, tags: str = "") -> None:
                 _svg_icon("staff.svg", "Staff (Base Attack)", "wl-assists"),
                 f"Staff — Conf {conf:.0f} ≥ 80  •  DPS {DPS['staff']['win']}% (n={DPS['staff']['n']})",
             )
+            _wl_dps_bar(DPS['staff']['win'], 'ASSISTS')
         else:
             _wl_why_line(
                 _svg_icon("staff.svg", "Staff (Base Attack)", "wl-assists"),
@@ -670,6 +820,7 @@ def _render_why_it_fires_rich(mkt: str, r, tags: str = "") -> None:
                 _svg_icon("odins_orb.svg", "Odin’s Orb (Heavy Attack)", "wl-assists"),
                 f"Odin’s Orb — Conf {conf:.0f} ≥ 85  •  DPS {DPS['odin']['win']}% (n={DPS['odin']['n']})  (Δ {DPS['odin']['win']-base_win:+.1f})",
             )
+            _wl_dps_bar(DPS['odin']['win'], 'ASSISTS')
 
         # 3) Debuffs (warnings only — never gates)
         if fortified:
@@ -689,16 +840,20 @@ def _render_why_it_fires_rich(mkt: str, r, tags: str = "") -> None:
                 _svg_icon("arcane_channel_iii.svg", "Arcane Channel III (CRIT)", "wl-assists"),
                 f"Arcane Channel III (CRIT) — PPP10 {ppp10:.0f} ≥ 6  •  DPS {DPS['arcane_6']['win']}% (n={DPS['arcane_6']['n']})  (Δ {DPS['arcane_6']['win']-DPS['odin']['win']:+.1f} vs Odin)",
             )
+            _wl_dps_bar(DPS['arcane_6']['win'], 'ASSISTS')
+
         elif arcane_t2:
             _wl_why_line(
                 _svg_icon("arcane_channel_ii.svg", "Arcane Channel II", "wl-assists"),
                 f"Arcane Channel II — PPP10 {ppp10:.0f} ≥ 5  •  DPS {DPS['arcane_5']['win']}% (n={DPS['arcane_5']['n']})  (Δ {DPS['arcane_5']['win']-DPS['odin']['win']:+.1f} vs Odin)",
             )
+            _wl_dps_bar(DPS['arcane_5']['win'], 'ASSISTS')
         elif arcane_t1:
             _wl_why_line(
                 _svg_icon("arcane_channel_i.svg", "Arcane Channel I", "wl-assists"),
                 f"Arcane Channel I — PPP10 {ppp10:.0f} ≥ 4  •  DPS {DPS['arcane_4']['win']}% (n={DPS['arcane_4']['n']})  (Δ {DPS['arcane_4']['win']-DPS['odin']['win']:+.1f} vs Odin)",
             )
+            _wl_dps_bar(DPS['arcane_4']['win'], 'ASSISTS')
 
         # 5) Fusion (one icon, tiered representation)
         if fusion_on:
@@ -715,6 +870,7 @@ def _render_why_it_fires_rich(mkt: str, r, tags: str = "") -> None:
                 _svg_icon("odins_arcane_orb.svg", "Odin’s Arcane Orb (Fusion)", "wl-assists"),
                 f"Odin’s Arcane Orb — Fusion (Tier {tier})  •  DPS {dps['win']}% (n={dps['n']})",
             )
+            _wl_dps_bar(dps['win'], 'ASSISTS')
 
         # 6) Proc (support only)
         if runic_on:
@@ -722,13 +878,55 @@ def _render_why_it_fires_rich(mkt: str, r, tags: str = "") -> None:
                 _svg_icon("runic_infusion.svg", "Runic Infusion (Proc)", "wl-assists"),
                 f"Runic Infusion — PP_iXA60 {pp_ix:.2f} ≥ 4.0  •  DPS {DPS['runic']['win']}% (n={DPS['runic']['n']})",
             )
+            _wl_dps_bar(DPS['runic']['win'], 'ASSISTS')
 
-        # 7) Mythic stabilizer (one per card; overrides burst visuals conceptually)
+        # 7) Orbs (identity)
+        if fire_orb_on:
+            _wl_why_line(
+                _svg_icon("fire_orb.svg", "Fire Orb", "wl-assists"),
+                f"Fire Orb — Conf≥82 + i5v5_primaryAssists60 {pa60:.3f} ≥ 0.970 + PP_iXA60≥4.0 + stability {stab:.1f} ≥ 70  •  DPS {DPS['fire_orb']['win']}% (n={DPS['fire_orb']['n']})",
+            )
+            _wl_dps_bar(DPS['fire_orb']['win'], 'ASSISTS')
+
+        if ice_orb_on:
+            _wl_why_line(
+                _svg_icon("ice_orb.svg", "Ice Orb", "wl-assists"),
+                f"Ice Orb — Conf≥80 + i5v5_primaryAssists60 {pa60:.3f} ≥ 1.075 + PP_iXA60≥4.0 + stability {stab:.1f} ≥ 72.3  •  DPS {DPS['ice_orb']['win']}% (n={DPS['ice_orb']['n']})",
+            )
+            _wl_dps_bar(DPS['ice_orb']['win'], 'ASSISTS')
+
+        # 8) Mythic stabilizer
         if magic_on:
             _wl_why_line(
                 _svg_icon("magic_mans_transcendence.svg", "Magic Man’s Transcendence (Mythic)", "wl-assists"),
                 f"Magic Man’s Transcendence — Conf≥85 + iXA% {ixa_pct:.1f} ≥ 97.5  •  DPS {DPS['magic']['win']}% (n={DPS['magic']['n']})",
             )
+            _wl_dps_bar(DPS['magic']['win'], 'ASSISTS')
+
+        # 9) Elemental Alignment (Ultra-Mythic)
+        if elemental_alignment_on:
+            _wl_why_line(
+                _svg_icon("elemental_alignment.svg", "Elemental Alignment", "wl-assists"),
+                f"Elemental Alignment — Fire + Ice + Magic Man  •  DPS {DPS['elemental_alignment']['win']}% (n={DPS['elemental_alignment']['n']})",
+            )
+            _wl_dps_bar(DPS['elemental_alignment']['win'], 'ASSISTS')
+
+        # 10) ENV (context only — never creates assists)
+        if shattered_armor_on:
+            key = "shattered_conf85" if odin_on else "shattered_conf80"
+            _wl_why_line(
+                _svg_icon("shattered_armor.svg", "Shattered Armor (ENV)", "wl-assists wl-keep"),
+                f"Shattered Armor — Goalie_Weak {goalie_weak:.0f} ≥ 90  •  DPS {DPS[key]['win']}% (n={DPS[key]['n']})",
+            )
+            _wl_dps_bar(DPS[key]['win'], 'ASSISTS')
+
+        if ymir_on:
+            key = "ymir_conf85" if odin_on else "ymir_conf80"
+            _wl_why_line(
+                _svg_icon("frost.svg", "Ymir’s Frost Curse (ENV)", "wl-assists wl-keep"),
+                f"Ymir’s Frost Curse — Opp_SV {opp_sv:.3f} ≤ 0.885  •  DPS {DPS[key]['win']}% (n={DPS[key]['n']})",
+            )
+            _wl_dps_bar(DPS[key]['win'], 'ASSISTS')
 
         st.markdown("---")
         return
@@ -1821,16 +2019,30 @@ def style_df(df: pd.DataFrame, cols: list[str]) -> "pd.io.formats.style.Styler":
             return "background-color:#1f5aa6;color:white;font-weight:700;"
         return ""
 
-    def conf_style(v):
+    def _conf_style_for(thr_green: float):
+        # Per-market confidence thresholds (UI only):
+        #   Points: 70+ green
+        #   SOG:    75+ green
+        #   Assists:80+ green
+        #   Goals:  85+ green
+        # Yellow = (green - 10). Red otherwise.
         try:
-            x = float(v)
+            tg = float(thr_green)
         except Exception:
-            return ""
-        if x >= 80:
-            return "background-color:#1f7a1f;color:white;font-weight:700;"
-        if x >= 70:
-            return "background-color:#b38f00;color:white;font-weight:700;"
-        return "background-color:#8b1a1a;color:white;font-weight:700;"
+            tg = 80.0
+        ty = tg - 10.0
+        def _style(v):
+            try:
+                x = float(v)
+            except Exception:
+                return ""
+            if x >= tg:
+                return "background-color:#1f7a1f;color:white;font-weight:700;"
+            if x >= ty:
+                return "background-color:#b38f00;color:white;font-weight:700;"
+            return "background-color:#8b1a1a;color:white;font-weight:700;"
+        return _style
+
 
     def ev_style(v):
         try:
@@ -1878,9 +2090,17 @@ def style_df(df: pd.DataFrame, cols: list[str]) -> "pd.io.formats.style.Styler":
         if c in view.columns:
             sty = sty.applymap(heat_style, subset=[c])
 
-    for c in ["Best_Conf", "Conf_Points", "Conf_SOG", "Conf_Goal", "Conf_Assists"]:
+    # Per-market Conf coloring (keeps each market's own green threshold)
+    conf_thr = {
+        "Conf_Points": 70,
+        "Conf_SOG": 75,
+        "Conf_Assists": 80,
+        "Conf_Goal": 85,
+        "Best_Conf": 80,
+    }
+    for c, thr in conf_thr.items():
         if c in view.columns:
-            sty = sty.applymap(conf_style, subset=[c])
+            sty = sty.applymap(_conf_style_for(thr), subset=[c])
 
     for c in [c for c in view.columns if c.endswith("EVpct_over")]:
         sty = sty.applymap(ev_style, subset=[c])
@@ -2876,12 +3096,15 @@ def _green_conf_threshold(market: str, slate_games: int) -> int:
     if m.upper() in ("GOAL (1+)", "GOAL 1+", "ATG", "ANYTIME GOAL"):
         m = "Goal"
 
+    # Hard floor: GOALS earned-green starts at 85 (fixed, not slate-size dependent)
+    if m == "Goal":
+        return 85
     if slate_games >= 8:
-        return {"SOG": 77, "Points": 77, "Goal": 78, "Assists": 77}[m]
+        return {"SOG": 75, "Points": 70, "Goal": 85, "Assists": 80}[m]
     elif slate_games >= 5:
-        return {"SOG": 77, "Points": 77, "Goal": 80, "Assists": 77}[m]
+        return {"SOG": 75, "Points": 70, "Goal": 85, "Assists": 80}[m]
     else:
-        return {"SOG": 77, "Points": 77, "Goal": 83, "Assists": 77}[m]
+        return {"SOG": 75, "Points": 70, "Goal": 85, "Assists": 80}[m]
 
 
 
@@ -3675,7 +3898,7 @@ elif page == "Points":
 
     st.sidebar.subheader("Points Filters")
     show_all = st.sidebar.checkbox("Show all players (ignore filters)", value=False, key="show_all_points")
-    min_conf = st.sidebar.slider("Min Conf (Points)", 0, 100, 77, 1)
+    min_conf = st.sidebar.slider("Min Conf (Points)", 0, 100, 70, 1)
     color_pick = st.sidebar.multiselect(
         "Colors (Points)",
         ["green", "yellow", "blue", "red"],
@@ -3968,7 +4191,7 @@ elif page == "Assists":
 
     st.sidebar.subheader("Assists Filters")
     show_all = st.sidebar.checkbox("Show all players (ignore filters)", value=False, key="show_all_assists")
-    min_conf = st.sidebar.slider("Min Conf (Assists)", 0, 100, 77, 1)
+    min_conf = st.sidebar.slider("Min Conf (Assists)", 0, 100, 80, 1)
     color_pick = st.sidebar.multiselect(
         "Colors (Assists)",
         ["green", "yellow", "blue", "red"],
@@ -4268,6 +4491,41 @@ elif page == "Assists":
         except Exception:
             _ixa_pct = float("nan")
         magic_on = odin_on and (not math.isnan(_ixa_pct)) and (_ixa_pct >= 97.5)
+        # Orbs + ENV (presentation-only)
+        try:
+            _pa60 = float(r.get("i5v5_primaryAssists60", float("nan")))
+        except Exception:
+            _pa60 = float("nan")
+        try:
+            _stab = float(r.get("v2_player_stability", float("nan")))
+        except Exception:
+            _stab = float("nan")
+
+        fire_orb_on = (
+            stance_ok and staff_on and (_conf_a >= 82)
+            and runic_on
+            and (not math.isnan(_pa60)) and (_pa60 >= 0.97)
+            and (not math.isnan(_stab)) and (_stab >= 70.0)
+        )
+        ice_orb_on = (
+            stance_ok and staff_on and (_conf_a >= 80)
+            and runic_on
+            and (not math.isnan(_pa60)) and (_pa60 >= 1.075)
+            and (not math.isnan(_stab)) and (_stab >= 72.3)
+        )
+        elemental_alignment_on = fire_orb_on and ice_orb_on and magic_on
+
+        try:
+            _gw = float(r.get("Goalie_Weak", float("nan")))
+        except Exception:
+            _gw = float("nan")
+        try:
+            _sv = float(r.get("Opp_SV", float("nan")))
+        except Exception:
+            _sv = float("nan")
+        shattered_armor_on = stance_ok and staff_on and (not math.isnan(_gw)) and (_gw >= 90)
+        ymir_on = stance_ok and staff_on and (not math.isnan(_sv)) and (_sv <= 0.885)
+
 
         # Warnings (keep icons colored even if conditions are "bad")
         try:
@@ -4303,6 +4561,18 @@ elif page == "Assists":
             _hud.append(_svg_icon("runic_infusion.svg", "Runic Infusion (Proc)", "wl-assists"))
         if magic_on:
             _hud.append(_svg_icon("magic_mans_transcendence.svg", "Magic Man’s Transcendence (Mythic)", "wl-assists"))
+        if fire_orb_on:
+            _hud.append(_svg_icon("fire_orb.svg", "Fire Orb", "wl-assists"))
+        if ice_orb_on:
+            _hud.append(_svg_icon("ice_orb.svg", "Ice Orb", "wl-assists"))
+        if elemental_alignment_on:
+            _hud.append(_svg_icon("elemental_alignment.svg", "Elemental Alignment", "wl-assists"))
+
+        if shattered_armor_on:
+            _hud.append(_svg_icon("shattered_armor.svg", "Shattered Armor (ENV)", "wl-assists wl-keep"))
+        if ymir_on:
+            _hud.append(_svg_icon("frost.svg", "Ymir’s Frost Curse (ENV)", "wl-assists wl-keep"))
+
 
         if fortified:
             _hud.append(_svg_icon("enemy_fortified.svg", "Enemy Fortified (Debuff)", "wl-assists wl-keep"))
@@ -4352,7 +4622,7 @@ elif page == "SOG":
 
     st.sidebar.subheader("SOG Filters")
     show_all = st.sidebar.checkbox("Show all players (ignore filters)", value=False, key="show_all_sog")
-    min_conf = st.sidebar.slider("Min Conf (SOG)", 0, 100, 77, 1)
+    min_conf = st.sidebar.slider("Min Conf (SOG)", 0, 100, 75, 1)
     color_pick = st.sidebar.multiselect(
         "Colors (SOG)",
         ["green", "yellow", "blue", "red"],
@@ -4579,7 +4849,7 @@ elif page == "GOAL (1+)":
 
     st.sidebar.subheader("Goal Filters")
     show_all = st.sidebar.checkbox("Show all players (ignore filters)", value=False)
-    min_conf = st.sidebar.slider("Min Conf (Goal)", 0, 100, 77, 1)
+    min_conf = st.sidebar.slider("Min Conf (Goal)", 0, 100, 80, 1)
     color_pick = st.sidebar.multiselect(
         "Colors (Goal)",
         ["green", "yellow", "blue", "red"],
