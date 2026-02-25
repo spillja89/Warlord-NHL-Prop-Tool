@@ -38,6 +38,80 @@ st.markdown("""
 /* All inline SVG icons injected via _svg_icon() */
 .wl-ico { display:inline-flex; align-items:center; justify-content:center; line-height:0; overflow:hidden; }
 .wl-ico svg { width:20px !important; height:20px !important; max-width:20px !important; max-height:20px !important; }
+
+
+      /* -------------------------
+               VENGEANCE BANNER
+               ------------------------- */
+            .vengeance-wrap{
+              color: rgba(255,255,255,0.96);
+              text-shadow: 0 1px 2px rgba(0,0,0,0.55);
+              border-radius: 18px;
+              padding: 14px 16px;
+              border: 1px solid rgba(255,255,255,0.12);
+              box-shadow: 0 8px 22px rgba(0,0,0,0.28);
+              margin: 10px 0 14px 0;
+            }
+            .vengeance-pre{
+              background: radial-gradient(1200px 120px at 10% 0%, rgba(255,255,255,0.14), rgba(0,0,0,0.0)),
+                          linear-gradient(90deg, rgba(25,25,25,0.95), rgba(45,18,18,0.92));
+            }
+            .vengeance-live{
+              background: radial-gradient(900px 140px at 15% 0%, rgba(255,255,255,0.16), rgba(0,0,0,0.0)),
+                          linear-gradient(90deg, rgba(80,0,0,0.95), rgba(20,10,10,0.92));
+              animation: vengeancePulse 1.6s ease-in-out infinite;
+            }
+            .vengeance-post{
+              background: radial-gradient(1200px 120px at 10% 0%, rgba(255,255,255,0.10), rgba(0,0,0,0.0)),
+                          linear-gradient(90deg, rgba(20,25,32,0.95), rgba(12,18,20,0.92));
+            }
+            @keyframes vengeancePulse{
+              0%{ filter: brightness(1.00); transform: translateY(0px); }
+              50%{ filter: brightness(1.08); transform: translateY(-1px); }
+              100%{ filter: brightness(1.00); transform: translateY(0px); }
+            }
+            .vengeance-kicker{
+              color: rgba(255,255,255,0.78);
+              font-weight: 900;
+              letter-spacing: 1.2px;
+              font-size: 12px;
+              opacity: 0.9;
+              text-transform: uppercase;
+            }
+            .vengeance-head{
+              color: rgba(255,255,255,0.98);
+              font-weight: 950;
+              letter-spacing: 0.6px;
+              font-size: 26px;
+              line-height: 1.05;
+              margin-top: 2px;
+            }
+            .vengeance-sub{
+              color: rgba(255,255,255,0.86);
+              margin-top: 4px;
+              font-size: 13px;
+              opacity: 0.92;
+            }
+            .vengeance-timer{
+              color: rgba(255,255,255,0.96);
+              font-weight: 950;
+              font-variant-numeric: tabular-nums;
+              letter-spacing: 1px;
+              font-size: 30px;
+              text-align: right;
+              line-height: 1.05;
+            }
+            .vengeance-pill{
+              display: inline-block;
+              padding: 3px 10px;
+              border-radius: 999px;
+              border: 1px solid rgba(255,255,255,0.18);
+              font-size: 12px;
+              font-weight: 800;
+              opacity: 0.95;
+            }
+      
+          
 </style>
 """, unsafe_allow_html=True)
 # --- END GLOBAL ICON CSS ---
@@ -75,7 +149,7 @@ if "_render_why_it_fires_rich" not in globals():
         try:
             for k in ("Player","Game","Pos","Conf_Goal","Conf_Points","Conf_SOG","Conf_Assists",
                       "Matrix_Goal","Matrix_Points","Matrix_SOG","Matrix_Assists",
-                      "Goal_Line","ATG_Line","SOG_Line","Points_Line","Assists_Line",
+                      "Goal_Line","Goal_Line","SOG_Line","Points_Line","Assists_Line",
                       "Avg5_SOG","Med10_SOG","ShotIntent","ShotIntent_Pct","opp_5v5_xGA60","Goalie_Weak"):
                 if k in getattr(r, "keys", lambda: [])():
                     v = r.get(k, None)
@@ -530,7 +604,7 @@ _ROLE_INFO = {
 
 def _role_for_market(mkt: str) -> dict:
     key = str(mkt or "").strip().upper()
-    if key in {"GOAL", "GOAL (1+)", "GOALS1P", "GOALS_1P", "GOALS 1+", "GOALS (1+)"}:
+    if key in {"GOAL", "GOALS (0.5)", "GOALS1P", "GOALS_1P", "GOALS 1+", "GOALS (1+)"}:
         key = "GOALS"
     return _ROLE_INFO.get(key, {"role": "Role", "svg": "", "cls": "wl-points", "emoji": "⭐"})
 
@@ -660,30 +734,25 @@ def _render_sog_combat_hud(r):
 
         st.markdown("**MOVES (≥50% DPS anchors)**")
 
-        # Show every 3.5 move that grades > 50% (important for +odds decisioning),
-        # and mark which ones are active on this row.
+        # Only show ACTIVE 50%+ moves. If none are active, do not spam anchor bullets.
         moves = [
             ("SNIPER CRIT", 28, 71.4, elite_enraged),
             ("STRONG", 53, 60.4, enraged),
             ("PERMISSION SPECIAL", 28, 60.7, enraged_shatter),
+            ("Enhanced Enraged (Share ≥ 18)", 39, 64.1, enhanced_enraged_1),
         ]
+
+        active_any = False
         for name, nn, wp, active in moves:
-            mark = "✅" if active else "•"
-            st.markdown(f"- {mark} **{name}** — n={nn} • Win%={wp}")
-            if active:
-                _wl_dps_bar(wp, "SOG")
+            if not active:
+                continue
+            active_any = True
+            st.markdown(f"- ✅ **{name}** — n={nn} • Win%={wp}")
 
-        # Optional display-only tag (not part of tier resolver unless you later promote it)
-        if True:
-            active = enhanced_enraged_1
-            mark = "✅" if active else "•"
-            st.markdown(f"- {mark} Enhanced Enraged (Share ≥ 18) — n=39 • Win%=64.1")
-            if active:
-                _wl_dps_bar(64.1, "SOG")
-
-        # Also show resolved tier for clarity
-        st.markdown(f"- **RESOLVED:** {tier} — n={n} • Win%={winp}")
-        _wl_dps_bar(winp, "SOG")
+        if not active_any:
+            st.markdown("- **No 50%+ moves active — RESOLVED: BASE**")
+        else:
+            st.markdown(f"- **RESOLVED:** {tier} — n={n} • Win%={winp}")
 
         st.markdown("**SUPPORT**")
         st.markdown(
@@ -1281,7 +1350,6 @@ def _render_points_combat_hud(r: dict) -> None:
         ico = _icon(icon_name, label)
         suffix = f" — {note}" if note else ""
         st.markdown(f"- {ico} **{label}**{suffix}  •  DPS **{win:.1f}%** (n={n})", unsafe_allow_html=True)
-        _wl_dps_bar(win, "POINTS")
 
     # =========================
     # 0.5 — Fortress Tank (UPDATED: POINTS_MOVES_V2)
@@ -1809,7 +1877,7 @@ def _render_goals_combat_hud(r) -> None:
     market_cls = "wl-goals"
 
     # ---- stance (Gate) ----
-    line = _safe_float(r.get("Goal_Line", r.get("ATG_Line")), default=None)
+    line = _safe_float(r.get("Goal_Line", r.get("Goal_Line")), default=None)
     mat = str(r.get("Matrix_Goal", "") or "").strip().upper()
     conf = _safe_float(r.get("Conf_Goal", None), default=None)
 
@@ -1818,6 +1886,12 @@ def _render_goals_combat_hud(r) -> None:
     # ---- feature pulls (safe) ----
     xga = _safe_float(r.get("opp_5v5_xGA60", r.get("Opp_5v5_xGA60")), default=None)
     oppsog = _safe_float(r.get("Opp_SOG_Against_L10", r.get("Opp_SOG_Against_L10")), default=None)
+
+    # Team scoring environment (L5 goals-for average)
+    team_gf = _safe_float(
+        r.get("Team_GF_Avg_L5", r.get("Team_GF_L5", r.get("Team_GF_Avg"))),
+        default=None,
+    )
 
     ixg = None
     for k in ("iXG%", "iXG_pct", "iXG_Pct", "ixg_pct", "ixg%"):
@@ -1909,54 +1983,81 @@ def _render_goals_combat_hud(r) -> None:
                 extra = f"+ iXG {ixg:.1f} ≥ 93.5"
         _move_line("fury.svg", fury_lbl, fury_key, extra)
 
-    # Fenrir (finisher identity) — show highest tier only
-    if ixg is not None and ixg >= 97:
-        if (ixg >= 99) and (xga is not None and xga >= 2.55):
-            _move_line("fenrir_claw.svg", "Fenrir’s Claw (Potent)", "fenrir_36", f"iXG {ixg:.1f} ≥ 99 & xGA≥2.55")
 
-    # Premium tiers (Smash/Valhalla) — show highest only
-    # Conf is NOT used for GOALS Smash/Valhalla (Conf≥90 is a known cliff; entry is engine-path driven).
-    armor_annihilation = bool((ixg is not None and ixg >= 97) and env_252)
-
-    # "FOR VALHALLA" = ultra-smash label driven by offensive stack / funnel pressure, not confidence.
-    team_gf = _safe_float(r.get("Team_GF_Avg_L5", r.get("Team_GF_L5")), default=None)
-    valhalla = bool(armor_annihilation and (team_gf is not None and team_gf >= 3.9))
-    smash = bool(armor_annihilation)
-
-    if valhalla:
-        _move_line("valhalla.svg", "FOR VALHALLA! (Ultimate)", "valhalla", "Armor Annihilation + Team_GF_L5 ≥ 3.9")
-    elif smash:
-        _move_line("smash.svg", "Warlord Smash Attack (Special)", "smash", "Armor Annihilation")
-
-    # STACK PROCS (only when active)
-    fury_shredder = bool(env_252 and opp_lane and (ixg is not None and ixg >= 94) and (drought_g is not None and drought_g >= 2))
-    if armor_annihilation or fury_shredder:
-        st.markdown("**STACK PROCS**")
-    if armor_annihilation:
-        _move_line("stack_armor_annihilation.svg", "Armor Annihilation", "armor_annihilation", "iXG ≥ 97 + xGA ≥ 2.52")
-    if fury_shredder:
-        _move_line("stack_fury_shredder.svg", "Fury Shredder", "fury_shredder", "Funnel core + Drought_G ≥ 2")
-
-    # SUPPORT (show important active descriptors even if they didn't qualify as a full DPS move)
-    st.markdown("**SUPPORT**")
-    sup = []
-    if oppsog is not None:
-        sup.append(f"OppSOG_L10={oppsog:.0f}")
-    if xga is not None:
-        if xga >= 2.52:
-            sup.append("Defense Collapsing")
-        elif xga >= 2.49:
-            sup.append("Armor Shred")
+    # Fenrir’s Frenzy / Value Frenzy (Shot Funnel + Hot Team ladder)
+    # Gate: OppSOG_L10 >= 29 AND Team_GF_Avg_L5 >= 2.5
+    # Value overlay: odds >= +170 (Goal_Odds_Over with ATG fallback)
+    frenzy_on = opp_lane and (team_gf is not None) and (team_gf >= 2.5)
+    if frenzy_on:
+        # tier by team GF (L5)
+        if team_gf >= 3.9:
+            tier = "FOR VALHALLA"
+        elif team_gf >= 3.7:
+            tier = "Smash"
+        elif team_gf >= 3.3:
+            tier = "Crit"
+        elif team_gf >= 3.0:
+            tier = "Press"
         else:
-            sup.append("Enemy Fortified")
-    if share is not None and share >= 15:
-        sup.append(f"Driver Share {share:.1f}≥15")
-    if ixg is not None:
-        sup.append(f"iXG {ixg:.1f}")
-    if drought_g is not None and drought_g >= 2:
-        sup.append(f"Drought {drought_g:.0f}≥2")
-    st.caption(" • ".join(sup) if sup else "—")
+            tier = "Floor"
 
+        # odds (american, +170+)
+        _go = _safe_float(r.get("Goal_Odds_Over"), default=None)
+        _ao = _safe_float(r.get("ATG_Odds_Over"), default=None)
+        odds = _go if _go is not None else _ao
+        is_value = (odds is not None) and (odds >= 170)
+
+        lbl = ("Value Frenzy" if is_value else "Fenrir’s Frenzy") + f" — {tier}"
+        extra = f"OppSOG_L10 {oppsog:.0f} • TeamGF_L5 {team_gf:.1f}" + (f" • Odds +{int(odds)}" if odds is not None else "")
+        _move_line("fury.svg", lbl, None, extra)
+
+        # Fenrir (finisher identity) — show highest tier only
+        if ixg is not None and ixg >= 97:
+            if (ixg >= 99) and (xga is not None and xga >= 2.55):
+                _move_line("fenrir_claw.svg", "Fenrir’s Claw (Potent)", "fenrir_36", f"iXG {ixg:.1f} ≥ 99 & xGA≥2.55")
+
+        # Premium tiers (Smash/Valhalla) — show highest only
+        # Conf is NOT used for GOALS Smash/Valhalla (Conf≥90 is a known cliff; entry is engine-path driven).
+        armor_annihilation = bool((ixg is not None and ixg >= 97) and env_252)
+
+        # "FOR VALHALLA" = ultra-smash label driven by offensive stack / funnel pressure, not confidence.
+        team_gf = _safe_float(r.get("Team_GF_Avg_L5", r.get("Team_GF_L5")), default=None)
+        valhalla = bool(armor_annihilation and (team_gf is not None and team_gf >= 3.9))
+        smash = bool(armor_annihilation)
+
+        if valhalla:
+            _move_line("valhalla.svg", "FOR VALHALLA! (Ultimate)", "valhalla", "Armor Annihilation + Team_GF_L5 ≥ 3.9")
+        elif smash:
+            _move_line("smash.svg", "Warlord Smash Attack (Special)", "smash", "Armor Annihilation")
+
+        # STACK PROCS (only when active)
+        fury_shredder = bool(env_252 and opp_lane and (ixg is not None and ixg >= 94) and (drought_g is not None and drought_g >= 2))
+        if armor_annihilation or fury_shredder:
+            st.markdown("**STACK PROCS**")
+        if armor_annihilation:
+            _move_line("stack_armor_annihilation.svg", "Armor Annihilation", "armor_annihilation", "iXG ≥ 97 + xGA ≥ 2.52")
+        if fury_shredder:
+            _move_line("stack_fury_shredder.svg", "Fury Shredder", "fury_shredder", "Funnel core + Drought_G ≥ 2")
+
+        # SUPPORT (show important active descriptors even if they didn't qualify as a full DPS move)
+        st.markdown("**SUPPORT**")
+        sup = []
+        if oppsog is not None:
+            sup.append(f"OppSOG_L10={oppsog:.0f}")
+        if xga is not None:
+            if xga >= 2.52:
+                sup.append("Defense Collapsing")
+            elif xga >= 2.49:
+                sup.append("Armor Shred")
+            else:
+                sup.append("Enemy Fortified")
+        if share is not None and share >= 15:
+            sup.append(f"Driver Share {share:.1f}≥15")
+        if ixg is not None:
+            sup.append(f"iXG {ixg:.1f}")
+        if drought_g is not None and drought_g >= 2:
+            sup.append(f"Drought {drought_g:.0f}≥2")
+        st.caption(" • ".join(sup) if sup else "—")
 
 
 def _render_why_it_fires_rich(mkt: str, r, tags: str = "") -> None:
@@ -2428,8 +2529,8 @@ def _calc_market_map(market: str) -> dict:
         )
     # Goal / ATG
     return dict(
-        line_col="ATG_Line",
-        odds_col="ATG_Odds_Over",
+        line_col="Goal_Line",
+        odds_col="Goal_Odds_Over",
         p_model_col="ATG_p_model_over",
         modelpct_col="ATG_Model%",
         evpct_col="ATG_EV%",
@@ -2865,9 +2966,9 @@ COLUMN_WIDTHS = {
     "Goal_EVpct_over": "small",
     "Plays_EV_Goal": "small",
 
-    "ATG_Line": "small",
-    "ATG_Book": "small",
-    "ATG_Odds_Over": "small",
+    "Goal_Line": "small",
+    "Goal_Book": "small",
+    "Goal_Odds_Over": "small",
     "ATG_p_model_over": "small",
     "ATG_p_imp_over": "small",
     "ATG_EVpct_over": "small",
@@ -3055,6 +3156,296 @@ def inject_warlord_css():
       .wl-accent-red{ background: rgba(239,68,68,0.18); border-left: 5px solid #ef4444; }
     </style>
     """, unsafe_allow_html=True)
+
+def _fmt_hms(delta_seconds: int) -> str:
+    delta_seconds = max(0, int(delta_seconds))
+    h = delta_seconds // 3600
+    m = (delta_seconds % 3600) // 60
+    s = delta_seconds % 60
+    return f"{h:02d}:{m:02d}:{s:02d}"
+
+def render_vengeance_banner():
+    """
+    Top-of-app theme banner:
+      - Pre-slate: countdown + "Vengeance is coming"
+      - Live: "Clock strikes vengeance" + "Cook the books" + elapsed
+      - Post: manual "Slate Complete" -> countdown to next strike
+    Timezone: America/Chicago (per user).
+    """
+    import streamlit as st
+    from datetime import datetime, timedelta
+    try:
+        from zoneinfo import ZoneInfo
+        tz = ZoneInfo("America/Chicago")
+    except Exception:
+        tz = None  # fallback: naive
+
+    now = datetime.now(tz) if tz else datetime.now()
+
+    presets = {
+        "Weeknight Main (6:00 PM CT)": (18, 0),
+        "Weeknight Alt (6:30 PM CT)": (18, 30),
+        "Weeknight Late (7:00 PM CT)": (19, 0),
+        "Weekend Early (11:30 AM CT)": (11, 30),
+        "Weekend Midday (12:30 PM CT)": (12, 30),
+        "Custom…": None,
+    }
+
+    # Default preset heuristics
+    if "vengeance_preset" not in st.session_state:
+        dow = now.weekday()  # 0=Mon
+        st.session_state.vengeance_preset = "Weeknight Main (6:00 PM CT)" if dow < 5 else "Weekend Early (11:30 AM CT)"
+    if "vengeance_custom_h" not in st.session_state:
+        st.session_state.vengeance_custom_h = 18
+    if "vengeance_custom_m" not in st.session_state:
+        st.session_state.vengeance_custom_m = 0
+    if "vengeance_completed_for" not in st.session_state:
+        st.session_state.vengeance_completed_for = ""  # key like YYYY-MM-DD@HH:MM
+
+    # Controls row (compact)
+    c1, c2, c3, c4 = st.columns([2.2, 1.1, 1.1, 1.1], gap="small")
+    with c1:
+        st.session_state.vengeance_preset = st.selectbox(
+            "Tonight's strike",
+            list(presets.keys()),
+            index=list(presets.keys()).index(st.session_state.vengeance_preset) if st.session_state.vengeance_preset in presets else 0,
+            label_visibility="collapsed",
+        )
+    # Determine target hour/minute
+    if st.session_state.vengeance_preset == "Custom…":
+        with c2:
+            st.session_state.vengeance_custom_h = st.number_input("Hr", min_value=0, max_value=23, value=int(st.session_state.vengeance_custom_h), step=1, label_visibility="collapsed")
+        with c3:
+            st.session_state.vengeance_custom_m = st.number_input("Min", min_value=0, max_value=59, value=int(st.session_state.vengeance_custom_m), step=1, label_visibility="collapsed")
+        target_h, target_m = int(st.session_state.vengeance_custom_h), int(st.session_state.vengeance_custom_m)
+    else:
+        hm = presets.get(st.session_state.vengeance_preset) or (18, 0)
+        target_h, target_m = hm
+        with c2:
+            st.markdown(f"<span class='vengeance-pill'>Strike: {target_h%12 or 12}:{target_m:02d} {'PM' if target_h>=12 else 'AM'} CT</span>", unsafe_allow_html=True)
+        with c3:
+            st.markdown(f"<span class='vengeance-pill'>TZ: CT</span>", unsafe_allow_html=True)
+
+    with c4:
+        if st.button("🔄", help="Refresh the clock"):
+            st.rerun()
+
+    # Compute strike datetime (today if upcoming, else tomorrow)
+    strike_dt = now.replace(hour=target_h, minute=target_m, second=0, microsecond=0)
+    if now >= strike_dt and (now - strike_dt).total_seconds() > 0:
+        # if already past strike today, treat as "today's strike" only if not completed and we want live;
+        # else roll to next day for countdown
+        pass
+
+    strike_key = f"{strike_dt.date().isoformat()}@{target_h:02d}:{target_m:02d}"
+    completed_key = st.session_state.vengeance_completed_for
+
+    # If completed_key is different and now is after strike_dt by a lot, we may be looking at next day.
+    # We'll treat "live" as: now >= strike_dt and not completed for this strike_key.
+    is_completed = (completed_key == strike_key)
+
+    # If now is past today's strike and it's completed, next strike is tomorrow.
+    # If now is past today's strike and it's NOT completed, we are LIVE until user completes.
+    # If now is before today's strike, we are PRE.
+    if now < strike_dt:
+        state = "pre"
+        t_delta = int((strike_dt - now).total_seconds())
+        big_timer = _fmt_hms(t_delta)
+        kicker = "VENGEANCE IS COMING"
+        head = "VENGEANCE IS COMING"
+        sub = f"Clock strikes at {target_h%12 or 12}:{target_m:02d} {'PM' if target_h>=12 else 'AM'} CT"
+        right_timer = f"STRIKES IN {big_timer}"
+        pill = "MODELS: ARMING"
+        wrap_class = "vengeance-wrap vengeance-pre"
+        action_line = "Sharpening the blades…"
+    else:
+        if not is_completed:
+            state = "live"
+            elapsed = int((now - strike_dt).total_seconds())
+            kicker = "THE CLOCK STRIKES VENGEANCE"
+            head = "COOK THE BOOKS."
+            sub = "Slate is live — build the board."
+            right_timer = f"LIVE {_fmt_hms(elapsed)}"
+            pill = "LEDGER: RECORDING"
+            wrap_class = "vengeance-wrap vengeance-live"
+            action_line = "Punish the lines."
+        else:
+            state = "post"
+            next_dt = strike_dt + timedelta(days=1)
+            remaining = int((next_dt - now).total_seconds())
+            kicker = "VENGEANCE HAS BEEN SERVED"
+            head = "TALLY THE DAMAGE."
+            sub = f"Next strike at {next_dt.hour%12 or 12}:{next_dt.minute:02d} {'PM' if next_dt.hour>=12 else 'AM'} CT"
+            right_timer = f"NEXT {_fmt_hms(remaining)}"
+            pill = "REVIEW: ACTIVE"
+            wrap_class = "vengeance-wrap vengeance-post"
+            action_line = "Post-mortem underway."
+
+    # Banner layout
+    left, right = st.columns([3.2, 1.2], gap="small")
+    with left:
+        st.markdown(
+            f"""
+            <div class="{wrap_class}">
+              <div class="vengeance-kicker">{kicker}</div>
+              <div class="vengeance-head">{head}</div>
+              <div class="vengeance-sub">{sub} <span style="opacity:.7">•</span> {action_line} <span style="opacity:.7">•</span> <span class="vengeance-pill">{pill}</span></div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+    with right:
+        st.markdown(
+            f"""
+            <div class="{wrap_class}" style="display:flex; flex-direction:column; justify-content:center;">
+              <div class="vengeance-timer">{right_timer}</div>
+              <div style="text-align:right; margin-top:6px; opacity:.85; font-size:12px;">
+                Strike key: {strike_key}
+              </div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+    # Manual slate complete (Option 2)
+    if state == "live":
+        b1, b2 = st.columns([1, 5])
+        with b1:
+            if st.button("✅ Slate Complete", help="Ends the live state until the next strike time"):
+                st.session_state.vengeance_completed_for = strike_key
+                st.rerun()
+        with b2:
+            st.caption("Live until you mark it complete. Keeps the vibe right even when real slate end-times vary.")
+
+
+
+
+
+
+
+
+# -------------------------------------------------------------------
+# Safety: ensure rich "Why it fires" renderer exists (prevents NameError
+# if a partial merge / paste removed the function definition).
+# -------------------------------------------------------------------
+if "_render_why_it_fires_rich" not in globals():
+    def _render_why_it_fires_rich(mkt: str, r, tags: str = "") -> None:
+        """Fallback renderer: keeps the app running if rich renderer is missing."""
+        mk = str(mkt or "").strip().upper()
+        st.caption(f"{mk} — Why it fires")
+        if tags:
+            st.write(tags)
+        # best-effort: print a few key fields
+        try:
+            for k in ("Player","Game","Pos","Conf_Goal","Conf_Points","Conf_SOG","Conf_Assists",
+                      "Matrix_Goal","Matrix_Points","Matrix_SOG","Matrix_Assists",
+                      "Goal_Line","Goal_Line","SOG_Line","Points_Line","Assists_Line",
+                      "Avg5_SOG","Med10_SOG","ShotIntent","ShotIntent_Pct","opp_5v5_xGA60","Goalie_Weak"):
+                if k in getattr(r, "keys", lambda: [])():
+                    v = r.get(k, None)
+                    if v not in (None, "", np.nan):
+                        st.caption(f"{k}: {v}")
+        except Exception:
+            pass
+
+
+
+
+# =========================
+# Ledger helpers (append-only bet tracking)
+# =========================
+UNIT_VALUE_USD = 50.0   # 1u = $50 (user-defined)
+MAX_STAKE_U = 3.0       # cap per play
+
+# CSV headers (append-only)
+BETSLIP_HEADERS = [
+    'bet_id','date','datetime_placed','game','player','market','line','odds_taken','book','stake_u',
+    'earned_green','ev_flag','lock_flag','conf','matrix','model_pct','imp_pct','ev_pct','tier','proof_count','why_tags',
+    'opp','opp_goalie','notes'
+]
+
+BET_EVENTS_HEADERS = [
+    'bet_id','event_type','event_datetime','event_period','event_game_minute','units_net','source','event_notes'
+]
+
+
+def inject_vengeance_css() -> None:
+    """Inject Vengeance banner CSS (idempotent)."""
+    import streamlit as st
+    st.markdown("""<style>
+/* -------------------------
+         VENGEANCE BANNER
+         ------------------------- */
+      .vengeance-wrap{
+        color: rgba(255,255,255,0.96);
+        text-shadow: 0 1px 2px rgba(0,0,0,0.55);
+        border-radius: 18px;
+        padding: 14px 16px;
+        border: 1px solid rgba(255,255,255,0.12);
+        box-shadow: 0 8px 22px rgba(0,0,0,0.28);
+        margin: 10px 0 14px 0;
+      }
+      .vengeance-pre{
+        background: radial-gradient(1200px 120px at 10% 0%, rgba(255,255,255,0.14), rgba(0,0,0,0.0)),
+                    linear-gradient(90deg, rgba(25,25,25,0.95), rgba(45,18,18,0.92));
+      }
+      .vengeance-live{
+        background: radial-gradient(900px 140px at 15% 0%, rgba(255,255,255,0.16), rgba(0,0,0,0.0)),
+                    linear-gradient(90deg, rgba(80,0,0,0.95), rgba(20,10,10,0.92));
+        animation: vengeancePulse 1.6s ease-in-out infinite;
+      }
+      .vengeance-post{
+        background: radial-gradient(1200px 120px at 10% 0%, rgba(255,255,255,0.10), rgba(0,0,0,0.0)),
+                    linear-gradient(90deg, rgba(20,25,32,0.95), rgba(12,18,20,0.92));
+      }
+      @keyframes vengeancePulse{
+        0%{ filter: brightness(1.00); transform: translateY(0px); }
+        50%{ filter: brightness(1.08); transform: translateY(-1px); }
+        100%{ filter: brightness(1.00); transform: translateY(0px); }
+      }
+      .vengeance-kicker{
+        color: rgba(255,255,255,0.78);
+        font-weight: 900;
+        letter-spacing: 1.2px;
+        font-size: 12px;
+        opacity: 0.9;
+        text-transform: uppercase;
+      }
+      .vengeance-head{
+        color: rgba(255,255,255,0.98);
+        font-weight: 950;
+        letter-spacing: 0.6px;
+        font-size: 26px;
+        line-height: 1.05;
+        margin-top: 2px;
+      }
+      .vengeance-sub{
+        color: rgba(255,255,255,0.86);
+        margin-top: 4px;
+        font-size: 13px;
+        opacity: 0.92;
+      }
+      .vengeance-timer{
+        color: rgba(255,255,255,0.96);
+        font-weight: 950;
+        font-variant-numeric: tabular-nums;
+        letter-spacing: 1px;
+        font-size: 30px;
+        text-align: right;
+        line-height: 1.05;
+      }
+      .vengeance-pill{
+        display: inline-block;
+        padding: 3px 10px;
+        border-radius: 999px;
+        border: 1px solid rgba(255,255,255,0.18);
+        font-size: 12px;
+        font-weight: 800;
+        opacity: 0.95;
+      }
+
+    
+</style>""", unsafe_allow_html=True)
 
 inject_warlord_css()
 
@@ -3753,7 +4144,7 @@ def _bundle_for_market(row, market_key: str) -> dict:
             "ev": ev,
             "model": model,
             "odds": odds,
-            "line": _first_num("Goal_Line","Goals_Line","ATG_Line","Line_Goal","Line_Goals", default=0),
+            "line": _first_num("Goal_Line","Goals_Line","Goal_Line","Line_Goal","Line_Goals", default=0),
             "avg5_sog": _first_num("Avg5_SOG", "Avg5_Shots", default=0),
             "shotintent": _first_num("ShotIntent", default=0),
             "shotintent_pct": _first_num("ShotIntent_Pct", default=0),
@@ -4065,6 +4456,9 @@ def show_table(df: pd.DataFrame, cols: list[str], title: str):
 # =========================
 # APP
 # =========================
+inject_vengeance_css()
+render_vengeance_banner()
+
 st.title("⚔️The Warlord's NHL Prop Tool⚔️")
 st.markdown(
     """
@@ -4210,7 +4604,7 @@ df = add_ui_columns(df)
 # ODDS / EV UI DERIVED COLS (readable)
 # =========================
 # Convert p_model / p_imp into human % columns and create a global 💰 marker.
-for m in ["Points","GOAL (1+)","Assists","ATG","SOG"]:
+for m in ["Points","GOALS (0.5)","Assists","ATG","SOG"]:
     pm = f"{m}_p_model_over"
     pi = f"{m}_p_imp_over"
     ev = f"{m}_EVpct_over"
@@ -4284,7 +4678,7 @@ def _green_conf_threshold(market: str, slate_games: int) -> int:
     # Normalize market aliases
     m = market.strip()
 
-    if m.upper() in ("GOAL (1+)", "GOAL 1+", "ATG", "ANYTIME GOAL"):
+    if m.upper() in ("GOALS (0.5)", "GOAL 1+", "ATG", "ANYTIME GOAL"):
         m = "Goal"
 
     # Hard floor: GOALS earned-green starts at 85 (fixed, not slate-size dependent)
@@ -4308,7 +4702,7 @@ thr_s = _green_conf_threshold("SOG", slate_games)
 # GOAL — earned green (v2 proof-count + tier-aware drought)
 # =========================
 
-thr_g = _green_conf_threshold("GOAL (1+)", slate_games)
+thr_g = _green_conf_threshold("GOALS (0.5)", slate_games)
 
 # numeric safety
 for c in ["Conf_Goal", "iXG%", "Med10_SOG", "Avg5_SOG", "Goalie_Weak", "Opp_DefWeak", "Reg_Gap_G10", "Drought_G"]:
@@ -4651,13 +5045,13 @@ with st.expander("Debug: loaded columns"):
 # Navigation
 page = st.sidebar.radio(
     "Page",
-    ["Board", "Points", "Assists", "SOG", "GOAL (1+)", "Power Play", "🧪 Dagger Lab", "🪜 Ladder Alerts", "Guide", "Ledger", "Raw CSV", "📟 Calculator", "🧾 Log Bet"],
+    ["Board", "Points", "Assists", "SOG", "GOALS (0.5)", "Power Play", "🧪 Dagger Lab", "🪜 Ladder Alerts", "Guide", "Ledger", "Raw CSV", "📟 Calculator", "🧾 Log Bet"],
     index=0,
     format_func=lambda x: {
         "Points": "Points (🛡️ Tank)",
         "Assists": "Assists (🪄 Support)",
         "SOG": "SOG (🌿 Jungle)",
-        "GOAL (1+)": "GOAL (1+) (⚔️ Carry)",
+        "GOALS (0.5)": "GOALS (0.5) (⚔️ Carry)",
     }.get(x, x)
 )
 
@@ -4990,7 +5384,7 @@ if page == "Board":
                 elif mkt in ("GOALS","ATG"):
                     if mkt == "ATG":
                         mu = _f(r.get("ATG_mu"))
-                        line = _f(r.get("ATG_Line"), 0.5)
+                        line = _f(r.get("Goal_Line"), 0.5)
                     else:
                         mu = _f(r.get("Goal_mu"))
                         line = _f(r.get("Goal_Line"), 0.5)
@@ -5131,39 +5525,31 @@ elif page == "Points":
     df_p["Green"] = df_p["Green_Points"].map(lambda x: "🟢" if bool(x) else "")
 
     points_cols = [
-        "Game","Player","Pos",
-        "Tier_Tag",
-        "Markets",
-        "Green",
-                "LOCK",
-        "Conf_Points","Matrix_Points",
-        "Points_Line",
-        "Points_Odds_Over","opp_5v5_xGA60","opp_5v5_HDCA60",
+        "Game","Player","Pos","Tier_Tag",
+        "Green","LOCK",
 
-        # --- MAIN (structure first) ---
+        # --- BOOK FIRST ---
+        "Points_Line","Points_Odds_Over","Points_Book",
+
+        # --- SIGNALS ---
+        "Conf_Points","Matrix_Points",
+
+        # --- HUD MATH (core) ---
+        "Assists_mu","Points_mu",
+        "PPP10_total","PP_iXA60","opp_5v5_xGA60",
+        # --- TIMING / STRUCTURE ---
         "REG_PRESSURE",
         "Reg_Heat_P","Reg_Gap_P10",
-        "Drought_P", "L10_Rate_Points","L10_Diff_Points","iXA%","PP_Points60","i5v5_points60",
+        "Drought_P",
+        "L10_Rate_Points","L10_Diff_Points",
         "Exp_P_10","L10_P",
 
-         # --- ENV (loss-avoidance only) ---
-      
-        "Opp_Goalie","Opp_SV","Opp_GAA","Goalie_Weak",
+        # --- SUPPORT STATS (creator identity) ---
+        "iXA%","PP_Points60","i5v5_points60",
 
-       
-       
-      
-
-       
-
-        # --- EV / Odds (display-only) ---
-        "Points_Book",
-        "Points_Model%",
-        "Points_Imp%",
-        "Points_EV%",
-        
-
-        "Line","Odds","Result",
+        # --- ENV (context / loss-avoidance) ---
+        "opp_5v5_HDCA60",
+        "Opp_Goalie","Opp_SV","Opp_GAA","Goalie_Weak","Opp_DefWeak",
     ]
 
     # Signals-first extras
@@ -5463,9 +5849,9 @@ elif page == "Points":
                 # --- Player card line (match GOALS/ASSISTS style): icons + bold combo + light meta ---
         proc_icons = "".join([t for t in tags if (isinstance(t, str) and ("<svg" in t or "wl-ico" in t))])
 
-                # --- POINTS card: keep ONLY meaningful, new info (no old Heat/Gap/L10/warn spam) ---
-        # Build combo descriptors from tags, but ignore noisy legacy meta tags.
+        # Separate combo descriptors from meta-like tags (keep L10 tags as meta; keep core move names as combo)
         combo_bits = []
+        meta_bits = []
         for t in tags:
             if not isinstance(t, str):
                 continue
@@ -5474,20 +5860,26 @@ elif page == "Points":
             s = t.strip()
             if not s:
                 continue
-            # Drop old/noisy meta-ish tags that don't belong on the POINTS card
-            if any(k in s for k in ["Heat", "Gap", "L10", "Suppress", "HDCA", "xGA", "xGF", "GAA", "Role:", "Creator Role", "PP Engine", "Playmaking", "Pace"]):
-                continue
-            combo_bits.append(s)
+            if s.startswith(("🔥", "🧨", "Heat", "Gap", "Conf", "L10")):
+                meta_bits.append(s)
+            else:
+                combo_bits.append(s)
 
         combo_s = " • ".join(combo_bits[:3])
 
-        # Build compact meta (no NaNs): Matrix | Conf | μ | Aμ | GF_L5 | Drought | (xGA for 1.5 monster context)
+        # Build compact meta (no NaNs)
         meta = []
         _mx = str(r.get("Matrix_Points", r.get("Matrix", "")) or "").strip()
         if _mx:
             meta.append(_mx)
-
-        # Confidence: use Conf_Assists for 1.5 backbone ladder; otherwise Conf_Points
+        if heatv:
+            meta.append(f"Heat {heatv}")
+        try:
+            _g = float(gapv)
+            if not math.isnan(_g):
+                meta.append(f"Gap {_g:.2f}")
+        except Exception:
+            pass
         try:
             _c = float(conf)
             if not math.isnan(_c):
@@ -5495,6 +5887,7 @@ elif page == "Points":
         except Exception:
             pass
 
+        # Key “up-front” stat trio for Points
         try:
             _pmu = float(r.get("Points_mu", float("nan")))
             if not math.isnan(_pmu):
@@ -5520,13 +5913,8 @@ elif page == "Points":
         except Exception:
             pass
 
-        # Show opp_5v5_xGA60 only when it matters for the 1.5 Monster context
-        try:
-            _xga = float(r.get("opp_5v5_xGA60", float("nan")))
-            if not math.isnan(_xga) and (float(line) >= 1.5):
-                meta.append(f"xGA {_xga:.2f}")
-        except Exception:
-            pass
+        meta.extend(meta_bits)
+        meta.extend(warns)
 
         meta_s = " | ".join([m for m in meta if m])
 
@@ -5862,25 +6250,20 @@ elif page == "SOG":
        "Game",
        "Player", "Pos",
        "Tier_Tag",
-       "Markets",
+       
        "Green",
-              "LOCK",
+              
        "Conf_SOG", "Matrix_SOG",
 
         # --- EV / Odds ---
         "SOG_Line",
         "SOG_Odds_Over",
         "SOG_Book",
-        "SOG_Model%",
-        "SOG_Imp%",
-        "SOG_EV%",
-        "Plays_EV_SOG",
-
-        "SOG_Call",
-        "SOG_Why",
+        "L20_Rate_SOG", "L40_Rate_SOG",
+        "Opp_SOG_Against_L50", "opp_5v5_xGA60", "Player_5v5_SOG_Share",
         "Drought_SOG", "Best_Drought",
-        "Reg_Heat_S", "Reg_Gap_S10", "Exp_S_10", "L10_S",
         "Med10_SOG", "Avg5_SOG", "ShotIntent", "ShotIntent_Pct",
+        "Reg_Heat_S", "Reg_Gap_S10", "Exp_S_10", "L10_S",
         "Opp_Goalie", "Opp_SV",
         "Goalie_Weak", "Opp_DefWeak",
         "Line", "Odds", "Result",
@@ -5989,6 +6372,10 @@ elif page == "SOG":
     _tier_rank = {"SNIPER CRIT": 4, "STRONG": 3, "PERMISSION SPECIAL": 2, "BASE": 1, "": 0}
     _rank["_tier_rank"] = _rank["_sniper_tier"].map(_tier_rank).fillna(0).astype(int)
 
+
+
+    # 3.5 Sniper Spec: do NOT show BASE on the Smash board (only show 50%+ move procs).
+    _rank = _rank[~(_is35 & (_rank["_sniper_tier"] == "BASE"))].copy()
 
     # Rank: Locks (if present) -> Sniper tier (3.5 only) -> Conf (no EV)
     if "LOCK" in _rank.columns:
@@ -6237,11 +6624,35 @@ elif page == "SOG":
 # =========================
 # GOAL
 # =========================
-elif page == "GOAL (1+)":
+elif page == "GOALS (0.5)":
 
-    st.markdown(_page_title_html("GOAL (1+)", "GOALS"), unsafe_allow_html=True)
+    st.markdown(_page_title_html("GOALS (0.5)", "GOALS"), unsafe_allow_html=True)
 
     df_g = df_f.copy()
+
+    # --- Odds aliasing: treat GOALS(0.5) as Anytime Goal (ATG) when Goal_* is missing ---
+    for _col in ["Goal_Line", "Goal_Odds_Over", "Goal_Book"]:
+        if _col not in df_g.columns:
+            df_g[_col] = pd.NA
+
+    # Coerce numeric odds/lines
+    df_g["Goal_Line"] = pd.to_numeric(df_g["Goal_Line"], errors="coerce")
+    df_g["Goal_Odds_Over"] = pd.to_numeric(df_g["Goal_Odds_Over"], errors="coerce")
+
+    # Fall back from ATG_* (common BDL naming)
+    if "ATG_Line" in df_g.columns:
+        df_g["Goal_Line"] = df_g["Goal_Line"].fillna(pd.to_numeric(df_g["ATG_Line"], errors="coerce"))
+    if "ATG_Odds_Over" in df_g.columns:
+        df_g["Goal_Odds_Over"] = df_g["Goal_Odds_Over"].fillna(pd.to_numeric(df_g["ATG_Odds_Over"], errors="coerce"))
+
+    # Book string fill: handle NaN -> empty
+    gb = df_g["Goal_Book"].astype("string")
+    gb = gb.fillna("").replace("nan", "").replace("None", "")
+    if "ATG_Book" in df_g.columns:
+        ab = df_g["ATG_Book"].astype("string").fillna("").replace("nan", "").replace("None", "")
+        gb = gb.mask(gb.str.strip().eq(""), ab)
+    df_g["Goal_Book"] = gb
+
     df_g["_cg"] = safe_num(df_g, "Conf_Goal", 0)
     df_g = df_g.sort_values(["_cg"], ascending=[False]).drop(columns=["_cg"], errors="ignore")
 
@@ -6265,36 +6676,41 @@ elif page == "GOAL (1+)":
         "Game",
         "Player", "Pos",
         "Tier_Tag",
-        "Markets",
+
+        # --- LINE / ODDS FIRST (bet slip view) ---
+        "Goal_Line",
+        "Goal_Odds_Over",
+        "Goal_Book",
+
+        # --- SIGNALS ---
         "Green",
-                "LOCK",
-
-        # --- CORE ---
+        
         "Conf_Goal", "Matrix_Goal",
-        # line/odds (ATG canonical)
-        "ATG_Line",
-        "ATG_Odds_Over",
 
-       
-
-        # --- WHY IT FIRES (structure) ---
-        "ATG_Call","opp_5v5_xGA60",
-        "Avg5_SOG", 
-        "ShotIntent","ShotIntent_Pct",
+        # --- GOALS HUD MATH (combo core) ---
+        "Opp_SOG_Against_L10",
+        "iXG%",
+        "Opp_DefWeak",
+        "Team_GF_Avg_L5",
+        "opp_5v5_xGA60",
+        "Med10_SOG",
+        "Avg5_SOG",
+        "ShotIntent",
+        "ShotIntent_Pct",
         "Drought_G", "Best_Drought",
 
-         # --- EV / Odds (display only) ---
-        "ATG_Book",
+        # --- WHY IT FIRES (label) ---
+        "ATG_Call",
+
+        # --- EV / MODEL (display only) ---
         "ATG_Model%", "ATG_Imp%", "ATG_EV%", "Plays_EV_ATG",
 
-        # --- ENV (battlefield) ---
-       
-        "Opp_Goalie", "Opp_SV", "Opp_GAA", "Goalie_Weak", "Opp_DefWeak",
+        # --- GOALIE / CONTEXT ---
+        "Opp_Goalie", "Opp_SV", "Opp_GAA", "Goalie_Weak",
 
         # --- result / bookkeeping ---
         "Line", "Odds", "Result",
     ]
-
 # Signals-first extras
 
     df_g["Markets"] = df_g.apply(build_markets_pills, axis=1)
@@ -6338,7 +6754,7 @@ elif page == "GOAL (1+)":
 
     # Robust column picks (tracker schema varies)
     line_col = None
-    for _c in ["ATG_Line", "Goal_Line", "Goals_Line"]:
+    for _c in ["Goal_Line", "Goal_Line", "Goals_Line"]:
         if _c in _g.columns:
             line_col = _c
             break
@@ -6372,6 +6788,7 @@ elif page == "GOAL (1+)":
     _ixg    = pd.to_numeric(_g.get("iXG%", _g.get("iXG_pct", _g.get("iXG_Pct", np.nan))), errors="coerce")
     _share  = pd.to_numeric(_g.get("Player_5v5_SOG_Share", np.nan), errors="coerce")
     _drought= pd.to_numeric(_g.get("Drought_G", _g.get("Drought_Goal", _g.get("Drought", np.nan))), errors="coerce")
+    _teamgf = pd.to_numeric(_g.get('Team_GF_Avg_L5', _g.get('Team_GF_L5', _g.get('Team_GF_L5_Avg', np.nan))), errors='coerce')
 
     # Odds for +odds lane (optional)
     odds_col = None
@@ -6386,21 +6803,27 @@ elif page == "GOAL (1+)":
     _ms  = _g.get("Match_Status_Goals", pd.Series("", index=_g.index)).astype(str).str.upper()
     m_grade = (_out.isin(["W", "L"]) | (_ms.ne("GRADED")))
 
-    # Core Gate +1 Proof (playable)
+    # Multi-path Beta Gate (GOALS)
     m_opp   = _oppsog.fillna(-999) >= 29
     m_xga49 = _xga.fillna(-999) >= 2.49
-    core_gate = m_opp & m_xga49
+    m_gf25  = _teamgf.fillna(-999) >= 2.5
 
-    finisher_proof = _ixg.fillna(-999) >= 93.5
-    drought_proof  = _drought.fillna(0) >= 2
-    armor_ann_path = (_ixg.fillna(-999) >= 97) & (_xga.fillna(-999) >= 2.52)
+    ixg94    = _ixg.fillna(-999) >= 94
+    ixg97    = _ixg.fillna(-999) >= 97
+    drought2 = _drought.fillna(0) >= 2
 
-    playable = core_gate & (finisher_proof | drought_proof | armor_ann_path)
+    # Path A: Armor/Env finisher (no OppSOG required)
+    path_armor  = m_xga49 & (ixg94 | drought2)
 
-    # Longshot/+odds lane: OppSOG only (for +180/+200 type shots)
-    longshot = m_opp & (_odds.fillna(-999) >= 180)
+    # Path B: Frenzy lane (OppSOG + Hot Team)
+    path_frenzy = m_opp & m_gf25
 
-    _g = _g[m_matrix & m_line & m_conf & m_grade & (playable | longshot)].copy()
+    # Path C: Funnel Sniper (OppSOG + iXG>=97)
+    path_sniper = m_opp & ixg97
+
+    eligible = path_armor | path_frenzy | path_sniper
+
+    _g = _g[m_matrix & m_line & m_conf & m_grade & eligible].copy()
 
     _g["_valhalla"] = (pd.to_numeric(_g.get("opp_5v5_xGA60", np.nan), errors="coerce").fillna(0) > 2.50).astype(int)
     _g["_avg5"] = pd.to_numeric(_g.get("Avg5_SOG", 0), errors="coerce").fillna(0)
@@ -6414,7 +6837,7 @@ elif page == "GOAL (1+)":
         player = str(r.get("Player", "") or "").strip()
         game = str(r.get("Game", "") or "").strip()
         line = r.get(line_col, r.get("Goals_Line", ""))
-        odds = r.get("ATG_Odds_Over", r.get("Goal_Odds_Over", r.get("Goals_Odds_Over", "")))
+        odds = r.get("Goal_Odds_Over", r.get("Goal_Odds_Over", r.get("Goals_Odds_Over", "")))
         conf = r.get("Conf_Goal", "")
         avg5 = r.get("Avg5_SOG", "")
         xga = r.get("opp_5v5_xGA60", "")
