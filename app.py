@@ -733,21 +733,28 @@ def _render_sog_combat_hud(r):
         st.markdown("- Permission Shatter: xGA ≥ 2.50 **OR** HDCA ≥ 2.20")
 
         st.markdown("**MOVES (≥50% DPS anchors)**")
-
-        # Only show ACTIVE 50%+ moves. If none are active, do not spam anchor bullets.
+        # Only show ACTIVE 50%+ moves (with formulas + DPS bars). If none are active, do not spam anchor bullets.
         moves = [
-            ("SNIPER CRIT", 28, 71.4, elite_enraged),
-            ("STRONG", 53, 60.4, enraged),
-            ("PERMISSION SPECIAL", 28, 60.7, enraged_shatter),
-            ("Enhanced Enraged (Share ≥ 18)", 39, 64.1, enhanced_enraged_1),
+            ("SNIPER CRIT", 28, 71.4, elite_enraged,
+             f"L40 {l40:.2f} ≥ 3.0 • xGA {xga:.2f} ≥ 2.50 • Share {share:.1f} ≥ 20"),
+            ("STRONG", 53, 60.4, enraged,
+             f"L40 {l40:.2f} ≥ 3.0 • xGA {xga:.2f} ≥ 2.50"),
+            ("PERMISSION SPECIAL", 28, 60.7, enraged_shatter,
+             f"OppSOG_L50 {opp_l50:.1f} ≥ 29.5 • (xGA {xga:.2f} ≥ 2.50 OR HDCA {hdca:.2f} ≥ 2.20)"),
+            ("Enhanced Enraged (Share ≥ 18)", 39, 64.1, enhanced_enraged_1,
+             f"L40 {l40:.2f} ≥ 3.0 • xGA {xga:.2f} ≥ 2.50 • Share {share:.1f} ≥ 18"),
         ]
 
         active_any = False
-        for name, nn, wp, active in moves:
+        for name, nn, wp, active, formula in moves:
             if not active:
                 continue
             active_any = True
-            st.markdown(f"- ✅ **{name}** — n={nn} • Win%={wp}")
+            st.markdown(f"- ✅ **{name}** — {formula} — n={nn} • Win%={wp}")
+            try:
+                _wl_dps_bar(float(wp), "SOG")
+            except Exception:
+                pass
 
         if not active_any:
             st.markdown("- **No 50%+ moves active — RESOLVED: BASE**")
@@ -755,6 +762,7 @@ def _render_sog_combat_hud(r):
             st.markdown(f"- **RESOLVED:** {tier} — n={n} • Win%={winp}")
 
         st.markdown("**SUPPORT**")
+
         st.markdown(
             f"- Conf {conf:.0f} • L40_Rate_SOG {l40:.2f} • Share {share:.1f} "
             f"• opp_xGA60 {xga:.2f} • opp_HDCA60 {hdca:.2f} • Opp_SOG_L50 {opp_l50:.1f}"
@@ -4480,8 +4488,10 @@ st.markdown(
         box-shadow: 0 6px 18px rgba(0,0,0,0.18);
         margin-bottom: 12px;
     ">
-        Vengeance is Coming!
-        Cook the Books!
+        As winter ends, the war begins.
+        Weapons forged by the gods. Warlords prepare to wage war on the books.
+        Vengeance is coming — cook the books!
+     
     </div>
     """,
     unsafe_allow_html=True
