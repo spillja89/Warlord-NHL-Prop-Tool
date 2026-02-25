@@ -1867,197 +1867,203 @@ def _render_assists_combat_hud(r) -> None:
 
 
 def _render_goals_combat_hud(r) -> None:
-    """GOALS Combat HUD (beta presentation).
-    Goal: match the ASSISTS HUD typography (STANCE / MOVES) while keeping GOALS logic + DPS anchors.
-    Shows only the highest tier per lane for cleanliness.
+    """GOALS Combat HUD (full moves + DPS bars).
+
+    Presentation-only; does not change gating/EV.
     """
     import math
 
     mk = "GOALS"
-    market_cls = "wl-goals"
+    # GOALS combat HUD (Beta). Clean: show only the highest tier per lane.
+    # Stance (locked): Line=0.5, Matrix=Green, Conf>=85 (EV ignored)
+    line = _safe_float(r.get("Goal_Line", None), 0.0) or 0.0
+    mat = str(r.get("Matrix_Goal", "") or "").strip().lower()
+    conf = _safe_float(r.get("Conf_Goal", None), None)
 
-    # ---- stance (Gate) ----
-    line = _safe_float(r.get("Goal_Line", r.get("Goal_Line")), default=None)
-    mat = str(r.get("Matrix_Goal", "") or "").strip().upper()
-    conf = _safe_float(r.get("Conf_Goal", None), default=None)
+    stance_ok = bool(line == 0.5 and mat.startswith("g") and (conf is not None and conf >= 85))
 
-    stance_ok = (mat in {"GREEN", "🟢"} or mat.startswith("G")) and (line == 0.5)
-
-    # ---- feature pulls (safe) ----
-    xga = _safe_float(r.get("opp_5v5_xGA60", r.get("Opp_5v5_xGA60")), default=None)
-    oppsog = _safe_float(r.get("Opp_SOG_Against_L10", r.get("Opp_SOG_Against_L10")), default=None)
-
-    # Team scoring environment (L5 goals-for average)
-    team_gf = _safe_float(
-        r.get("Team_GF_Avg_L5", r.get("Team_GF_L5", r.get("Team_GF_Avg"))),
-        default=None,
-    )
-
+    # Core inputs (new GOALS lanes)
+    xga   = _safe_float(r.get("opp_5v5_xGA60", None), None)
+    oppsog = _safe_float(r.get("Opp_SOG_Against_L10", None), None)
+    # iXG% can come under different column spellings
     ixg = None
     for k in ("iXG%", "iXG_pct", "iXG_Pct", "ixg_pct", "ixg%"):
         if k in r:
-            ixg = _safe_float(r.get(k, None), default=None)
+            ixg = _safe_float(r.get(k, None), None)
             if ixg is not None:
                 break
-
     share = None
     for k in ("Player_5v5_SOG_Share", "Player_5v5_SOG_Share_Pct", "Player_5v5_SOGShare"):
         if k in r:
-            share = _safe_float(r.get(k, None), default=None)
+            share = _safe_float(r.get(k, None), None)
             if share is not None:
                 break
+    drought_g = _safe_float(r.get("Drought_G", None), None)
 
-    drought_g = _safe_float(r.get("Drought_G", None), default=None)
-
-    # ---- DPS anchors (final) ----
+    # --- DPS anchors (final from this chat) ---
     DPS = {
         "base": {"n": 423, "win": 34.3},
-        "armor_shred": {"n": 189, "win": 41.8},
-        "armor_buff":  {"n": 234, "win": 28.2},
+        "armor_shred": {"n": 189, "win": 41.8},   # xGA >= 2.49
+        "armor_buff":  {"n": 234, "win": 28.2},   # xGA < 2.49 (derived complement)
 
-        "fenrir_34": {"n": 200, "win": 40.0},
-        "fenrir_36": {"n": 28,  "win": 60.7},
+        "fenrir_34": {"n": 200, "win": 40.0},     # iXG% >= 97
+        "fenrir_36": {"n": 28,  "win": 60.7},     # iXG% >= 99 & xGA >= 2.55
 
-        "fury_35": {"n": 113, "win": 47.8},
-        "fury_37": {"n": 76,  "win": 52.6},
-        "fury_38": {"n": 57,  "win": 59.6},
-        "fury_40": {"n": 52,  "win": 63.5},
+        "fury_35": {"n": 113, "win": 47.8},       # OppSOG_L10 >= 29
+        "fury_37": {"n": 76,  "win": 52.6},       # + xGA >= 2.49
+        "fury_38": {"n": 57,  "win": 59.6},       # + iXG% >= 93.5
+        "fury_40": {"n": 52,  "win": 63.5},       # + iXG% >= 94
 
-        # BIG punch version (Unleashed): iXG>=97 (n=25, 72.0)
-        "tyrs_wrath_unleashed": {"n": 25, "win": 72.0},
-        "fury_core":         {"n": 52, "win": 63.5},  # OppSOG>=29 + xGA>=2.49 + iXG>=94
-        "armor_core":        {"n": 28, "win": 67.9},  # OppSOG>=29 + xGA>=2.52 + iXG>=97
+        "tyrs_wrath_unleashed": {"n": 25, "win": 72.0},  # OppSOG>=29 & Share>=15 & xGA>=2.52 & iXG>=94
 
-        "armor_annihilation": {"n": 66, "win": 54.5},
-        "smash":             {"n": 21, "win": 71.4},  # heater-based (xGA>=2.55 + TeamGF_Avg_L5>=3.7)
-        "valhalla":          {"n": 11, "win": 81.8},  # ultra-heater (xGA>=2.55 + TeamGF_Avg_L5>=3.9)
-        "fury_shredder": {"n": 15, "win": 73.3},
+        "armor_annihilation": {"n": 66, "win": 54.5},    # iXG%>=97 & xGA>=2.52
+        "smash":             {"n": 52, "win": 57.7},     # armor_annihilation + Conf>=91
+        "valhalla":          {"n": 44, "win": 61.4},     # armor_annihilation + Conf>=95
+
+        "fury_shredder": {"n": 15, "win": 73.3},         # xGA>=2.52 & iXG>=94 & OppSOG>=29 & Drought_G>=2
     }
 
-    def _move_line(icon_file: str, label: str, dps_key: str | None = None, extra: str = "") -> None:
-        ico = _svg_icon(icon_file, label, market_cls)
-        tail = f" — {extra}" if extra else ""
-        st.markdown(f"{ico} <b>{label}</b>{tail}", unsafe_allow_html=True)
-        if dps_key and (dps_key in DPS):
-            st.caption(f"n={DPS[dps_key]['n']} • Win%={DPS[dps_key]['win']:.1f}")
-            _wl_dps_bar(DPS[dps_key]['win'], mk)
+    base_win = DPS["base"]["win"]
 
-    # -------------------------
-    # STANCE
-    # -------------------------
-    st.markdown("**STANCE**")
-    _move_line("valhalla.svg", "Gate to Valhalla (Entry)", None,
-               "Green + 0.5 • 3 board-entry paths: A) Funnel Carry: OppSOG_L10≥29 & Team_GF_Avg_L5≥2.5 • B) Fury: iXG%≥94 & xGA≥2.55 • C) Armor: iXG%≥97 & xGA≥2.49 • Conf/Avg5/EV ignored")
+    st.markdown("**Combat HUD (GOALS):**")
 
-    # -------------------------
-    # MOVES (highest tier only)
-    # -------------------------
-    st.markdown("**MOVES**")
+    # 1) Stance
+    if stance_ok:
+        _wl_why_line(
+            _svg_icon("base.svg", "Base Attack (Stance)", "wl-goals"),
+            f"Base Attack active — Conf≥85 / Green / 0.5  •  DPS {DPS['base']['win']}% (n={DPS['base']['n']})",
+        )
+        _wl_dps_bar(DPS["base"]["win"], "GOALS")
+    else:
+        _wl_why_line(
+            _svg_icon("base.svg", "Base Attack (Stance)", "wl-goals"),
+            "Base Attack NOT active — needs Conf≥85 / Green / 0.5",
+        )
 
-    opp_lane = (oppsog is not None and oppsog >= 29)
-    env_249  = (xga is not None and xga >= 2.49)
-    env_252  = (xga is not None and xga >= 2.52)
+    # 2) Enemy armor state (ENV) — show highest tier only
+    env_label = None
+    env_key = None
+    env_icon = None
+    if xga is not None:
+        if xga >= 2.52:
+            env_label = f"Armor Shred (Defense Collapsing) — opp xGA {xga:.2f} ≥ 2.52"
+            env_key = "armor_shred"  # DPS anchor is xGA>=2.49; 2.52 is a gate, not separate DPS bar
+            env_icon = "armor_shred.svg"
+        elif xga >= 2.49:
+            env_label = f"Armor Shred — opp xGA {xga:.2f} ≥ 2.49"
+            env_key = "armor_shred"
+            env_icon = "armor_shred.svg"
+        else:
+            env_label = f"Enemy Fortified — opp xGA {xga:.2f} < 2.49"
+            env_key = "armor_buff"
+            env_icon = "armor_buff.svg"
 
-    # Tyr’s Wrath Unleashed (premium storm) — show when active
+        _wl_why_line(
+            _svg_icon(env_icon, "Enemy Armor (ENV)", "wl-goals wl-keep"),
+            f"{env_label}  •  DPS {DPS[env_key]['win']}% (n={DPS[env_key]['n']})  (Δ {DPS[env_key]['win']-base_win:+.1f})",
+        )
+        _wl_dps_bar(DPS[env_key]["win"], "GOALS")
+    else:
+        _wl_why_line(
+            _svg_icon("armor_buff.svg", "Enemy Armor Unknown", "wl-goals"),
+            "Enemy armor state unknown — opp xGA missing",
+        )
+
+    # Lane flags
+    opp_lane = bool(oppsog is not None and oppsog >= 29)
+    env_249  = bool(xga is not None and xga >= 2.49)
+    env_252  = bool(xga is not None and xga >= 2.52)
+
+    # Tyr’s Wrath Unleashed (signature) — if active, it replaces Fury lines for cleanliness
     tyr_on = bool(opp_lane and env_252 and (share is not None and share >= 15) and (ixg is not None and ixg >= 97))
-    if tyr_on:
-        _move_line("fury.svg", "Tyr’s Wrath Unleashed", "tyrs_wrath_unleashed",
-                   "OppSOG≥29 + Share≥15 + xGA≥2.52 + iXG≥97")
 
-    # Fury ladder (unless Tyr is active) — show one rung
+    if tyr_on:
+        _wl_why_line(
+            _svg_icon("fury.svg", "Tyr’s Wrath Unleashed", "wl-goals"),
+            f"Tyr’s Wrath Unleashed — OppSOG≥29 + Share≥15 + xGA≥2.52 + iXG≥97  •  DPS {DPS['tyrs_wrath_unleashed']['win']}% (n={DPS['tyrs_wrath_unleashed']['n']})  (Δ {DPS['tyrs_wrath_unleashed']['win']-base_win:+.1f})",
+        )
+        _wl_dps_bar(DPS["tyrs_wrath_unleashed"]["win"], "GOALS")
+
+    # 3) Fury lane (Opp shot funnel) — show highest tier only (unless Tyr is active)
     if (not tyr_on) and opp_lane:
         fury_key = "fury_35"
-        fury_lbl = "Warlord Fury"
-        extra = f"OppSOG_L10 {oppsog:.0f} ≥ 29"
+        fury_lbl = f"Warlord Fury — OppSOG_L10 {oppsog:.0f} ≥ 29"
         if env_249:
             fury_key = "fury_37"
-            fury_lbl = "Warlord Fury (Charged)"
-            extra = f"OppSOG≥29 + xGA≥2.49"
+            fury_lbl = f"Warlord Fury (Charged) — OppSOG_L10 {oppsog:.0f} ≥ 29 + xGA≥2.49"
             if ixg is not None and ixg >= 94:
                 fury_key = "fury_40"
-                fury_lbl = "Warlord Fury (Potent)"
-                extra = f"+ iXG {ixg:.1f} ≥ 94"
+                fury_lbl = f"Warlord Fury (Potent) — + iXG {ixg:.1f} ≥ 94"
             elif ixg is not None and ixg >= 93.5:
                 fury_key = "fury_38"
-                fury_lbl = "Warlord Fury (Surging)"
-                extra = f"+ iXG {ixg:.1f} ≥ 93.5"
-        _move_line("fury.svg", fury_lbl, fury_key, extra)
+                fury_lbl = f"Warlord Fury (Surging) — + iXG {ixg:.1f} ≥ 93.5"
 
+        _wl_why_line(
+            _svg_icon("fury.svg", "Warlord Fury", "wl-goals"),
+            f"{fury_lbl}  •  DPS {DPS[fury_key]['win']}% (n={DPS[fury_key]['n']})  (Δ {DPS[fury_key]['win']-base_win:+.1f})",
+        )
+        _wl_dps_bar(DPS[fury_key]["win"], "GOALS")
 
-    # Fenrir’s Frenzy / Value Frenzy (Shot Funnel + Hot Team ladder)
-    # Gate: OppSOG_L10 >= 29 AND Team_GF_Avg_L5 >= 2.5
-    # Value overlay: odds >= +170 (Goal_Odds_Over with ATG fallback)
-    frenzy_on = opp_lane and (team_gf is not None) and (team_gf >= 2.5)
-    if frenzy_on:
-        # tier by team GF (L5)
-        if team_gf >= 3.9:
-            tier = "FOR VALHALLA"
-        elif team_gf >= 3.7:
-            tier = "Smash"
-        elif team_gf >= 3.3:
-            tier = "Crit"
-        elif team_gf >= 3.0:
-            tier = "Press"
+    # 4) Fenrir lane (Finisher identity) — show highest tier only
+    fenrir_on = bool(ixg is not None and ixg >= 97)
+    fenrir_potent = bool(ixg is not None and ixg >= 99 and (xga is not None and xga >= 2.55))
+    if fenrir_on:
+        if fenrir_potent:
+            _wl_why_line(
+                _svg_icon("fenrir_claw.svg", "Fenrir’s Claw (Potent)", "wl-goals"),
+                f"Fenrir’s Claw (Potent) — iXG {ixg:.1f} ≥ 99 & xGA≥2.55  •  DPS {DPS['fenrir_36']['win']}% (n={DPS['fenrir_36']['n']})  (Δ {DPS['fenrir_36']['win']-base_win:+.1f})",
+            )
+            _wl_dps_bar(DPS["fenrir_36"]["win"], "GOALS")
         else:
-            tier = "Floor"
+            _wl_why_line(
+                _svg_icon("fenrir_claw.svg", "Fenrir’s Claw", "wl-goals"),
+                f"Fenrir’s Claw — iXG {ixg:.1f} ≥ 97  •  DPS {DPS['fenrir_34']['win']}% (n={DPS['fenrir_34']['n']})  (Δ {DPS['fenrir_34']['win']-base_win:+.1f})",
+            )
+            _wl_dps_bar(DPS["fenrir_34"]["win"], "GOALS")
 
-        # odds (american, +170+)
-        _go = _safe_float(r.get("Goal_Odds_Over"), default=None)
-        _ao = _safe_float(r.get("ATG_Odds_Over"), default=None)
-        odds = _go if _go is not None else _ao
-        is_value = (odds is not None) and (odds >= 170)
+    # 5) Premium tiers (Special / Ultimate) — show highest only
+    armor_annihilation = bool((ixg is not None and ixg >= 97) and env_252)
+    smash = bool(armor_annihilation and (conf is not None and conf >= 91))
+    valhalla = bool(armor_annihilation and (conf is not None and conf >= 95))
 
-        lbl = ("Value Frenzy" if is_value else "Fenrir’s Frenzy") + f" — {tier}"
-        extra = f"OppSOG_L10 {oppsog:.0f} • TeamGF_L5 {team_gf:.1f}" + (f" • Odds +{int(odds)}" if odds is not None else "")
-        _move_line("fury.svg", lbl, None, extra)
+    if valhalla:
+        _wl_why_line(
+            _svg_icon("valhalla.svg", "FOR VALHALLA! (Ultimate)", "wl-goals"),
+            f"FOR VALHALLA! — Armor Annihilation + Conf≥95  •  DPS {DPS['valhalla']['win']}% (n={DPS['valhalla']['n']})",
+        )
+        _wl_dps_bar(DPS["valhalla"]["win"], "GOALS")
+    elif smash:
+        _wl_why_line(
+            _svg_icon("smash.svg", "Warlord Smash Attack (Special)", "wl-goals"),
+            f"Warlord Smash Attack — Armor Annihilation + Conf≥91  •  DPS {DPS['smash']['win']}% (n={DPS['smash']['n']})  (Δ {DPS['smash']['win']-base_win:+.1f})",
+        )
+        _wl_dps_bar(DPS["smash"]["win"], "GOALS")
 
-        # Fenrir (finisher identity) — show highest tier only
-        if ixg is not None and ixg >= 97:
-            if (ixg >= 99) and (xga is not None and xga >= 2.55):
-                _move_line("fenrir_claw.svg", "Fenrir’s Claw (Potent)", "fenrir_36", f"iXG {ixg:.1f} ≥ 99 & xGA≥2.55")
+    # -------------------------
+    # STACK PROCS (clean): show only the procs that are truly active
+    # -------------------------
+    fury_shredder = bool(env_252 and opp_lane and (ixg is not None and ixg >= 94) and (drought_g is not None and drought_g >= 2))
 
-        # Premium tiers (Smash/Valhalla) — show highest only
-        # Conf is NOT used for GOALS Smash/Valhalla (Conf≥90 is a known cliff; entry is engine-path driven).
-        armor_annihilation = bool((ixg is not None and ixg >= 97) and env_252)
+    if armor_annihilation or fury_shredder:
+        st.markdown(
+            "<div style='margin-top:6px;font-size:13px;font-weight:900;opacity:0.85;'>⚡ STACK PROCS</div>",
+            unsafe_allow_html=True,
+        )
 
-        # "FOR VALHALLA" = ultra-smash label driven by offensive stack / funnel pressure, not confidence.
-        team_gf = _safe_float(r.get("Team_GF_Avg_L5", r.get("Team_GF_L5")), default=None)
-        valhalla = bool(armor_annihilation and (team_gf is not None and team_gf >= 3.9))
-        smash = bool(armor_annihilation)
+    if armor_annihilation:
+        _wl_why_line(
+            _svg_icon("stack_armor_annihilation.svg", "Armor Annihilation", "wl-goals"),
+            f"Armor Annihilation — iXG≥97 + xGA≥2.52  •  DPS {DPS['armor_annihilation']['win']}% (n={DPS['armor_annihilation']['n']})  (Δ {DPS['armor_annihilation']['win']-base_win:+.1f})",
+        )
+        _wl_dps_bar(DPS["armor_annihilation"]["win"], "GOALS")
 
-        if valhalla:
-            _move_line("valhalla.svg", "FOR VALHALLA! (Ultimate)", "valhalla", "Armor Annihilation + Team_GF_L5 ≥ 3.9")
-        elif smash:
-            _move_line("smash.svg", "Warlord Smash Attack (Special)", "smash", "Armor Annihilation")
+    if fury_shredder:
+        _wl_why_line(
+            _svg_icon("stack_fury_shredder.svg", "Fury Shredder", "wl-goals"),
+            f"Fury Shredder — Funnel core + Drought_G≥2  •  DPS {DPS['fury_shredder']['win']}% (n={DPS['fury_shredder']['n']})  (Δ {DPS['fury_shredder']['win']-base_win:+.1f})",
+        )
+        _wl_dps_bar(DPS["fury_shredder"]["win"], "GOALS")
 
-        # STACK PROCS (only when active)
-        fury_shredder = bool(env_252 and opp_lane and (ixg is not None and ixg >= 94) and (drought_g is not None and drought_g >= 2))
-        if armor_annihilation or fury_shredder:
-            st.markdown("**STACK PROCS**")
-        if armor_annihilation:
-            _move_line("stack_armor_annihilation.svg", "Armor Annihilation", "armor_annihilation", "iXG ≥ 97 + xGA ≥ 2.52")
-        if fury_shredder:
-            _move_line("stack_fury_shredder.svg", "Fury Shredder", "fury_shredder", "Funnel core + Drought_G ≥ 2")
-
-        # SUPPORT (show important active descriptors even if they didn't qualify as a full DPS move)
-        st.markdown("**SUPPORT**")
-        sup = []
-        if oppsog is not None:
-            sup.append(f"OppSOG_L10={oppsog:.0f}")
-        if xga is not None:
-            if xga >= 2.52:
-                sup.append("Defense Collapsing")
-            elif xga >= 2.49:
-                sup.append("Armor Shred")
-            else:
-                sup.append("Enemy Fortified")
-        if share is not None and share >= 15:
-            sup.append(f"Driver Share {share:.1f}≥15")
-        if ixg is not None:
-            sup.append(f"iXG {ixg:.1f}")
-        if drought_g is not None and drought_g >= 2:
-            sup.append(f"Drought {drought_g:.0f}≥2")
-        st.caption(" • ".join(sup) if sup else "—")
 
 
 def _render_why_it_fires_rich(mkt: str, r, tags: str = "") -> None:
