@@ -1907,6 +1907,8 @@ def _render_points_combat_hud(r: dict) -> None:
         ico = _icon(icon_name, label)
         suffix = f" — {note}" if note else ""
         st.markdown(f"- {ico} **{label}**{suffix}  •  DPS **{win:.1f}%** (n={n})", unsafe_allow_html=True)
+        # Match GOALS/ASSISTS/SOG: show a visual DPS bar under each active proc line.
+        _wl_dps_bar(win, "POINTS")
 
     # =========================
     # 0.5 — Fortress Tank (UPDATED: POINTS_MOVES_V2)
