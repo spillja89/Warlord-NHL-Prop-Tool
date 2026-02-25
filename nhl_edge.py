@@ -2386,6 +2386,121 @@ def matrix_goal_v2(
 
     return "Yellow"
 
+
+
+def matrix_goal_v3(
+    ixg_pct: float,
+    med10: Optional[float],
+    pos: str,
+    g5_total: Optional[int],
+    goalie_weak: float,
+    shotintent: Optional[float] = None,
+    avg5_sog: Optional[float] = None,
+    opp_5v5_xga60: Optional[float] = None,
+    opp_sog_against_l10: Optional[float] = None,
+    opp_defweak: Optional[float] = None,
+    team_gf_avg_l5: Optional[float] = None,
+) -> str:
+    """GOALS stance matrix (environment permission + finisher readiness).
+
+    Philosophy (beta):
+      - Don't miss elite finishers (iXG% 97+).
+      - Treat opponent environment as *permission* (not only "smash-tier" thresholds).
+      - Team GF L5 is a *cherry/ladder* (helpful for Crit/Valhalla), not required for Green.
+
+    Returns:
+      - Red: iXG% < 80 OR shot median far below need.
+      - Yellow: missing key data or not aligned enough.
+      - Green: shot baseline met AND (heater OR shooter-monster OR elite finisher) AND env permission true.
+
+    Env permission (OR):
+      - opp_5v5_xGA60 >= 2.45  OR
+      - Opp_SOG_Against_L10 >= 27.5  OR
+      - Opp_DefWeak >= 60
+    """
+    ixg = float(ixg_pct or 0.0)
+
+    # Hard finisher floor
+    if ixg < 80.0:
+        return "Red"
+    if ixg < 88.0:
+        return "Yellow"
+
+    # Need Med10 for shot-floor sanity; if missing, don't promote
+    if med10 is None:
+        return "Yellow"
+
+    need = 3.0 if not is_defense(pos) else 2.8
+    med = float(med10)
+
+    # Red if shot floor is way under
+    if med < (need - 0.5):
+        return "Red"
+
+    # Env permission: if all env signals are missing, do not promote to Green
+    if opp_5v5_xga60 is None and opp_sog_against_l10 is None and opp_defweak is None:
+        return "Yellow"
+
+    xga_ok = (opp_5v5_xga60 is not None) and (float(opp_5v5_xga60) >= 2.45)
+    sog_ok = (opp_sog_against_l10 is not None) and (float(opp_sog_against_l10) >= 27.5)
+    def_ok = (opp_defweak is not None) and (float(opp_defweak) >= 60.0)
+
+    env_ok = xga_ok or sog_ok or def_ok
+    if not env_ok:
+        return "Yellow"
+
+    # Player readiness routes
+    g5 = int(g5_total or 0)
+    si = float(shotintent or 0.0)
+    a5 = float(avg5_sog or 0.0)
+
+    heater = (g5 >= 2)
+    shooter_monster = (si >= 3.4 and a5 >= 3.5)
+    elite_finisher = (ixg >= 97.0)
+
+    # Elite finisher override: if env permission + reasonable shot floor, don't require heater
+    if elite_finisher and med >= (need - 0.2):
+        return "Green"
+
+    if med >= need and (heater or shooter_monster):
+        return "Green"
+
+    return "Yellow"
+
+    if med10 is None:
+        return "Yellow"
+
+    need = 3.0 if not is_defense(pos) else 2.8
+    med = float(med10)
+
+    if med < (need - 0.5):
+        return "Red"
+
+    # Environment checks (structure)
+    # If env data is missing, don't promote to Green.
+    if opp_5v5_xga60 is None and opp_sog_against_l10 is None:
+        return "Yellow"
+
+    xga_ok = (opp_5v5_xga60 is not None) and (float(opp_5v5_xga60) >= 2.52)
+    sog_ok = (opp_sog_against_l10 is not None) and (float(opp_sog_against_l10) >= 29.0)
+
+    env_ok = xga_ok or sog_ok
+    if not env_ok:
+        return "Yellow"
+
+    # Player readiness routes
+    g5 = int(g5_total or 0)
+    si = float(shotintent or 0.0)
+    a5 = float(avg5_sog or 0.0)
+
+    heater = (g5 >= 2)
+    shooter_monster = (si >= 3.4 and a5 >= 3.5)
+
+    if med >= need and (heater or shooter_monster):
+        return "Green"
+
+    return "Yellow"
+
 def matrix_points_v2(ixa_pct: float, v2_stab: Optional[float], reg_heat_p: str = "COOL",
                      toi_pct: Optional[float] = None, team_xgf_pct: Optional[float] = None,
                      opp_defweak: Optional[float] = None) -> str:
@@ -2457,37 +2572,56 @@ def conf_sog(
 def conf_goal(
     ixg_pct: float,
     ixa_pct: float,
-    g5: Optional[int],
+    g5: Optional[float],
     defweak: float,
     goalieweak: float,
     toi_pct: float,
     shotintent: Optional[float] = None,
-    avg5_sog: Optional[float] = None,
+    shotintent_pct: Optional[float] = None,
+    avg5_sog: Optional[float] = None,  # compat (unused)
+    drought_g: Optional[int] = None,
 ) -> int:
-    """GOALS confidence (player-driven).
-    - No goalie / opponent def boosts (params kept for backward compatibility).
-    - Uses iXG%, ShotIntent (raw), Avg5_SOG, and last-5 goals.
     """
+    GOALS confidence v4 ("Goal Readiness") — Feb 2026 rebuild.
+
+    Uses player finishing + intent + recent goals, plus light environment context.
+    Returns 0..100.
+    """
+
+    # Safe defaults
     ixg = 50.0 if ixg_pct is None else float(ixg_pct)
     ixa = 50.0 if ixa_pct is None else float(ixa_pct)
 
-    # Scale helpers (cap at 0..100)
-    si = 50.0 if shotintent is None else clamp((float(shotintent) / 4.0) * 100.0)
-    a5 = 50.0 if avg5_sog is None else clamp((float(avg5_sog) / 4.0) * 100.0)
-    g5s = 50.0 if g5 is None else clamp((float(g5) / 3.0) * 100.0)
+    si_raw = 50.0 if shotintent is None else clamp((float(shotintent) / 4.0) * 100.0)
+    si_pct = 50.0 if shotintent_pct is None else float(shotintent_pct)
+
+    # L5 goals scaled to /5 (cap at 100)
+    g5_val = 0.0 if g5 is None else float(g5)
+    g5s = clamp((g5_val / 5.0) * 100.0)
+
+    dw = 50.0 if defweak is None else float(defweak)          # higher = weaker defense
+    gw = 50.0 if goalieweak is None else float(goalieweak)    # higher = weaker goalie
+    toi = 50.0 if toi_pct is None else float(toi_pct)
 
     base = (
-        0.55 * ixg
-        + 0.20 * si
-        + 0.15 * a5
+        0.58 * ixg
+        + 0.10 * si_pct
+        + 0.05 * si_raw
         + 0.10 * g5s
+        + 0.10 * dw
+        + 0.08 * gw
     )
 
     # identity bias: shooter vs facilitator
-    base += 5.0 if (ixg - ixa) >= 20.0 else 0.0
+    if (ixg - ixa) >= 20.0:
+        base += 3.0
 
-    # very light usage nudge (avoid TOI model)
-    base += 0.03 * (float(toi_pct or 50.0) - 50.0)
+    # TOI role nudge (small)
+    base += 0.05 * (toi - 50.0)
+
+    # SAFE drought proc (binary; no scaling)
+    if drought_g is not None and int(drought_g) >= 2:
+        base += 1.0
 
     return int(round(clamp(base)))
 
@@ -2532,7 +2666,7 @@ def conf_assists(
     # (If you want "missing" to be neutral, do NOT default to 65 here.)
     if reg_gap_a10 is not None and not (isinstance(reg_gap_a10, float) and math.isnan(reg_gap_a10)):
         # Example scaling: +0 to +10
-        bonus += clamp((reg_gap_a10 / 4.0) * 10.0, 0.0, 10.0)
+        bonus += clamp((reg_gap_a10 / 4.0) * 5.0, 0.0, 5.0)
 
     # Assist volume bonus: only above neutral earns points
     if assist_vol is not None and not (isinstance(assist_vol, float) and math.isnan(assist_vol)):
@@ -2561,6 +2695,7 @@ def conf_assists(
     # ----------------------------
     # 3) Final clamp
     # ----------------------------
+    bonus = min(bonus, 8.0)
     conf = clamp(base + bonus, 0.0, 100.0)
     return int(round(conf))
 # ============================
@@ -2998,7 +3133,7 @@ def ga_avg_to_defweak(ga_avg: float) -> float:
     weak = 20.0 + (ga_avg - 2.0) * 30.0
     return float(max(0.0, min(100.0, weak)))
 
-def drought_bump(tier: str, market: str, drought: Optional[int]) -> tuple[int, bool]:
+def drought_bump(tier: str, market: str, drought: Optional[int], ixg_pct: Optional[float] = None) -> tuple[int, bool]:
     if drought is None:
         return 0, False
 
@@ -3025,8 +3160,11 @@ def drought_bump(tier: str, market: str, drought: Optional[int]) -> tuple[int, b
             if d >= 2: bump = 5
             if d >= 3: bump = 8; flag = True
         elif tier == "STAR":
-            if d >= 3: bump = 4
-            if d >= 4: bump = 7; flag = True
+            # Gate ALL STAR goal/assist drought lift behind elite finisher proof
+            # If not an elite finisher, drought alone should not push GOAL confidence.
+            if (ixg_pct is not None) and float(ixg_pct) >= 97.0:
+                if d >= 3: bump = 2
+                if d >= 4: bump = 4; flag = True
         else:
             if d >= 4: bump = 2
             if d >= 5: bump = 5; flag = True
@@ -3827,7 +3965,7 @@ def build_tracker(today_local: date, debug: bool = False) -> str:
     )
 
     sk["Matrix_Goal"] = sk.apply(
-        lambda r: matrix_goal_v2(
+        lambda r: matrix_goal_v3(
             ixg_pct=float(safe_float(r.get("iXG_pct")) or safe_float(r.get("iXG%")) or 50.0),
             med10=safe_float(r.get("Median10_SOG")),
             pos=str(r.get("Pos", "F")),
@@ -3835,6 +3973,10 @@ def build_tracker(today_local: date, debug: bool = False) -> str:
             goalie_weak=float(safe_float(r.get("Goalie_Weak")) or 50.0),
             shotintent=safe_float(r.get("ShotIntent")),
             avg5_sog=safe_float(r.get("Avg5_SOG")),
+            opp_5v5_xga60=safe_float(r.get("opp_5v5_xGA60")),
+            opp_sog_against_l10=safe_float(r.get("Opp_SOG_Against_L10")),
+            opp_defweak=safe_float(r.get("Opp_DefWeak")),
+            team_gf_avg_l5=safe_float(r.get("Team_GF_Avg_L5")) or safe_float(r.get("Team_GF_L5")),
         ),
         axis=1
     )
@@ -3877,7 +4019,9 @@ def build_tracker(today_local: date, debug: bool = False) -> str:
             float(safe_float(r.get("Goalie_Weak")) or 50.0),
             float(safe_float(r.get("TOI_Pct")) or 50.0),
             shotintent=safe_float(r.get("ShotIntent")),
+            shotintent_pct=safe_float(r.get("ShotIntent_Pct")),
             avg5_sog=safe_float(r.get("Avg5_SOG")),
+            drought_g=safe_int(r.get("Drought_G")),
        ),
        axis=1
     ) 
@@ -3996,10 +4140,16 @@ def build_tracker(today_local: date, debug: bool = False) -> str:
         if tier not in {"ELITE", "STAR"}:
             tier = "NONE"
 
-        b_s, f_s = drought_bump(tier, "SOG", safe_int(r.get("Drought_SOG")))
-        b_p, f_p = drought_bump(tier, "POINTS", safe_int(r.get("Drought_P")))
-        b_a, f_a = drought_bump(tier, "ASSISTS", safe_int(r.get("Drought_A")))
-        b_g, f_g = drought_bump(tier, "GOAL", safe_int(r.get("Drought_G")))
+        b_s, f_s = drought_bump(tier, "SOG", safe_int(r.get("Drought_SOG")), ixg_pct=None)
+        b_p, f_p = drought_bump(tier, "POINTS", safe_int(r.get("Drought_P")), ixg_pct=None)
+        b_a, f_a = drought_bump(tier, "ASSISTS", safe_int(r.get("Drought_A")), ixg_pct=None)
+        ixg_for_bump = (
+            safe_float(r.get("iXG%"))
+            or safe_float(r.get("iXG_Pct"))
+            or safe_float(r.get("iXG_PCT"))
+            or safe_float(r.get("iXG"))
+        )
+        b_g, f_g = drought_bump(tier, "GOAL", safe_int(r.get("Drought_G")), ixg_pct=ixg_for_bump)
 
         return pd.Series({
             "GameReg_Bump_SOG": b_s,

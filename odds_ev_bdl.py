@@ -33,6 +33,7 @@ import os
 import math
 import unicodedata
 import re
+from datetime import datetime, timedelta
 from typing import Dict, Optional, Tuple, List, Any
 
 import requests
@@ -354,15 +355,47 @@ def fetch_bdl_games_for_date(game_date: str, api_key: str | None = None, per_pag
     return list(j.get("data") or [])
 
 
-def fetch_bdl_props_for_game(game_id: int, api_key: str | None = None, vendors: Optional[List[str]] = None) -> List[dict]:
-    url = f"{BDL_NHL_BASE}/odds/player_props"
-    params: List[Tuple[str, str | int]] = [("game_id", int(game_id))]
-    if vendors:
-        for v in vendors:
-            params.append(("vendors[]", str(v)))
-    j = _bdl_get(url, params=params, api_key=api_key)
-    return list(j.get("data") or [])
 
+def fetch_bdl_props_for_game(
+    game_id: int,
+    api_key: str | None = None,
+    vendors: Optional[List[str]] = None,
+    per_page: int = 250,
+    debug: bool = False,
+) -> List[dict]:
+    """Fetch ALL player props for a game from BallDontLie, handling cursor pagination."""
+    url = f"{BDL_NHL_BASE}/odds/player_props"
+    out: List[dict] = []
+
+    cursor: str | None = None
+    guard = 0
+    while True:
+        guard += 1
+        if guard > 60:
+            if debug:
+                print("[BDL] pagination guard hit; stopping")
+            break
+
+        params: List[Tuple[str, str | int]] = [("game_id", int(game_id)), ("per_page", int(per_page))]
+        if vendors:
+            for v in vendors:
+                params.append(("vendors[]", str(v)))
+        if cursor:
+            params.append(("cursor", str(cursor)))
+
+        j = _bdl_get(url, params=params, api_key=api_key)
+        data = list(j.get("data") or [])
+        out.extend(data)
+
+        meta = j.get("meta") or {}
+        cursor = meta.get("next_cursor")
+        if debug:
+            print(f"[BDL] fetched {len(data)} props (total={len(out)}) next_cursor={cursor}")
+
+        if not cursor:
+            break
+
+    return out
 
 def fetch_bdl_players_map(player_ids: List[int], api_key: str | None = None, chunk: int = 80, per_page: int = 100) -> Dict[int, dict]:
     out: Dict[int, dict] = {}
@@ -424,6 +457,12 @@ _MARKETS = {
     "assists": ("Assists", 0.5, (0.5, 3.5)),
     "goals": ("Goal", 0.5, (0.5, 2.5)),
     "anytime_goal": ("ATG", 0.5, (0.5, 2.5)),
+    # aliases / variant strings observed on some slates (prevents "missing goals" when prop_type differs)
+    "anytime_goal_scorer": ("ATG", 0.5, (0.5, 2.5)),
+    "anytime_goal_scorer_over_under": ("ATG", 0.5, (0.5, 2.5)),
+    "goal_scorer": ("ATG", 0.5, (0.5, 2.5)),
+    "goals_scored": ("Goal", 0.5, (0.5, 2.5)),
+    "player_goals": ("Goal", 0.5, (0.5, 2.5)),
 }
 
 
@@ -530,10 +569,28 @@ def merge_bdl_props_altlines(
     if df.empty:
         return df
 
-    vendors = vendors or ["draftkings", "fanduel", "caesars"]
+    # IMPORTANT (beta stability): if vendors is None/empty, fetch ALL available books.
+    # Restricting to a short list (e.g., DK/FD/CZR) can yield *zero* coverage on some slates
+    # even when odds exist widely (ESPN Bet, BetMGM, BetRivers, Hard Rock, etc.).
+    # `fetch_bdl_props_for_game()` only includes vendors[] params when a non-empty list is provided.
+    if vendors is not None and len(vendors) == 0:
+        vendors = None
+
+    # User-requested: do NOT restrict vendors. Always fetch across all books.
+    # If a caller passes a vendor list, override it to None for maximum coverage.
+    if vendors is not None:
+        if debug:
+            print(f"[bdl] overriding vendors filter {vendors} -> ALL books")
+        vendors = None
+
+    def _next_day(d: str) -> str:
+        return (datetime.strptime(d, "%Y-%m-%d") + timedelta(days=1)).strftime("%Y-%m-%d")
 
     try:
-        games = fetch_bdl_games_for_date(game_date, api_key=api_key)
+        # BDL buckets games by UTC date; late local games often land on game_date+1 in UTC.
+        games_1 = fetch_bdl_games_for_date(game_date, api_key=api_key) or []
+        games_2 = fetch_bdl_games_for_date(_next_day(game_date), api_key=api_key) or []
+        games = games_1 + games_2
     except Exception as e:
         if debug:
             print(f"[odds/ev] BDL games fetch failed: {e}")
@@ -638,7 +695,7 @@ def merge_bdl_props_altlines(
         if not full_name:
             continue
 
-        team = _player_team_tricode(pobj)
+        team = _player_team_tricode(pobj) or ""
         ptype = str(pr.get("prop_type") or "")
         mkt_name, baseline_min, (lo, hi) = _MARKETS.get(ptype, (None, None, None))
         if not mkt_name:
@@ -652,6 +709,10 @@ def merge_bdl_props_altlines(
         # BDL "anytime_goal_scorer" sometimes reports line_value=1.0; treat as 0.5 (score 1+).
         if mkt_name == "ATG" and lv >= 1.0:
             lv = 0.5
+        # Beta: only keep 0.5 (anytime) for Goal/ATG
+        if mkt_name in ("Goal", "ATG") and lv != 0.5:
+            continue
+
 
         if baseline_min is not None and lv < float(baseline_min):
             continue
@@ -705,7 +766,7 @@ def merge_bdl_props_altlines(
 
         # fill alt columns (Line_1..K etc)
         def _get_line_at(idx_key: Tuple[str, str], i: int) -> float | None:
-            arr = lines_map.get(idx_key)
+            arr = _lines_for_pair(idx_key)
             if not arr or i >= len(arr):
                 return None
             return float(arr[i])
@@ -724,6 +785,27 @@ def merge_bdl_props_altlines(
 
         idx_pairs = list(zip(df["__player_key"].tolist(), df["__team_key"].tolist()))
 
+        # Fallback: some BDL player records may not carry a reliable team tricode (or it may differ).
+        # To avoid dropping stars (e.g., McDavid/Tage) when team keys don't align, allow a player-only fallback
+        # when there is no exact (player,team) match.
+        def _lines_for_pair(kp: Tuple[str, str]) -> List[float]:
+            arr = lines_map.get(kp)
+            if arr:
+                return arr
+            # try blank team
+            arr = lines_map.get((kp[0], ""))
+            if arr:
+                return arr
+            # try any team (unique)
+            cands = [v for (pk, _tk), v in lines_map.items() if pk == kp[0] and v]
+            if len(cands) == 1:
+                return cands[0]
+            # if multiple, prefer the one with most lines
+            if cands:
+                cands.sort(key=lambda a: len(a), reverse=True)
+                return cands[0]
+            return []
+
         K = max(1, int(top_k))
         for i in range(K):
             lv_i = [_get_line_at(kp, i) for kp in idx_pairs]
@@ -736,7 +818,7 @@ def merge_bdl_props_altlines(
         chosen_odds: List[float | None] = []
         chosen_book: List[str] = []
         for kp, (_, row) in zip(idx_pairs, df.iterrows()):
-            arr = lines_map.get(kp) or []
+            arr = _lines_for_pair(kp) or []
             if not arr:
                 chosen_line.append(None)
                 chosen_odds.append(None)
@@ -777,7 +859,7 @@ def merge_bdl_props_mainlines(
 def merge_bdl_milestones(
     tracker: pd.DataFrame,
     game_date: str,
-    vendors: Optional[Tuple[str, ...]] = ("fanduel", "draftkings", "caesars"),
+    vendors: Optional[Tuple[str, ...]] = None,
     debug: bool = False,
 ) -> pd.DataFrame:
     vlist = list(vendors) if vendors else None
