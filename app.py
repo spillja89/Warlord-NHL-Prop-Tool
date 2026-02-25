@@ -675,6 +675,535 @@ def _wl_dps_bar(pct: float, mk: str, *, height_px: int = 8) -> None:
         unsafe_allow_html=True,
     )
 
+
+def _adj_win(win: float, n: int, k: int = 20) -> float:
+    """Shrink DPS win% toward 50 as n gets smaller (presentation only)."""
+    try:
+        w = float(win)
+        nn = int(n) if n is not None else 0
+        if nn <= 0:
+            return 50.0
+        return 50.0 + (w - 50.0) * (nn / (nn + float(k)))
+    except Exception:
+        return 50.0
+
+def _render_rank_line(best_title: str, win: float, n: int, mk: str) -> None:
+    """Small rank label shown on cards/HUDs. Presentation only."""
+    if not best_title:
+        return
+    aw = _adj_win(win, n, k=20)
+    try:
+        w = float(win)
+    except Exception:
+        w = win
+    st.caption(f"🏆 Best proc: **{best_title}** • AdjWin **{aw:.1f}** • Win **{w:.1f}%** (n={int(n)})")
+
+
+# =========================
+# Board-style DPS filters (shared by market pages) — presentation only
+# =========================
+def add_best_proc_cols(df: pd.DataFrame, mk: str) -> pd.DataFrame:
+    """Add DPS_* columns (Title/Win/N/Adj) using the existing probe functions.
+    Presentation-only: does not change any eligibility logic.
+    """
+    if df is None or len(df) == 0:
+        return df
+    mk_u = str(mk or "").strip().upper()
+    out = df.copy()
+
+    # Compute best proc per row (safe)
+    def _best_row(row):
+        try:
+            b = _probe_best_proc(mk_u, row.to_dict())
+            if not b:
+                return ("", 0.0, 0, 0.0)
+            return (str(b.get("title","")), float(b.get("win",0.0)), int(b.get("n",0)), float(b.get("adj",0.0)))
+        except Exception:
+            return ("", 0.0, 0, 0.0)
+
+    vals = out.apply(_best_row, axis=1, result_type="expand")
+    vals.columns = ["DPS_Title", "DPS_Win", "DPS_N", "DPS_Adj"]
+    out = pd.concat([out.reset_index(drop=True), vals.reset_index(drop=True)], axis=1)
+    return out
+
+def _odds_value_for_row(row: dict, mk: str) -> float | None:
+    mk_u = str(mk or "").strip().upper()
+
+    # Market-specific odds columns (best-effort). We prefer explicit *Over columns when present.
+    cand: list[str] = ["Odds", "Best_Odds", "Odds_Taken"]
+
+    if mk_u == "POINTS":
+        cand = [
+            "Points_Odds_Over",
+            "Odds_Points", "Odds_PTS",
+            "BDL_Points_Odds", "BDL_Points_Odds_1", "BDL_Points_Odds_2", "BDL_Points_Odds_3", "BDL_Points_Odds_4",
+        ] + cand
+    elif mk_u == "ASSISTS":
+        cand = [
+            "Assists_Odds_Over",
+            "Odds_Assists", "Odds_AST",
+            "BDL_Assists_Odds", "BDL_Assists_Odds_1", "BDL_Assists_Odds_2", "BDL_Assists_Odds_3", "BDL_Assists_Odds_4",
+        ] + cand
+    elif mk_u == "SOG":
+        cand = [
+            "SOG_Odds_Over",
+            "Odds_SOG", "Odds_Sh", "Odds_Shots",
+            "BDL_SOG_Odds", "BDL_SOG_Odds_1", "BDL_SOG_Odds_2", "BDL_SOG_Odds_3", "BDL_SOG_Odds_4",
+        ] + cand
+    elif mk_u in ("GOALS", "GOAL"):
+        cand = [
+            "Goal_Odds_Over",
+            "Odds_Goals", "Odds_Goal",
+            "BDL_Goal_Odds", "BDL_Goal_Odds_1", "BDL_Goal_Odds_2", "BDL_Goal_Odds_3", "BDL_Goal_Odds_4",
+        ] + cand
+    elif mk_u == "ATG":
+        cand = [
+            "ATG_Odds_Over",
+            "Odds_ATG",
+            "BDL_ATG_Odds", "BDL_ATG_Odds_1", "BDL_ATG_Odds_2", "BDL_ATG_Odds_3", "BDL_ATG_Odds_4",
+        ] + cand
+
+    for k in cand:
+        if k in row:
+            v = _safe_float(row.get(k, None), None)
+            if v is not None and not (isinstance(v, float) and math.isnan(v)):
+                return float(v)
+
+    return None
+
+
+def _line_value_for_row(row: dict, mk: str) -> float | None:
+    mk_u = str(mk or "").strip().upper()
+    cand = []
+    if mk_u == "POINTS":
+        cand = ["Points_Line","Line_Points"]
+    elif mk_u == "ASSISTS":
+        cand = ["Assists_Line","Line_Assists"]
+    elif mk_u == "SOG":
+        cand = ["SOG_Line","Line_SOG","Shots_Line"]
+    elif mk_u in ("GOALS","GOAL","ATG"):
+        cand = ["Goal_Line","Goals_Line","Line_Goals"]
+    for k in cand:
+        if k in row:
+            v = _safe_float(row.get(k, None), None)
+            if v is not None:
+                return float(v)
+    return None
+
+def apply_dps_filters_ui(df: pd.DataFrame, mk: str, key_prefix: str = "m") -> pd.DataFrame:
+    """Board-style filter bar for a single market page.
+    Filters: Line, Move/Tier, Min DPS win, Min DPS n, Max favorite odds, Search.
+    Sorting: DPS_Adj desc, DPS_N desc (ranking only).
+    """
+    if df is None or len(df) == 0:
+        return df
+
+    mk_u = str(mk or "").strip().upper()
+    out = df.copy()
+
+    # Ensure DPS columns exist
+    if "DPS_Adj" not in out.columns:
+        out = add_best_proc_cols(out, mk_u)
+
+    # Build line + move option lists
+    try:
+        line_vals = sorted({lv for lv in (out.apply(lambda r: _line_value_for_row(r.to_dict(), mk_u), axis=1).tolist()) if lv is not None})
+    except Exception:
+        line_vals = []
+    move_vals = sorted({str(x) for x in out.get("DPS_Title","").fillna("").astype(str).tolist() if str(x).strip()})
+
+    st.sidebar.subheader(f"{mk_u} — Filters")
+    line_sel = st.sidebar.multiselect("Line", line_vals, default=line_vals, key=f"{key_prefix}_line") if line_vals else []
+    move_sel = st.sidebar.multiselect("Move / Tier", move_vals, default=move_vals, key=f"{key_prefix}_move") if move_vals else []
+    min_win = float(st.sidebar.slider("Min DPS win%", 0.0, 100.0, 50.0, 0.5, key=f"{key_prefix}_minwin"))
+    min_n = int(st.sidebar.number_input("Min DPS n", min_value=0, max_value=500, value=20, step=1, key=f"{key_prefix}_minn"))
+    max_fav_odds = int(st.sidebar.number_input("Max favorite odds (e.g. -200)", min_value=-1000, max_value=300, value=-200, step=5, key=f"{key_prefix}_maxfav"))
+    q = st.sidebar.text_input("Search", value="", key=f"{key_prefix}_q").strip().lower()
+
+    # Compute helper columns for filtering
+    out["_Line"] = out.apply(lambda r: _line_value_for_row(r.to_dict(), mk_u), axis=1)
+    out["_Odds"] = out.apply(lambda r: _odds_value_for_row(r.to_dict(), mk_u), axis=1)
+
+    if q and "Player" in out.columns:
+        out = out[out["Player"].astype(str).str.lower().str.contains(re.escape(q), na=False)]
+    if line_sel:
+        out = out[out["_Line"].isin(line_sel)]
+    if move_sel:
+        out = out[out["DPS_Title"].astype(str).isin(move_sel)]
+
+    # DPS-based filters (rows with no proc naturally drop if min_win/min_n > 0)
+    out = out[(pd.to_numeric(out.get("DPS_Win", 0), errors="coerce").fillna(0) >= min_win)]
+    out = out[(pd.to_numeric(out.get("DPS_N", 0), errors="coerce").fillna(0).astype(int) >= min_n)]
+
+    # Odds filter (favorites only): keep if odds >= max_fav_odds (e.g., -140 passes when max_fav=-150; -200 fails)
+    def _odds_ok(v):
+        try:
+            if v is None or (isinstance(v, float) and math.isnan(v)):
+                return True  # missing odds => allow
+            v = float(v)
+            if v < 0:
+                return v >= float(max_fav_odds)
+            return True
+        except Exception:
+            return True
+    out = out[out["_Odds"].apply(_odds_ok)]
+
+    # Sort by DPS ranking (presentation only)
+    out["_dps_adj"] = pd.to_numeric(out.get("DPS_Adj", 0), errors="coerce").fillna(0.0)
+    out["_dps_n"] = pd.to_numeric(out.get("DPS_N", 0), errors="coerce").fillna(0).astype(int)
+    out = out.sort_values(["_dps_adj", "_dps_n"], ascending=[False, False]).drop(columns=["_dps_adj","_dps_n"], errors="ignore")
+
+    return out
+
+
+# =========================
+# DPS ranking probes (presentation only)
+# =========================
+def _probe_points_best(r: dict) -> dict | None:
+    """Return best active POINTS proc: {title, win, n, adj}. Presentation only."""
+    line = _safe_float(r.get("Points_Line"))
+    line = 0.0 if line is None else float(line)
+    conf_p = _safe_float(r.get("Conf_Points")) or 0.0
+    conf_a = _safe_float(r.get("Conf_Assists")) or 0.0
+    ppp = _safe_float(r.get("PPP10_total")) or 0.0
+    pp_ixg = _safe_float(r.get("PP_iXG60")) or 0.0
+    pp_ixa = _safe_float(r.get("PP_iXA60")) or 0.0
+    assists_mu = _safe_float(r.get("Assists_mu")) or 0.0
+    points_mu = _safe_float(r.get("Points_mu")) or 0.0
+    drought_p = _safe_float(r.get("Drought_P"))
+    drought_p = 0.0 if drought_p is None else float(drought_p)
+    opp_gaa = _safe_float(r.get("Opp_GAA"))
+    team_pp_xgf = _safe_float(r.get("Team_PP_xGF60")) or 0.0
+    opp_defweak = _safe_float(r.get("Opp_DefWeak")) or 0.0
+    opp_xga = _safe_float(r.get("opp_5v5_xGA60", r.get("Opp_5v5_xGA60")))
+    team_gf_l5 = _safe_float(r.get("Team_GF_Avg_L5", r.get("Team_GF_L5")))
+    team_gf_l5 = 0.0 if team_gf_l5 is None else float(team_gf_l5)
+    opp_sog_l10 = _safe_float(r.get("Opp_SOG_Against_L10", r.get("Opp_SA_Avg_L10", r.get("OppSOG_L10"))))
+    opp_sog_l10 = 0.0 if opp_sog_l10 is None else float(opp_sog_l10)
+
+    procs = []
+    is_fortress = (line <= 0.75)  # 0.5 build
+    if is_fortress:
+        procs += [
+            ("Hammer Fists", 69.1, 55, (conf_p >= 70)),
+            ("Echo Stomp I", 75.8, 33, (conf_p >= 70 and ppp >= 3)),
+            ("Echo Stomp II", 75.9, 29, (conf_p >= 70 and points_mu >= 1.5)),
+            ("Gaia’s Blessing", 70.85, 223, (conf_p >= 75 and assists_mu >= 0.7)),
+            ("Enraged Engine", 92.3, 13, (conf_p >= 78 and points_mu >= 1.5)),
+            ("Enraged Fury", 90.0, 10, (conf_p >= 78 and assists_mu >= 1.0)),
+            ("Blood Stomp", 90.9, 11, (conf_p >= 78 and (opp_gaa is not None) and (2.5 <= float(opp_gaa) <= 3.0))),
+            ("Hammer Fists II", 85.0, 20, (conf_p >= 70 and assists_mu >= 1.1)),
+            ("Gaia’s Blessing+ (Press)", 73.60, 178, (conf_p >= 77 and assists_mu >= 0.7)),
+            ("Gaia’s Blessing++ (Smash)", 78.31, 83, (conf_p >= 82 and assists_mu >= 0.7)),
+        ]
+        gaia_core = (conf_p >= 75 and assists_mu >= 0.7)
+        favor_on = gaia_core and (team_gf_l5 >= 3.5)
+        wrath_on = gaia_core and (team_gf_l5 >= 3.7)
+        ascension_on = gaia_core and (team_gf_l5 >= 3.9)
+        floodgate_on = wrath_on and (opp_sog_l10 >= 27.5)
+        if floodgate_on:
+            procs.append(("Gaia’s Floodgate", 81.0, 58, True))
+        elif ascension_on:
+            procs.append(("Gaia’s Ascension", 80.0, 75, True))
+        elif wrath_on:
+            procs.append(("Gaia’s Wrath", 76.7, 103, True))
+        elif favor_on:
+            procs.append(("Gaia’s Favor", 73.0, 152, True))
+        # Label-only still eligible as a proc for ordering (keeps beta consistent)
+        procs.append(("Bleed ENV (Label Only)", 76.9, 26, (conf_p >= 70 and pp_ixg >= 1.5)))
+    else:
+        # 1.5 kit (cond list copied from HUD)
+        procs += [
+            ("Backbone", 54.3, 116, (conf_a >= 89 and points_mu >= 1.7)),
+            ("Blade Impale (Power Tier)", 60.8, 51, (conf_a >= 89 and points_mu >= 2.2)),
+            ("Blade Slash (Monster)", 77.8, 18, (conf_a >= 89 and points_mu >= 2.2 and (opp_xga is not None) and float(opp_xga) >= 2.6)),
+            ("Delayed Hammer Smash", 67.6, 34, (conf_a >= 89 and drought_p >= 1 and points_mu >= 1.7)),
+            ("Enchanted Hammer (Legacy)", 61.1, 18, (conf_p >= 80 and pp_ixg >= 1.7)),
+            ("Blade Impale (Legacy PP)", 49.2, 61, (conf_p >= 80 and pp_ixa >= 4.0)),
+            ("Blade Slash (Legacy PP)", 48.1, 81, (conf_p >= 80 and team_pp_xgf >= 7.0)),
+            ("Blood Exposure (Legacy)", 54.5, 44, (conf_p >= 80 and team_pp_xgf >= 7.0 and opp_defweak >= 60)),
+            ("Blood Exposure II (Legacy)", 54.7, 64, (conf_p >= 80 and opp_defweak >= 60)),
+            ("Polarizing Smash (Legacy)", 54.5, 33, (conf_p >= 80 and team_pp_xgf >= 7.0 and opp_defweak >= 70)),
+            ("Eternal Smash (Legacy)", 53.2, 47, (conf_p >= 80 and opp_defweak >= 70)),
+        ]
+
+    best = None
+    for title, win, n, cond in procs:
+        if not cond:
+            continue
+        adj = _adj_win(win, n, k=20)
+        if (best is None) or (adj > best["adj"]) or (abs(adj - best["adj"]) < 1e-9 and n > best["n"]):
+            best = {"title": title, "win": float(win), "n": int(n), "adj": float(adj)}
+    return best
+
+def _probe_assists_best(r: dict) -> dict | None:
+    import math
+    line = _safe_float(r.get("Assists_Line"))
+    if line is None:
+        line = _safe_float(r.get("Line_Assists"))
+    mat = str(r.get("Matrix_Assists", r.get("Matrix_A", "")) or "").strip().upper()
+    conf = _safe_float(r.get("Conf_Assists", r.get("Conf_A", 0))) or 0.0
+    stance_ok = (mat in {"GREEN", "🟢"}) and ((line == 0.5) or (line is None)) and (conf >= 80)
+
+    ixa_pct    = _safe_float(r.get("iXA%"), default=float("nan"))
+    pp_ix      = _safe_float(r.get("PP_iXA60", r.get("PP_iXA_60")), default=float("nan"))
+    team_gf_l5 = _safe_float(r.get("Team_GF_L5"), default=float("nan"))
+    ppp10      = _safe_float(r.get("PPP10_total"), default=float("nan"))
+    assists_mu = _safe_float(r.get("Assists_mu"), default=float("nan"))
+    goalie_weak = _safe_float(r.get("Goalie_Weak"), default=float("nan"))
+
+    staff_on = stance_ok
+    if not staff_on:
+        return None
+
+    procs = []
+    procs.append(("Staff (Base Shell)", 51.2, 733, True))
+    procs.append(("Odin’s Staff", 54.3, 392, (not math.isnan(ixa_pct) and ixa_pct >= 95.0)))
+
+    # Arcane ladder (PPP10)
+    if not math.isnan(ppp10):
+        if ppp10 >= 6:
+            procs.append(("Arcane Channel VI", 60.6, 99, True))
+        elif ppp10 >= 5:
+            procs.append(("Arcane Channel V", 61.2, 201, True))
+        elif ppp10 >= 4:
+            procs.append(("Arcane Channel IV", 58.0, 319, True))
+        elif ppp10 >= 3:
+            procs.append(("Arcane Channel III", 56.3, 439, True))
+
+    # Runic ladder (PP_iXA60)
+    if not math.isnan(pp_ix):
+        if pp_ix >= 4.0:
+            procs.append(("Rune Orchestration (PP_iXA60≥4.0)", 63.3, 210, True))
+        elif pp_ix >= 3.5:
+            procs.append(("Rune Orchestration (PP_iXA60≥3.5)", 59.6, 317, True))
+
+    # Silent Assassin ladder (mu)
+    if not math.isnan(assists_mu):
+        if assists_mu >= 1.62:
+            procs.append(("Silent Assassin III", 69.4, 49, True))
+        elif assists_mu >= 1.30:
+            procs.append(("Silent Assassin II", 64.0, 178, True))
+        elif assists_mu >= 1.15:
+            procs.append(("Silent Assassin I", 61.1, 275, True))
+
+    # ENV
+    procs.append(("Odin’s Blessing (Goalie_Weak≥90)", 77.5, 40, (not math.isnan(goalie_weak) and goalie_weak >= 90)))
+
+    # Magic (iXA%>=99)
+    procs.append(("Magic (iXA%≥99)", 63.8, 130, (not math.isnan(ixa_pct) and ixa_pct >= 99.0)))
+
+    # Supernova (convergence)
+    supernova_on = staff_on and (conf >= 80) and (not math.isnan(ixa_pct) and ixa_pct >= 95.0) and (not math.isnan(pp_ix) and pp_ix >= 3.7) and (not math.isnan(team_gf_l5) and team_gf_l5 >= 20)
+    procs.append(("Supernova Overdrive", 75.0, 64, supernova_on))
+
+    # Stars aligned tiers
+    if staff_on and (not math.isnan(ixa_pct)):
+        if (conf >= 88) and (ixa_pct >= 96):
+            procs.append(("Stars Aligned (Tier A)", 65.6, 163, True))
+        if (conf >= 90) and (ixa_pct >= 95):
+            procs.append(("Stars Aligned (Tier B)", 65.3, 118, True))
+
+    best = None
+    for title, win, n, cond in procs:
+        if not cond:
+            continue
+        adj = _adj_win(win, n, k=20)
+        if (best is None) or (adj > best["adj"]) or (abs(adj - best["adj"]) < 1e-9 and n > best["n"]):
+            best = {"title": title, "win": float(win), "n": int(n), "adj": float(adj)}
+    return best
+
+def _probe_goals_best(r: dict) -> dict | None:
+    # mirror the GOALS HUD key procs (exclude BASE from ranking)
+    line = _safe_float(r.get("Goal_Line", None), 0.0) or 0.0
+    mat = str(r.get("Matrix_Goal", "") or "").strip().lower()
+    conf = _safe_float(r.get("Conf_Goal", None), None)
+    stance_ok = bool(line == 0.5 and mat.startswith("g") and (conf is not None and conf >= 85))
+
+    if not stance_ok:
+        return None
+
+    xga   = _safe_float(r.get("opp_5v5_xGA60", None), None)
+    oppsog = _safe_float(r.get("Opp_SOG_Against_L10", None), None)
+
+    ixg = None
+    for k in ("iXG%", "iXG_pct", "iXG_Pct", "ixg_pct", "ixg%"):
+        if k in r:
+            ixg = _safe_float(r.get(k, None), None)
+            if ixg is not None:
+                break
+    share = None
+    for k in ("Player_5v5_SOG_Share", "Player_5v5_SOG_Share_Pct", "Player_5v5_SOGShare"):
+        if k in r:
+            share = _safe_float(r.get(k, None), None)
+            if share is not None:
+                break
+    drought_g = _safe_float(r.get("Drought_G", None), None)
+    team_gf = None
+    for k in ("Team_GF_Avg_L5", "Team_GF_L5", "Team_GF_Avg5", "Team_GF_L5_Avg"):
+        if k in r:
+            team_gf = _safe_float(r.get(k, None), None)
+            if team_gf is not None:
+                break
+
+    team_gf = None
+    for k in ("Team_GF_Avg_L5", "Team_GF_L5", "Team_GF_Avg5", "Team_GoalsFor_Avg_L5"):
+        if k in r:
+            team_gf = _safe_float(r.get(k, None), None)
+            if team_gf is not None:
+                break
+
+    team_gf = _safe_float(r.get("Team_GF_Avg_L5", None), None)
+
+    team_gf = _safe_float(r.get("Team_GF_Avg_L5", None), None)
+
+    # DPS anchors (from HUD)
+    DPS = {
+        "armor_shred": (41.8, 189),
+        "hot_team_press": (51.9, 81),
+        "fenrir_34": (40.0, 200),
+        "fenrir_36": (60.7, 28),
+        "fury_35": (47.8, 113),
+        "fury_37": (52.6, 76),
+        "fury_40": (63.5, 52),
+        "tyrs_wrath_unleashed": (72.0, 25),
+        "armor_annihilation": (54.5, 66),
+        "smash": (57.7, 52),
+        "valhalla": (61.4, 44),
+        "fury_shredder": (73.3, 15),
+    }
+
+    opp_lane = bool(oppsog is not None and oppsog >= 29)
+    env_249  = bool(xga is not None and xga >= 2.49)
+    env_252  = bool(xga is not None and xga >= 2.52)
+
+    procs = []
+
+    # Tyr’s Wrath Unleashed
+    tyr_on = bool(opp_lane and env_252 and (share is not None and share >= 15) and (ixg is not None and ixg >= 97))
+    procs.append(("Tyr’s Wrath Unleashed", *DPS["tyrs_wrath_unleashed"], tyr_on))
+
+    # Armor Annihilation stack
+    aa_on = bool((ixg is not None and ixg >= 97) and env_252)
+    procs.append(("Armor Annihilation", *DPS["armor_annihilation"], aa_on))
+    procs.append(("Smash", *DPS["smash"], bool(aa_on and conf is not None and conf >= 91)))
+    procs.append(("Valhalla", *DPS["valhalla"], bool(aa_on and conf is not None and conf >= 95)))
+
+    # Fury ladder (shot funnel)
+    procs.append(("Fury Shredder", *DPS["fury_shredder"], bool(env_252 and (ixg is not None and ixg >= 94) and opp_lane and (drought_g is not None and drought_g >= 2))))
+    procs.append(("Fury 40", *DPS["fury_40"], bool(opp_lane and env_249 and (ixg is not None and ixg >= 94))))
+    procs.append(("Fury 37", *DPS["fury_37"], bool(opp_lane and env_249)))
+    procs.append(("Fury 35", *DPS["fury_35"], bool(opp_lane)))
+
+    # Fenrir
+    procs.append(("Fenrir’s Fury 99+", *DPS["fenrir_36"], bool((ixg is not None and ixg >= 99) and (xga is not None and xga >= 2.55))))
+    procs.append(("Fenrir’s Fury 97+", *DPS["fenrir_34"], bool(ixg is not None and ixg >= 97)))
+
+    # Armor Shred alone
+    procs.append(("Armor Shred", *DPS["armor_shred"], bool(env_249)))
+
+    # Press the Attack (xGA>=2.49 & iXG>=96.5 & Team_GF_Avg_L5>=3.0)
+    procs.append(("Press the Attack", *DPS["hot_team_press"], bool(env_249 and (ixg is not None and ixg >= 96.5) and (team_gf is not None and team_gf >= 3.0))))
+
+    best = None
+    for title, win, n, cond in procs:
+        if not cond:
+            continue
+        adj = _adj_win(win, n, k=20)
+        if (best is None) or (adj > best["adj"]) or (abs(adj - best["adj"]) < 1e-9 and n > best["n"]):
+            best = {"title": title, "win": float(win), "n": int(n), "adj": float(adj)}
+    return best
+
+def _probe_sog_best(r: dict) -> dict | None:
+    # Use the SOG HUD procs (2.5 and 3.5). Exclude 3.5 BASE.
+    line = _safe_float(r.get("SOG_Line"))
+    line = 0.0 if line is None else float(line)
+    conf = _safe_float(r.get("Conf_SOG")) or 0.0
+    mat_green = _is_matrix_green(str(r.get("Matrix_SOG", "") or ""))
+
+    # 3.5 sniper spec
+    if line >= 3.5:
+        l40 = _safe_float(r.get("L40_Rate_SOG", r.get("L40_Rate_SOG", 0))) or 0.0
+        xga = _safe_float(r.get("opp_5v5_xGA60", r.get("Opp_5v5_xGA60", r.get("opp_xGA60", 0)))) or 0.0
+        hdca = _safe_float(r.get("opp_5v5_HDCA60", r.get("Opp_5v5_HDCA60", r.get("opp_HDCA60", 0)))) or 0.0
+        share = _safe_float(r.get("Player_5v5_SOG_Share", r.get("SOG_Share_5v5", r.get("Player_SOG_Share_5v5", 0)))) or 0.0
+        opp_l50 = _safe_float(r.get("Opp_SOG_Against_L50", r.get("OppSOG_L50", r.get("Opp_SOG_L50", 0)))) or 0.0
+
+        if not (mat_green and conf >= 75):
+            return None
+
+        permission_shatter = (xga >= 2.50) or (hdca >= 2.20)
+        enraged = (l40 >= 3.0) and (xga >= 2.50)
+        elite_enraged = enraged and (share >= 20.0)
+        enraged_shatter = (opp_l50 >= 29.5) and permission_shatter
+
+        procs = [
+            ("SNIPER CRIT", 71.4, 28, elite_enraged),
+            ("STRONG", 60.4, 53, enraged),
+            ("PERMISSION SPECIAL", 60.7, 28, enraged_shatter),
+            ("Enhanced Enraged (Share ≥ 18)", 64.1, 39, (enraged and share >= 18.0)),
+        ]
+        best=None
+        for title, win, n, cond in procs:
+            if not cond:
+                continue
+            adj=_adj_win(win,n,k=20)
+            if best is None or adj>best["adj"] or (abs(adj-best["adj"])<1e-9 and n>best["n"]):
+                best={"title": title, "win": float(win), "n": int(n), "adj": float(adj)}
+        return best
+
+    # 2.5 kit
+    xga = _safe_float(r.get("opp_5v5_xGA60", r.get("Opp_5v5_xGA60", 0))) or 0.0
+    drought = _safe_float(r.get("Drought_SOG", r.get("Drought_S", 0))) or 0.0
+    avg5 = _safe_float(r.get("Avg5_SOG", r.get("Avg5", 0))) or 0.0
+    sipct = _safe_float(r.get("ShotIntent_Pct", r.get("ShotIntentPct", r.get("SI_Pct", 0)))) or 0.0
+    l20 = _safe_float(r.get("L20_Rate_SOG", r.get("L20_Rate", r.get("L20_SOG_Rate", 0)))) or 0.0
+    share = _safe_float(r.get("Player_5v5_SOG_Share", r.get("SOG_5v5_Share", 0))) or 0.0
+    opp_sog50 = _safe_float(r.get("Opp_SOG_Against_L50", r.get("Opp_SOG_Against_50", r.get("Opp_SOG_Against_50g", 0)))) or 0.0
+
+    base25 = (mat_green and (line > 0 and line <= 2.5) and (conf >= 75))
+    if not base25:
+        return None
+
+    # DPS anchors (from HUD)
+    procs = [
+        ("Siege (Ultimate)", 90.9, 11, (l20 >= 3.0 and share >= 16 and conf >= 83 and xga >= 2.50)),
+        ("Assassin’s Overdrive (Elite)", 81.0, 21, (l20 >= 3.4 and share >= 16)),
+        ("Berserker’s Rage (Strong)", 73.0, 37, (l20 >= 3.0 and share >= 16)),
+        ("Berserker Volley (Role)", 61.8, 55, (share >= 16)),
+        ("Berserker Swipe (Backbone)", 63.1, 65, (l20 >= 3.0)),
+        ("Locked & Loaded (Conf Spike)", 59.2, 49, (conf >= 82)),
+        ("Berserker’s Patience", 60.5, 43, (drought >= 1)),
+        ("Bloodthirst", 66.7, 27, (drought >= 1 and xga >= 2.48)),
+        ("Shattered Armor (Crit)", 71.4, 35, (xga >= 2.55)),
+        ("Shattered Ice II", 65.9, 41, (xga >= 2.50)),
+        ("Shattered Ice I", 58.0, 69, (xga >= 2.46)),
+        ("Berserker’s Barrage (Shots Allowed)", 58.9, 73, (opp_sog50 >= 27.5)),
+        ("Enraged Strike", 57.1, 21, (sipct >= 96.0)),
+        ("Elite Enraged Strike", 66.7, 18, (sipct >= 96.5)),
+    ]
+
+    best=None
+    for title, win, n, cond in procs:
+        if not cond:
+            continue
+        adj=_adj_win(win,n,k=20)
+        if best is None or adj>best["adj"] or (abs(adj-best["adj"])<1e-9 and n>best["n"]):
+            best={"title": title, "win": float(win), "n": int(n), "adj": float(adj)}
+    return best
+
+def _probe_best_proc(mkt: str, r: dict) -> dict | None:
+    mk = str(mkt or "").strip().upper()
+    if mk == "POINTS":
+        return _probe_points_best(r)
+    if mk == "ASSISTS":
+        return _probe_assists_best(r)
+    if mk in ("GOALS","GOAL","ATG"):
+        return _probe_goals_best(r)
+    if mk == "SOG":
+        return _probe_sog_best(r)
+    return None
+
 def _render_sog_combat_hud(r):
     """SOG COMBAT HUD (Berserker kit) — EV ignored.
 
@@ -992,8 +1521,24 @@ def _render_sog_combat_hud(r):
             _svg_icon("sog_basic_swipe.svg", "Jungle Stance (SOG)", "wl-sog"),
             "Guardrails NOT met — needs Matrix Green + line≤2.5 + Conf≥75",
         )
+    # Rank label tracking (presentation only)
+    _best_title = ""
+    _best_win = None
+    _best_n = 0
+    _best_aw = -1.0
+    def _track_best(title: str, win: float, n: int) -> None:
+        nonlocal _best_title, _best_win, _best_n, _best_aw
+        aw = _adj_win(win, n, k=20)
+        nn = int(n) if n is not None else 0
+        if (aw > _best_aw) or (abs(aw - _best_aw) < 1e-9 and nn > _best_n):
+            _best_aw = aw
+            _best_title = title
+            _best_win = float(win)
+            _best_n = nn
+
 
     def _render_move(icon_file: str, title: str, body: str, win: float, n: int, show_bar: bool = True) -> None:
+        _track_best(title, win, n)
         _wl_why_line(_svg_icon(icon_file, title, "wl-sog"), body)
         if show_bar:
             _wl_dps_bar(win, "SOG")
@@ -1308,6 +1853,10 @@ def _render_sog_combat_hud(r):
             DPS["enhanced_enraged_2"]["win"],
             DPS["enhanced_enraged_2"]["n"],
         )
+    # Rank label (best active proc)
+    if _best_title and _best_win is not None:
+        _render_rank_line(_best_title, _best_win, _best_n, "SOG")
+
 
 def _render_points_combat_hud(r: dict) -> None:
     """Render POINTS combat HUD (Fortress 0.5 & DPS 1.5) in the same style as GOALS/ASSISTS/SOG.
@@ -1808,6 +2357,22 @@ def _render_assists_combat_hud(r) -> None:
 
     moves_rendered = 0
 
+    # Rank label tracking (presentation only)
+    _best_title = ""
+    _best_win = None
+    _best_n = 0
+    _best_aw = -1.0
+    def _track_best(label: str, win: float, n: int) -> None:
+        nonlocal _best_title, _best_win, _best_n, _best_aw
+        aw = _adj_win(win, n, k=20)
+        nn = int(n) if n is not None else 0
+        if (aw > _best_aw) or (abs(aw - _best_aw) < 1e-9 and nn > _best_n):
+            _best_aw = aw
+            _best_title = label
+            _best_win = float(win)
+            _best_n = nn
+
+
 
     def _move_line(icon_file: str, label: str, dps_key: str = None, extra: str = ""):
         nonlocal moves_rendered
@@ -1815,6 +2380,7 @@ def _render_assists_combat_hud(r) -> None:
         tail = f" — {extra}" if extra else ""
         st.markdown(f"{ico} <b>{label}</b>{tail}", unsafe_allow_html=True)
         if dps_key and (dps_key in DPS):
+            _track_best(label, DPS[dps_key]["win"], DPS[dps_key]["n"])
             st.caption(f"n={DPS[dps_key]['n']} • Win%={DPS[dps_key]['win']:.1f}")
             _wl_dps_bar(DPS[dps_key]["win"], mk)
         moves_rendered += 1
@@ -1870,6 +2436,11 @@ def _render_assists_combat_hud(r) -> None:
         _move_line("supernova.svg", "Supernova Overdrive", "supernova_overdrive",
                    "Conf ≥ 80 + iXA% ≥ 95 + PP_iXA60 ≥ 3.7 + Team_GF_L5 ≥ 20")
 
+    
+    # Rank label (best active proc)
+    if _best_title and _best_win is not None:
+        _render_rank_line(_best_title, _best_win, _best_n, mk)
+
     if moves_rendered == 0:
         st.caption("No procs fired (inside gate).")
 
@@ -1912,6 +2483,7 @@ def _render_goals_combat_hud(r) -> None:
     DPS = {
         "base": {"n": 423, "win": 34.3},
         "armor_shred": {"n": 189, "win": 41.8},   # xGA >= 2.49
+        "hot_team_press": {"n": 81, "win": 51.9},  # xGA>=2.49 & iXG>=96.5 & Team_GF>=3.0
         "armor_buff":  {"n": 234, "win": 28.2},   # xGA < 2.49 (derived complement)
 
         "fenrir_34": {"n": 200, "win": 40.0},     # iXG% >= 97
@@ -1931,6 +2503,36 @@ def _render_goals_combat_hud(r) -> None:
         "fury_shredder": {"n": 15, "win": 73.3},         # xGA>=2.52 & iXG>=94 & OppSOG>=29 & Drought_G>=2
     }
 
+    
+    # Rank label tracking (presentation only) — excludes BASE
+    _best_title = ""
+    _best_win = None
+    _best_n = 0
+    _best_aw = -1.0
+    _key_titles = {
+        "tyrs_wrath_unleashed": "Tyr’s Wrath Unleashed",
+        "fenrir_36": "Fenrir’s Fury (3.6)",
+        "fenrir_34": "Fenrir’s Fury (3.4)",
+        "valhalla": "FOR VALHALLA",
+        "smash": "SMASH",
+        "armor_annihilation": "Armor Annihilation",
+        "fury_shredder": "Fury Shredder",
+        "hot_team_press": "Press the Attack",
+    }
+    def _track_best_key(key: str) -> None:
+        nonlocal _best_title, _best_win, _best_n, _best_aw
+        if not key or key == "base" or key not in DPS:
+            return
+        win = DPS[key]["win"]
+        n = DPS[key]["n"]
+        title = _key_titles.get(key, key)
+        aw = _adj_win(win, n, k=20)
+        nn = int(n) if n is not None else 0
+        if (aw > _best_aw) or (abs(aw - _best_aw) < 1e-9 and nn > _best_n):
+            _best_aw = aw
+            _best_title = title
+            _best_win = float(win)
+            _best_n = nn
     base_win = DPS["base"]["win"]
 
     st.markdown("**Combat HUD (GOALS):**")
@@ -1977,6 +2579,24 @@ def _render_goals_combat_hud(r) -> None:
             "Enemy armor state unknown — opp xGA missing",
         )
 
+
+    # Team offense (L5) — used for Press the Attack
+    team_gf = None
+    for k in ("Team_GF_Avg_L5", "Team_GF_L5_Avg", "Team_GF_L5", "Team_GoalsFor_Avg_L5"):
+        if k in r:
+            team_gf = _safe_float(r.get(k, None), None)
+            if team_gf is not None:
+                break
+    # Press the Attack (NEW): xGA>=2.49 & iXG>=96.5 & Team_GF_Avg_L5>=3.0
+    hot_press_on = bool((xga is not None and xga >= 2.49) and (ixg is not None and ixg >= 96.5) and (team_gf is not None and team_gf >= 3.0))
+    if hot_press_on:
+        _wl_why_line(
+            _svg_icon("smash.svg", "Press the Attack", "wl-goals wl-keep"),
+            f"Press the Attack — xGA {xga:.2f} ≥ 2.49 • iXG {ixg:.1f} ≥ 96.5 • Team GF {team_gf:.1f} ≥ 3.0  •  DPS {DPS['hot_team_press']['win']}% (n={DPS['hot_team_press']['n']})  (Δ {DPS['hot_team_press']['win']-base_win:+.1f})",
+        )
+        _wl_dps_bar(DPS["hot_team_press"]["win"], "GOALS")
+        _track_best_key("hot_team_press")
+
     # Lane flags
     opp_lane = bool(oppsog is not None and oppsog >= 29)
     env_249  = bool(xga is not None and xga >= 2.49)
@@ -1990,6 +2610,7 @@ def _render_goals_combat_hud(r) -> None:
             _svg_icon("fury.svg", "Tyr’s Wrath Unleashed", "wl-goals"),
             f"Tyr’s Wrath Unleashed — OppSOG≥29 + Share≥15 + xGA≥2.52 + iXG≥97  •  DPS {DPS['tyrs_wrath_unleashed']['win']}% (n={DPS['tyrs_wrath_unleashed']['n']})  (Δ {DPS['tyrs_wrath_unleashed']['win']-base_win:+.1f})",
         )
+        _track_best_key("tyrs_wrath_unleashed")
         _wl_dps_bar(DPS["tyrs_wrath_unleashed"]["win"], "GOALS")
 
     # 3) Fury lane (Opp shot funnel) — show highest tier only (unless Tyr is active)
@@ -2021,12 +2642,14 @@ def _render_goals_combat_hud(r) -> None:
                 _svg_icon("fenrir_claw.svg", "Fenrir’s Claw (Potent)", "wl-goals"),
                 f"Fenrir’s Claw (Potent) — iXG {ixg:.1f} ≥ 99 & xGA≥2.55  •  DPS {DPS['fenrir_36']['win']}% (n={DPS['fenrir_36']['n']})  (Δ {DPS['fenrir_36']['win']-base_win:+.1f})",
             )
+            _track_best_key("fenrir_36")
             _wl_dps_bar(DPS["fenrir_36"]["win"], "GOALS")
         else:
             _wl_why_line(
                 _svg_icon("fenrir_claw.svg", "Fenrir’s Claw", "wl-goals"),
                 f"Fenrir’s Claw — iXG {ixg:.1f} ≥ 97  •  DPS {DPS['fenrir_34']['win']}% (n={DPS['fenrir_34']['n']})  (Δ {DPS['fenrir_34']['win']-base_win:+.1f})",
             )
+            _track_best_key("fenrir_34")
             _wl_dps_bar(DPS["fenrir_34"]["win"], "GOALS")
 
     # 5) Premium tiers (Special / Ultimate) — show highest only
@@ -2039,12 +2662,14 @@ def _render_goals_combat_hud(r) -> None:
             _svg_icon("valhalla.svg", "FOR VALHALLA! (Ultimate)", "wl-goals"),
             f"FOR VALHALLA! — Armor Annihilation + Conf≥95  •  DPS {DPS['valhalla']['win']}% (n={DPS['valhalla']['n']})",
         )
+        _track_best_key("valhalla")
         _wl_dps_bar(DPS["valhalla"]["win"], "GOALS")
     elif smash:
         _wl_why_line(
             _svg_icon("smash.svg", "Warlord Smash Attack (Special)", "wl-goals"),
             f"Warlord Smash Attack — Armor Annihilation + Conf≥91  •  DPS {DPS['smash']['win']}% (n={DPS['smash']['n']})  (Δ {DPS['smash']['win']-base_win:+.1f})",
         )
+        _track_best_key("smash")
         _wl_dps_bar(DPS["smash"]["win"], "GOALS")
 
     # -------------------------
@@ -2063,6 +2688,7 @@ def _render_goals_combat_hud(r) -> None:
             _svg_icon("stack_armor_annihilation.svg", "Armor Annihilation", "wl-goals"),
             f"Armor Annihilation — iXG≥97 + xGA≥2.52  •  DPS {DPS['armor_annihilation']['win']}% (n={DPS['armor_annihilation']['n']})  (Δ {DPS['armor_annihilation']['win']-base_win:+.1f})",
         )
+        _track_best_key("armor_annihilation")
         _wl_dps_bar(DPS["armor_annihilation"]["win"], "GOALS")
 
     if fury_shredder:
@@ -2070,8 +2696,13 @@ def _render_goals_combat_hud(r) -> None:
             _svg_icon("stack_fury_shredder.svg", "Fury Shredder", "wl-goals"),
             f"Fury Shredder — Funnel core + Drought_G≥2  •  DPS {DPS['fury_shredder']['win']}% (n={DPS['fury_shredder']['n']})  (Δ {DPS['fury_shredder']['win']-base_win:+.1f})",
         )
+        _track_best_key("fury_shredder")
         _wl_dps_bar(DPS["fury_shredder"]["win"], "GOALS")
 
+
+    # Rank label (best active proc, BASE excluded)
+    if _best_title and _best_win is not None:
+        _render_rank_line(_best_title, _best_win, _best_n, "GOALS")
 
 
 def _render_why_it_fires_rich(mkt: str, r, tags: str = "") -> None:
@@ -4312,7 +4943,11 @@ def _passes_engine(b: dict) -> bool:
 
 
 def select_all_market_rows(row, thr_conf: int, thr_ev: float, thr_drought: int, thr_gap: float, thr_heat: float) -> list[dict]:
-    """Return ALL market bundles that pass the hard gate (multi-market allowed)."""
+    """Return ALL market bundles that pass the hard gate (multi-market allowed).
+
+    Ranking is DPS-first (AdjWin shrunk by n), then DPS n, then odds nudge.
+    EV is NOT used for ordering (may still exist as a filter elsewhere).
+    """
     cands = [
         _bundle_for_market(row, "sog"),
         _bundle_for_market(row, "assists"),
@@ -4320,8 +4955,30 @@ def select_all_market_rows(row, thr_conf: int, thr_ev: float, thr_drought: int, 
         _bundle_for_market(row, "goal"),
     ]
     elig = [c for c in cands if _passes_engine(c)]
-    # sort strongest first
-    elig.sort(key=lambda x: (x.get("ev", 0.0), x.get("conf", 0), x.get("model", 0.0)), reverse=True)
+
+    # attach best DPS proc (presentation only)
+    for b in elig:
+        p = _probe_best_proc(str(b.get("label","") or "").upper().strip(), row)
+        if p:
+            b["dps_title"] = p["title"]
+            b["dps_win"] = p["win"]
+            b["dps_n"] = p["n"]
+            b["dps_adj"] = p["adj"]
+        else:
+            b["dps_title"] = ""
+            b["dps_win"] = 0.0
+            b["dps_n"] = 0
+            b["dps_adj"] = 0.0
+
+    # sort strongest first (DPS AdjWin, then n, then odds (less-favorite / higher odds wins ties))
+    elig.sort(
+        key=lambda x: (
+            float(x.get("dps_adj", 0.0) or 0.0),
+            int(x.get("dps_n", 0) or 0),
+            float(x.get("odds", 0.0) or 0.0),
+        ),
+        reverse=True,
+    )
     return elig
 
 def select_best_market_row(row, thr_conf: int, thr_ev: float, thr_drought: int, thr_gap: float, thr_heat: float):
@@ -5163,13 +5820,8 @@ if page == "Board":
         return ""
 
     # -------------------------
-    # Board-only gating (does NOT affect other pages)
+    # Board filters (beta polish) — presentation only
     # -------------------------
-    thr_conf = int(st.sidebar.number_input("Smash min Confidence", min_value=0, max_value=100, value=int(THR_CONF_DEFAULT), step=1, key="board_thr_conf"))
-    thr_ev = float(st.sidebar.number_input("Smash min EV%", value=float(THR_EV_DEFAULT), step=0.5, key="board_thr_ev"))
-    thr_drought = int(st.sidebar.number_input("Smash min Drought", min_value=0, max_value=20, value=int(THR_DROUGHT_DEFAULT), step=1, key="board_thr_drought"))
-    thr_gap = float(st.sidebar.number_input("Smash min Reg Gap", value=float(THR_REG_GAP_DEFAULT), step=0.5, key="board_thr_gap"))
-    thr_heat = float(st.sidebar.number_input("Smash min Reg Heat", value=float(THR_REG_HEAT_DEFAULT), step=0.5, key="board_thr_heat"))
 
     df_board_src = df_f.copy()
 
@@ -5193,7 +5845,7 @@ if page == "Board":
     best_rows = []
 
     for _, _r in df_board_src.iterrows():
-        passing = select_all_market_rows(_r, thr_conf, thr_ev, thr_drought, thr_gap, thr_heat)
+        passing = select_all_market_rows(_r, 0, 0.0, 0, 0.0, 0.0)
         if not passing:
             continue
         for b in passing:
@@ -5211,9 +5863,14 @@ if page == "Board":
             rr["Best_EV%"] = b["ev"]
             rr["Best_Model%"] = b["model"]
             rr["Best_Line"] = b["line"]
+            rr["Best_Odds"] = b.get("odds", _r.get("Odds", 0))
             rr["Best_Drought"] = b["drought"]
             rr["Best_Reg_Gap10"] = b["reg_gap"]
             rr["Best_Reg_Heat10"] = b["reg_heat"]
+            rr["DPS_Title"] = b.get("dps_title","")
+            rr["DPS_Win"] = b.get("dps_win",0.0)
+            rr["DPS_N"] = b.get("dps_n",0)
+            rr["DPS_Adj"] = b.get("dps_adj",0.0)
             best_rows.append(rr)
 
     df_board = pd.DataFrame(best_rows) if best_rows else df_board_src.iloc[0:0]
@@ -5280,13 +5937,41 @@ if page == "Board":
         st.metric("+EV", int((df_b["EV_Signal"].astype(str).str.contains("💰")).sum()) if "EV_Signal" in df_b.columns else 0)
     with cD:
         st.metric("Top Conf", float(df_b["Best_Conf"].max()) if "Best_Conf" in df_b.columns else 0.0)
+    # === Board filter set (beta default) ===
+    st.sidebar.subheader("Board Filters (DPS-first)")
+    market_sel = st.sidebar.multiselect("Market", ["POINTS","ASSISTS","SOG","GOALS"], default=["POINTS","ASSISTS","SOG","GOALS"], key="board_mkt_sel")
+    # Lines available depend on the underlying slate
+    line_vals = sorted([x for x in pd.unique(pd.to_numeric(df_b.get("Best_Line", pd.Series([])), errors="coerce")) if not pd.isna(x)])
+    line_sel = st.sidebar.multiselect("Line", line_vals, default=line_vals, key="board_line_sel") if len(line_vals) else []
+    move_vals = sorted([x for x in pd.unique(df_b.get("DPS_Title", pd.Series([])).astype(str)) if x and x != "nan"])
+    move_sel = st.sidebar.multiselect("Move / Tier", move_vals, default=move_vals, key="board_move_sel") if len(move_vals) else []
+    min_win = float(st.sidebar.slider("Min DPS win%", 0.0, 100.0, 55.0, 0.5, key="board_min_win"))
+    min_n = int(st.sidebar.number_input("Min DPS n", min_value=0, max_value=500, value=20, step=1, key="board_min_n"))
+    max_fav_odds = int(st.sidebar.number_input("Max favorite odds (e.g. -200)", min_value=-1000, max_value=300, value=-200, step=5, key="board_max_fav"))
+    q = st.sidebar.text_input("Search", value="", key="board_search").strip().lower()
 
-    # Top candidates: prefer locks, then EV signal, then confidence (presentation-only)
+    df_b_filt = df_b.copy()
+    if market_sel:
+        df_b_filt = df_b_filt[df_b_filt["Best_Market"].astype(str).str.upper().isin([m.upper() for m in market_sel])]
+    if line_sel:
+        df_b_filt = df_b_filt[pd.to_numeric(df_b_filt.get("Best_Line", 0), errors="coerce").isin(line_sel)]
+    if move_sel:
+        df_b_filt = df_b_filt[df_b_filt.get("DPS_Title","").astype(str).isin(move_sel)]
+    df_b_filt = df_b_filt[pd.to_numeric(df_b_filt.get("DPS_Win", 0), errors="coerce").fillna(0.0) >= min_win]
+    df_b_filt = df_b_filt[pd.to_numeric(df_b_filt.get("DPS_N", 0), errors="coerce").fillna(0).astype(int) >= min_n]
+    # odds filter: hide ultra-favorites (keep anything >= max_fav_odds)
+    df_b_filt = df_b_filt[pd.to_numeric(df_b_filt.get("Best_Odds", df_b_filt.get("Odds", 0)), errors="coerce").fillna(0.0) >= float(max_fav_odds)]
+    if q:
+        df_b_filt = df_b_filt[df_b_filt.get("Player","").astype(str).str.lower().str.contains(q)]
+
+
+
+    # Top candidates: DPS-first (presentation-only)
     _rank = df_b.copy()
-    _rank["_is_lock"] = _rank["LOCK"].astype(str).str.len().fillna(0).astype(int) if "LOCK" in _rank.columns else 0
-    _rank["_is_ev"] = _rank["EV_Signal"].astype(str).str.contains("💰").fillna(False).astype(int) if "EV_Signal" in _rank.columns else 0
-    _rank["_bc"] = pd.to_numeric(_rank.get("Best_Conf", 0), errors="coerce").fillna(0)
-    _rank = _rank.sort_values(["_is_lock","_is_ev","_bc"], ascending=[False, False, False])
+    _rank["_dps_adj"] = pd.to_numeric(_rank.get("DPS_Adj", 0), errors="coerce").fillna(0.0)
+    _rank["_dps_n"] = pd.to_numeric(_rank.get("DPS_N", 0), errors="coerce").fillna(0).astype(int)
+    _rank["_odds"] = pd.to_numeric(_rank.get("Best_Odds", _rank.get("Odds", 0)), errors="coerce").fillna(0.0)
+    _rank = _rank.sort_values(["_dps_adj","_dps_n","_odds"], ascending=[False, False, False])
 
     top_n = st.slider("Show top plays", 5, 30, 12, 1, key="board_topn")
     top = _rank.head(int(top_n)).copy()
@@ -5323,7 +6008,11 @@ if page == "Board":
                 bm_heat = r.get("Reg_Heat_G","")
             flames = _flames_from_heat(bm_heat)
 
-            headline = f"**{player}** — {game}  ·  {expl}{crit} **{bm}** {flames} ·  Conf **{bc}**"
+            dps_t = str(r.get("DPS_Title","") or "").strip()
+            dps_w = _safe_float(r.get("DPS_Win"), 0.0) or 0.0
+            dps_n = int(_safe_float(r.get("DPS_N"), 0) or 0)
+            dps_a = _safe_float(r.get("DPS_Adj"), 0.0) or 0.0
+            headline = f"**{player}** — {game}  ·  {expl}{crit} **{bm}**  ·  🏆 {dps_t}  ·  AdjWin **{dps_a:.1f}**  (Win {dps_w:.1f}% • n={dps_n})"
             mb = calc_ev_per_dollar(_to_float(_get(r, "Model%", "Model_Prob", default="")), _to_float(_get(r, "Odds", "Odds_Amer", default="")))
             mb_txt = f"↩ {mb:+.2f}/$1" if mb is not None else ""
             badges = " ".join([str(x) for x in [lock, evsig, mb_txt] if str(x).strip()])
@@ -5336,178 +6025,30 @@ if page == "Board":
                         f"</div>", unsafe_allow_html=True)
 
             with st.expander("🔥 Why it fires", expanded=False):
-                # Market-aware WHY renderer (MAIN / SUPPORT / TONIGHT)
+                # Market-aware combat HUD (presentation only)
                 mkt_raw = str(bm or "").strip().upper()
                 if mkt_raw.startswith("SOG"):
                     mkt = "SOG"
+                    tags = str(r.get("SOG_Why", r.get("Why","")) or "").strip()
                 elif mkt_raw.startswith("POINT"):
                     mkt = "POINTS"
+                    tags = str(r.get("Points_Why", r.get("Why","")) or "").strip()
                 elif mkt_raw.startswith("ASSIST"):
                     mkt = "ASSISTS"
+                    tags = str(r.get("Assist_Why", r.get("Why","")) or "").strip()
                 elif mkt_raw.startswith("ATG"):
                     mkt = "ATG"
+                    tags = str(r.get("Goal_Why", r.get("Why","")) or "").strip()
                 elif mkt_raw.startswith("GOAL"):
                     mkt = "GOALS"
+                    tags = str(r.get("Goal_Why", r.get("Why","")) or "").strip()
                 else:
                     mkt = mkt_raw or "UNKNOWN"
+                    tags = str(r.get("Why","") or "").strip()
 
-                def _f(x, default=None):
-                    try:
-                        if pd.isna(x):
-                            return default
-                        return float(x)
-                    except Exception:
-                        return default
+                _why_sections_header(mkt)
+                _render_why_it_fires_rich(mkt, r, tags)
 
-                def _s(x):
-                    return str(x).strip() if x is not None and not pd.isna(x) else ""
-
-                def _heat_to_flames(h: str) -> str:
-                    h = _s(h).upper()
-                    if "OVERDUE" in h:
-                        return "🔥🔥🔥"
-                    if h in ("HOT","DUE"):
-                        return "🔥🔥"
-                    return ""
-
-                mu = line = None
-                heat = ""
-                gap = None
-                drought = None
-                proof = None
-
-                if mkt == "SOG":
-                    mu = _f(r.get("SOG_mu"))
-                    line = _f(r.get("SOG_Line"))
-                    heat = _s(r.get("Reg_Heat_S"))
-                    gap = _f(r.get("Reg_Gap_S10"))
-                    drought = _f(r.get("Drought_SOG"))
-                    proof = _f(r.get("SOG_ProofCount"))
-                elif mkt == "POINTS":
-                    mu = _f(r.get("Points_mu"))
-                    line = _f(r.get("Points_Line"))
-                    heat = _s(r.get("Reg_Heat_P"))
-                    gap = _f(r.get("Reg_Gap_P10"))
-                    drought = _f(r.get("Drought_P"))
-                    proof = _f(r.get("Points_ProofCount"))
-                elif mkt == "ASSISTS":
-                    mu = _f(r.get("Assists_mu"))
-                    line = _f(r.get("Assists_Line"), 0.5)
-                    heat = _s(r.get("Reg_Heat_A"))
-                    gap = _f(r.get("Reg_Gap_A10"))
-                    drought = _f(r.get("Drought_A"))
-                    proof = _f(r.get("Assist_ProofCount"))
-                elif mkt in ("GOALS","ATG"):
-                    if mkt == "ATG":
-                        mu = _f(r.get("ATG_mu"))
-                        line = _f(r.get("Goal_Line"), 0.5)
-                    else:
-                        mu = _f(r.get("Goal_mu"))
-                        line = _f(r.get("Goal_Line"), 0.5)
-                    heat = _s(r.get("Reg_Heat_G"))
-                    gap = _f(r.get("Reg_Gap_G10"))
-                    drought = _f(r.get("Drought_G"))
-                    proof = _f(r.get("Goal_ProofCount"))
-
-                flames = _heat_to_flames(heat)
-                med10_sog = _f(r.get("Med10_SOG"))
-                avg5_sog = _f(r.get("Avg5_SOG"))
-                share_sog = _f(r.get("Player_5v5_SOG_Share"))
-                toi = _f(r.get("TOI_per_game"))
-                pp_role = _s(r.get("PP_Role"))
-                pp_match = _f(r.get("PP_Matchup"))
-                opp_def = _f(r.get("Opp_DefWeak"))
-                gk_weak = _f(r.get("Goalie_Weak"))
-                opp_sog_l10 = _f(r.get("Opp_SOG_Against_L10"))
-                team_sf60 = _f(r.get("team_5v5_SF60"))
-                tier_raw = (r.get('Tier_Tag_Best') or r.get('Tier_Tag') or r.get('Tier') or r.get('TierTag') or r.get('Tier_Class') or '')
-                tier_u = _s(tier_raw).upper()
-
-                main = ""
-                if mkt == "SOG":
-                    if (med10_sog is not None and line is not None and med10_sog >= max(4.0, line + 1.0)) or (avg5_sog is not None and line is not None and avg5_sog >= max(4.0, line + 1.0)):
-                        main = "High Shot Volume"
-                    elif (mu is not None and line is not None and mu >= line + 1.5):
-                        main = "μ Expectation (High)"
-                    elif (toi is not None and toi >= 18) or (share_sog is not None and share_sog >= 0.12):
-                        main = "Usage Dominance"
-                elif mkt == "POINTS":
-                    if (mu is not None and line is not None and mu >= line + 1.5):
-                        main = "μ Expectation (High)"
-                    elif flames == "🔥🔥🔥":
-                        main = "Bonkers Regression 🔥🔥🔥"
-                    elif (gk_weak is not None and gk_weak >= 65) and (opp_def is not None and opp_def >= 60) and (mu is not None and line is not None and mu >= line + 0.75):
-                        main = "Scoring Environment"
-                elif mkt == "ASSISTS":
-                    if (proof is not None and proof >= 4):
-                        main = "🗡️ Assist Proof (4/6)"
-                    elif (mu is not None and line is not None and mu >= line + 1.5) and (proof is not None and proof >= 4):
-                        main = "μ Expectation (High)"
-                    elif flames == "🔥🔥🔥" and (proof is not None and proof >= 4):
-                        main = "Bonkers Regression 🔥🔥🔥"
-                elif mkt in ("GOALS","ATG"):
-                    if (mu is not None and line is not None and mu >= line + 0.35):
-                        main = "μ Expectation (High)"
-                    elif flames == "🔥🔥🔥" and ((gk_weak is not None and gk_weak >= 65) or (opp_def is not None and opp_def >= 60)):
-                        main = "Conversion Regression 🔥🔥🔥"
-                    elif (gk_weak is not None and gk_weak >= 70) and ((med10_sog is not None and med10_sog >= 3.5) or (avg5_sog is not None and avg5_sog >= 3.5)):
-                        main = "Finishing Matchup"
-
-                supports = []
-                def _add_support(label: str, ok: bool):
-                    supports.append((label, bool(ok)))
-
-                if mkt == "SOG":
-                    _add_support("μ Moderate+", (mu is not None and line is not None and mu >= line + 0.75))
-                    _add_support("Stable Usage", (toi is not None and toi >= 16))
-                    _add_support("STAR/ELITE", ("ELITE" in tier_u) or ("STAR" in tier_u))
-                    _add_support("Shot Environment", (opp_sog_l10 is not None and opp_sog_l10 >= 30) or (opp_def is not None and opp_def >= 60))
-                    _add_support("Pace", (team_sf60 is not None and team_sf60 >= 58))
-                elif mkt == "POINTS":
-                    _add_support("μ Moderate+", (mu is not None and line is not None and mu >= line + 0.75))
-                    _add_support("Regression 🔥🔥", flames in ("🔥🔥","🔥🔥🔥"))
-                    _add_support("STAR/ELITE", ("ELITE" in tier_u) or ("STAR" in tier_u))
-                    _add_support("Usage Stability", (toi is not None and toi >= 16))
-                    _add_support("PP Role", pp_role != "" and pp_role.upper() not in ("NONE","0","N/A"))
-                elif mkt == "ASSISTS":
-                    _add_support("μ Moderate+", (mu is not None and line is not None and mu >= line + 0.75))
-                    _add_support("Regression 🔥🔥", flames in ("🔥🔥","🔥🔥🔥"))
-                    _add_support("PP Distributor", bool(r.get("Assist_PP_Proof")) or (pp_role != "" and (("PP1" in pp_role.upper()) or ("PP2" in pp_role.upper()) or pp_role.strip() in ("1","2"))))
-                    _add_support("STAR/ELITE", ("ELITE" in tier_u) or ("STAR" in tier_u))
-                    _add_support("Linemate Finishing", (opp_def is not None and opp_def >= 60) or (gk_weak is not None and gk_weak >= 65))
-                elif mkt in ("GOALS","ATG"):
-                    _add_support("μ Moderate+", (mu is not None and line is not None and mu >= line + 0.20))
-                    _add_support("Regression 🔥🔥", flames in ("🔥🔥","🔥🔥🔥"))
-                    _add_support("Shooter Identity", (med10_sog is not None and med10_sog >= 3.5) or (avg5_sog is not None and avg5_sog >= 3.5))
-                    _add_support("STAR/ELITE", ("ELITE" in tier_u) or ("STAR" in tier_u))
-                    _add_support("PP Role", pp_role != "" and pp_role.upper() not in ("NONE","0","N/A"))
-
-                support_on = [lab for lab, ok in supports if ok]
-                support_score = sum(1 for _, ok in supports if ok)
-                support_total = len(supports)
-
-                tonight = []
-                if opp_def is not None and opp_def >= 60:
-                    tonight.append("Weak Defense")
-                if gk_weak is not None and gk_weak >= 65:
-                    tonight.append("Weak Goalie")
-                if pp_match is not None and pp_match >= 60:
-                    tonight.append("PP Matchup")
-                if mkt == "SOG" and opp_sog_l10 is not None and opp_sog_l10 >= 30:
-                    tonight.append("Shot-Friendly Opponent")
-                if team_sf60 is not None and team_sf60 >= 60:
-                    tonight.append("Pace")
-
-                st.markdown(f"**MAIN:** {main if main else '—'}")
-                st.markdown(f"**SUPPORT:** {support_score} / {support_total}")
-                st.caption(" • ".join(support_on) if support_on else "—")
-                st.markdown(f"**TONIGHT:** {' • '.join(tonight) if tonight else '—'}")
-                if flames:
-                    st.caption(f"Regression: {flames} ({heat})")
-                if gap is not None or drought is not None:
-                    _gap_s = f"{gap:.2f}" if gap is not None else "—"
-                    _dr_s = str(int(drought)) if drought is not None and not pd.isna(drought) else "—"
-                    st.caption(f"Reg gap: {_gap_s}  |  Drought: {_dr_s}")
     with st.expander("Full Board Table (all rows)", expanded=False):
         show_table(df_b, board_cols, "Board (sorted by Best_Conf)")
 
@@ -5655,6 +6196,11 @@ elif page == "Points":
         )
     except Exception:
         pass
+
+
+    # --- DPS ranking + filters (Board-style; presentation only) ---
+    df_p = add_best_proc_cols(df_p, 'POINTS')
+    df_p = apply_dps_filters_ui(df_p, 'POINTS', key_prefix='pts')
 
 
 
@@ -5996,6 +6542,11 @@ elif page == "Assists":
     df_a["Green"] = df_a.get("Green_Assists", False).map(lambda x: "🟢" if bool(x) else "")
     df_a["PP_PROOF"] = df_a.get("Assist_PP_Proof", False).map(lambda x: "✅" if bool(x) else "")
 
+    # --- DPS ranking + filters (Board-style; presentation only) ---
+    df_a = add_best_proc_cols(df_a, 'ASSISTS')
+    df_a = apply_dps_filters_ui(df_a, 'ASSISTS', key_prefix='assists')
+
+
     # Valhalla gate columns (Assists) — matches board text
     df_a["Valhalla_OK"] = (
         (df_a.get("Matrix_Assists", "").astype(str).str.strip().str.lower() == "green")
@@ -6319,6 +6870,11 @@ elif page == "SOG":
         )
     except Exception:
         pass
+
+
+    # --- DPS ranking + filters (Board-style; presentation only) ---
+    df_s = add_best_proc_cols(df_s, 'SOG')
+    df_s = apply_dps_filters_ui(df_s, 'SOG', key_prefix='sog')
 
     # -------------------------
     # SOG Smash (cards) — Berserker kit (EV ignored)
@@ -6755,6 +7311,11 @@ elif page == "GOALS (0.5)":
         )
     except Exception:
         pass
+
+
+    # --- DPS ranking + filters (Board-style; presentation only) ---
+    df_g = add_best_proc_cols(df_g, 'GOALS')
+    df_g = apply_dps_filters_ui(df_g, 'GOALS', key_prefix='goals')
 
 
 
