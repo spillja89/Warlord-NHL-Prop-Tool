@@ -1021,7 +1021,7 @@ def _probe_goals_best(r: dict) -> dict | None:
     line = _safe_float(r.get("Goal_Line", None), 0.0) or 0.0
     mat = str(r.get("Matrix_Goal", "") or "").strip().lower()
     conf = _safe_float(r.get("Conf_Goal", None), None)
-    stance_ok = bool(line == 0.5 and mat.startswith("g") and (conf is not None and conf >= 80))
+    stance_ok = bool(line == 0.5 and mat.startswith("g") and (conf is not None and conf >= 85))
 
     if not stance_ok:
         return None
@@ -1116,7 +1116,7 @@ def _probe_goals_best(r: dict) -> dict | None:
     envmix_odds_ok = bool(goal_odds is not None and goal_odds >= 150)
     procs.append(("Berserker Aggression (Env Mix)", *DPS["envmix_50"], bool(envmix_on)))
 
-    # Berserker Aggression (Env Mix • ELITE) — xGA>=2.55 & iXG>=97 & Team_GF>=3.8 (no odds requirement)
+    # Berserker Aggression (Env Mix • ELITE) — xGA>=2.55 & iXG>=92 & Team_GF>=3.8 (no odds requirement)
     procs.append(("Berserker Aggression (Env Mix • ELITE)", *DPS["envmix_elite"], bool((xga is not None and xga >= 2.55) and (ixg is not None and ixg >= 92) and (team_gf is not None and team_gf >= 3.8))))
 
     best = None
@@ -2478,7 +2478,7 @@ def _render_goals_combat_hud(r) -> None:
     mat = str(r.get("Matrix_Goal", "") or "").strip().lower()
     conf = _safe_float(r.get("Conf_Goal", None), None)
 
-    stance_ok = bool(line == 0.5 and mat.startswith("g") and (conf is not None and conf >= 80))
+    stance_ok = bool(line == 0.5 and mat.startswith("g") and (conf is not None and conf >= 85))
 
     # Core inputs (new GOALS lanes)
     xga   = _safe_float(r.get("opp_5v5_xGA60", None), None)
@@ -2640,12 +2640,12 @@ def _render_goals_combat_hud(r) -> None:
         if envmix_board_ok:
             _track_best_key("envmix_50")
 
-    # Berserker Aggression (Env Mix • ELITE) — xGA>=2.55 & iXG>=97 & Team_GF>=3.8 (no odds requirement)
-    envmix_elite_on = bool((xga is not None and xga >= 2.55) and (ixg is not None and ixg >= 97) and (team_gf is not None and team_gf >= 3.8))
+    # Berserker Aggression (Env Mix • ELITE) — xGA>=2.55 & iXG>=92 & Team_GF>=3.8 (no odds requirement)
+    envmix_elite_on = bool((xga is not None and xga >= 2.55) and (ixg is not None and ixg >= 92) and (team_gf is not None and team_gf >= 3.8))
     if envmix_elite_on:
         _wl_why_line(
             _svg_icon("smash.svg", "Berserker Aggression (Env Mix • ELITE)", "wl-goals wl-keep"),
-            f"Berserker Aggression (Env Mix • ELITE) — xGA {xga:.2f} ≥ 2.55 • iXG {ixg:.1f} ≥ 97 • Team GF {team_gf:.1f} ≥ 3.8  •  DPS {DPS['envmix_elite']['win']}% (n={DPS['envmix_elite']['n']})  (Δ {DPS['envmix_elite']['win']-base_win:+.1f})",
+            f"Berserker Aggression (Env Mix • ELITE) — xGA {xga:.2f} ≥ 2.55 • iXG {ixg:.1f} ≥ 92 • Team GF {team_gf:.1f} ≥ 3.8  •  DPS {DPS['envmix_elite']['win']}% (n={DPS['envmix_elite']['n']})  (Δ {DPS['envmix_elite']['win']-base_win:+.1f})",
         )
         _wl_dps_bar(DPS["envmix_elite"]["win"], "GOALS")
         _track_best_key("envmix_elite")
@@ -2700,7 +2700,7 @@ def _render_goals_combat_hud(r) -> None:
         else:
             _wl_why_line(
                 _svg_icon("fenrir_claw.svg", "Fenrir’s Claw", "wl-goals"),
-                f"Fenrir’s Claw — iXG {ixg:.1f} ≥ 97  •  DPS {DPS['fenrir_34']['win']}% (n={DPS['fenrir_34']['n']})  (Δ {DPS['fenrir_34']['win']-base_win:+.1f})",
+                f"Fenrir’s Claw — iXG {ixg:.1f} ≥ 92  •  DPS {DPS['fenrir_34']['win']}% (n={DPS['fenrir_34']['n']})  (Δ {DPS['fenrir_34']['win']-base_win:+.1f})",
             )
             _track_best_key("fenrir_34")
             _wl_dps_bar(DPS["fenrir_34"]["win"], "GOALS")
@@ -2950,7 +2950,7 @@ def _render_why_it_fires_rich(mkt: str, r, tags: str = "") -> None:
             else:
                 _wl_why_line(
                     _svg_icon("fenrir_claw.svg", "Fenrir’s Claw", "wl-goals"),
-                    f"Fenrir’s Claw — iXG {ixg:.1f} ≥ 97  •  DPS {DPS['fenrir_34']['win']}% (n={DPS['fenrir_34']['n']})  (Δ {DPS['fenrir_34']['win']-base_win:+.1f})",
+                    f"Fenrir’s Claw — iXG {ixg:.1f} ≥ 92  •  DPS {DPS['fenrir_34']['win']}% (n={DPS['fenrir_34']['n']})  (Δ {DPS['fenrir_34']['win']-base_win:+.1f})",
                 )
                 _wl_dps_bar(DPS["fenrir_34"]["win"], "GOALS")
 
