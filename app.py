@@ -7451,7 +7451,20 @@ elif page == "GOALS (0.5)":
     # Path C: Funnel Sniper (OppSOG + iXG>=97)
     path_sniper = m_opp & ixg97
 
-    eligible = path_armor | path_frenzy | path_sniper
+
+    # Path D: Berserker Aggression (Env Mix) — xGA>=2.55 & iXG>=92 & TeamGF>=3.0 (+150 odds requirement)
+    #        Elite Team Scoring tier — same but TeamGF>=3.8 (no odds requirement)
+    m_xga55 = _xga.fillna(-999) >= 2.55
+    ixg92   = _ixg.fillna(-999) >= 92
+    gf30    = _teamgf.fillna(-999) >= 3.0
+    gf38    = _teamgf.fillna(-999) >= 3.8
+    # Odds: prefer Goal_Odds_Over; fallback to ATG_Odds_Over; allow NaN only for elite tier
+    _odds_over = pd.to_numeric(_g.get("Goal_Odds_Over", _g.get("ATG_Odds_Over", np.nan)), errors="coerce")
+    odds150 = _odds_over.fillna(-999) >= 150
+    path_envmix = m_xga55 & ixg92 & gf30 & odds150
+    path_envmix_elite = m_xga55 & ixg92 & gf38
+
+    eligible = path_armor | path_frenzy | path_sniper | path_envmix | path_envmix_elite
 
     _g = _g[m_matrix & m_line & m_conf & m_grade & eligible].copy()
 
