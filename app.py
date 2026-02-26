@@ -1021,7 +1021,7 @@ def _probe_goals_best(r: dict) -> dict | None:
     line = _safe_float(r.get("Goal_Line", None), 0.0) or 0.0
     mat = str(r.get("Matrix_Goal", "") or "").strip().lower()
     conf = _safe_float(r.get("Conf_Goal", None), None)
-    stance_ok = bool(line == 0.5 and mat.startswith("g") and (conf is not None and conf >= 85))
+    stance_ok = bool(line == 0.5 and mat.startswith("g") and (conf is not None and conf >= 80))
 
     if not stance_ok:
         return None
@@ -2478,7 +2478,7 @@ def _render_goals_combat_hud(r) -> None:
     mat = str(r.get("Matrix_Goal", "") or "").strip().lower()
     conf = _safe_float(r.get("Conf_Goal", None), None)
 
-    stance_ok = bool(line == 0.5 and mat.startswith("g") and (conf is not None and conf >= 85))
+    stance_ok = bool(line == 0.5 and mat.startswith("g") and (conf is not None and conf >= 80))
 
     # Core inputs (new GOALS lanes)
     xga   = _safe_float(r.get("opp_5v5_xGA60", None), None)
