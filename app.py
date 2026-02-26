@@ -702,8 +702,6 @@ def _render_rank_line(best_title: str, win: float, n: int, mk: str) -> None:
 # =========================
 # Board-style DPS filters (shared by market pages) — presentation only
 # =========================
-ALLOWED_HALF_LINES = {0.5, 1.5, 2.5, 3.5}  # board hygiene: drop NaN/junk lines (e.g., injured scratch rows)
-
 def add_best_proc_cols(df: pd.DataFrame, mk: str) -> pd.DataFrame:
     """Add DPS_* columns (Title/Win/N/Adj) using the existing probe functions.
     Presentation-only: does not change any eligibility logic.
@@ -824,11 +822,6 @@ def apply_dps_filters_ui(df: pd.DataFrame, mk: str, key_prefix: str = "m") -> pd
 
     # Compute helper columns for filtering
     out["_Line"] = out.apply(lambda r: _line_value_for_row(r.to_dict(), mk_u), axis=1)
-
-    # Board hygiene: remove NaN line rows (often injury/scratch pollution) and keep only half-lines
-    out = out[out['_Line'].notna()]
-    out = out[out['_Line'].isin(ALLOWED_HALF_LINES)]
-
     out["_Odds"] = out.apply(lambda r: _odds_value_for_row(r.to_dict(), mk_u), axis=1)
 
     if q and "Player" in out.columns:
@@ -937,6 +930,9 @@ def _probe_points_best(r: dict) -> dict | None:
     best = None
     for title, win, n, cond in procs:
         if not cond:
+            continue
+        # Board eligibility guard: Env Mix requires Goal_Odds_Over >= +150 to qualify as best-proc/board pick.
+        if title == "Berserker Aggression (Env Mix)" and not envmix_odds_ok:
             continue
         adj = _adj_win(win, n, k=20)
         if (best is None) or (adj > best["adj"]) or (abs(adj - best["adj"]) < 1e-9 and n > best["n"]):
@@ -1068,6 +1064,8 @@ def _probe_goals_best(r: dict) -> dict | None:
     DPS = {
         "armor_shred": (41.8, 189),
         "hot_team_press": (51.9, 81),
+        "envmix_50": (50.0, 64),
+        "envmix_elite": (58.5, 41),
         "fenrir_34": (40.0, 200),
         "fenrir_36": (60.7, 28),
         "fury_35": (47.8, 113),
@@ -1078,13 +1076,7 @@ def _probe_goals_best(r: dict) -> dict | None:
         "smash": (57.7, 52),
         "valhalla": (61.4, 44),
         "fury_shredder": (73.3, 15),
-
-        # Berserker Aggression (screenshots): OppSOG>=29 & iXG>=97 & Team_GF tiered
-        "berserker_54": (54.3, 46),   # Team_GF>=2.5
-        "berserker_59": (59.0, 39),   # Team_GF>=3.0
-        "berserker_71": (71.4, 14),   # Team_GF>=3.9 (display tier; below board min_n)
     }
-
 
     opp_lane = bool(oppsog is not None and oppsog >= 29)
     env_249  = bool(xga is not None and xga >= 2.49)
@@ -1118,32 +1110,25 @@ def _probe_goals_best(r: dict) -> dict | None:
     # Press the Attack (xGA>=2.49 & iXG>=96.5 & Team_GF_Avg_L5>=3.0)
     procs.append(("Press the Attack", *DPS["hot_team_press"], bool(env_249 and (ixg is not None and ixg >= 96.5) and (team_gf is not None and team_gf >= 3.0))))
 
-    # Berserker Aggression (Elite Hot Team finisher): OppSOG>=29 & iXG>=97 & Team_GF tiered
-    bers_base_on = bool(opp_lane and (ixg is not None and ixg >= 97) and (team_gf is not None and team_gf >= 2.5))
-    bers_press_on = bool(opp_lane and (ixg is not None and ixg >= 97) and (team_gf is not None and team_gf >= 3.0))
-    bers_valhalla_on = bool(opp_lane and (ixg is not None and ixg >= 97) and (team_gf is not None and team_gf >= 3.9))
-    # Keep all tiers in procs list; board selection will prefer n>=20 tiers if available.
-    procs.append(("Berserker Aggression (FOR VALHALLA)", *DPS["berserker_71"], bers_valhalla_on))
-    procs.append(("Berserker Aggression (Press)", *DPS["berserker_59"], bers_press_on))
-    procs.append(("Berserker Aggression", *DPS["berserker_54"], bers_base_on))
+    # Berserker Aggression (Env Mix) — xGA>=2.55 & iXG>=92 & Team_GF>=3.0 (requires Goal_Odds >= +150 for board eligibility)
+    goal_odds = _safe_float(r.get("Goal_Odds_Over", r.get("Goal_Odds", None)), None)
+    envmix_on = bool((xga is not None and xga >= 2.55) and (ixg is not None and ixg >= 92) and (team_gf is not None and team_gf >= 3.0))
+    envmix_odds_ok = bool(goal_odds is not None and goal_odds >= 150)
+    procs.append(("Berserker Aggression (Env Mix)", *DPS["envmix_50"], bool(envmix_on)))
 
-    # Selection rule (board): if ANY active proc has (n>=20 and win>=50), rank ONLY within those.
-    eligible = []
-    fallback = []
+    # Berserker Aggression (Env Mix • ELITE) — xGA>=2.55 & iXG>=97 & Team_GF>=3.8 (no odds requirement)
+    procs.append(("Berserker Aggression (Env Mix • ELITE)", *DPS["envmix_elite"], bool((xga is not None and xga >= 2.55) and (ixg is not None and ixg >= 92) and (team_gf is not None and team_gf >= 3.8))))
+
+    best = None
     for title, win, n, cond in procs:
         if not cond:
             continue
+        # Board eligibility guard: Env Mix requires Goal_Odds_Over >= +150 to qualify as best-proc/board pick.
+        if title == "Berserker Aggression (Env Mix)" and not envmix_odds_ok:
+            continue
         adj = _adj_win(win, n, k=20)
-        row = {"title": title, "win": float(win), "n": int(n), "adj": float(adj)}
-        fallback.append(row)
-        if int(n) >= 20 and float(win) >= 50.0:
-            eligible.append(row)
-
-    pool = eligible if len(eligible) else fallback
-    best = None
-    for row in pool:
-        if (best is None) or (row["adj"] > best["adj"]) or (abs(row["adj"] - best["adj"]) < 1e-9 and row["n"] > best["n"]):
-            best = row
+        if (best is None) or (adj > best["adj"]) or (abs(adj - best["adj"]) < 1e-9 and n > best["n"]):
+            best = {"title": title, "win": float(win), "n": int(n), "adj": float(adj)}
     return best
 
 def _probe_sog_best(r: dict) -> dict | None:
@@ -2518,6 +2503,11 @@ def _render_goals_combat_hud(r) -> None:
         "base": {"n": 423, "win": 34.3},
         "armor_shred": {"n": 189, "win": 41.8},   # xGA >= 2.49
         "hot_team_press": {"n": 81, "win": 51.9},  # xGA>=2.49 & iXG>=96.5 & Team_GF>=3.0
+
+        # Env+Finisher (mid-iXG) lane — board-eligible only when Goal_Odds >= +150
+        "envmix_50": {"n": 64, "win": 50.0},       # xGA>=2.55 & iXG>=92 & Team_GF>=3.0
+        "envmix_elite": {"n": 41, "win": 58.5},    # xGA>=2.55 & iXG>=97 & Team_GF>=3.8
+
         "armor_buff":  {"n": 234, "win": 28.2},   # xGA < 2.49 (derived complement)
 
         "fenrir_34": {"n": 200, "win": 40.0},     # iXG% >= 97
@@ -2527,11 +2517,6 @@ def _render_goals_combat_hud(r) -> None:
         "fury_37": {"n": 76,  "win": 52.6},       # + xGA >= 2.49
         "fury_38": {"n": 57,  "win": 59.6},       # + iXG% >= 93.5
         "fury_40": {"n": 52,  "win": 63.5},       # + iXG% >= 94
-
-        "berserker_54": {"n": 46, "win": 54.3},   # OppSOG_L10>=29 & iXG>=97 & Team_GF>=2.5
-        "berserker_59": {"n": 39, "win": 59.0},   # OppSOG_L10>=29 & iXG>=97 & Team_GF>=3.0
-        "berserker_71": {"n": 14, "win": 71.4},   # OppSOG_L10>=29 & iXG>=97 & Team_GF>=3.9
-
 
         "tyrs_wrath_unleashed": {"n": 25, "win": 72.0},  # OppSOG>=29 & Share>=15 & xGA>=2.52 & iXG>=94
 
@@ -2557,10 +2542,8 @@ def _render_goals_combat_hud(r) -> None:
         "armor_annihilation": "Armor Annihilation",
         "fury_shredder": "Fury Shredder",
         "hot_team_press": "Press the Attack",
-
-        "berserker_71": "Berserker Aggression (FOR VALHALLA)",
-        "berserker_59": "Berserker Aggression (Press)",
-        "berserker_54": "Berserker Aggression",
+        "envmix_50": "Berserker Aggression (Env Mix)",
+        "envmix_elite": "Berserker Aggression (Env Mix • ELITE)",
     }
     def _track_best_key(key: str) -> None:
         nonlocal _best_title, _best_win, _best_n, _best_aw
@@ -2640,6 +2623,33 @@ def _render_goals_combat_hud(r) -> None:
         _wl_dps_bar(DPS["hot_team_press"]["win"], "GOALS")
         _track_best_key("hot_team_press")
 
+
+    # Berserker Aggression (Env Mix) — xGA>=2.55 & iXG>=92 & Team_GF>=3.0 (board requires Goal_Odds >= +150)
+    goal_odds = _safe_float(r.get("Goal_Odds_Over", r.get("Goal_Odds", None)), None)
+    envmix_on = bool((xga is not None and xga >= 2.55) and (ixg is not None and ixg >= 92) and (team_gf is not None and team_gf >= 3.0))
+    envmix_odds_ok = bool(goal_odds is not None and goal_odds >= 150)
+    envmix_board_ok = bool(envmix_on and envmix_odds_ok)
+    if envmix_on:
+        odds_txt = f" • Odds +{int(goal_odds)}" if goal_odds is not None else " • Odds n/a"
+        extra = "" if envmix_odds_ok else " (board needs ≥ +150)"
+        _wl_why_line(
+            _svg_icon("fury.svg", "Berserker Aggression (Env Mix)", "wl-goals wl-keep"),
+            f"Berserker Aggression (Env Mix) — xGA {xga:.2f} ≥ 2.55 • iXG {ixg:.1f} ≥ 92 • Team GF {team_gf:.1f} ≥ 3.0{odds_txt}{extra}  •  DPS {DPS['envmix_50']['win']}% (n={DPS['envmix_50']['n']})  (Δ {DPS['envmix_50']['win']-base_win:+.1f})",
+        )
+        _wl_dps_bar(DPS["envmix_50"]["win"], "GOALS")
+        if envmix_board_ok:
+            _track_best_key("envmix_50")
+
+    # Berserker Aggression (Env Mix • ELITE) — xGA>=2.55 & iXG>=97 & Team_GF>=3.8 (no odds requirement)
+    envmix_elite_on = bool((xga is not None and xga >= 2.55) and (ixg is not None and ixg >= 97) and (team_gf is not None and team_gf >= 3.8))
+    if envmix_elite_on:
+        _wl_why_line(
+            _svg_icon("smash.svg", "Berserker Aggression (Env Mix • ELITE)", "wl-goals wl-keep"),
+            f"Berserker Aggression (Env Mix • ELITE) — xGA {xga:.2f} ≥ 2.55 • iXG {ixg:.1f} ≥ 97 • Team GF {team_gf:.1f} ≥ 3.8  •  DPS {DPS['envmix_elite']['win']}% (n={DPS['envmix_elite']['n']})  (Δ {DPS['envmix_elite']['win']-base_win:+.1f})",
+        )
+        _wl_dps_bar(DPS["envmix_elite"]["win"], "GOALS")
+        _track_best_key("envmix_elite")
+
     # Lane flags
     opp_lane = bool(oppsog is not None and oppsog >= 29)
     env_249  = bool(xga is not None and xga >= 2.49)
@@ -2675,33 +2685,6 @@ def _render_goals_combat_hud(r) -> None:
             f"{fury_lbl}  •  DPS {DPS[fury_key]['win']}% (n={DPS[fury_key]['n']})  (Δ {DPS[fury_key]['win']-base_win:+.1f})",
         )
         _wl_dps_bar(DPS[fury_key]["win"], "GOALS")
-
-
-    # 3B) Berserker Aggression (Elite Hot Team finisher) — requires iXG (your screenshots)
-    # Rule: OppSOG_L10 ≥ 29 AND iXG% ≥ 97 AND Team_GF_Avg_L5 tiered (2.5 / 3.0 / 3.9)
-    berserker_on = bool(
-        (oppsog is not None and oppsog >= 29)
-        and (ixg is not None and ixg >= 97)
-        and (team_gf is not None and team_gf >= 2.5)
-    )
-    if berserker_on:
-        b_key = "berserker_54"
-        b_lbl = f"Berserker Aggression — OppSOG_L10 {oppsog:.0f} ≥ 29 + iXG {ixg:.1f} ≥ 97 + Team GF {team_gf:.1f} ≥ 2.5"
-
-        # Tier up (top-down)
-        if team_gf >= 3.9:
-            b_key = "berserker_71"
-            b_lbl = f"Berserker Aggression (FOR VALHALLA) — OppSOG_L10 {oppsog:.0f} ≥ 29 + iXG {ixg:.1f} ≥ 97 + Team GF {team_gf:.1f} ≥ 3.9"
-        elif team_gf >= 3.0:
-            b_key = "berserker_59"
-            b_lbl = f"Berserker Aggression (Press) — OppSOG_L10 {oppsog:.0f} ≥ 29 + iXG {ixg:.1f} ≥ 97 + Team GF {team_gf:.1f} ≥ 3.0"
-
-        _wl_why_line(
-            _svg_icon("smash.svg", "Berserker Aggression", "wl-goals wl-keep"),
-            f"{b_lbl}  •  DPS {DPS[b_key]['win']}% (n={DPS[b_key]['n']})  (Δ {DPS[b_key]['win']-base_win:+.1f})",
-        )
-        _track_best_key(b_key)
-        _wl_dps_bar(DPS[b_key]["win"], "GOALS")
 
     # 4) Fenrir lane (Finisher identity) — show highest tier only
     fenrir_on = bool(ixg is not None and ixg >= 97)
