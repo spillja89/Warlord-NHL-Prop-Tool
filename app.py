@@ -702,6 +702,8 @@ def _render_rank_line(best_title: str, win: float, n: int, mk: str) -> None:
 # =========================
 # Board-style DPS filters (shared by market pages) — presentation only
 # =========================
+ALLOWED_HALF_LINES = {0.5, 1.5, 2.5, 3.5}  # board hygiene: drop NaN/junk lines (e.g., injured scratch rows)
+
 def add_best_proc_cols(df: pd.DataFrame, mk: str) -> pd.DataFrame:
     """Add DPS_* columns (Title/Win/N/Adj) using the existing probe functions.
     Presentation-only: does not change any eligibility logic.
@@ -822,6 +824,11 @@ def apply_dps_filters_ui(df: pd.DataFrame, mk: str, key_prefix: str = "m") -> pd
 
     # Compute helper columns for filtering
     out["_Line"] = out.apply(lambda r: _line_value_for_row(r.to_dict(), mk_u), axis=1)
+
+    # Board hygiene: remove NaN line rows (often injury/scratch pollution) and keep only half-lines
+    out = out[out['_Line'].notna()]
+    out = out[out['_Line'].isin(ALLOWED_HALF_LINES)]
+
     out["_Odds"] = out.apply(lambda r: _odds_value_for_row(r.to_dict(), mk_u), axis=1)
 
     if q and "Player" in out.columns:
