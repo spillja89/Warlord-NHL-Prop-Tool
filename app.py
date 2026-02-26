@@ -32,6 +32,40 @@ from datetime import datetime, date
 import numpy as np
 import pandas as pd
 import streamlit as st
+
+def render_odds_implied_reference(location="main", title="Odds → Implied% (break-even)"):
+    """Simple reference block: American odds (+odds ladder) → implied break-even probability.
+
+    location: "main" (st) or "sidebar" (st.sidebar)
+    """
+    try:
+        import streamlit as st
+    except Exception:
+        return
+
+    host = st if location == "main" else st.sidebar
+
+    odds_list = [100,110,120,130,140,150,160,170,180,190,200,210,220,230]
+
+    # Build a compact markdown table (no pandas)
+    lines = []
+    lines.append("| Odds | Implied% |")
+    lines.append("|---:|---:|")
+    for o in odds_list:
+        try:
+            imp = implied_prob_from_american(float(o)) * 100.0
+        except Exception:
+            imp = 100.0 / (float(o) + 100.0) * 100.0
+        lines.append(f"| +{int(o)} | {imp:.2f}% |")
+
+    with host.expander(title, expanded=False):
+        host.caption(
+            "Implied% shown is the break-even rate from the listed odds (not true two-sided no-vig). "
+            "Use this to compare: Edge = Our Hit% − Implied%."
+        )
+        host.markdown("\n".join(lines))
+
+
 # --- GLOBAL ICON CSS (always inject; prevents oversized SVGs on reruns) ---
 st.markdown("""
 <style>
@@ -6235,6 +6269,7 @@ elif page == "Points":
 
     df_p["LOCK"] = [build_lock_badge(gg, ee) for gg, ee in zip(g, e)]
     legend_signals()
+    render_odds_implied_reference(location="main")
     _f = render_market_filter_bar(default_min_conf=60, key_prefix="pts")
 
     try:
@@ -6909,6 +6944,7 @@ elif page == "SOG":
 
     df_s["LOCK"] = [build_lock_badge(gg, ee) for gg, ee in zip(g, e)]
     legend_signals()
+    render_odds_implied_reference(location="main")
     _f = render_market_filter_bar(default_min_conf=60, key_prefix="sog")
 
     try:
@@ -7350,6 +7386,7 @@ elif page == "GOALS (0.5)":
 
     df_g["LOCK"] = [build_lock_badge(gg, ee) for gg, ee in zip(g, e)]
     legend_signals()
+    render_odds_implied_reference(location="main")
     _f = render_market_filter_bar(default_min_conf=60, key_prefix="goal")
 
     try:
