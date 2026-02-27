@@ -986,6 +986,8 @@ def _probe_assists_best(r: dict) -> dict | None:
     pp_ix      = _safe_float(r.get("PP_iXA60", r.get("PP_iXA_60")), default=float("nan"))
     team_gf_l5 = _safe_float(r.get("Team_GF_L5"), default=float("nan"))
     ppp10      = _safe_float(r.get("PPP10_total"), default=float("nan"))
+    pp_toi_pct = _safe_float(r.get("PP_TOI_Pct", r.get("PP_TOI%")), default=float("nan"))
+    pp_toi_pct = _safe_float(r.get("PP_TOI_Pct", r.get("PP_TOI%")), default=float("nan"))
     assists_mu = _safe_float(r.get("Assists_mu"), default=float("nan"))
     goalie_weak = _safe_float(r.get("Goalie_Weak"), default=float("nan"))
 
@@ -1029,6 +1031,14 @@ def _probe_assists_best(r: dict) -> dict | None:
 
     # Magic (iXA%>=99)
     procs.append(("Magic (iXA%≥99)", 63.8, 130, (not math.isnan(ixa_pct) and ixa_pct >= 99.0)))
+
+    # Arcane Transcendence (new core)
+    arcane_transcendence_on = staff_on and (conf >= 88) and (not math.isnan(ppp10) and ppp10 >= 3) and (not math.isnan(pp_toi_pct) and pp_toi_pct >= 17)
+    procs.append(("Arcane Transcendence", 77.8, 45, arcane_transcendence_on))
+
+    # Arcane Supernova (heater upgrade; GF_Avg_L5 ≥ 3.9 ≈ Team_GF_L5 ≥ 20)
+    arcane_supernova_on = arcane_transcendence_on and (not math.isnan(team_gf_l5) and team_gf_l5 >= 20)
+    procs.append(("Arcane Supernova", 84.0, 25, arcane_supernova_on))
 
     # Supernova (convergence)
     supernova_on = staff_on and (conf >= 80) and (not math.isnan(ixa_pct) and ixa_pct >= 95.0) and (not math.isnan(pp_ix) and pp_ix >= 3.7) and (not math.isnan(team_gf_l5) and team_gf_l5 >= 20)
@@ -2271,6 +2281,9 @@ def _render_assists_combat_hud(r) -> None:
         "magic": {"n": 130, "win": 63.8},              # iXA% >= 99
         "supernova_overdrive": {"n": 64, "win": 75.0}, # convergence
 
+        "arcane_transcendence": {"n": 45, "win": 77.8},  # Conf≥88 + PPP10≥3 + PP_TOI%≥17
+        "arcane_supernova": {"n": 25, "win": 84.0},       # Arcane Transcendence + Team_GF_L5≥20 (≈ GF_Avg_L5≥3.9)
+
         "stars_aligned_a": {"n": 163, "win": 65.6},       # Conf≥88 + iXA%≥96
         "stars_aligned_b": {"n": 118, "win": 65.3},       # Conf≥90 + iXA%≥95
     }
@@ -2337,6 +2350,18 @@ def _render_assists_combat_hud(r) -> None:
         elif (conf >= 88) and (ixa_pct >= 96):
             stars_tier = "Tier A: Conf ≥ 88 + iXA% ≥ 96"
             stars_key = "stars_aligned_a"
+
+    arcane_transcendence = (
+        staff_on
+        and (conf >= 88)
+        and (not math.isnan(ppp10)) and (ppp10 >= 3)
+        and (not math.isnan(pp_toi_pct)) and (pp_toi_pct >= 17)
+    )
+
+    arcane_supernova = (
+        arcane_transcendence
+        and (not math.isnan(team_gf_l5)) and (team_gf_l5 >= 20)  # ≈ GF_Avg_L5 ≥ 3.9
+    )
 
     supernova_overdrive = (
         staff_on
@@ -2484,6 +2509,14 @@ def _render_assists_combat_hud(r) -> None:
 
     if stars_tier:
         _move_line("stars.svg", "Stars Aligned", stars_key, stars_tier)
+
+    if arcane_transcendence:
+        _move_line("magic_mans_transcendence.svg", "Arcane Transcendence", "arcane_transcendence",
+                   "Conf ≥ 88 + PPP10 ≥ 3 + PP_TOI% ≥ 17")
+
+    if arcane_supernova:
+        _move_line("supernova.svg", "Arcane Supernova", "arcane_supernova",
+                   "Arcane Transcendence + Team_GF_L5 ≥ 20 (≈ GF_Avg_L5 ≥ 3.9)")
 
     if supernova_overdrive:
         _move_line("supernova.svg", "Supernova Overdrive", "supernova_overdrive",
