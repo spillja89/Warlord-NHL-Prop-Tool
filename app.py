@@ -32,40 +32,6 @@ from datetime import datetime, date
 import numpy as np
 import pandas as pd
 import streamlit as st
-
-def render_odds_implied_reference(location="main", title="Odds → Implied% (break-even)"):
-    """Simple reference block: American odds (+odds ladder) → implied break-even probability.
-
-    location: "main" (st) or "sidebar" (st.sidebar)
-    """
-    try:
-        import streamlit as st
-    except Exception:
-        return
-
-    host = st if location == "main" else st.sidebar
-
-    odds_list = [100,110,120,130,140,150,160,170,180,190,200,210,220,230]
-
-    # Build a compact markdown table (no pandas)
-    lines = []
-    lines.append("| Odds | Implied% |")
-    lines.append("|---:|---:|")
-    for o in odds_list:
-        try:
-            imp = implied_prob_from_american(float(o)) * 100.0
-        except Exception:
-            imp = 100.0 / (float(o) + 100.0) * 100.0
-        lines.append(f"| +{int(o)} | {imp:.2f}% |")
-
-    with host.expander(title, expanded=False):
-        host.caption(
-            "Implied% shown is the break-even rate from the listed odds (not true two-sided no-vig). "
-            "Use this to compare: Edge = Our Hit% − Implied%."
-        )
-        host.markdown("\n".join(lines))
-
-
 # --- GLOBAL ICON CSS (always inject; prevents oversized SVGs on reruns) ---
 st.markdown("""
 <style>
@@ -736,6 +702,8 @@ def _render_rank_line(best_title: str, win: float, n: int, mk: str) -> None:
 # =========================
 # Board-style DPS filters (shared by market pages) — presentation only
 # =========================
+ALLOWED_HALF_LINES = {0.5, 1.5, 2.5, 3.5}  # board hygiene: drop NaN/junk lines (e.g., injured scratch rows)
+
 def add_best_proc_cols(df: pd.DataFrame, mk: str) -> pd.DataFrame:
     """Add DPS_* columns (Title/Win/N/Adj) using the existing probe functions.
     Presentation-only: does not change any eligibility logic.
@@ -856,6 +824,11 @@ def apply_dps_filters_ui(df: pd.DataFrame, mk: str, key_prefix: str = "m") -> pd
 
     # Compute helper columns for filtering
     out["_Line"] = out.apply(lambda r: _line_value_for_row(r.to_dict(), mk_u), axis=1)
+
+    # Board hygiene: remove NaN line rows (often injury/scratch pollution) and keep only half-lines
+    out = out[out['_Line'].notna()]
+    out = out[out['_Line'].isin(ALLOWED_HALF_LINES)]
+
     out["_Odds"] = out.apply(lambda r: _odds_value_for_row(r.to_dict(), mk_u), axis=1)
 
     if q and "Player" in out.columns:
@@ -964,9 +937,6 @@ def _probe_points_best(r: dict) -> dict | None:
     best = None
     for title, win, n, cond in procs:
         if not cond:
-            continue
-        # Board eligibility guard: Env Mix requires Goal_Odds_Over >= +150 to qualify as best-proc/board pick.
-        if title == "Berserker Aggression (Env Mix)" and not envmix_odds_ok:
             continue
         adj = _adj_win(win, n, k=20)
         if (best is None) or (adj > best["adj"]) or (abs(adj - best["adj"]) < 1e-9 and n > best["n"]):
@@ -1098,8 +1068,6 @@ def _probe_goals_best(r: dict) -> dict | None:
     DPS = {
         "armor_shred": (41.8, 189),
         "hot_team_press": (51.9, 81),
-        "envmix_50": (50.0, 64),
-        "envmix_elite": (58.5, 41),
         "fenrir_34": (40.0, 200),
         "fenrir_36": (60.7, 28),
         "fury_35": (47.8, 113),
@@ -1110,7 +1078,13 @@ def _probe_goals_best(r: dict) -> dict | None:
         "smash": (57.7, 52),
         "valhalla": (61.4, 44),
         "fury_shredder": (73.3, 15),
+
+        # Berserker Aggression (screenshots): OppSOG>=29 & iXG>=97 & Team_GF tiered
+        "berserker_54": (54.3, 46),   # Team_GF>=2.5
+        "berserker_59": (59.0, 39),   # Team_GF>=3.0
+        "berserker_71": (71.4, 14),   # Team_GF>=3.9 (display tier; below board min_n)
     }
+
 
     opp_lane = bool(oppsog is not None and oppsog >= 29)
     env_249  = bool(xga is not None and xga >= 2.49)
@@ -1144,25 +1118,32 @@ def _probe_goals_best(r: dict) -> dict | None:
     # Press the Attack (xGA>=2.49 & iXG>=96.5 & Team_GF_Avg_L5>=3.0)
     procs.append(("Press the Attack", *DPS["hot_team_press"], bool(env_249 and (ixg is not None and ixg >= 96.5) and (team_gf is not None and team_gf >= 3.0))))
 
-    # Berserker Aggression (Env Mix) — xGA>=2.55 & iXG>=92 & Team_GF>=3.0 (requires Goal_Odds >= +150 for board eligibility)
-    goal_odds = _safe_float(r.get("Goal_Odds_Over", r.get("Goal_Odds", None)), None)
-    envmix_on = bool((xga is not None and xga >= 2.55) and (ixg is not None and ixg >= 92) and (team_gf is not None and team_gf >= 3.0))
-    envmix_odds_ok = bool(goal_odds is not None and goal_odds >= 150)
-    procs.append(("Berserker Aggression (Env Mix)", *DPS["envmix_50"], bool(envmix_on)))
+    # Berserker Aggression (Elite Hot Team finisher): OppSOG>=29 & iXG>=97 & Team_GF tiered
+    bers_base_on = bool(opp_lane and (ixg is not None and ixg >= 97) and (team_gf is not None and team_gf >= 2.5))
+    bers_press_on = bool(opp_lane and (ixg is not None and ixg >= 97) and (team_gf is not None and team_gf >= 3.0))
+    bers_valhalla_on = bool(opp_lane and (ixg is not None and ixg >= 97) and (team_gf is not None and team_gf >= 3.9))
+    # Keep all tiers in procs list; board selection will prefer n>=20 tiers if available.
+    procs.append(("Berserker Aggression (FOR VALHALLA)", *DPS["berserker_71"], bers_valhalla_on))
+    procs.append(("Berserker Aggression (Press)", *DPS["berserker_59"], bers_press_on))
+    procs.append(("Berserker Aggression", *DPS["berserker_54"], bers_base_on))
 
-    # Berserker Aggression (Env Mix • ELITE) — xGA>=2.55 & iXG>=92 & Team_GF>=3.8 (no odds requirement)
-    procs.append(("Berserker Aggression (Env Mix • ELITE)", *DPS["envmix_elite"], bool((xga is not None and xga >= 2.55) and (ixg is not None and ixg >= 92) and (team_gf is not None and team_gf >= 3.8))))
-
-    best = None
+    # Selection rule (board): if ANY active proc has (n>=20 and win>=50), rank ONLY within those.
+    eligible = []
+    fallback = []
     for title, win, n, cond in procs:
         if not cond:
             continue
-        # Board eligibility guard: Env Mix requires Goal_Odds_Over >= +150 to qualify as best-proc/board pick.
-        if title == "Berserker Aggression (Env Mix)" and not envmix_odds_ok:
-            continue
         adj = _adj_win(win, n, k=20)
-        if (best is None) or (adj > best["adj"]) or (abs(adj - best["adj"]) < 1e-9 and n > best["n"]):
-            best = {"title": title, "win": float(win), "n": int(n), "adj": float(adj)}
+        row = {"title": title, "win": float(win), "n": int(n), "adj": float(adj)}
+        fallback.append(row)
+        if int(n) >= 20 and float(win) >= 50.0:
+            eligible.append(row)
+
+    pool = eligible if len(eligible) else fallback
+    best = None
+    for row in pool:
+        if (best is None) or (row["adj"] > best["adj"]) or (abs(row["adj"] - best["adj"]) < 1e-9 and row["n"] > best["n"]):
+            best = row
     return best
 
 def _probe_sog_best(r: dict) -> dict | None:
@@ -2537,11 +2518,6 @@ def _render_goals_combat_hud(r) -> None:
         "base": {"n": 423, "win": 34.3},
         "armor_shred": {"n": 189, "win": 41.8},   # xGA >= 2.49
         "hot_team_press": {"n": 81, "win": 51.9},  # xGA>=2.49 & iXG>=96.5 & Team_GF>=3.0
-
-        # Env+Finisher (mid-iXG) lane — board-eligible only when Goal_Odds >= +150
-        "envmix_50": {"n": 64, "win": 50.0},       # xGA>=2.55 & iXG>=92 & Team_GF>=3.0
-        "envmix_elite": {"n": 41, "win": 58.5},    # xGA>=2.55 & iXG>=97 & Team_GF>=3.8
-
         "armor_buff":  {"n": 234, "win": 28.2},   # xGA < 2.49 (derived complement)
 
         "fenrir_34": {"n": 200, "win": 40.0},     # iXG% >= 97
@@ -2551,6 +2527,11 @@ def _render_goals_combat_hud(r) -> None:
         "fury_37": {"n": 76,  "win": 52.6},       # + xGA >= 2.49
         "fury_38": {"n": 57,  "win": 59.6},       # + iXG% >= 93.5
         "fury_40": {"n": 52,  "win": 63.5},       # + iXG% >= 94
+
+        "berserker_54": {"n": 46, "win": 54.3},   # OppSOG_L10>=29 & iXG>=97 & Team_GF>=2.5
+        "berserker_59": {"n": 39, "win": 59.0},   # OppSOG_L10>=29 & iXG>=97 & Team_GF>=3.0
+        "berserker_71": {"n": 14, "win": 71.4},   # OppSOG_L10>=29 & iXG>=97 & Team_GF>=3.9
+
 
         "tyrs_wrath_unleashed": {"n": 25, "win": 72.0},  # OppSOG>=29 & Share>=15 & xGA>=2.52 & iXG>=94
 
@@ -2576,8 +2557,10 @@ def _render_goals_combat_hud(r) -> None:
         "armor_annihilation": "Armor Annihilation",
         "fury_shredder": "Fury Shredder",
         "hot_team_press": "Press the Attack",
-        "envmix_50": "Berserker Aggression (Env Mix)",
-        "envmix_elite": "Berserker Aggression (Env Mix • ELITE)",
+
+        "berserker_71": "Berserker Aggression (FOR VALHALLA)",
+        "berserker_59": "Berserker Aggression (Press)",
+        "berserker_54": "Berserker Aggression",
     }
     def _track_best_key(key: str) -> None:
         nonlocal _best_title, _best_win, _best_n, _best_aw
@@ -2657,33 +2640,6 @@ def _render_goals_combat_hud(r) -> None:
         _wl_dps_bar(DPS["hot_team_press"]["win"], "GOALS")
         _track_best_key("hot_team_press")
 
-
-    # Berserker Aggression (Env Mix) — xGA>=2.55 & iXG>=92 & Team_GF>=3.0 (board requires Goal_Odds >= +150)
-    goal_odds = _safe_float(r.get("Goal_Odds_Over", r.get("Goal_Odds", None)), None)
-    envmix_on = bool((xga is not None and xga >= 2.55) and (ixg is not None and ixg >= 92) and (team_gf is not None and team_gf >= 3.0))
-    envmix_odds_ok = bool(goal_odds is not None and goal_odds >= 150)
-    envmix_board_ok = bool(envmix_on and envmix_odds_ok)
-    if envmix_on:
-        odds_txt = f" • Odds +{int(goal_odds)}" if goal_odds is not None else " • Odds n/a"
-        extra = "" if envmix_odds_ok else " (board needs ≥ +150)"
-        _wl_why_line(
-            _svg_icon("fury.svg", "Berserker Aggression (Env Mix)", "wl-goals wl-keep"),
-            f"Berserker Aggression (Env Mix) — xGA {xga:.2f} ≥ 2.55 • iXG {ixg:.1f} ≥ 92 • Team GF {team_gf:.1f} ≥ 3.0{odds_txt}{extra}  •  DPS {DPS['envmix_50']['win']}% (n={DPS['envmix_50']['n']})  (Δ {DPS['envmix_50']['win']-base_win:+.1f})",
-        )
-        _wl_dps_bar(DPS["envmix_50"]["win"], "GOALS")
-        if envmix_board_ok:
-            _track_best_key("envmix_50")
-
-    # Berserker Aggression (Env Mix • ELITE) — xGA>=2.55 & iXG>=92 & Team_GF>=3.8 (no odds requirement)
-    envmix_elite_on = bool((xga is not None and xga >= 2.55) and (ixg is not None and ixg >= 92) and (team_gf is not None and team_gf >= 3.8))
-    if envmix_elite_on:
-        _wl_why_line(
-            _svg_icon("smash.svg", "Berserker Aggression (Env Mix • ELITE)", "wl-goals wl-keep"),
-            f"Berserker Aggression (Env Mix • ELITE) — xGA {xga:.2f} ≥ 2.55 • iXG {ixg:.1f} ≥ 92 • Team GF {team_gf:.1f} ≥ 3.8  •  DPS {DPS['envmix_elite']['win']}% (n={DPS['envmix_elite']['n']})  (Δ {DPS['envmix_elite']['win']-base_win:+.1f})",
-        )
-        _wl_dps_bar(DPS["envmix_elite"]["win"], "GOALS")
-        _track_best_key("envmix_elite")
-
     # Lane flags
     opp_lane = bool(oppsog is not None and oppsog >= 29)
     env_249  = bool(xga is not None and xga >= 2.49)
@@ -2720,6 +2676,33 @@ def _render_goals_combat_hud(r) -> None:
         )
         _wl_dps_bar(DPS[fury_key]["win"], "GOALS")
 
+
+    # 3B) Berserker Aggression (Elite Hot Team finisher) — requires iXG (your screenshots)
+    # Rule: OppSOG_L10 ≥ 29 AND iXG% ≥ 97 AND Team_GF_Avg_L5 tiered (2.5 / 3.0 / 3.9)
+    berserker_on = bool(
+        (oppsog is not None and oppsog >= 29)
+        and (ixg is not None and ixg >= 97)
+        and (team_gf is not None and team_gf >= 2.5)
+    )
+    if berserker_on:
+        b_key = "berserker_54"
+        b_lbl = f"Berserker Aggression — OppSOG_L10 {oppsog:.0f} ≥ 29 + iXG {ixg:.1f} ≥ 97 + Team GF {team_gf:.1f} ≥ 2.5"
+
+        # Tier up (top-down)
+        if team_gf >= 3.9:
+            b_key = "berserker_71"
+            b_lbl = f"Berserker Aggression (FOR VALHALLA) — OppSOG_L10 {oppsog:.0f} ≥ 29 + iXG {ixg:.1f} ≥ 97 + Team GF {team_gf:.1f} ≥ 3.9"
+        elif team_gf >= 3.0:
+            b_key = "berserker_59"
+            b_lbl = f"Berserker Aggression (Press) — OppSOG_L10 {oppsog:.0f} ≥ 29 + iXG {ixg:.1f} ≥ 97 + Team GF {team_gf:.1f} ≥ 3.0"
+
+        _wl_why_line(
+            _svg_icon("smash.svg", "Berserker Aggression", "wl-goals wl-keep"),
+            f"{b_lbl}  •  DPS {DPS[b_key]['win']}% (n={DPS[b_key]['n']})  (Δ {DPS[b_key]['win']-base_win:+.1f})",
+        )
+        _track_best_key(b_key)
+        _wl_dps_bar(DPS[b_key]["win"], "GOALS")
+
     # 4) Fenrir lane (Finisher identity) — show highest tier only
     fenrir_on = bool(ixg is not None and ixg >= 97)
     fenrir_potent = bool(ixg is not None and ixg >= 99 and (xga is not None and xga >= 2.55))
@@ -2734,7 +2717,7 @@ def _render_goals_combat_hud(r) -> None:
         else:
             _wl_why_line(
                 _svg_icon("fenrir_claw.svg", "Fenrir’s Claw", "wl-goals"),
-                f"Fenrir’s Claw — iXG {ixg:.1f} ≥ 92  •  DPS {DPS['fenrir_34']['win']}% (n={DPS['fenrir_34']['n']})  (Δ {DPS['fenrir_34']['win']-base_win:+.1f})",
+                f"Fenrir’s Claw — iXG {ixg:.1f} ≥ 97  •  DPS {DPS['fenrir_34']['win']}% (n={DPS['fenrir_34']['n']})  (Δ {DPS['fenrir_34']['win']-base_win:+.1f})",
             )
             _track_best_key("fenrir_34")
             _wl_dps_bar(DPS["fenrir_34"]["win"], "GOALS")
@@ -2984,7 +2967,7 @@ def _render_why_it_fires_rich(mkt: str, r, tags: str = "") -> None:
             else:
                 _wl_why_line(
                     _svg_icon("fenrir_claw.svg", "Fenrir’s Claw", "wl-goals"),
-                    f"Fenrir’s Claw — iXG {ixg:.1f} ≥ 92  •  DPS {DPS['fenrir_34']['win']}% (n={DPS['fenrir_34']['n']})  (Δ {DPS['fenrir_34']['win']-base_win:+.1f})",
+                    f"Fenrir’s Claw — iXG {ixg:.1f} ≥ 97  •  DPS {DPS['fenrir_34']['win']}% (n={DPS['fenrir_34']['n']})  (Δ {DPS['fenrir_34']['win']-base_win:+.1f})",
                 )
                 _wl_dps_bar(DPS["fenrir_34"]["win"], "GOALS")
 
@@ -6269,7 +6252,6 @@ elif page == "Points":
 
     df_p["LOCK"] = [build_lock_badge(gg, ee) for gg, ee in zip(g, e)]
     legend_signals()
-    render_odds_implied_reference(location="main")
     _f = render_market_filter_bar(default_min_conf=60, key_prefix="pts")
 
     try:
@@ -6944,7 +6926,6 @@ elif page == "SOG":
 
     df_s["LOCK"] = [build_lock_badge(gg, ee) for gg, ee in zip(g, e)]
     legend_signals()
-    render_odds_implied_reference(location="main")
     _f = render_market_filter_bar(default_min_conf=60, key_prefix="sog")
 
     try:
@@ -7386,7 +7367,6 @@ elif page == "GOALS (0.5)":
 
     df_g["LOCK"] = [build_lock_badge(gg, ee) for gg, ee in zip(g, e)]
     legend_signals()
-    render_odds_implied_reference(location="main")
     _f = render_market_filter_bar(default_min_conf=60, key_prefix="goal")
 
     try:
@@ -7444,18 +7424,68 @@ elif page == "GOALS (0.5)":
     if conf_col is None:
         conf_col = "Conf_Goal"
 
+    # --- schema-safe column helpers (avoid scalar .fillna crashes) ---
+    def _scol(obj, col, default=np.nan):
+        """Return a pandas Series for column `col` aligned to obj.index.
+        Works for DataFrame/Series; falls back to a Series of `default` if missing.
+        """
+        if col is None:
+            # If obj has an index, align; otherwise empty Series
+            if hasattr(obj, "index"):
+                return pd.Series(default, index=obj.index)
+            return pd.Series([], dtype="float64")
+        if hasattr(obj, "columns"):
+            # DataFrame
+            if col in obj.columns:
+                return obj[col]
+            return pd.Series(default, index=obj.index)
+        if isinstance(obj, pd.Series):
+            # Row/Series
+            v = obj.get(col, default)
+            return pd.Series(v, index=obj.index)
+        # Unknown/scalar
+        return pd.Series(default, index=getattr(obj, "index", pd.RangeIndex(0)))
+
+    def _num(obj, col_or_default=0.0, default=np.nan):
+        """Numeric helper.
+        - _num(df, 'Col', default) -> Series (filled)
+        - _num(series, 'Col', default) -> scalar
+        - _num(value, default) -> scalar
+        """
+        # Column mode
+        if isinstance(col_or_default, str):
+            col = col_or_default
+            dflt = default
+            if hasattr(obj, "columns"):
+                out = pd.to_numeric(_scol(obj, col, dflt), errors="coerce")
+                return out.fillna(dflt) if isinstance(out, pd.Series) else (float(dflt) if pd.isna(out) else float(out))
+            if isinstance(obj, pd.Series):
+                v = obj.get(col, dflt)
+                out = pd.to_numeric(v, errors="coerce")
+                return float(dflt) if pd.isna(out) else float(out)
+            if isinstance(obj, dict):
+                v = obj.get(col, dflt)
+                out = pd.to_numeric(v, errors="coerce")
+                return float(dflt) if pd.isna(out) else float(out)
+            return float(dflt)
+
+        # Scalar mode
+        dflt = col_or_default
+        out = pd.to_numeric(obj, errors="coerce")
+        return float(dflt) if pd.isna(out) else float(out)
+
         # Hard gates (GOALS Beta Gate)
-    m_matrix = _g[matrix_col].astype(str).str.strip().str.upper().isin(["GREEN", "🟢"])
-    m_line   = (pd.to_numeric(_g.get(line_col, 0), errors="coerce") == 0.5)
-    m_conf   = (pd.to_numeric(_g.get(conf_col, 0), errors="coerce").fillna(0) >= 85)
+    m_matrix = (_scol(_g, matrix_col, "GREEN").astype(str).str.strip().str.upper().isin(["GREEN", "🟢"]) if (matrix_col in _g.columns) else pd.Series(True, index=_g.index))
+    m_line   = ((_num(_g, line_col, np.nan) == 0.5) if (line_col in _g.columns) else pd.Series(True, index=_g.index))
+    m_conf   = (_num(_g, conf_col, 0).fillna(0) >= 85)
 
     # Pull key GOALS columns (schema varies)
-    _oppsog = pd.to_numeric(_g.get("Opp_SOG_Against_L10", np.nan), errors="coerce")
-    _xga    = pd.to_numeric(_g.get("opp_5v5_xGA60", np.nan), errors="coerce")
-    _ixg    = pd.to_numeric(_g.get("iXG%", _g.get("iXG_pct", _g.get("iXG_Pct", np.nan))), errors="coerce")
-    _share  = pd.to_numeric(_g.get("Player_5v5_SOG_Share", np.nan), errors="coerce")
-    _drought= pd.to_numeric(_g.get("Drought_G", _g.get("Drought_Goal", _g.get("Drought", np.nan))), errors="coerce")
-    _teamgf = pd.to_numeric(_g.get('Team_GF_Avg_L5', _g.get('Team_GF_L5', _g.get('Team_GF_L5_Avg', np.nan))), errors='coerce')
+    _oppsog = _num(_g, "Opp_SOG_Against_L10", np.nan)
+    _xga    = _num(_g, "opp_5v5_xGA60", np.nan)
+    _ixg    = _num(_g, "iXG%", np.nan).where(~_num(_g, "iXG%", np.nan).isna(), _num(_g, "iXG_pct", np.nan)).where(lambda s: ~s.isna(), _num(_g, "iXG_Pct", np.nan))
+    _share  = _num(_g, "Player_5v5_SOG_Share", np.nan)  # schema-safe
+    _drought= _num(_g, "Drought_G", np.nan).where(lambda s: ~s.isna(), _num(_g, "Drought_Goal", np.nan)).where(lambda s: ~s.isna(), _num(_g, "Drought", np.nan))
+    _teamgf = _num(_g, 'Team_GF_Avg_L5', np.nan).where(lambda s: ~s.isna(), _num(_g,'Team_GF_L5',np.nan)).where(lambda s: ~s.isna(), _num(_g,'Team_GF_L5_Avg',np.nan))
 
     # Odds for +odds lane (optional)
     odds_col = None
@@ -7488,26 +7518,13 @@ elif page == "GOALS (0.5)":
     # Path C: Funnel Sniper (OppSOG + iXG>=97)
     path_sniper = m_opp & ixg97
 
-
-    # Path D: Berserker Aggression (Env Mix) — xGA>=2.55 & iXG>=92 & TeamGF>=3.0 (+150 odds requirement)
-    #        Elite Team Scoring tier — same but TeamGF>=3.8 (no odds requirement)
-    m_xga55 = _xga.fillna(-999) >= 2.55
-    ixg92   = _ixg.fillna(-999) >= 92
-    gf30    = _teamgf.fillna(-999) >= 3.0
-    gf38    = _teamgf.fillna(-999) >= 3.8
-    # Odds: prefer Goal_Odds_Over; fallback to ATG_Odds_Over; allow NaN only for elite tier
-    _odds_over = pd.to_numeric(_g.get("Goal_Odds_Over", _g.get("ATG_Odds_Over", np.nan)), errors="coerce")
-    odds150 = _odds_over.fillna(-999) >= 150
-    path_envmix = m_xga55 & ixg92 & gf30 & odds150
-    path_envmix_elite = m_xga55 & ixg92 & gf38
-
-    eligible = path_armor | path_frenzy | path_sniper | path_envmix | path_envmix_elite
+    eligible = path_armor | path_frenzy | path_sniper
 
     _g = _g[m_matrix & m_line & m_conf & m_grade & eligible].copy()
 
-    _g["_valhalla"] = (pd.to_numeric(_g.get("opp_5v5_xGA60", np.nan), errors="coerce").fillna(0) > 2.50).astype(int)
-    _g["_avg5"] = pd.to_numeric(_g.get("Avg5_SOG", 0), errors="coerce").fillna(0)
-    _g["_conf"] = pd.to_numeric(_g.get("Conf_Goal", 0), errors="coerce").fillna(0)
+    _g["_valhalla"] = (_num(_g, "opp_5v5_xGA60", np.nan).fillna(0) > 2.50).astype(int)
+    _g["_avg5"] = _num(_g, "Avg5_SOG", 0).fillna(0)
+    _g["_conf"] = _num(_g, "Conf_Goal", 0).fillna(0)
     _g = _g.sort_values(["_valhalla","_avg5","_conf"], ascending=[False, False, False], kind="mergesort")
 
     top_n_g = st.slider("Show top plays (Goals)", 3, 25, 10, 1, key="goal_smash_topn")
