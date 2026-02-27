@@ -2625,9 +2625,21 @@ def conf_goal(
 
     return int(round(clamp(base)))
 
-def conf_points(ixa_pct: float, p10_gap: Optional[float], stab: float, defweak: float, goalieweak: float, toi_pct: float) -> int:
+def conf_points(ixa_pct: float, p10_gap: Optional[float], stab: float, defweak: float, goalieweak: float, toi_pct: float, team_gf_l5: Optional[float] = None) -> int:
     reg = 65.0 if p10_gap is None else clamp((p10_gap / 4.0) * 100.0)
-    base = 0.52 * ixa_pct + 0.10 * stab + 0.10 * defweak + 0.08 * goalieweak + 0.14 * reg
+    # Environment contribution (defweak + goalie) can get over-penalized for HOT offenses.
+    w_def, w_gw = 0.10, 0.08
+    env = w_def * defweak + w_gw * goalieweak
+
+    if team_gf_l5 is not None and not (isinstance(team_gf_l5, float) and math.isnan(team_gf_l5)):
+        hot = team_gf_l5 >= 3.8
+        ultra = team_gf_l5 >= 4.1
+        if hot:
+            neutral_env = (w_def + w_gw) * 50.0
+            cap = 2.0 if ultra else 3.0  # cap total ENV penalty under HOT offense
+            env = max(env, neutral_env - cap)
+
+    base = 0.52 * ixa_pct + 0.10 * stab + env + 0.14 * reg
     base += USAGE_WEIGHT_POINTS * (toi_pct - 50.0)
     return int(round(clamp(base)))
 
@@ -2644,16 +2656,28 @@ def conf_assists(
     pp_share_pct_game: Optional[float] = None,
     pp_ixA60: Optional[float] = None,
     pp_matchup: Optional[float] = None,
+    team_gf_l5: Optional[float] = None,
 ) -> int:
     # ----------------------------
     # 1) Baseline (cannot be penalized by optional signals)
     # ----------------------------
+    # Environment contribution (defweak + goalie) can get over-penalized for HOT offenses.
+    w_def, w_gw = 0.12, 0.06
+    env = w_def * defweak + w_gw * goalieweak
+
+    if team_gf_l5 is not None and not (isinstance(team_gf_l5, float) and math.isnan(team_gf_l5)):
+        hot = team_gf_l5 >= 3.8
+        ultra = team_gf_l5 >= 4.1
+        if hot:
+            neutral_env = (w_def + w_gw) * 50.0
+            cap = 2.0 if ultra else 3.0  # cap total ENV penalty under HOT offense
+            env = max(env, neutral_env - cap)
+
     base = (
         0.45 * ixa_pct +
         0.10 * ixg_pct +
         0.17 * stab +
-        0.12 * defweak +
-        0.06 * goalieweak
+        env
     )
     base += 0.10 * (toi_pct - 50.0)  # light usage tilt
 
@@ -4034,6 +4058,8 @@ def build_tracker(today_local: date, debug: bool = False) -> str:
             float(r.get("Opp_DefWeak", 50)),
             float(r.get("Goalie_Weak", 50)),
             float(r.get("TOI_Pct", 50)),
+        
+            team_gf_l5=safe_float(r.get("Team_GF_Avg_L5")),
         ),
         axis=1
     )
@@ -4051,6 +4077,7 @@ def build_tracker(today_local: date, debug: bool = False) -> str:
             pp_share_pct_game=safe_float(r.get("PP_TOI_Pct_Game")),
             pp_ixA60=safe_float(r.get("PP_iXA60")),
             pp_matchup=safe_float(r.get("PP_Matchup")),
+            team_gf_l5=safe_float(r.get("Team_GF_Avg_L5")),
         ),
         axis=1
     )

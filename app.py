@@ -822,6 +822,22 @@ def apply_dps_filters_ui(df: pd.DataFrame, mk: str, key_prefix: str = "m") -> pd
     max_fav_odds = int(st.sidebar.number_input("Max favorite odds (e.g. -200)", min_value=-1000, max_value=300, value=-200, step=5, key=f"{key_prefix}_maxfav"))
     q = st.sidebar.text_input("Search", value="", key=f"{key_prefix}_q").strip().lower()
 
+    # Matrix filter (default ON): keep only GREEN if a matrix column exists for this market
+    green_only = st.sidebar.checkbox("Matrix: Green only", value=True, key=f"{key_prefix}_green")
+    matrix_cands = []
+    if mk_u in ["SOG", "SHOTS"]:
+        matrix_cands = ["Matrix_SOG", "Matrix_Shots", "Matrix"]
+    elif mk_u in ["GOALS", "ATG"]:
+        matrix_cands = ["Matrix_Goal", "Matrix_Goals", "Matrix_ATG", "Matrix"]
+    elif mk_u in ["POINTS"]:
+        matrix_cands = ["Matrix_Points", "Matrix"]
+    elif mk_u in ["ASSISTS"]:
+        matrix_cands = ["Matrix_Assists", "Matrix"]
+    matrix_col = next((c for c in matrix_cands if c in out.columns), None)
+    if green_only and matrix_col is not None:
+        m = out[matrix_col].astype(str).str.strip().str.upper().isin(["GREEN", "🟢"])
+        out = out[m]
+
     # Compute helper columns for filtering
     out["_Line"] = out.apply(lambda r: _line_value_for_row(r.to_dict(), mk_u), axis=1)
 
@@ -839,8 +855,10 @@ def apply_dps_filters_ui(df: pd.DataFrame, mk: str, key_prefix: str = "m") -> pd
         out = out[out["DPS_Title"].astype(str).isin(move_sel)]
 
     # DPS-based filters (rows with no proc naturally drop if min_win/min_n > 0)
-    out = out[(pd.to_numeric(out.get("DPS_Win", 0), errors="coerce").fillna(0) >= min_win)]
-    out = out[(pd.to_numeric(out.get("DPS_N", 0), errors="coerce").fillna(0).astype(int) >= min_n)]
+    dps_win = pd.to_numeric(out["DPS_Win"], errors="coerce").fillna(0) if "DPS_Win" in out.columns else pd.Series(0.0, index=out.index)
+    out = out[(dps_win >= min_win)]
+    dps_n = pd.to_numeric(out["DPS_N"], errors="coerce").fillna(0).astype(int) if "DPS_N" in out.columns else pd.Series(0, index=out.index)
+    out = out[(dps_n >= min_n)]
 
     # Odds filter (favorites only): keep if odds >= max_fav_odds (e.g., -140 passes when max_fav=-150; -200 fails)
     def _odds_ok(v):
@@ -856,8 +874,8 @@ def apply_dps_filters_ui(df: pd.DataFrame, mk: str, key_prefix: str = "m") -> pd
     out = out[out["_Odds"].apply(_odds_ok)]
 
     # Sort by DPS ranking (presentation only)
-    out["_dps_adj"] = pd.to_numeric(out.get("DPS_Adj", 0), errors="coerce").fillna(0.0)
-    out["_dps_n"] = pd.to_numeric(out.get("DPS_N", 0), errors="coerce").fillna(0).astype(int)
+    out["_dps_adj"] = (pd.to_numeric(out["DPS_Adj"], errors="coerce").fillna(0.0) if "DPS_Adj" in out.columns else pd.Series(0.0, index=out.index))
+    out["_dps_n"] = (pd.to_numeric(out["DPS_N"], errors="coerce").fillna(0).astype(int) if "DPS_N" in out.columns else pd.Series(0, index=out.index))
     out = out.sort_values(["_dps_adj", "_dps_n"], ascending=[False, False]).drop(columns=["_dps_adj","_dps_n"], errors="ignore")
 
     return out
@@ -1079,6 +1097,8 @@ def _probe_goals_best(r: dict) -> dict | None:
         "valhalla": (61.4, 44),
         "fury_shredder": (73.3, 15),
 
+        "bloodshed_finisher": (53.1, 81),  # opp_5v5_xGA60>=2.53 & iXG%>=94 (Kempe lane)
+
         # Berserker Aggression (screenshots): OppSOG>=29 & iXG>=97 & Team_GF tiered
         "berserker_54": (54.3, 46),   # Team_GF>=2.5
         "berserker_59": (59.0, 39),   # Team_GF>=3.0
@@ -1114,6 +1134,9 @@ def _probe_goals_best(r: dict) -> dict | None:
 
     # Armor Shred alone
     procs.append(("Armor Shred", *DPS["armor_shred"], bool(env_249)))
+
+    # Bloodshed Finisher (Kempe lane): opp xGA>=2.53 & iXG>=94 (no OppSOG required)
+    procs.append(("Bloodshed Finisher", *DPS["bloodshed_finisher"], bool((xga is not None and xga >= 2.53) and (ixg is not None and ixg >= 94))))
 
     # Press the Attack (xGA>=2.49 & iXG>=96.5 & Team_GF_Avg_L5>=3.0)
     procs.append(("Press the Attack", *DPS["hot_team_press"], bool(env_249 and (ixg is not None and ixg >= 96.5) and (team_gf is not None and team_gf >= 3.0))))
@@ -2518,6 +2541,7 @@ def _render_goals_combat_hud(r) -> None:
         "base": {"n": 423, "win": 34.3},
         "armor_shred": {"n": 189, "win": 41.8},   # xGA >= 2.49
         "hot_team_press": {"n": 81, "win": 51.9},  # xGA>=2.49 & iXG>=96.5 & Team_GF>=3.0
+        "bloodshed_finisher": {"n": 81, "win": 53.1},  # opp_5v5_xGA60>=2.53 & iXG%>=94 (Kempe lane)
         "armor_buff":  {"n": 234, "win": 28.2},   # xGA < 2.49 (derived complement)
 
         "fenrir_34": {"n": 200, "win": 40.0},     # iXG% >= 97
@@ -2557,6 +2581,7 @@ def _render_goals_combat_hud(r) -> None:
         "armor_annihilation": "Armor Annihilation",
         "fury_shredder": "Fury Shredder",
         "hot_team_press": "Press the Attack",
+        "bloodshed_finisher": "Bloodshed Finisher",
 
         "berserker_71": "Berserker Aggression (FOR VALHALLA)",
         "berserker_59": "Berserker Aggression (Press)",
@@ -2639,6 +2664,17 @@ def _render_goals_combat_hud(r) -> None:
         )
         _wl_dps_bar(DPS["hot_team_press"]["win"], "GOALS")
         _track_best_key("hot_team_press")
+
+    # Bloodshed Finisher (Kempe lane): opp xGA>=2.53 & iXG>=94 (no OppSOG required)
+    bloodshed_on = bool((xga is not None and xga >= 2.53) and (ixg is not None and ixg >= 94))
+    if bloodshed_on:
+        _wl_why_line(
+            _svg_icon("armor_shred.svg", "Bloodshed Finisher", "wl-goals wl-keep"),
+            f"Bloodshed Finisher — opp xGA {xga:.2f} ≥ 2.53 • iXG {ixg:.1f} ≥ 94  •  DPS {DPS['bloodshed_finisher']['win']}% (n={DPS['bloodshed_finisher']['n']})",
+        )
+        _track_best_key("bloodshed_finisher")
+        _wl_dps_bar(DPS["bloodshed_finisher"]["win"], "GOALS")
+
 
     # Lane flags
     opp_lane = bool(oppsog is not None and oppsog >= 29)
@@ -7424,68 +7460,18 @@ elif page == "GOALS (0.5)":
     if conf_col is None:
         conf_col = "Conf_Goal"
 
-    # --- schema-safe column helpers (avoid scalar .fillna crashes) ---
-    def _scol(obj, col, default=np.nan):
-        """Return a pandas Series for column `col` aligned to obj.index.
-        Works for DataFrame/Series; falls back to a Series of `default` if missing.
-        """
-        if col is None:
-            # If obj has an index, align; otherwise empty Series
-            if hasattr(obj, "index"):
-                return pd.Series(default, index=obj.index)
-            return pd.Series([], dtype="float64")
-        if hasattr(obj, "columns"):
-            # DataFrame
-            if col in obj.columns:
-                return obj[col]
-            return pd.Series(default, index=obj.index)
-        if isinstance(obj, pd.Series):
-            # Row/Series
-            v = obj.get(col, default)
-            return pd.Series(v, index=obj.index)
-        # Unknown/scalar
-        return pd.Series(default, index=getattr(obj, "index", pd.RangeIndex(0)))
-
-    def _num(obj, col_or_default=0.0, default=np.nan):
-        """Numeric helper.
-        - _num(df, 'Col', default) -> Series (filled)
-        - _num(series, 'Col', default) -> scalar
-        - _num(value, default) -> scalar
-        """
-        # Column mode
-        if isinstance(col_or_default, str):
-            col = col_or_default
-            dflt = default
-            if hasattr(obj, "columns"):
-                out = pd.to_numeric(_scol(obj, col, dflt), errors="coerce")
-                return out.fillna(dflt) if isinstance(out, pd.Series) else (float(dflt) if pd.isna(out) else float(out))
-            if isinstance(obj, pd.Series):
-                v = obj.get(col, dflt)
-                out = pd.to_numeric(v, errors="coerce")
-                return float(dflt) if pd.isna(out) else float(out)
-            if isinstance(obj, dict):
-                v = obj.get(col, dflt)
-                out = pd.to_numeric(v, errors="coerce")
-                return float(dflt) if pd.isna(out) else float(out)
-            return float(dflt)
-
-        # Scalar mode
-        dflt = col_or_default
-        out = pd.to_numeric(obj, errors="coerce")
-        return float(dflt) if pd.isna(out) else float(out)
-
         # Hard gates (GOALS Beta Gate)
-    m_matrix = (_scol(_g, matrix_col, "GREEN").astype(str).str.strip().str.upper().isin(["GREEN", "🟢"]) if (matrix_col in _g.columns) else pd.Series(True, index=_g.index))
-    m_line   = ((_num(_g, line_col, np.nan) == 0.5) if (line_col in _g.columns) else pd.Series(True, index=_g.index))
-    m_conf   = (_num(_g, conf_col, 0).fillna(0) >= 85)
+    m_matrix = _g[matrix_col].astype(str).str.strip().str.upper().isin(["GREEN", "🟢"])
+    m_line   = (pd.to_numeric(_g.get(line_col, 0), errors="coerce") == 0.5)
+    m_conf   = (pd.to_numeric(_g.get(conf_col, 0), errors="coerce").fillna(0) >= 85)
 
     # Pull key GOALS columns (schema varies)
-    _oppsog = _num(_g, "Opp_SOG_Against_L10", np.nan)
-    _xga    = _num(_g, "opp_5v5_xGA60", np.nan)
-    _ixg    = _num(_g, "iXG%", np.nan).where(~_num(_g, "iXG%", np.nan).isna(), _num(_g, "iXG_pct", np.nan)).where(lambda s: ~s.isna(), _num(_g, "iXG_Pct", np.nan))
-    _share  = _num(_g, "Player_5v5_SOG_Share", np.nan)  # schema-safe
-    _drought= _num(_g, "Drought_G", np.nan).where(lambda s: ~s.isna(), _num(_g, "Drought_Goal", np.nan)).where(lambda s: ~s.isna(), _num(_g, "Drought", np.nan))
-    _teamgf = _num(_g, 'Team_GF_Avg_L5', np.nan).where(lambda s: ~s.isna(), _num(_g,'Team_GF_L5',np.nan)).where(lambda s: ~s.isna(), _num(_g,'Team_GF_L5_Avg',np.nan))
+    _oppsog = pd.to_numeric(_g.get("Opp_SOG_Against_L10", np.nan), errors="coerce")
+    _xga    = pd.to_numeric(_g.get("opp_5v5_xGA60", np.nan), errors="coerce")
+    _ixg    = pd.to_numeric(_g.get("iXG%", _g.get("iXG_pct", _g.get("iXG_Pct", np.nan))), errors="coerce")
+    _share  = pd.to_numeric(_g.get("Player_5v5_SOG_Share", np.nan), errors="coerce")
+    _drought= pd.to_numeric(_g.get("Drought_G", _g.get("Drought_Goal", _g.get("Drought", np.nan))), errors="coerce")
+    _teamgf = pd.to_numeric(_g.get('Team_GF_Avg_L5', _g.get('Team_GF_L5', _g.get('Team_GF_L5_Avg', np.nan))), errors='coerce')
 
     # Odds for +odds lane (optional)
     odds_col = None
@@ -7522,9 +7508,9 @@ elif page == "GOALS (0.5)":
 
     _g = _g[m_matrix & m_line & m_conf & m_grade & eligible].copy()
 
-    _g["_valhalla"] = (_num(_g, "opp_5v5_xGA60", np.nan).fillna(0) > 2.50).astype(int)
-    _g["_avg5"] = _num(_g, "Avg5_SOG", 0).fillna(0)
-    _g["_conf"] = _num(_g, "Conf_Goal", 0).fillna(0)
+    _g["_valhalla"] = (pd.to_numeric(_g.get("opp_5v5_xGA60", np.nan), errors="coerce").fillna(0) > 2.50).astype(int)
+    _g["_avg5"] = pd.to_numeric(_g.get("Avg5_SOG", 0), errors="coerce").fillna(0)
+    _g["_conf"] = pd.to_numeric(_g.get("Conf_Goal", 0), errors="coerce").fillna(0)
     _g = _g.sort_values(["_valhalla","_avg5","_conf"], ascending=[False, False, False], kind="mergesort")
 
     top_n_g = st.slider("Show top plays (Goals)", 3, 25, 10, 1, key="goal_smash_topn")
