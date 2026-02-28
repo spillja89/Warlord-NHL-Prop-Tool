@@ -4017,6 +4017,22 @@ def build_tracker(today_local: date, debug: bool = False) -> str:
         ),
         axis=1
     )
+    # -------------------------
+    # Elite Visibility Override (Feb 2026)
+    # -------------------------
+    # Purpose: Never let elite-caliber players get "lost" due to Matrix gating.
+    # If player is tagged ELITE by Talent_Tier (or Tier_Tag contains ELITE), force all market matrices to GREEN.
+    try:
+        _tal = sk.get("Talent_Tier", "").astype(str).str.upper()
+        _tier_tag = sk.get("Tier_Tag", "").astype(str).str.upper()
+        _elite = _tal.eq("ELITE") | _tier_tag.str.contains("ELITE", na=False)
+        if _elite.any():
+            for _col in ("Matrix_SOG", "Matrix_Assists", "Matrix_Goal", "Matrix_Points"):
+                if _col in sk.columns:
+                    sk.loc[_elite, _col] = "Green"
+    except Exception:
+        pass
+
 
     # Confidence (base)
     
