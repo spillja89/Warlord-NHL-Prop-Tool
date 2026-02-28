@@ -915,6 +915,20 @@ def _probe_points_best(r: dict) -> dict | None:
     opp_sog_l10 = _safe_float(r.get("Opp_SOG_Against_L10", r.get("Opp_SA_Avg_L10", r.get("OppSOG_L10"))))
     opp_sog_l10 = 0.0 if opp_sog_l10 is None else float(opp_sog_l10)
 
+    # iXG% / iXA% (identity lane)
+    ixg_pct = None
+    for k in ("iXG%", "iXG_pct", "iXG_Pct", "ixg_pct", "ixg%"):
+        if k in r:
+            ixg_pct = _safe_float(r.get(k, None), None)
+            if ixg_pct is not None:
+                break
+    ixa_pct = None
+    for k in ("iXA%", "iXA_pct", "iXA_Pct", "ixa_pct", "ixa%"):
+        if k in r:
+            ixa_pct = _safe_float(r.get(k, None), None)
+            if ixa_pct is not None:
+                break
+
     procs = []
     is_fortress = (line <= 0.75)  # 0.5 build
     if is_fortress:
@@ -946,20 +960,43 @@ def _probe_points_best(r: dict) -> dict | None:
         # Label-only still eligible as a proc for ordering (keeps beta consistent)
         procs.append(("Bleed ENV (Label Only)", 76.9, 26, (conf_p >= 70 and pp_ixg >= 1.5)))
     else:
-        # 1.5 kit (cond list copied from HUD)
+        # 1.5 kit — Apex lanes (Identity + Creator). Ordered top-down so best proc wins cleanly.
+        # NOTE: Presentation-only ranking for DPS board; does not change any eligibility logic elsewhere.
+        line15 = (line == 1.5)
+
+        # ----- Identity lane (elite “god” profile) -----
+        apex_instinct_core = bool(line15 and (ixg_pct is not None) and (ixa_pct is not None) and (float(ixg_pct) >= 97.0) and (float(ixa_pct) >= 99.0))
+        apex_rampage_identity = bool(apex_instinct_core and (ppp >= 7))
+
+        # ----- Creator lane (money-maker ladder) -----
+        creator_core = bool(line15 and (assists_mu >= 1.5) and (conf_a >= 89))
+        creator_weak_def = bool(creator_core and (opp_defweak >= 70))
+        creator_team_heater = bool(creator_core and (team_gf_l5 >= 3.5))
+        creator_rampage_smash = bool(creator_core and (team_gf_l5 >= 3.5) and (opp_xga is not None) and (float(opp_xga) >= 2.53))
+        creator_annihilator = bool(creator_core and (team_gf_l5 >= 3.8) and (opp_xga is not None) and (float(opp_xga) >= 2.53))
+
+        # Suggested tier ordering (best proc wins cleanly)
         procs += [
-            ("Backbone", 54.3, 116, (conf_a >= 89 and points_mu >= 1.7)),
-            ("Blade Impale (Power Tier)", 60.8, 51, (conf_a >= 89 and points_mu >= 2.2)),
-            ("Blade Slash (Monster)", 77.8, 18, (conf_a >= 89 and points_mu >= 2.2 and (opp_xga is not None) and float(opp_xga) >= 2.6)),
-            ("Delayed Hammer Smash", 67.6, 34, (conf_a >= 89 and drought_p >= 1 and points_mu >= 1.7)),
-            ("Enchanted Hammer (Legacy)", 61.1, 18, (conf_p >= 80 and pp_ixg >= 1.7)),
-            ("Blade Impale (Legacy PP)", 49.2, 61, (conf_p >= 80 and pp_ixa >= 4.0)),
-            ("Blade Slash (Legacy PP)", 48.1, 81, (conf_p >= 80 and team_pp_xgf >= 7.0)),
-            ("Blood Exposure (Legacy)", 54.5, 44, (conf_p >= 80 and team_pp_xgf >= 7.0 and opp_defweak >= 60)),
-            ("Blood Exposure II (Legacy)", 54.7, 64, (conf_p >= 80 and opp_defweak >= 60)),
-            ("Polarizing Smash (Legacy)", 54.5, 33, (conf_p >= 80 and team_pp_xgf >= 7.0 and opp_defweak >= 70)),
-            ("Eternal Smash (Legacy)", 53.2, 47, (conf_p >= 80 and opp_defweak >= 70)),
+            ("Apex Annihilator (RARE)", 82.4, 17, creator_annihilator),
+            ("Apex Rampage (Creator Smash)", 70.4, 27, creator_rampage_smash),
+            ("Apex Instinct — Weak Defense", 65.8, 38, creator_weak_def),
+            ("Apex Instinct — Team Heater", 59.0, 61, creator_team_heater),
+            ("Apex Instinct (Creator Core)", 56.8, 81, creator_core),
+            ("Apex Rampage (Smash)", 71.4, 21, apex_rampage_identity),
+            ("Apex Instinct (Core)", 57.1, 49, apex_instinct_core),
         ]
+
+
+    # Selection:
+    # - Fortress (0.5): keep AdjWin ranking
+    # - 1.5 Apex kit: use ordered tier list so the best proc wins cleanly
+    if not is_fortress:
+        for title, win, n, cond in procs:
+            if not cond:
+                continue
+            adj = _adj_win(win, n, k=20)
+            return {"title": title, "win": float(win), "n": int(n), "adj": float(adj)}
+        return None
 
     best = None
     for title, win, n, cond in procs:
@@ -972,6 +1009,7 @@ def _probe_points_best(r: dict) -> dict | None:
         if (best is None) or (adj > best["adj"]) or (abs(adj - best["adj"]) < 1e-9 and n > best["n"]):
             best = {"title": title, "win": float(win), "n": int(n), "adj": float(adj)}
     return best
+
 
 def _probe_assists_best(r: dict) -> dict | None:
     import math
@@ -986,6 +1024,7 @@ def _probe_assists_best(r: dict) -> dict | None:
     pp_ix      = _safe_float(r.get("PP_iXA60", r.get("PP_iXA_60")), default=float("nan"))
     team_gf_l5 = _safe_float(r.get("Team_GF_L5"), default=float("nan"))
     ppp10      = _safe_float(r.get("PPP10_total"), default=float("nan"))
+    pp_toi_pct = _safe_float(r.get("PP_TOI_Pct", r.get("PP_TOI%")), default=float("nan"))
     pp_toi_pct = _safe_float(r.get("PP_TOI_Pct", r.get("PP_TOI%")), default=float("nan"))
     pp_toi_pct = _safe_float(r.get("PP_TOI_Pct", r.get("PP_TOI%")), default=float("nan"))
     assists_mu = _safe_float(r.get("Assists_mu"), default=float("nan"))
@@ -2251,6 +2290,7 @@ def _render_assists_combat_hud(r) -> None:
     pp_ix      = _safe_float(r.get("PP_iXA60", r.get("PP_iXA_60")), default=float("nan"))
     team_gf_l5 = _safe_float(r.get("Team_GF_L5"), default=float("nan"))
     ppp10      = _safe_float(r.get("PPP10_total"), default=float("nan"))
+    pp_toi_pct = _safe_float(r.get("PP_TOI_Pct", r.get("PP_TOI%")), default=float("nan"))
     assists_mu = _safe_float(r.get("Assists_mu"), default=float("nan"))
     goalie_weak = _safe_float(r.get("Goalie_Weak"), default=float("nan"))
     opp_sv     = _safe_float(r.get("Opp_SV"), default=float("nan"))
