@@ -2512,9 +2512,9 @@ def matrix_points_v2(ixa_pct: float, v2_stab: Optional[float], reg_heat_p: str =
     if ixa_pct < 78:
         return "Red" if ixa_pct < 70 else "Yellow"
 
-    if ixa_pct >= 90 and stab >= 62:
+    if ixa_pct >= 90 and stab >= 60:
         return "Green"
-    if ixa_pct >= 90 and stab >= 65 and toi >= 55:
+    if ixa_pct >= 94 and toi >= 55:
         return "Green"
     if ixa_pct >= 94 and stab >= 60 and reg_heat_p == "HOT":
         return "Green"
