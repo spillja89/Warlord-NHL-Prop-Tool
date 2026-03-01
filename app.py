@@ -4444,7 +4444,7 @@ def style_df(df: pd.DataFrame, cols: list[str]) -> "pd.io.formats.style.Styler":
         "Conf_Points": 70,
         "Conf_SOG": 75,
         "Conf_Assists": 80,
-        "Conf_Goal": 85,
+        "Conf_Goal": 80,
         "Best_Conf": 80,
     }
     for c, thr in conf_thr.items():
