@@ -6214,7 +6214,7 @@ elif page == "Points":
 
     points_cols = [
         "Game","Player","Pos","Tier_Tag",
-        "Green","LOCK",
+        "Green"
 
         # --- BOOK FIRST ---
         "Points_Line","Points_Odds_Over","Points_Book",
@@ -6731,12 +6731,12 @@ elif page == "Assists":
         "Game",
         "Player", "Pos",
         "Tier_Tag",
-        "Markets",
+        
         "Green",
-                "LOCK", "Assists_Odds_Over",
+                "Assists_Odds_Over",
         "Assists_Book",
-        "Conf_Assists", "Matrix_Assists", "Assists_Line", "Valhalla_OK", "PP_iXA60", "PP_iXA60_Tier", "PP_TOI_Pct_Game", "PP_Matchup",
-        "opp_5v5_xGA60",      "ENV_BAD_OppSV", "ENV_GOOD_OppSV", "ENV_BAD_xGA", "ENV_BAD_GWeak", "ENV_GOOD_GWeak","PP_PROOF", 
+        "Conf_Assists", "Matrix_Assists", "Assists_Line", "PP_iXA60", "PP_iXA60_Tier", "PP_TOI_Pct_Game", "PP_Matchup",
+        "opp_5v5_xGA60",      
 
        
        
@@ -6745,7 +6745,7 @@ elif page == "Assists":
         
         "Reg_Heat_A", "Reg_Gap_A10", "Exp_A_10", "L10_A",
         "PP_Tier", "PP_Path", 
-        "PP_TOI_Pct_Game",  "PP_Matchup",
+     "PP_Matchup",
 
         
         "iXA%","iXG%", "v2_player_stability",
