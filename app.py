@@ -849,9 +849,9 @@ def apply_dps_filters_ui(df: pd.DataFrame, mk: str, key_prefix: str = "m") -> pd
     st.sidebar.subheader(f"{mk_u} — Filters")
     line_sel = st.sidebar.multiselect("Line", line_vals, default=line_vals, key=f"{key_prefix}_line") if line_vals else []
     move_sel = st.sidebar.multiselect("Move / Tier", move_vals, default=move_vals, key=f"{key_prefix}_move") if move_vals else []
-   
-    min_n = int(st.sidebar.number_input("Min DPS n", min_value=0, max_value=000, value=0, step=1, key=f"{key_prefix}_minn"))
-    max_fav_odds = int(st.sidebar.number_input("Max favorite odds (e.g. -250)", min_value=-1000, max_value=300, value=-250, step=5, key=f"{key_prefix}_maxfav"))
+    min_win = float(st.sidebar.slider("Min DPS win%", 0.0, 100.0, 50.0, 0.5, key=f"{key_prefix}_minwin"))
+    min_n = int(st.sidebar.number_input("Min DPS n", min_value=0, max_value=500, value=20, step=1, key=f"{key_prefix}_minn"))
+    max_fav_odds = int(st.sidebar.number_input("Max favorite odds (e.g. -200)", min_value=-1000, max_value=300, value=-200, step=5, key=f"{key_prefix}_maxfav"))
     q = st.sidebar.text_input("Search", value="", key=f"{key_prefix}_q").strip().lower()
 
     # Compute helper columns for filtering
@@ -1196,7 +1196,7 @@ def _probe_sog_best(r: dict) -> dict | None:
         permission_shatter = (xga >= 2.50) or (hdca >= 2.20)
         enraged = (l40 >= 3.0) and (xga >= 2.50)
         elite_enraged = enraged and (share >= 20.0)
-        enraged_shatter = (opp_l50 >= 28.5) and permission_shatter
+        enraged_shatter = (opp_l50 >= 29.5) and permission_shatter
 
         procs = [
             ("SNIPER CRIT", 71.4, 28, elite_enraged),
@@ -2251,8 +2251,6 @@ def _render_assists_combat_hud(r) -> None:
     pp_ix      = _safe_float(r.get("PP_iXA60", r.get("PP_iXA_60")), default=float("nan"))
     team_gf_l5 = _safe_float(r.get("Team_GF_L5"), default=float("nan"))
     ppp10      = _safe_float(r.get("PPP10_total"), default=float("nan"))
-    pp_toi_pct = _safe_float(r.get("PP_TOI_Pct", r.get("PP_TOI%")), default=float("nan"))
-
     assists_mu = _safe_float(r.get("Assists_mu"), default=float("nan"))
     goalie_weak = _safe_float(r.get("Goalie_Weak"), default=float("nan"))
     opp_sv     = _safe_float(r.get("Opp_SV"), default=float("nan"))
@@ -6067,9 +6065,9 @@ if page == "Board":
     line_sel = st.sidebar.multiselect("Line", line_vals, default=line_vals, key="board_line_sel") if len(line_vals) else []
     move_vals = sorted([x for x in pd.unique(df_b.get("DPS_Title", pd.Series([])).astype(str)) if x and x != "nan"])
     move_sel = st.sidebar.multiselect("Move / Tier", move_vals, default=move_vals, key="board_move_sel") if len(move_vals) else []
-    min_win = float(st.sidebar.slider("Min DPS win%", 0.0, 0.0, 0.0, 0.0, key="board_min_win"))
+    min_win = float(st.sidebar.slider("Min DPS win%", 0.0, 100.0, 55.0, 0.5, key="board_min_win"))
     min_n = int(st.sidebar.number_input("Min DPS n", min_value=0, max_value=500, value=20, step=1, key="board_min_n"))
-    max_fav_odds = int(st.sidebar.number_input("Max favorite odds (e.g. -250)", min_value=-1000, max_value=300, value=-250, step=5, key="board_max_fav"))
+    max_fav_odds = int(st.sidebar.number_input("Max favorite odds (e.g. -200)", min_value=-1000, max_value=300, value=-200, step=5, key="board_max_fav"))
     q = st.sidebar.text_input("Search", value="", key="board_search").strip().lower()
 
     df_b_filt = df_b.copy()
@@ -6192,9 +6190,9 @@ elif page == "Points":
     min_conf = st.sidebar.slider("Min Conf (Points)", 0, 100, 70, 1)
     color_pick = st.sidebar.multiselect(
         "Colors (Points)",
-        ["green"],
+        ["green", "yellow", "blue", "red"],
         # Default excludes yellow (yellow was not part of the green-matrix test regime)
-        default=["green"]
+        default=["green", "blue"]
     )
     require_matrix_green = st.sidebar.checkbox(
         "Require Matrix=Green (Points)",
@@ -6214,7 +6212,7 @@ elif page == "Points":
 
     points_cols = [
         "Game","Player","Pos","Tier_Tag",
-        "Green"
+        "Green","LOCK",
 
         # --- BOOK FIRST ---
         "Points_Line","Points_Odds_Over","Points_Book",
@@ -6662,8 +6660,8 @@ elif page == "Assists":
     min_conf = st.sidebar.slider("Min Conf (Assists)", 0, 100, 80, 1)
     color_pick = st.sidebar.multiselect(
         "Colors (Assists)",
-        ["green"],
-        default=["green"]
+        ["green", "yellow", "blue", "red"],
+        default=["green", "yellow", "blue"]
     )
 
     if not show_all:
@@ -6731,12 +6729,12 @@ elif page == "Assists":
         "Game",
         "Player", "Pos",
         "Tier_Tag",
-        
+        "Markets",
         "Green",
-                "Assists_Odds_Over",
+                "LOCK", "Assists_Odds_Over",
         "Assists_Book",
-        "Conf_Assists", "Matrix_Assists", "Assists_Line", "PP_iXA60", "PP_iXA60_Tier", "PP_TOI_Pct_Game", "PP_Matchup",
-        "opp_5v5_xGA60",      
+        "Conf_Assists", "Matrix_Assists", "Assists_Line", "Valhalla_OK", "PP_iXA60", "PP_iXA60_Tier", "PP_TOI_Pct_Game", "PP_Matchup",
+        "opp_5v5_xGA60",      "ENV_BAD_OppSV", "ENV_GOOD_OppSV", "ENV_BAD_xGA", "ENV_BAD_GWeak", "ENV_GOOD_GWeak","PP_PROOF", 
 
        
        
@@ -6745,7 +6743,7 @@ elif page == "Assists":
         
         "Reg_Heat_A", "Reg_Gap_A10", "Exp_A_10", "L10_A",
         "PP_Tier", "PP_Path", 
-     "PP_Matchup",
+        "PP_TOI_Pct_Game",  "PP_Matchup",
 
         
         "iXA%","iXG%", "v2_player_stability",
@@ -7491,7 +7489,7 @@ elif page == "GOALS (0.5)":
         # Hard gates (GOALS Beta Gate)
     m_matrix = _g[matrix_col].astype(str).str.strip().str.upper().isin(["GREEN", "🟢"])
     m_line   = (pd.to_numeric(_g.get(line_col, 0), errors="coerce") == 0.5)
-    m_conf   = (pd.to_numeric(_g.get(conf_col, 0), errors="coerce").fillna(0) >= 80)
+    m_conf   = (pd.to_numeric(_g.get(conf_col, 0), errors="coerce").fillna(0) >= 85)
 
     # Pull key GOALS columns (schema varies)
     _oppsog = pd.to_numeric(_g.get("Opp_SOG_Against_L10", np.nan), errors="coerce")
@@ -7515,7 +7513,7 @@ elif page == "GOALS (0.5)":
     m_grade = (_out.isin(["W", "L"]) | (_ms.ne("GRADED")))
 
     # Multi-path Beta Gate (GOALS)
-    m_opp   = _oppsog.fillna(-999) >= 28.5
+    m_opp   = _oppsog.fillna(-999) >= 29
     m_xga49 = _xga.fillna(-999) >= 2.49
     m_gf25  = _teamgf.fillna(-999) >= 2.5
 
@@ -7590,7 +7588,7 @@ elif page == "GOALS (0.5)":
             _conf_g = float(conf)
         except Exception:
             _conf_g = 0.0
-        _stance_ok = (_line_g == 0.5) and (_mat_g == "green") and (_conf_g >= 80)
+        _stance_ok = (_line_g == 0.5) and (_mat_g == "green") and (_conf_g >= 85)
 
         _hud = []
         if _stance_ok:
@@ -7674,6 +7672,11 @@ elif page == "GOALS (0.5)":
             combo_tags.append("PLAYABLE")
         elif longshot:
             combo_tags.append("Longshot +Odds")
+
+        # Ensure best-proc move title appears in the card header + filterable context
+        _best = str(r.get("DPS_Title", "") or "").strip()
+        if _best and (_best not in combo_tags):
+            combo_tags.insert(0, _best)
 
         if tyr_unleashed:
             combo_tags.append("Tyr’s Wrath Unleashed")
