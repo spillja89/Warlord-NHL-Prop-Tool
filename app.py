@@ -850,7 +850,7 @@ def apply_dps_filters_ui(df: pd.DataFrame, mk: str, key_prefix: str = "m") -> pd
     line_sel = st.sidebar.multiselect("Line", line_vals, default=line_vals, key=f"{key_prefix}_line") if line_vals else []
     move_sel = st.sidebar.multiselect("Move / Tier", move_vals, default=move_vals, key=f"{key_prefix}_move") if move_vals else []
    
-    min_n = int(st.sidebar.number_input("Min DPS n", min_value=0, max_value=500, value=0, step=1, key=f"{key_prefix}_minn"))
+    min_n = int(st.sidebar.number_input("Min DPS n", min_value=0, max_value=000, value=0, step=1, key=f"{key_prefix}_minn"))
     max_fav_odds = int(st.sidebar.number_input("Max favorite odds (e.g. -250)", min_value=-1000, max_value=300, value=-250, step=5, key=f"{key_prefix}_maxfav"))
     q = st.sidebar.text_input("Search", value="", key=f"{key_prefix}_q").strip().lower()
 
@@ -1196,7 +1196,7 @@ def _probe_sog_best(r: dict) -> dict | None:
         permission_shatter = (xga >= 2.50) or (hdca >= 2.20)
         enraged = (l40 >= 3.0) and (xga >= 2.50)
         elite_enraged = enraged and (share >= 20.0)
-        enraged_shatter = (opp_l50 >= 29.5) and permission_shatter
+        enraged_shatter = (opp_l50 >= 28.5) and permission_shatter
 
         procs = [
             ("SNIPER CRIT", 71.4, 28, elite_enraged),
@@ -6067,7 +6067,7 @@ if page == "Board":
     line_sel = st.sidebar.multiselect("Line", line_vals, default=line_vals, key="board_line_sel") if len(line_vals) else []
     move_vals = sorted([x for x in pd.unique(df_b.get("DPS_Title", pd.Series([])).astype(str)) if x and x != "nan"])
     move_sel = st.sidebar.multiselect("Move / Tier", move_vals, default=move_vals, key="board_move_sel") if len(move_vals) else []
-    min_win = float(st.sidebar.slider("Min DPS win%", 0.0, 100.0, 0.0, 0.0, key="board_min_win"))
+    min_win = float(st.sidebar.slider("Min DPS win%", 0.0, 0.0, 0.0, 0.0, key="board_min_win"))
     min_n = int(st.sidebar.number_input("Min DPS n", min_value=0, max_value=500, value=20, step=1, key="board_min_n"))
     max_fav_odds = int(st.sidebar.number_input("Max favorite odds (e.g. -250)", min_value=-1000, max_value=300, value=-250, step=5, key="board_max_fav"))
     q = st.sidebar.text_input("Search", value="", key="board_search").strip().lower()
@@ -7515,7 +7515,7 @@ elif page == "GOALS (0.5)":
     m_grade = (_out.isin(["W", "L"]) | (_ms.ne("GRADED")))
 
     # Multi-path Beta Gate (GOALS)
-    m_opp   = _oppsog.fillna(-999) >= 29
+    m_opp   = _oppsog.fillna(-999) >= 28.5
     m_xga49 = _xga.fillna(-999) >= 2.49
     m_gf25  = _teamgf.fillna(-999) >= 2.5
 
