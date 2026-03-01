@@ -987,7 +987,6 @@ def _probe_assists_best(r: dict) -> dict | None:
     team_gf_l5 = _safe_float(r.get("Team_GF_L5"), default=float("nan"))
     ppp10      = _safe_float(r.get("PPP10_total"), default=float("nan"))
     pp_toi_pct = _safe_float(r.get("PP_TOI_Pct", r.get("PP_TOI%")), default=float("nan"))
-    pp_toi_pct = _safe_float(r.get("PP_TOI_Pct", r.get("PP_TOI%")), default=float("nan"))
     assists_mu = _safe_float(r.get("Assists_mu"), default=float("nan"))
     goalie_weak = _safe_float(r.get("Goalie_Weak"), default=float("nan"))
 
@@ -2233,6 +2232,7 @@ def _render_assists_combat_hud(r) -> None:
     Does NOT change eligibility or EV logic — only explains signals.
     """
     import math
+    pp_toi_pct = float('nan')  # SAFETY: prevent NameError if feature pull block is edited
 
     mk = "ASSISTS"
     market_cls = "wl-assists"
@@ -4442,7 +4442,7 @@ def style_df(df: pd.DataFrame, cols: list[str]) -> "pd.io.formats.style.Styler":
         "Conf_Points": 70,
         "Conf_SOG": 75,
         "Conf_Assists": 80,
-        "Conf_Goal": 80,
+        "Conf_Goal": 85,
         "Best_Conf": 80,
     }
     for c, thr in conf_thr.items():
@@ -7672,11 +7672,6 @@ elif page == "GOALS (0.5)":
             combo_tags.append("PLAYABLE")
         elif longshot:
             combo_tags.append("Longshot +Odds")
-
-        # Ensure best-proc move title appears in the card header + filterable context
-        _best = str(r.get("DPS_Title", "") or "").strip()
-        if _best and (_best not in combo_tags):
-            combo_tags.insert(0, _best)
 
         if tyr_unleashed:
             combo_tags.append("Tyr’s Wrath Unleashed")
