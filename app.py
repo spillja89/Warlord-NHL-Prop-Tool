@@ -6067,7 +6067,7 @@ if page == "Board":
     line_sel = st.sidebar.multiselect("Line", line_vals, default=line_vals, key="board_line_sel") if len(line_vals) else []
     move_vals = sorted([x for x in pd.unique(df_b.get("DPS_Title", pd.Series([])).astype(str)) if x and x != "nan"])
     move_sel = st.sidebar.multiselect("Move / Tier", move_vals, default=move_vals, key="board_move_sel") if len(move_vals) else []
-    min_win = float(st.sidebar.slider("Min DPS win%", 0.0, 100.0, 55.0, 0.5, key="board_min_win"))
+    min_win = float(st.sidebar.slider("Min DPS win%", 0.0, 100.0, 0.0, 0.0, key="board_min_win"))
     min_n = int(st.sidebar.number_input("Min DPS n", min_value=0, max_value=500, value=20, step=1, key="board_min_n"))
     max_fav_odds = int(st.sidebar.number_input("Max favorite odds (e.g. -250)", min_value=-1000, max_value=300, value=-250, step=5, key="board_max_fav"))
     q = st.sidebar.text_input("Search", value="", key="board_search").strip().lower()
