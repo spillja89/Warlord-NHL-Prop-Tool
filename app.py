@@ -851,7 +851,7 @@ def apply_dps_filters_ui(df: pd.DataFrame, mk: str, key_prefix: str = "m") -> pd
     move_sel = st.sidebar.multiselect("Move / Tier", move_vals, default=move_vals, key=f"{key_prefix}_move") if move_vals else []
     min_win = float(st.sidebar.slider("Min DPS win%", 0.0, 100.0, 50.0, 0.5, key=f"{key_prefix}_minwin"))
     min_n = int(st.sidebar.number_input("Min DPS n", min_value=0, max_value=500, value=20, step=1, key=f"{key_prefix}_minn"))
-    max_fav_odds = int(st.sidebar.number_input("Max favorite odds (e.g. -200)", min_value=-1000, max_value=300, value=-200, step=5, key=f"{key_prefix}_maxfav"))
+    max_fav_odds = int(st.sidebar.number_input("Max favorite odds (e.g. -250)", min_value=-1000, max_value=300, value=-250, step=5, key=f"{key_prefix}_maxfav"))
     q = st.sidebar.text_input("Search", value="", key=f"{key_prefix}_q").strip().lower()
 
     # Compute helper columns for filtering
@@ -946,37 +946,7 @@ def _probe_points_best(r: dict) -> dict | None:
         # Label-only still eligible as a proc for ordering (keeps beta consistent)
         procs.append(("Bleed ENV (Label Only)", 76.9, 26, (conf_p >= 70 and pp_ixg >= 1.5)))
     else:
-        # 1.5 kit (Apex lanes + legacy kit fallback)
-        ixg_pct = _safe_float(r.get("iXG%", r.get("iXG_Pct", r.get("iXG_pct"))))
-        ixa_pct = _safe_float(r.get("iXA%", r.get("iXA_Pct", r.get("iXA_pct"))))
-        ixg_pct = 0.0 if ixg_pct is None else float(ixg_pct)
-        ixa_pct = 0.0 if ixa_pct is None else float(ixa_pct)
-
-        is_15 = (abs(float(line) - 1.5) < 0.05)
-
-        # --- APEX: Identity lane (elite "god" profile) ---
-        apex_identity_core = (is_15 and ixg_pct >= 97 and ixa_pct >= 99)
-        apex_identity_smash = (apex_identity_core and ppp >= 7)
-
-        # --- APEX: Creator engine lane (money-maker ladder) ---
-        apex_creator_core = (is_15 and assists_mu >= 1.5 and conf_a >= 89)
-        apex_weak_def = (apex_creator_core and opp_defweak >= 70)
-        apex_team_heater = (apex_creator_core and team_gf_l5 >= 3.5)
-        apex_creator_smash = (apex_creator_core and team_gf_l5 >= 3.5 and (opp_xga is not None) and float(opp_xga) >= 2.53)
-        apex_annihilator = (apex_creator_core and team_gf_l5 >= 3.8 and (opp_xga is not None) and float(opp_xga) >= 2.53)
-
-        # Suggested tier ordering so best proc wins cleanly
-        procs += [
-            ("Apex Annihilator (RARE)", 82.4, 17, apex_annihilator),
-            ("Apex Rampage (Creator Smash)", 70.4, 27, apex_creator_smash),
-            ("Apex Instinct — Weak Defense", 65.8, 38, apex_weak_def),
-            ("Apex Instinct — Team Heater", 59.0, 61, apex_team_heater),
-            ("Apex Instinct (Creator Core)", 56.8, 81, apex_creator_core),
-            ("Apex Rampage (Smash)", 71.4, 21, apex_identity_smash),
-            ("Apex Instinct (Core)", 57.1, 49, apex_identity_core),
-        ]
-
-        # --- Legacy 1.5 kit fallback (HUD-aligned) ---
+        # 1.5 kit (cond list copied from HUD)
         procs += [
             ("Backbone", 54.3, 116, (conf_a >= 89 and points_mu >= 1.7)),
             ("Blade Impale (Power Tier)", 60.8, 51, (conf_a >= 89 and points_mu >= 2.2)),
@@ -987,9 +957,9 @@ def _probe_points_best(r: dict) -> dict | None:
             ("Blade Slash (Legacy PP)", 48.1, 81, (conf_p >= 80 and team_pp_xgf >= 7.0)),
             ("Blood Exposure (Legacy)", 54.5, 44, (conf_p >= 80 and team_pp_xgf >= 7.0 and opp_defweak >= 60)),
             ("Blood Exposure II (Legacy)", 54.7, 64, (conf_p >= 80 and opp_defweak >= 60)),
-            ("Polarizing Smash (Legacy)", 54.5, 33, (conf_p >= 80 and opp_defweak >= 70)),
+            ("Polarizing Smash (Legacy)", 54.5, 33, (conf_p >= 80 and team_pp_xgf >= 7.0 and opp_defweak >= 70)),
+            ("Eternal Smash (Legacy)", 53.2, 47, (conf_p >= 80 and opp_defweak >= 70)),
         ]
-
 
     best = None
     for title, win, n, cond in procs:
@@ -2281,6 +2251,8 @@ def _render_assists_combat_hud(r) -> None:
     pp_ix      = _safe_float(r.get("PP_iXA60", r.get("PP_iXA_60")), default=float("nan"))
     team_gf_l5 = _safe_float(r.get("Team_GF_L5"), default=float("nan"))
     ppp10      = _safe_float(r.get("PPP10_total"), default=float("nan"))
+    pp_toi_pct = _safe_float(r.get("PP_TOI_Pct", r.get("PP_TOI%")), default=float("nan"))
+
     assists_mu = _safe_float(r.get("Assists_mu"), default=float("nan"))
     goalie_weak = _safe_float(r.get("Goalie_Weak"), default=float("nan"))
     opp_sv     = _safe_float(r.get("Opp_SV"), default=float("nan"))
@@ -6097,7 +6069,7 @@ if page == "Board":
     move_sel = st.sidebar.multiselect("Move / Tier", move_vals, default=move_vals, key="board_move_sel") if len(move_vals) else []
     min_win = float(st.sidebar.slider("Min DPS win%", 0.0, 100.0, 55.0, 0.5, key="board_min_win"))
     min_n = int(st.sidebar.number_input("Min DPS n", min_value=0, max_value=500, value=20, step=1, key="board_min_n"))
-    max_fav_odds = int(st.sidebar.number_input("Max favorite odds (e.g. -200)", min_value=-1000, max_value=300, value=-200, step=5, key="board_max_fav"))
+    max_fav_odds = int(st.sidebar.number_input("Max favorite odds (e.g. -250)", min_value=-1000, max_value=300, value=-250, step=5, key="board_max_fav"))
     q = st.sidebar.text_input("Search", value="", key="board_search").strip().lower()
 
     df_b_filt = df_b.copy()
@@ -6220,9 +6192,9 @@ elif page == "Points":
     min_conf = st.sidebar.slider("Min Conf (Points)", 0, 100, 70, 1)
     color_pick = st.sidebar.multiselect(
         "Colors (Points)",
-        ["green", "yellow", "blue", "red"],
+        ["green"],
         # Default excludes yellow (yellow was not part of the green-matrix test regime)
-        default=["green", "blue"]
+        default=["green"]
     )
     require_matrix_green = st.sidebar.checkbox(
         "Require Matrix=Green (Points)",
@@ -6690,8 +6662,8 @@ elif page == "Assists":
     min_conf = st.sidebar.slider("Min Conf (Assists)", 0, 100, 80, 1)
     color_pick = st.sidebar.multiselect(
         "Colors (Assists)",
-        ["green", "yellow", "blue", "red"],
-        default=["green", "yellow", "blue"]
+        ["green"],
+        default=["green"]
     )
 
     if not show_all:
@@ -7519,7 +7491,7 @@ elif page == "GOALS (0.5)":
         # Hard gates (GOALS Beta Gate)
     m_matrix = _g[matrix_col].astype(str).str.strip().str.upper().isin(["GREEN", "🟢"])
     m_line   = (pd.to_numeric(_g.get(line_col, 0), errors="coerce") == 0.5)
-    m_conf   = (pd.to_numeric(_g.get(conf_col, 0), errors="coerce").fillna(0) >= 85)
+    m_conf   = (pd.to_numeric(_g.get(conf_col, 0), errors="coerce").fillna(0) >= 80)
 
     # Pull key GOALS columns (schema varies)
     _oppsog = pd.to_numeric(_g.get("Opp_SOG_Against_L10", np.nan), errors="coerce")
@@ -7618,7 +7590,7 @@ elif page == "GOALS (0.5)":
             _conf_g = float(conf)
         except Exception:
             _conf_g = 0.0
-        _stance_ok = (_line_g == 0.5) and (_mat_g == "green") and (_conf_g >= 85)
+        _stance_ok = (_line_g == 0.5) and (_mat_g == "green") and (_conf_g >= 80)
 
         _hud = []
         if _stance_ok:
