@@ -3998,7 +3998,7 @@ def build_tracker(today_local: date, debug: bool = False) -> str:
 
     sk["Matrix_Assists"] = sk.apply(
         lambda r: matrix_assists_v1(
-            ixa_pct=float(r.get("iXA_pct", 50)),
+            ixa_pct=float(r.get("iXA%", 50)),
             v2_stab=safe_float(r.get("v2_player_stability")),
             reg_heat_a=str(r.get("Reg_Heat_A", "COOL")),
             toi_pct=safe_float(r.get("TOI_Pct")),
@@ -5116,3 +5116,4 @@ def main() -> None:
 if __name__ == "__main__":
 
     main()
+
