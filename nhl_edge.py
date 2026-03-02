@@ -2525,19 +2525,41 @@ def matrix_points_v2(ixa_pct: float, v2_stab: Optional[float], reg_heat_p: str =
 
     return "Yellow"
 
-def matrix_assists_v1(ixa_pct: float, v2_stab: Optional[float], reg_heat_a: str = "COOL",
-                      toi_pct: Optional[float] = None, team_xgf_pct: Optional[float] = None,
-                      opp_defweak: Optional[float] = None, shot_assists60: Optional[float] = None) -> str:
+def matrix_assists_v1(
+    ixa_pct: float,
+    v2_stab: Optional[float],
+    reg_heat_a: str = "COOL",
+    toi_pct: Optional[float] = None,
+    team_xgf_pct: Optional[float] = None,
+    opp_defweak: Optional[float] = None,
+    shot_assists60: Optional[float] = None,
+    conf: Optional[float] = None,
+) -> str:
     stab = 50.0 if v2_stab is None else float(v2_stab)
     toi = 50.0 if toi_pct is None else float(toi_pct)
-    tx  = 50.0 if team_xgf_pct is None else float(team_xgf_pct)
-    dw  = 50.0 if opp_defweak is None else float(opp_defweak)
+    tx = 50.0 if team_xgf_pct is None else float(team_xgf_pct)
+    dw = 50.0 if opp_defweak is None else float(opp_defweak)
 
-    sa60 = 0.0 if shot_assists60 is None or (isinstance(shot_assists60, float) and math.isnan(shot_assists60)) else float(shot_assists60)
+    sa60 = (
+        0.0
+        if shot_assists60 is None
+        or (isinstance(shot_assists60, float) and math.isnan(shot_assists60))
+        else float(shot_assists60)
+    )
     sa_pct = clamp(sa60 * 20.0)
+
+    conf_v = (
+        0.0
+        if conf is None or (isinstance(conf, float) and math.isnan(conf))
+        else float(conf)
+    )
 
     if ixa_pct < 78:
         return "Red" if ixa_pct < 70 else "Yellow"
+
+    # NEW: hard Green gate you asked for
+    if ixa_pct >= 97 and conf_v >= 80:
+        return "Green"
 
     if ixa_pct >= 94 and stab >= 68:
         return "Green"
@@ -2551,7 +2573,6 @@ def matrix_assists_v1(ixa_pct: float, v2_stab: Optional[float], reg_heat_a: str 
         return "Green"
 
     return "Yellow"
-
 def conf_sog(
     ixg_pct: float,
     shot_intent_pct: float,
@@ -3984,8 +4005,10 @@ def build_tracker(today_local: date, debug: bool = False) -> str:
             team_xgf_pct=safe_float(r.get("team_5v5_xGF60_pct")),
             opp_defweak=safe_float(r.get("Opp_DefWeak")),
             shot_assists60=safe_float(r.get("i5v5_shotAssists60")),
-        ),
-        axis=1
+            conf=safe_float(r.get("Conf_Assists")),   # <-- add this
+    ),
+    axis=1
+)
     )
 
     sk["Matrix_Goal"] = sk.apply(
@@ -5091,4 +5114,5 @@ def main() -> None:
     build_tracker(today_local, debug=bool(args.debug))
 
 if __name__ == "__main__":
+
     main()
