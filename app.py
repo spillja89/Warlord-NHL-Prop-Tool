@@ -6372,7 +6372,7 @@ elif page == "Points":
 
     _p = _p.sort_values(["_conf","_l10r","_l10d","_gap"], ascending=[False, False, False, False], kind="mergesort")
 
-    top_n_p = st.slider("Show top plays (Points)", 3, 30, 12, 1, key="points_smash_topn")
+    top_n_p = st.slider("Show top plays (Points)", 3, 30, 16, 1, key="points_smash_topn")
     topp = _p.head(int(top_n_p))
 
     for _, r in topp.iterrows():
@@ -6799,7 +6799,7 @@ elif page == "Assists":
 
     _a = _a.sort_values(["_conf","_ppixa","_ppshare"], ascending=[False, False, False], kind="mergesort")
 
-    top_n_a = st.slider("Show top plays (Assists)", 3, 30, 12, 1, key="assist_smash_topn")
+    top_n_a = st.slider("Show top plays (Assists)", 3, 30, 16, 1, key="assist_smash_topn")
     topa = _a.head(int(top_n_a))
 
     if len(topa) == 0:
