@@ -861,12 +861,8 @@ def apply_dps_filters_ui(df: pd.DataFrame, mk: str, key_prefix: str = "m") -> pd
     _allowed = set(_allowed_lines_for_market(mk_u) or [])
     if _allowed and line_vals:
         line_vals = [lv for lv in line_vals if lv in _allowed]
-
-    move_vals = sorted({str(x) for x in out.get("DPS_Title","").fillna("").astype(str).tolist() if str(x).strip()})
-
     st.sidebar.subheader(f"{mk_u} — Filters")
     line_sel = st.sidebar.multiselect("Line", line_vals, default=line_vals, key=f"{key_prefix}_line") if line_vals else []
-    move_sel = st.sidebar.multiselect("Move / Tier", move_vals, default=move_vals, key=f"{key_prefix}_move") if move_vals else []
     max_fav_odds = int(st.sidebar.number_input("Max favorite odds (e.g. -200)", min_value=-1000, max_value=300, value=-200, step=5, key=f"{key_prefix}_maxfav"))
     q = st.sidebar.text_input("Search", value="", key=f"{key_prefix}_q").strip().lower()
 
@@ -878,8 +874,6 @@ def apply_dps_filters_ui(df: pd.DataFrame, mk: str, key_prefix: str = "m") -> pd
         out = out[out["Player"].astype(str).str.lower().str.contains(re.escape(q), na=False)]
     if line_sel:
         out = out[out["_Line"].isin(line_sel)]
-    if move_sel:
-        out = out[out["DPS_Title"].astype(str).isin(move_sel)]
 
     # Odds filter (favorites only): keep if odds >= max_fav_odds (e.g., -140 passes when max_fav=-150; -200 fails)
     def _odds_ok(v):
@@ -4454,7 +4448,7 @@ def style_df(df: pd.DataFrame, cols: list[str]) -> "pd.io.formats.style.Styler":
         "Conf_Points": 70,
         "Conf_SOG": 75,
         "Conf_Assists": 80,
-        "Conf_Goal": 80,
+        "Conf_Goal": 85,
         "Best_Conf": 80,
     }
     for c, thr in conf_thr.items():
@@ -6079,8 +6073,6 @@ if page == "Board":
     _raw_lines = pd.unique(pd.to_numeric(df_b.get("Best_Line", pd.Series([])), errors="coerce"))
     line_vals = sorted([float(x) for x in _raw_lines if (not pd.isna(x)) and (not _allowed_lines or float(x) in _allowed_lines)])
     line_sel = st.sidebar.multiselect("Line", line_vals, default=line_vals, key="board_line_sel") if len(line_vals) else []
-    move_vals = sorted([x for x in pd.unique(df_b.get("DPS_Title", pd.Series([])).astype(str)) if x and x != "nan"])
-    move_sel = st.sidebar.multiselect("Move / Tier", move_vals, default=move_vals, key="board_move_sel") if len(move_vals) else []
     max_fav_odds = int(st.sidebar.number_input("Max favorite odds (e.g. -200)", min_value=-1000, max_value=300, value=-200, step=5, key="board_max_fav"))
     q = st.sidebar.text_input("Search", value="", key="board_search").strip().lower()
 
@@ -6089,8 +6081,6 @@ if page == "Board":
         df_b_filt = df_b_filt[df_b_filt["Best_Market"].astype(str).str.upper().isin([m.upper() for m in market_sel])]
     if line_sel:
         df_b_filt = df_b_filt[pd.to_numeric(df_b_filt.get("Best_Line", 0), errors="coerce").isin(line_sel)]
-    if move_sel:
-        df_b_filt = df_b_filt[df_b_filt.get("DPS_Title","").astype(str).isin(move_sel)]
     # odds filter: hide ultra-favorites (keep anything >= max_fav_odds)
     df_b_filt = df_b_filt[pd.to_numeric(df_b_filt.get("Best_Odds", df_b_filt.get("Odds", 0)), errors="coerce").fillna(0.0) >= float(max_fav_odds)]
     if q:
