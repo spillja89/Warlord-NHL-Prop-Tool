@@ -4005,7 +4005,7 @@ def build_tracker(today_local: date, debug: bool = False) -> str:
             team_xgf_pct=safe_float(r.get("team_5v5_xGF60_pct")),
             opp_defweak=safe_float(r.get("Opp_DefWeak")),
             shot_assists60=safe_float(r.get("i5v5_shotAssists60")),
-            conf=safe_float(r.get("Conf_Assists")),   # <-- add this
+            conf_v=safe_float(r.get("Conf_Assists")),   # <-- add this
         ),
         axis=1
 
@@ -5116,6 +5116,7 @@ def main() -> None:
 if __name__ == "__main__":
 
     main()
+
 
 
 
