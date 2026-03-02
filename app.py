@@ -824,9 +824,22 @@ def _line_value_for_row(row: dict, mk: str) -> float | None:
                 return float(v)
     return None
 
+
+
+def _allowed_lines_for_market(mk: str) -> list[float]:
+    """Hard-allowed line values by market (prevents NaN and off-board lines)."""
+    mk_u = str(mk or "").strip().upper()
+    if mk_u in ("POINTS", "ASSISTS"):
+        return [0.5, 1.5]
+    if mk_u in ("GOALS", "GOAL"):
+        return [0.5]
+    if mk_u in ("SOG", "SHOTS", "SHOT", "SHOTS ON GOAL", "SHOTS_ON_GOAL"):
+        return [2.5, 3.5]
+    return []
+
 def apply_dps_filters_ui(df: pd.DataFrame, mk: str, key_prefix: str = "m") -> pd.DataFrame:
     """Board-style filter bar for a single market page.
-    Filters: Line, Move/Tier, Min DPS win, Min DPS n, Max favorite odds, Search.
+    Filters: Line, Move/Tier, Max favorite odds, Search.
     Sorting: DPS_Adj desc, DPS_N desc (ranking only).
     """
     if df is None or len(df) == 0:
@@ -843,14 +856,17 @@ def apply_dps_filters_ui(df: pd.DataFrame, mk: str, key_prefix: str = "m") -> pd
     try:
         line_vals = sorted({lv for lv in (out.apply(lambda r: _line_value_for_row(r.to_dict(), mk_u), axis=1).tolist()) if lv is not None})
     except Exception:
-        line_vals = []
+                line_vals = []
+    # Restrict to hard-allowed lines for this market (prevents NaN/off-board options)
+    _allowed = set(_allowed_lines_for_market(mk_u) or [])
+    if _allowed and line_vals:
+        line_vals = [lv for lv in line_vals if lv in _allowed]
+
     move_vals = sorted({str(x) for x in out.get("DPS_Title","").fillna("").astype(str).tolist() if str(x).strip()})
 
     st.sidebar.subheader(f"{mk_u} — Filters")
     line_sel = st.sidebar.multiselect("Line", line_vals, default=line_vals, key=f"{key_prefix}_line") if line_vals else []
     move_sel = st.sidebar.multiselect("Move / Tier", move_vals, default=move_vals, key=f"{key_prefix}_move") if move_vals else []
-    min_win = float(st.sidebar.slider("Min DPS win%", 0.0, 100.0, 50.0, 0.5, key=f"{key_prefix}_minwin"))
-    min_n = int(st.sidebar.number_input("Min DPS n", min_value=0, max_value=500, value=20, step=1, key=f"{key_prefix}_minn"))
     max_fav_odds = int(st.sidebar.number_input("Max favorite odds (e.g. -200)", min_value=-1000, max_value=300, value=-200, step=5, key=f"{key_prefix}_maxfav"))
     q = st.sidebar.text_input("Search", value="", key=f"{key_prefix}_q").strip().lower()
 
@@ -864,10 +880,6 @@ def apply_dps_filters_ui(df: pd.DataFrame, mk: str, key_prefix: str = "m") -> pd
         out = out[out["_Line"].isin(line_sel)]
     if move_sel:
         out = out[out["DPS_Title"].astype(str).isin(move_sel)]
-
-    # DPS-based filters (rows with no proc naturally drop if min_win/min_n > 0)
-    out = out[(pd.to_numeric(out.get("DPS_Win", 0), errors="coerce").fillna(0) >= min_win)]
-    out = out[(pd.to_numeric(out.get("DPS_N", 0), errors="coerce").fillna(0).astype(int) >= min_n)]
 
     # Odds filter (favorites only): keep if odds >= max_fav_odds (e.g., -140 passes when max_fav=-150; -200 fails)
     def _odds_ok(v):
@@ -6058,15 +6070,17 @@ if page == "Board":
     with cD:
         st.metric("Top Conf", float(df_b["Best_Conf"].max()) if "Best_Conf" in df_b.columns else 0.0)
     # === Board filter set (beta default) ===
-    st.sidebar.subheader("Board Filters (DPS-first)")
+    st.sidebar.subheader("Board Filters")
     market_sel = st.sidebar.multiselect("Market", ["POINTS","ASSISTS","SOG","GOALS"], default=["POINTS","ASSISTS","SOG","GOALS"], key="board_mkt_sel")
-    # Lines available depend on the underlying slate
-    line_vals = sorted([x for x in pd.unique(pd.to_numeric(df_b.get("Best_Line", pd.Series([])), errors="coerce")) if not pd.isna(x)])
+    # Lines available depend on the underlying slate (hard-restricted by market to avoid NaN/off-board lines)
+    _allowed_lines = set()
+    for _m in (market_sel or []):
+        _allowed_lines |= set(_allowed_lines_for_market(_m) or [])
+    _raw_lines = pd.unique(pd.to_numeric(df_b.get("Best_Line", pd.Series([])), errors="coerce"))
+    line_vals = sorted([float(x) for x in _raw_lines if (not pd.isna(x)) and (not _allowed_lines or float(x) in _allowed_lines)])
     line_sel = st.sidebar.multiselect("Line", line_vals, default=line_vals, key="board_line_sel") if len(line_vals) else []
     move_vals = sorted([x for x in pd.unique(df_b.get("DPS_Title", pd.Series([])).astype(str)) if x and x != "nan"])
     move_sel = st.sidebar.multiselect("Move / Tier", move_vals, default=move_vals, key="board_move_sel") if len(move_vals) else []
-    min_win = float(st.sidebar.slider("Min DPS win%", 0.0, 100.0, 55.0, 0.5, key="board_min_win"))
-    min_n = int(st.sidebar.number_input("Min DPS n", min_value=0, max_value=500, value=20, step=1, key="board_min_n"))
     max_fav_odds = int(st.sidebar.number_input("Max favorite odds (e.g. -200)", min_value=-1000, max_value=300, value=-200, step=5, key="board_max_fav"))
     q = st.sidebar.text_input("Search", value="", key="board_search").strip().lower()
 
@@ -6077,8 +6091,6 @@ if page == "Board":
         df_b_filt = df_b_filt[pd.to_numeric(df_b_filt.get("Best_Line", 0), errors="coerce").isin(line_sel)]
     if move_sel:
         df_b_filt = df_b_filt[df_b_filt.get("DPS_Title","").astype(str).isin(move_sel)]
-    df_b_filt = df_b_filt[pd.to_numeric(df_b_filt.get("DPS_Win", 0), errors="coerce").fillna(0.0) >= min_win]
-    df_b_filt = df_b_filt[pd.to_numeric(df_b_filt.get("DPS_N", 0), errors="coerce").fillna(0).astype(int) >= min_n]
     # odds filter: hide ultra-favorites (keep anything >= max_fav_odds)
     df_b_filt = df_b_filt[pd.to_numeric(df_b_filt.get("Best_Odds", df_b_filt.get("Odds", 0)), errors="coerce").fillna(0.0) >= float(max_fav_odds)]
     if q:
