@@ -2558,7 +2558,7 @@ def matrix_assists_v1(
         return "Red" if ixa_pct < 70 else "Yellow"
 
     # NEW: hard Green gate you asked for
-    if ixa_pct >= 97 and conf_v >= 80:
+    if ixa_pct >= 97:
         return "Green"
 
     if ixa_pct >= 94 and stab >= 68:
@@ -5116,4 +5116,5 @@ def main() -> None:
 if __name__ == "__main__":
 
     main()
+
 
