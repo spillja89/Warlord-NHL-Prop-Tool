@@ -4008,7 +4008,7 @@ def build_tracker(today_local: date, debug: bool = False) -> str:
             conf=safe_float(r.get("Conf_Assists")),   # <-- add this
     ),
     axis=1
-)
+
     )
 
     sk["Matrix_Goal"] = sk.apply(
@@ -5116,6 +5116,7 @@ def main() -> None:
 if __name__ == "__main__":
 
     main()
+
 
 
 
