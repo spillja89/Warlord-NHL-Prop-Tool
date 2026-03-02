@@ -2553,13 +2553,13 @@ def matrix_assists_v1(
         if conf is None or (isinstance(conf, float) and math.isnan(conf))
         else float(conf)
     )
-
+    # NEW: hard Green gate you asked for
+    if ixa_pct >= 97 and conf_v >= 80:
+        return "Green"
     if ixa_pct < 78:
         return "Red" if ixa_pct < 70 else "Yellow"
 
-    # NEW: hard Green gate you asked for
-    if ixa_pct >= 97:
-        return "Green"
+
 
     if ixa_pct >= 94 and stab >= 68:
         return "Green"
@@ -5116,5 +5116,6 @@ def main() -> None:
 if __name__ == "__main__":
 
     main()
+
 
 
