@@ -4448,7 +4448,7 @@ def style_df(df: pd.DataFrame, cols: list[str]) -> "pd.io.formats.style.Styler":
         "Conf_Points": 70,
         "Conf_SOG": 75,
         "Conf_Assists": 80,
-        "Conf_Goal": 85,
+        "Conf_Goal": 80,
         "Best_Conf": 80,
     }
     for c, thr in conf_thr.items():
@@ -6731,12 +6731,12 @@ elif page == "Assists":
         "Game",
         "Player", "Pos",
         "Tier_Tag",
-        "Markets",
+   
         "Green",
-                "LOCK", "Assists_Odds_Over",
+               "Assists_Odds_Over",
         "Assists_Book",
-        "Conf_Assists", "Matrix_Assists", "Assists_Line", "Valhalla_OK", "PP_iXA60", "PP_iXA60_Tier", "PP_TOI_Pct_Game", "PP_Matchup",
-        "opp_5v5_xGA60",      "ENV_BAD_OppSV", "ENV_GOOD_OppSV", "ENV_BAD_xGA", "ENV_BAD_GWeak", "ENV_GOOD_GWeak","PP_PROOF", 
+        "Conf_Assists", "Matrix_Assists", "Assists_Line", "Valhalla_OK", "PP_iXA60", "PP_TOI_Pct_Game", "PP_Matchup",
+        "opp_5v5_xGA60",    
 
        
        
