@@ -2553,9 +2553,7 @@ def matrix_assists_v1(
         if conf is None or (isinstance(conf, float) and math.isnan(conf))
         else float(conf)
     )
-    # NEW: hard Green gate you asked for
-    if ixa_pct >= 97 and conf_v >= 80:
-        return "Green"
+  
     if ixa_pct < 78:
         return "Red" if ixa_pct < 70 else "Yellow"
 
@@ -2570,6 +2568,9 @@ def matrix_assists_v1(
     if ixa_pct >= 92 and stab >= 60 and dw >= 60:
         return "Green"
     if ixa_pct >= 90 and stab >= 60 and sa_pct >= 70 and toi >= 60:
+        return "Green"
+    # NEW: hard Green gate you asked for
+    if ixa_pct >= 97 and conf_v >= 80:
         return "Green"
 
     return "Yellow"
@@ -4005,7 +4006,7 @@ def build_tracker(today_local: date, debug: bool = False) -> str:
             team_xgf_pct=safe_float(r.get("team_5v5_xGF60_pct")),
             opp_defweak=safe_float(r.get("Opp_DefWeak")),
             shot_assists60=safe_float(r.get("i5v5_shotAssists60")),
-            conf_v=safe_float(r.get("Conf_Assists")),   # <-- add this
+            conf=safe_float(r.get("Conf_Assists")),   # <-- add this
         ),
         axis=1
 
@@ -5116,6 +5117,7 @@ def main() -> None:
 if __name__ == "__main__":
 
     main()
+
 
 
 
