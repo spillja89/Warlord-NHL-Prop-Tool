@@ -2559,6 +2559,9 @@ def matrix_assists_v1(
     if ixa_pct < 78:
         return "Red" if ixa_pct < 70 else "Yellow"
 
+    if ixa_pct >= 97:
+        return "Green"
+
 
 
     if ixa_pct >= 94 and stab >= 68:
@@ -2572,7 +2575,7 @@ def matrix_assists_v1(
     if ixa_pct >= 90 and stab >= 60 and sa_pct >= 70 and toi >= 60:
         return "Green"
    
-    if ixa_pct >= 97 and conf_v >= 80:
+    if ixa_pct >= 97:
         return "Green"
 
     return "Yellow"
@@ -5119,6 +5122,7 @@ def main() -> None:
 if __name__ == "__main__":
 
     main()
+
 
 
 
