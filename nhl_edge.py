@@ -220,6 +220,26 @@ def market_tier_tag(row: "pd.Series", market: str) -> str:
     rules = MARKET_TIER_RULES[market]
     t = rules["thresholds"]
 
+    # --- Dual 97.5 (iXA + iXG) ---
+    # If both iXA% and iXG% are elite-percentile, this is a hard "ON" identity signal.
+    ixg_pct = _safe_float(row.get("iXG_pct"), default=None)
+    if ixg_pct is None:
+        ixg_pct = _safe_float(row.get("iXG%"), default=None)
+
+    ixa_pct = _safe_float(row.get("iXA_pct"), default=None)
+    if ixa_pct is None:
+        ixa_pct = _safe_float(row.get("iXA%"), default=None)
+
+    dual_97_5 = (ixg_pct is not None and ixa_pct is not None and ixg_pct >= 97.5 and ixa_pct >= 97.5)
+
+    # Market Conf mapping (Elite tag integrity: ELITE implies Conf >= 80)
+    _conf_col = {"SOG": "Conf_SOG", "Points": "Conf_Points", "Assists": "Conf_Assists", "Goal": "Conf_Goal"}.get(market, "")
+    market_conf = _safe_float(row.get(_conf_col), default=None) if _conf_col else None
+
+    # Dual 97.5 => ELITE (but still enforce Conf floor for the ELITE label)
+    if dual_97_5 and (market_conf is None or market_conf >= 80):
+        return "ELITE"
+
     # --- pull from YOUR column names (and accept alternates) ---
     ppg = _safe_float(row.get("PPG"), default=None)
 
@@ -316,6 +336,9 @@ def market_tier_tag(row: "pd.Series", market: str) -> str:
     is_elite = (elite_proofs >= rules["elite_min_proofs"]) and gates_ok
 
     if is_elite:
+        # ELITE label integrity: never emit ELITE if market Conf is below 80
+        if market_conf is not None and market_conf < 80:
+            return "STAR"
         return "ELITE"
     if is_star:
         return "STAR"
@@ -2363,6 +2386,7 @@ def matrix_goal_v2(
         return "Red"
     if ixg < 88.0:
         return "Yellow"
+   
 
     if med10 is None:
         return "Yellow"
@@ -2425,6 +2449,8 @@ def matrix_goal_v3(
         return "Red"
     if ixg < 88.0:
         return "Yellow"
+    if ixg >= 96.5:
+        return "Green" 
 
     # Need Med10 for shot-floor sanity; if missing, don't promote
     if med10 is None:
