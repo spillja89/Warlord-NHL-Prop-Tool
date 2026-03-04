@@ -2449,7 +2449,7 @@ def matrix_goal_v3(
         return "Red"
     if ixg < 88.0:
         return "Yellow"
-    if ixg >= 96.5:
+    if ixg >= 94.5:
         return "Green" 
 
     # Need Med10 for shot-floor sanity; if missing, don't promote
