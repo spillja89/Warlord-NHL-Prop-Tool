@@ -5082,6 +5082,31 @@ def select_all_market_rows(row, thr_conf: int, thr_ev: float, thr_drought: int, 
     ]
     elig = [c for c in cands if _passes_engine(c)]
 
+    # --- Dual 97.5 fallback ---
+    # If a player is Dual 97.5 (iXA%>=97.5 AND iXG%>=97.5), never return empty:
+    # show best market bundle as a WATCH candidate even if engine gates fail.
+    if not elig:
+        try:
+            _ixg = float(row.get("iXG%", 0) or 0)
+            _ixa = float(row.get("iXA%", 0) or 0)
+        except Exception:
+            _ixg, _ixa = 0.0, 0.0
+
+        if _ixg >= 97.5 and _ixa >= 97.5:
+            # pick best candidate by Conf then EV then Model
+            def _k(x):
+                try:
+                    return (
+                        float(x.get("conf", 0) or 0),
+                        float(x.get("ev", 0) or 0),
+                        float(x.get("model", 0) or 0),
+                    )
+                except Exception:
+                    return (0.0, 0.0, 0.0)
+
+            best = max(cands, key=_k)
+            elig = [best]
+
     # attach best DPS proc (presentation only)
     for b in elig:
         p = _probe_best_proc(str(b.get("label","") or "").upper().strip(), row)
@@ -5951,6 +5976,15 @@ if page == "Board":
 
     df_board_src = df_f.copy()
 
+    # Dual 97.5 (iXA% + iXG%) — visibility override (never hide these profiles)
+    if "Dual_97_5" not in df_board_src.columns:
+        try:
+            _ixg = pd.to_numeric(df_board_src.get("iXG%"), errors="coerce")
+            _ixa = pd.to_numeric(df_board_src.get("iXA%"), errors="coerce")
+            df_board_src["Dual_97_5"] = (_ixg >= 97.5) & (_ixa >= 97.5)
+        except Exception:
+            df_board_src["Dual_97_5"] = False
+
     # Tier gate: STAR/ELITE only (robust; fall back if Tier_Tag is blank)
     _mask = None
     if "Tier_Tag" in df_board_src.columns:
@@ -5965,217 +5999,221 @@ if page == "Board":
         _t3 = df_board_src["Tier"].astype(str).str.upper()
         _mask = _t3.str.contains("STAR") | _t3.str.contains("ELITE")
 
+    
     if _mask is not None:
+        # Always keep Dual 97.5 profiles even if tier tags are blank/demoted
+        if "Dual_97_5" in df_board_src.columns:
+            _mask = _mask | df_board_src["Dual_97_5"].fillna(False)
         df_board_src = df_board_src[_mask].copy()
-
-    best_rows = []
-
-    for _, _r in df_board_src.iterrows():
-        passing = select_all_market_rows(_r, 0, 0.0, 0, 0.0, 0.0)
-        if not passing:
-            continue
-        for b in passing:
-            # Defensive hard-enforcement (board safety net)
-            _lbl = str(b.get("label","") or "").upper().strip()
-            if _lbl in ("GOALS","GOAL","ATG"):
-                _conf = _num(b.get("conf",0), 0)
-                _avg5 = _num(b.get("avg5_sog",0), 0)
-                _line = _num(b.get("line",0), 0)
-                if abs(_line - 0.5) > 1e-6 or _conf < 85 or _avg5 < 3.4:
-                    continue
-            rr = _r.copy()
-            rr["Best_Market"] = b["label"]
-            rr["Best_Conf"] = b["conf"]
-            rr["Best_EV%"] = b["ev"]
-            rr["Best_Model%"] = b["model"]
-            rr["Best_Line"] = b["line"]
-            rr["Best_Odds"] = b.get("odds", _r.get("Odds", 0))
-            rr["Best_Drought"] = b["drought"]
-            rr["Best_Reg_Gap10"] = b["reg_gap"]
-            rr["Best_Reg_Heat10"] = b["reg_heat"]
-            rr["DPS_Title"] = b.get("dps_title","")
-            rr["DPS_Win"] = b.get("dps_win",0.0)
-            rr["DPS_N"] = b.get("dps_n",0)
-            rr["DPS_Adj"] = b.get("dps_adj",0.0)
-            best_rows.append(rr)
-
-    df_board = pd.DataFrame(best_rows) if best_rows else df_board_src.iloc[0:0]
-    df_b = sort_board(df_board)
-
-    board_cols = [
-        "Game",
-        "Player", "Pos",
-        "Tier_Tag",
-        "Markets",
-                "LOCK",
-        "Best_Market",
-        "Best_Conf",
-        "🔥",
-        "iXG%", "iXA%",
-        "Goalie_Weak", "Opp_DefWeak",
-        "Opp_Goalie", "Opp_SV", "Opp_GAA",
-        "Matrix_Points", "Conf_Points", "Reg_Heat_P", "Reg_Gap_P10",
-        "Matrix_SOG", "Conf_SOG", "Reg_Heat_S", "Reg_Gap_S10",
-        "Matrix_Goal", "Conf_Goal", "Reg_Heat_G", "Reg_Gap_G10",
-        "Matrix_Assists", "Conf_Assists", "Reg_Heat_A", "Reg_Gap_A10",
-        "Line", "Odds", "Result",
-    ]
-
     
-
-    # Build Markets pills + best-market EV signal for Board
-
+        best_rows = []
     
-
-    df_b["Markets"] = df_b.apply(build_markets_pills, axis=1)
-
+        for _, _r in df_board_src.iterrows():
+            passing = select_all_market_rows(_r, 0, 0.0, 0, 0.0, 0.0)
+            if not passing:
+                continue
+            for b in passing:
+                # Defensive hard-enforcement (board safety net)
+                _lbl = str(b.get("label","") or "").upper().strip()
+                if _lbl in ("GOALS","GOAL","ATG"):
+                    _conf = _num(b.get("conf",0), 0)
+                    _avg5 = _num(b.get("avg5_sog",0), 0)
+                    _line = _num(b.get("line",0), 0)
+                    if abs(_line - 0.5) > 1e-6 or _conf < 85 or _avg5 < 3.4:
+                        continue
+                rr = _r.copy()
+                rr["Best_Market"] = b["label"]
+                rr["Best_Conf"] = b["conf"]
+                rr["Best_EV%"] = b["ev"]
+                rr["Best_Model%"] = b["model"]
+                rr["Best_Line"] = b["line"]
+                rr["Best_Odds"] = b.get("odds", _r.get("Odds", 0))
+                rr["Best_Drought"] = b["drought"]
+                rr["Best_Reg_Gap10"] = b["reg_gap"]
+                rr["Best_Reg_Heat10"] = b["reg_heat"]
+                rr["DPS_Title"] = b.get("dps_title","")
+                rr["DPS_Win"] = b.get("dps_win",0.0)
+                rr["DPS_N"] = b.get("dps_n",0)
+                rr["DPS_Adj"] = b.get("dps_adj",0.0)
+                best_rows.append(rr)
     
-
-    _ev_lock = df_b.apply(board_best_market_ev, axis=1, result_type="expand")
-    # Robustly normalize apply() output across pandas versions / empty / 1-row cases
-    if isinstance(_ev_lock, pd.DataFrame):
-        _c0 = _ev_lock.iloc[:, 0] if _ev_lock.shape[1] > 0 else ""
-        _c1 = _ev_lock.iloc[:, 1] if _ev_lock.shape[1] > 1 else ""
-    elif isinstance(_ev_lock, pd.Series):
-        _c0 = _ev_lock.apply(lambda x: x[0] if isinstance(x, (list, tuple)) and len(x) > 0 else "")
-        _c1 = _ev_lock.apply(lambda x: x[1] if isinstance(x, (list, tuple)) and len(x) > 1 else "")
-    else:
-        _c0, _c1 = "", ""
+        df_board = pd.DataFrame(best_rows) if best_rows else df_board_src.iloc[0:0]
+        df_b = sort_board(df_board)
     
-    df_b["EV_Signal"] = _c0
-    df_b["EV_Source"] = _c1
-    df_b["LOCK"] = _c1
-
+        board_cols = [
+            "Game",
+            "Player", "Pos",
+            "Tier_Tag",
+            "Markets",
+                    "LOCK",
+            "Best_Market",
+            "Best_Conf",
+            "🔥",
+            "iXG%", "iXA%",
+            "Goalie_Weak", "Opp_DefWeak",
+            "Opp_Goalie", "Opp_SV", "Opp_GAA",
+            "Matrix_Points", "Conf_Points", "Reg_Heat_P", "Reg_Gap_P10",
+            "Matrix_SOG", "Conf_SOG", "Reg_Heat_S", "Reg_Gap_S10",
+            "Matrix_Goal", "Conf_Goal", "Reg_Heat_G", "Reg_Gap_G10",
+            "Matrix_Assists", "Conf_Assists", "Reg_Heat_A", "Reg_Gap_A10",
+            "Line", "Odds", "Result",
+        ]
     
-
-
+        
     
-
-
-    # === PICK SHEET (UI ONLY) ===
-    st.subheader("🧾 Pick Sheet — signals-first")
-    cA, cB, cC, cD = st.columns(4)
-    with cA:
-        st.metric("Players", int(len(df_b)))
-    with cB:
-        st.metric("Locks", int((df_b["LOCK"].astype(str).str.len() > 0).sum()) if "LOCK" in df_b.columns else 0)
-    with cC:
-        st.metric("+EV", int((df_b["EV_Signal"].astype(str).str.contains("💰")).sum()) if "EV_Signal" in df_b.columns else 0)
-    with cD:
-        st.metric("Top Conf", float(df_b["Best_Conf"].max()) if "Best_Conf" in df_b.columns else 0.0)
-    # === Board filter set (beta default) ===
-    st.sidebar.subheader("Board Filters")
-    market_sel = st.sidebar.multiselect("Market", ["POINTS","ASSISTS","SOG","GOALS"], default=["POINTS","ASSISTS","SOG","GOALS"], key="board_mkt_sel")
-    # Lines available depend on the underlying slate (hard-restricted by market to avoid NaN/off-board lines)
-    _allowed_lines = set()
-    for _m in (market_sel or []):
-        _allowed_lines |= set(_allowed_lines_for_market(_m) or [])
-    _raw_lines = pd.unique(pd.to_numeric(df_b.get("Best_Line", pd.Series([])), errors="coerce"))
-    line_vals = sorted([float(x) for x in _raw_lines if (not pd.isna(x)) and (not _allowed_lines or float(x) in _allowed_lines)])
-    line_sel = st.sidebar.multiselect("Line", line_vals, default=line_vals, key="board_line_sel") if len(line_vals) else []
-    max_fav_odds = int(st.sidebar.number_input("Max favorite odds (e.g. -200)", min_value=-1000, max_value=300, value=-200, step=5, key="board_max_fav"))
-    q = st.sidebar.text_input("Search", value="", key="board_search").strip().lower()
-
-    df_b_filt = df_b.copy()
-    if market_sel:
-        df_b_filt = df_b_filt[df_b_filt["Best_Market"].astype(str).str.upper().isin([m.upper() for m in market_sel])]
-    if line_sel:
-        df_b_filt = df_b_filt[pd.to_numeric(df_b_filt.get("Best_Line", 0), errors="coerce").isin(line_sel)]
-    # odds filter: hide ultra-favorites (keep anything >= max_fav_odds)
-    df_b_filt = df_b_filt[pd.to_numeric(df_b_filt.get("Best_Odds", df_b_filt.get("Odds", 0)), errors="coerce").fillna(0.0) >= float(max_fav_odds)]
-    if q:
-        df_b_filt = df_b_filt[df_b_filt.get("Player","").astype(str).str.lower().str.contains(q)]
-
-
-
-    # Top candidates: DPS-first (presentation-only)
-    _rank = df_b.copy()
-    _rank["_dps_adj"] = pd.to_numeric(_rank.get("DPS_Adj", 0), errors="coerce").fillna(0.0)
-    _rank["_dps_n"] = pd.to_numeric(_rank.get("DPS_N", 0), errors="coerce").fillna(0).astype(int)
-    _rank["_odds"] = pd.to_numeric(_rank.get("Best_Odds", _rank.get("Odds", 0)), errors="coerce").fillna(0.0)
-    _rank = _rank.sort_values(["_dps_adj","_dps_n","_odds"], ascending=[False, False, False])
-
-    top_n = st.slider("Show top plays", 5, 30, 12, 1, key="board_topn")
-    top = _rank.head(int(top_n)).copy()
-
-    def _best_why(r: pd.Series) -> str:
-        # UI-only: tracker exports a unified 'Why' column
-        return str(r.get("Why", "") or "")
-    # Render as cards (two-column grid)
-    grid_left, grid_right = st.columns(2)
-    for i, (_, r) in enumerate(top.iterrows()):
-        side = grid_left if i % 2 == 0 else grid_right
-        with side:
-            player = r.get("Player","")
-            game = r.get("Game","")
-            tier = r.get("Tier_Tag","")
-            bm = r.get("Best_Market","")
-            accent = _board_market_accent(bm)
-            bc = r.get("Best_Conf","")
-            evsig = r.get("EV_Signal","")
-            lock = r.get("LOCK","")
-            markets = r.get("Markets","")
-            why = _best_why(r)
-
-            expl, crit = _derive_badges(r)
-            # Flames are best-market regression heat (visual only; logic already exists upstream)
-            bm_heat = ""
-            if str(bm or "").upper().startswith("SOG"):
-                bm_heat = r.get("Reg_Heat_S","")
-            elif str(bm or "").upper().startswith("ASS"):
-                bm_heat = r.get("Reg_Heat_A","")
-            elif str(bm or "").upper().startswith("POI") or str(bm or "").upper().startswith("PTS"):
-                bm_heat = r.get("Reg_Heat_P","")
-            else:
-                bm_heat = r.get("Reg_Heat_G","")
-            flames = _flames_from_heat(bm_heat)
-
-            dps_t = str(r.get("DPS_Title","") or "").strip()
-            dps_w = _safe_float(r.get("DPS_Win"), 0.0) or 0.0
-            dps_n = int(_safe_float(r.get("DPS_N"), 0) or 0)
-            dps_a = _safe_float(r.get("DPS_Adj"), 0.0) or 0.0
-            headline = f"**{player}** — {game}  ·  {expl}{crit} **{bm}**  ·  🏆 {dps_t}  ·  AdjWin **{dps_a:.1f}**  (Win {dps_w:.1f}% • n={dps_n})"
-            mb = calc_ev_per_dollar(_to_float(_get(r, "Model%", "Model_Prob", default="")), _to_float(_get(r, "Odds", "Odds_Amer", default="")))
-            mb_txt = f"↩ {mb:+.2f}/$1" if mb is not None else ""
-            badges = " ".join([str(x) for x in [lock, evsig, mb_txt] if str(x).strip()])
-            st.markdown(f"<div class='wl-board-card {accent}'>"
-                        f"<div style='display:flex;justify-content:space-between;gap:10px;'>"
-                        f"<div style='font-size:16px;line-height:1.2;'>{headline}</div>"
-                        f"<div style='font-size:16px;white-space:nowrap;'>{badges}</div>"
-                        f"</div>"
-                        f"<div style='margin-top:6px;opacity:0.95;'>{markets}</div>"
-                        f"</div>", unsafe_allow_html=True)
-
-            with st.expander("🔥 Why it fires", expanded=False):
-                # Market-aware combat HUD (presentation only)
-                mkt_raw = str(bm or "").strip().upper()
-                if mkt_raw.startswith("SOG"):
-                    mkt = "SOG"
-                    tags = str(r.get("SOG_Why", r.get("Why","")) or "").strip()
-                elif mkt_raw.startswith("POINT"):
-                    mkt = "POINTS"
-                    tags = str(r.get("Points_Why", r.get("Why","")) or "").strip()
-                elif mkt_raw.startswith("ASSIST"):
-                    mkt = "ASSISTS"
-                    tags = str(r.get("Assist_Why", r.get("Why","")) or "").strip()
-                elif mkt_raw.startswith("ATG"):
-                    mkt = "ATG"
-                    tags = str(r.get("Goal_Why", r.get("Why","")) or "").strip()
-                elif mkt_raw.startswith("GOAL"):
-                    mkt = "GOALS"
-                    tags = str(r.get("Goal_Why", r.get("Why","")) or "").strip()
+        # Build Markets pills + best-market EV signal for Board
+    
+        
+    
+        df_b["Markets"] = df_b.apply(build_markets_pills, axis=1)
+    
+        
+    
+        _ev_lock = df_b.apply(board_best_market_ev, axis=1, result_type="expand")
+        # Robustly normalize apply() output across pandas versions / empty / 1-row cases
+        if isinstance(_ev_lock, pd.DataFrame):
+            _c0 = _ev_lock.iloc[:, 0] if _ev_lock.shape[1] > 0 else ""
+            _c1 = _ev_lock.iloc[:, 1] if _ev_lock.shape[1] > 1 else ""
+        elif isinstance(_ev_lock, pd.Series):
+            _c0 = _ev_lock.apply(lambda x: x[0] if isinstance(x, (list, tuple)) and len(x) > 0 else "")
+            _c1 = _ev_lock.apply(lambda x: x[1] if isinstance(x, (list, tuple)) and len(x) > 1 else "")
+        else:
+            _c0, _c1 = "", ""
+        
+        df_b["EV_Signal"] = _c0
+        df_b["EV_Source"] = _c1
+        df_b["LOCK"] = _c1
+    
+        
+    
+    
+        
+    
+    
+        # === PICK SHEET (UI ONLY) ===
+        st.subheader("🧾 Pick Sheet — signals-first")
+        cA, cB, cC, cD = st.columns(4)
+        with cA:
+            st.metric("Players", int(len(df_b)))
+        with cB:
+            st.metric("Locks", int((df_b["LOCK"].astype(str).str.len() > 0).sum()) if "LOCK" in df_b.columns else 0)
+        with cC:
+            st.metric("+EV", int((df_b["EV_Signal"].astype(str).str.contains("💰")).sum()) if "EV_Signal" in df_b.columns else 0)
+        with cD:
+            st.metric("Top Conf", float(df_b["Best_Conf"].max()) if "Best_Conf" in df_b.columns else 0.0)
+        # === Board filter set (beta default) ===
+        st.sidebar.subheader("Board Filters")
+        market_sel = st.sidebar.multiselect("Market", ["POINTS","ASSISTS","SOG","GOALS"], default=["POINTS","ASSISTS","SOG","GOALS"], key="board_mkt_sel")
+        # Lines available depend on the underlying slate (hard-restricted by market to avoid NaN/off-board lines)
+        _allowed_lines = set()
+        for _m in (market_sel or []):
+            _allowed_lines |= set(_allowed_lines_for_market(_m) or [])
+        _raw_lines = pd.unique(pd.to_numeric(df_b.get("Best_Line", pd.Series([])), errors="coerce"))
+        line_vals = sorted([float(x) for x in _raw_lines if (not pd.isna(x)) and (not _allowed_lines or float(x) in _allowed_lines)])
+        line_sel = st.sidebar.multiselect("Line", line_vals, default=line_vals, key="board_line_sel") if len(line_vals) else []
+        max_fav_odds = int(st.sidebar.number_input("Max favorite odds (e.g. -200)", min_value=-1000, max_value=300, value=-200, step=5, key="board_max_fav"))
+        q = st.sidebar.text_input("Search", value="", key="board_search").strip().lower()
+    
+        df_b_filt = df_b.copy()
+        if market_sel:
+            df_b_filt = df_b_filt[df_b_filt["Best_Market"].astype(str).str.upper().isin([m.upper() for m in market_sel])]
+        if line_sel:
+            df_b_filt = df_b_filt[pd.to_numeric(df_b_filt.get("Best_Line", 0), errors="coerce").isin(line_sel)]
+        # odds filter: hide ultra-favorites (keep anything >= max_fav_odds)
+        df_b_filt = df_b_filt[pd.to_numeric(df_b_filt.get("Best_Odds", df_b_filt.get("Odds", 0)), errors="coerce").fillna(0.0) >= float(max_fav_odds)]
+        if q:
+            df_b_filt = df_b_filt[df_b_filt.get("Player","").astype(str).str.lower().str.contains(q)]
+    
+    
+    
+        # Top candidates: DPS-first (presentation-only)
+        _rank = df_b.copy()
+        _rank["_dps_adj"] = pd.to_numeric(_rank.get("DPS_Adj", 0), errors="coerce").fillna(0.0)
+        _rank["_dps_n"] = pd.to_numeric(_rank.get("DPS_N", 0), errors="coerce").fillna(0).astype(int)
+        _rank["_odds"] = pd.to_numeric(_rank.get("Best_Odds", _rank.get("Odds", 0)), errors="coerce").fillna(0.0)
+        _rank = _rank.sort_values(["_dps_adj","_dps_n","_odds"], ascending=[False, False, False])
+    
+        top_n = st.slider("Show top plays", 5, 30, 12, 1, key="board_topn")
+        top = _rank.head(int(top_n)).copy()
+    
+        def _best_why(r: pd.Series) -> str:
+            # UI-only: tracker exports a unified 'Why' column
+            return str(r.get("Why", "") or "")
+        # Render as cards (two-column grid)
+        grid_left, grid_right = st.columns(2)
+        for i, (_, r) in enumerate(top.iterrows()):
+            side = grid_left if i % 2 == 0 else grid_right
+            with side:
+                player = r.get("Player","")
+                game = r.get("Game","")
+                tier = r.get("Tier_Tag","")
+                bm = r.get("Best_Market","")
+                accent = _board_market_accent(bm)
+                bc = r.get("Best_Conf","")
+                evsig = r.get("EV_Signal","")
+                lock = r.get("LOCK","")
+                markets = r.get("Markets","")
+                why = _best_why(r)
+    
+                expl, crit = _derive_badges(r)
+                # Flames are best-market regression heat (visual only; logic already exists upstream)
+                bm_heat = ""
+                if str(bm or "").upper().startswith("SOG"):
+                    bm_heat = r.get("Reg_Heat_S","")
+                elif str(bm or "").upper().startswith("ASS"):
+                    bm_heat = r.get("Reg_Heat_A","")
+                elif str(bm or "").upper().startswith("POI") or str(bm or "").upper().startswith("PTS"):
+                    bm_heat = r.get("Reg_Heat_P","")
                 else:
-                    mkt = mkt_raw or "UNKNOWN"
-                    tags = str(r.get("Why","") or "").strip()
-
-                _why_sections_header(mkt)
-                _render_why_it_fires_rich(mkt, r, tags)
-
-    with st.expander("Full Board Table (all rows)", expanded=False):
-        show_table(df_b, board_cols, "Board (sorted by Best_Conf)")
-
-
-
+                    bm_heat = r.get("Reg_Heat_G","")
+                flames = _flames_from_heat(bm_heat)
+    
+                dps_t = str(r.get("DPS_Title","") or "").strip()
+                dps_w = _safe_float(r.get("DPS_Win"), 0.0) or 0.0
+                dps_n = int(_safe_float(r.get("DPS_N"), 0) or 0)
+                dps_a = _safe_float(r.get("DPS_Adj"), 0.0) or 0.0
+                headline = f"**{player}** — {game}  ·  {expl}{crit} **{bm}**  ·  🏆 {dps_t}  ·  AdjWin **{dps_a:.1f}**  (Win {dps_w:.1f}% • n={dps_n})"
+                mb = calc_ev_per_dollar(_to_float(_get(r, "Model%", "Model_Prob", default="")), _to_float(_get(r, "Odds", "Odds_Amer", default="")))
+                mb_txt = f"↩ {mb:+.2f}/$1" if mb is not None else ""
+                badges = " ".join([str(x) for x in [lock, evsig, mb_txt] if str(x).strip()])
+                st.markdown(f"<div class='wl-board-card {accent}'>"
+                            f"<div style='display:flex;justify-content:space-between;gap:10px;'>"
+                            f"<div style='font-size:16px;line-height:1.2;'>{headline}</div>"
+                            f"<div style='font-size:16px;white-space:nowrap;'>{badges}</div>"
+                            f"</div>"
+                            f"<div style='margin-top:6px;opacity:0.95;'>{markets}</div>"
+                            f"</div>", unsafe_allow_html=True)
+    
+                with st.expander("🔥 Why it fires", expanded=False):
+                    # Market-aware combat HUD (presentation only)
+                    mkt_raw = str(bm or "").strip().upper()
+                    if mkt_raw.startswith("SOG"):
+                        mkt = "SOG"
+                        tags = str(r.get("SOG_Why", r.get("Why","")) or "").strip()
+                    elif mkt_raw.startswith("POINT"):
+                        mkt = "POINTS"
+                        tags = str(r.get("Points_Why", r.get("Why","")) or "").strip()
+                    elif mkt_raw.startswith("ASSIST"):
+                        mkt = "ASSISTS"
+                        tags = str(r.get("Assist_Why", r.get("Why","")) or "").strip()
+                    elif mkt_raw.startswith("ATG"):
+                        mkt = "ATG"
+                        tags = str(r.get("Goal_Why", r.get("Why","")) or "").strip()
+                    elif mkt_raw.startswith("GOAL"):
+                        mkt = "GOALS"
+                        tags = str(r.get("Goal_Why", r.get("Why","")) or "").strip()
+                    else:
+                        mkt = mkt_raw or "UNKNOWN"
+                        tags = str(r.get("Why","") or "").strip()
+    
+                    _why_sections_header(mkt)
+                    _render_why_it_fires_rich(mkt, r, tags)
+    
+        with st.expander("Full Board Table (all rows)", expanded=False):
+            show_table(df_b, board_cols, "Board (sorted by Best_Conf)")
+    
+    
+    
 # =========================
 # POINTS
 # =========================
