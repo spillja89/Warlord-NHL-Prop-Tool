@@ -2546,12 +2546,12 @@ def _render_goals_combat_hud(r) -> None:
 
     mk = "GOALS"
     # GOALS combat HUD (Beta). Clean: show only the highest tier per lane.
-    # Stance (locked): Line=0.5, Matrix=Green, Conf>=85 (EV ignored)
+    # Stance (locked): Line=0.5, Matrix=Green, Conf>=80 (EV ignored)
     line = _safe_float(r.get("Goal_Line", None), 0.0) or 0.0
     mat = str(r.get("Matrix_Goal", "") or "").strip().lower()
     conf = _safe_float(r.get("Conf_Goal", None), None)
 
-    stance_ok = bool(line == 0.5 and mat.startswith("g") and (conf is not None and conf >= 85))
+    stance_ok = bool(line == 0.5 and mat.startswith("g") and (conf is not None and conf >= 80))
 
     # Core inputs (new GOALS lanes)
     xga   = _safe_float(r.get("opp_5v5_xGA60", None), None)
@@ -2640,13 +2640,13 @@ def _render_goals_combat_hud(r) -> None:
     if stance_ok:
         _wl_why_line(
             _svg_icon("base.svg", "Base Attack (Stance)", "wl-goals"),
-            f"Base Attack active — Conf≥85 / Green / 0.5  •  DPS {DPS['base']['win']}% (n={DPS['base']['n']})",
+            f"Base Attack active — Conf≥80 / Green / 0.5  •  DPS {DPS['base']['win']}% (n={DPS['base']['n']})",
         )
         _wl_dps_bar(DPS["base"]["win"], "GOALS")
     else:
         _wl_why_line(
             _svg_icon("base.svg", "Base Attack (Stance)", "wl-goals"),
-            "Base Attack NOT active — needs Conf≥85 / Green / 0.5",
+            "Base Attack NOT active — needs Conf≥80 / Green / 0.5",
         )
 
     # 2) Enemy armor state (ENV) — show highest tier only
@@ -2881,12 +2881,12 @@ def _render_why_it_fires_rich(mkt: str, r, tags: str = "") -> None:
     
     if mk == "GOALS":
         # GOALS combat HUD (Beta). Clean: show only the highest tier per lane.
-        # Stance (locked): Line=0.5, Matrix=Green, Conf>=85 (EV ignored)
+        # Stance (locked): Line=0.5, Matrix=Green, Conf>=80 (EV ignored)
         line = _safe_float(r.get("Goal_Line", None), 0.0) or 0.0
         mat = str(r.get("Matrix_Goal", "") or "").strip().lower()
         conf = _safe_float(r.get("Conf_Goal", None), None)
 
-        stance_ok = bool(line == 0.5 and mat.startswith("g") and (conf is not None and conf >= 85))
+        stance_ok = bool(line == 0.5 and mat.startswith("g") and (conf is not None and conf >= 80))
 
         # Core inputs (new GOALS lanes)
         xga   = _safe_float(r.get("opp_5v5_xGA60", None), None)
@@ -2937,13 +2937,13 @@ def _render_why_it_fires_rich(mkt: str, r, tags: str = "") -> None:
         if stance_ok:
             _wl_why_line(
                 _svg_icon("base.svg", "Base Attack (Stance)", "wl-goals"),
-                f"Base Attack active — Conf≥85 / Green / 0.5  •  DPS {DPS['base']['win']}% (n={DPS['base']['n']})",
+                f"Base Attack active — Conf≥80 / Green / 0.5  •  DPS {DPS['base']['win']}% (n={DPS['base']['n']})",
             )
             _wl_dps_bar(DPS["base"]["win"], "GOALS")
         else:
             _wl_why_line(
                 _svg_icon("base.svg", "Base Attack (Stance)", "wl-goals"),
-                "Base Attack NOT active — needs Conf≥85 / Green / 0.5",
+                "Base Attack NOT active — needs Conf≥80 / Green / 0.5",
             )
 
         # 2) Enemy armor state (ENV) — show highest tier only
@@ -5045,7 +5045,7 @@ def _passes_engine(b: dict) -> bool:
         avg5 = _num(b.get("avg5_sog", 0), 0)
         if abs(line - 0.5) > 1e-6:
             return False
-        if conf < 85:
+        if conf < 80:
             return False
         if avg5 < 3.4:
             return False
@@ -5509,11 +5509,11 @@ def _green_conf_threshold(market: str, slate_games: int) -> int:
     if m == "Goal":
         return 85
     if slate_games >= 8:
-        return {"SOG": 75, "Points": 70, "Goal": 85, "Assists": 80}[m]
+        return {"SOG": 75, "Points": 70, "Goal": 80, "Assists": 80}[m]
     elif slate_games >= 5:
-        return {"SOG": 75, "Points": 70, "Goal": 85, "Assists": 80}[m]
+        return {"SOG": 75, "Points": 70, "Goal": 80, "Assists": 80}[m]
     else:
-        return {"SOG": 75, "Points": 70, "Goal": 85, "Assists": 80}[m]
+        return {"SOG": 75, "Points": 70, "Goal": 80, "Assists": 80}[m]
 
 
 
@@ -6019,7 +6019,7 @@ if page == "Board":
                     _conf = _num(b.get("conf",0), 0)
                     _avg5 = _num(b.get("avg5_sog",0), 0)
                     _line = _num(b.get("line",0), 0)
-                    if abs(_line - 0.5) > 1e-6 or _conf < 85 or _avg5 < 3.4:
+                    if abs(_line - 0.5) > 1e-6 or _conf < 80 or _avg5 < 3.4:
                         continue
                 rr = _r.copy()
                 rr["Best_Market"] = b["label"]
@@ -6772,8 +6772,10 @@ elif page == "Assists":
    
         "Green",
                "Assists_Odds_Over",
-        "Assists_Book",
-        "Conf_Assists", "Matrix_Assists", "Assists_Line", "Valhalla_OK", "PP_iXA60", "PP_TOI_Pct_Game", "PP_Matchup",
+        "Assists_Book","Assists_Line",
+        "Conf_Assists", "Matrix_Assists",  "iXA%",  "PPP10_total",
+        "Drought_PPP",
+ "PP_iXA60", "PP_TOI_Pct_Game", "PP_Matchup",
         "opp_5v5_xGA60",    
 
        
@@ -6786,7 +6788,7 @@ elif page == "Assists":
         "PP_TOI_Pct_Game",  "PP_Matchup",
 
         
-        "iXA%","iXG%", "v2_player_stability",
+      "iXG%", "v2_player_stability",
         "Opp_Goalie", "Opp_SV",
         "Goalie_Weak", "Opp_DefWeak",
 
@@ -7529,7 +7531,7 @@ elif page == "GOALS (0.5)":
         # Hard gates (GOALS Beta Gate)
     m_matrix = _g[matrix_col].astype(str).str.strip().str.upper().isin(["GREEN", "🟢"])
     m_line   = (pd.to_numeric(_g.get(line_col, 0), errors="coerce") == 0.5)
-    m_conf   = (pd.to_numeric(_g.get(conf_col, 0), errors="coerce").fillna(0) >= 85)
+    m_conf   = (pd.to_numeric(_g.get(conf_col, 0), errors="coerce").fillna(0) >= 80)
 
     # Pull key GOALS columns (schema varies)
     _oppsog = pd.to_numeric(_g.get("Opp_SOG_Against_L10", np.nan), errors="coerce")
@@ -7628,7 +7630,7 @@ elif page == "GOALS (0.5)":
             _conf_g = float(conf)
         except Exception:
             _conf_g = 0.0
-        _stance_ok = (_line_g == 0.5) and (_mat_g == "green") and (_conf_g >= 85)
+        _stance_ok = (_line_g == 0.5) and (_mat_g == "green") and (_conf_g >= 80)
 
         _hud = []
         if _stance_ok:
