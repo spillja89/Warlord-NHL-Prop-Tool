@@ -220,26 +220,6 @@ def market_tier_tag(row: "pd.Series", market: str) -> str:
     rules = MARKET_TIER_RULES[market]
     t = rules["thresholds"]
 
-    # --- Dual 97.5 (iXA + iXG) ---
-    # If both iXA% and iXG% are elite-percentile, this is a hard "ON" identity signal.
-    ixg_pct = _safe_float(row.get("iXG_pct"), default=None)
-    if ixg_pct is None:
-        ixg_pct = _safe_float(row.get("iXG%"), default=None)
-
-    ixa_pct = _safe_float(row.get("iXA_pct"), default=None)
-    if ixa_pct is None:
-        ixa_pct = _safe_float(row.get("iXA%"), default=None)
-
-    dual_97_5 = (ixg_pct is not None and ixa_pct is not None and ixg_pct >= 97.5 and ixa_pct >= 97.5)
-
-    # Market Conf mapping (Elite tag integrity: ELITE implies Conf >= 80)
-    _conf_col = {"SOG": "Conf_SOG", "Points": "Conf_Points", "Assists": "Conf_Assists", "Goal": "Conf_Goal"}.get(market, "")
-    market_conf = _safe_float(row.get(_conf_col), default=None) if _conf_col else None
-
-    # Dual 97.5 => ELITE (but still enforce Conf floor for the ELITE label)
-    if dual_97_5 and (market_conf is None or market_conf >= 80):
-        return "ELITE"
-
     # --- pull from YOUR column names (and accept alternates) ---
     ppg = _safe_float(row.get("PPG"), default=None)
 
@@ -336,9 +316,6 @@ def market_tier_tag(row: "pd.Series", market: str) -> str:
     is_elite = (elite_proofs >= rules["elite_min_proofs"]) and gates_ok
 
     if is_elite:
-        # ELITE label integrity: never emit ELITE if market Conf is below 80
-        if market_conf is not None and market_conf < 80:
-            return "STAR"
         return "ELITE"
     if is_star:
         return "STAR"
@@ -2386,7 +2363,6 @@ def matrix_goal_v2(
         return "Red"
     if ixg < 88.0:
         return "Yellow"
-   
 
     if med10 is None:
         return "Yellow"
@@ -2449,8 +2425,8 @@ def matrix_goal_v3(
         return "Red"
     if ixg < 88.0:
         return "Yellow"
-    if ixg >= 94.5:
-        return "Green" 
+    if ixg > 95.0:
+        return "Green"
 
     # Need Med10 for shot-floor sanity; if missing, don't promote
     if med10 is None:
@@ -2482,7 +2458,7 @@ def matrix_goal_v3(
 
     heater = (g5 >= 2)
     shooter_monster = (si >= 3.4 and a5 >= 3.5)
-    elite_finisher = (ixg >= 97.0)
+    elite_finisher = (ixg >= 95.0)
 
     # Elite finisher override: if env permission + reasonable shot floor, don't require heater
     if elite_finisher and med >= (need - 0.2):
@@ -2548,47 +2524,22 @@ def matrix_points_v2(ixa_pct: float, v2_stab: Optional[float], reg_heat_p: str =
         return "Green"
     if ixa_pct >= 90 and stab >= 63 and dw >= 60:
         return "Green"
-    if ixa_pct >= 95 and conf_v >= 80:
-        return "Green"
 
     return "Yellow"
 
-def matrix_assists_v1(
-    ixa_pct: float,
-    v2_stab: Optional[float],
-    reg_heat_a: str = "COOL",
-    toi_pct: Optional[float] = None,
-    team_xgf_pct: Optional[float] = None,
-    opp_defweak: Optional[float] = None,
-    shot_assists60: Optional[float] = None,
-    conf: Optional[float] = None,
-) -> str:
+def matrix_assists_v1(ixa_pct: float, v2_stab: Optional[float], reg_heat_a: str = "COOL",
+                      toi_pct: Optional[float] = None, team_xgf_pct: Optional[float] = None,
+                      opp_defweak: Optional[float] = None, shot_assists60: Optional[float] = None) -> str:
     stab = 50.0 if v2_stab is None else float(v2_stab)
     toi = 50.0 if toi_pct is None else float(toi_pct)
-    tx = 50.0 if team_xgf_pct is None else float(team_xgf_pct)
-    dw = 50.0 if opp_defweak is None else float(opp_defweak)
+    tx  = 50.0 if team_xgf_pct is None else float(team_xgf_pct)
+    dw  = 50.0 if opp_defweak is None else float(opp_defweak)
 
-    sa60 = (
-        0.0
-        if shot_assists60 is None
-        or (isinstance(shot_assists60, float) and math.isnan(shot_assists60))
-        else float(shot_assists60)
-    )
+    sa60 = 0.0 if shot_assists60 is None or (isinstance(shot_assists60, float) and math.isnan(shot_assists60)) else float(shot_assists60)
     sa_pct = clamp(sa60 * 20.0)
 
-    conf_v = (
-        0.0
-        if conf is None or (isinstance(conf, float) and math.isnan(conf))
-        else float(conf)
-    )
-  
     if ixa_pct < 78:
         return "Red" if ixa_pct < 70 else "Yellow"
-
-    if ixa_pct >= 97:
-        return "Green"
-
-
 
     if ixa_pct >= 94 and stab >= 68:
         return "Green"
@@ -2600,11 +2551,9 @@ def matrix_assists_v1(
         return "Green"
     if ixa_pct >= 90 and stab >= 60 and sa_pct >= 70 and toi >= 60:
         return "Green"
-   
-    if ixa_pct >= 97:
-        return "Green"
 
     return "Yellow"
+
 def conf_sog(
     ixg_pct: float,
     shot_intent_pct: float,
@@ -4037,10 +3986,8 @@ def build_tracker(today_local: date, debug: bool = False) -> str:
             team_xgf_pct=safe_float(r.get("team_5v5_xGF60_pct")),
             opp_defweak=safe_float(r.get("Opp_DefWeak")),
             shot_assists60=safe_float(r.get("i5v5_shotAssists60")),
-            conf=safe_float(r.get("Conf_Assists")),   # <-- add this
         ),
         axis=1
-
     )
 
     sk["Matrix_Goal"] = sk.apply(
@@ -5146,16 +5093,4 @@ def main() -> None:
     build_tracker(today_local, debug=bool(args.debug))
 
 if __name__ == "__main__":
-
     main()
-
-
-
-
-
-
-
-
-
-
-
