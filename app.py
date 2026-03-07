@@ -6754,7 +6754,9 @@ elif page == "Assists":
         "Green",
                  "Assists_Odds_Over",
         "Assists_Book",
-        "Conf_Assists", "Matrix_Assists", "Assists_Line",  "PP_iXA60","PP_Matchup", "PP_TOI_Pct_Game", 
+        "Conf_Assists", "Matrix_Assists", "Assists_Line", "iXA%",  "PP_iXA60","PP_Matchup","PPP10_total",
+        "Drought_PPP",
+ "PP_TOI_Pct_Game", 
         "opp_5v5_xGA60",   
 
        
@@ -6764,10 +6766,10 @@ elif page == "Assists":
         
         "Reg_Heat_A", "Reg_Gap_A10", "Exp_A_10", "L10_A",
         "PP_Tier", "PP_Path", 
-        "PP_TOI_Pct_Game",  "PP_Matchup",
+        
 
         
-        "iXA%","iXG%", "v2_player_stability",
+       "iXG%", "v2_player_stability",
         "Opp_Goalie", "Opp_SV",
         "Goalie_Weak", "Opp_DefWeak",
 
