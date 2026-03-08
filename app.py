@@ -913,7 +913,6 @@ def _probe_points_best(r: dict) -> dict | None:
     drought_p = _safe_float(r.get("Drought_P"))
     drought_p = 0.0 if drought_p is None else float(drought_p)
     opp_gaa = _safe_float(r.get("Opp_GAA"))
-    team_pp_xgf = _safe_float(r.get("Team_PP_xGF60")) or 0.0
     opp_defweak = _safe_float(r.get("Opp_DefWeak")) or 0.0
     opp_xga = _safe_float(r.get("opp_5v5_xGA60", r.get("Opp_5v5_xGA60")))
     team_gf_l5 = _safe_float(r.get("Team_GF_Avg_L5", r.get("Team_GF_L5")))
@@ -949,10 +948,9 @@ def _probe_points_best(r: dict) -> dict | None:
             procs.append(("Gaia’s Wrath", 76.7, 103, True))
         elif favor_on:
             procs.append(("Gaia’s Favor", 73.0, 152, True))
-        # Label-only still eligible as a proc for ordering (keeps beta consistent)
         procs.append(("Bleed ENV (Label Only)", 76.9, 26, (conf_p >= 70 and pp_ixg >= 1.5)))
     else:
-        # 1.5 kit (mu-family + new tank family)
+        # Trusted 1.5 mu-family + new tank/xGA family only.
         procs += [
             ("Backbone", 54.3, 116, (conf_a >= 89 and points_mu >= 1.7)),
             ("Blade Impale (Power Tier)", 60.8, 51, (conf_a >= 89 and points_mu >= 2.2)),
@@ -971,11 +969,6 @@ def _probe_points_best(r: dict) -> dict | None:
     best = None
     for title, win, n, cond in procs:
         if not cond:
-            continue
-        # Board eligibility guard: Env Mix requires Goal_Odds_Over >= +150 to qualify as best-proc/board pick.
-        if title == "Berserker Aggression (Env Mix)" and not envmix_odds_ok:
-            continue
-        if float(win) < FEATURED_GOALS_MIN:
             continue
         adj = _adj_win(win, n, k=20)
         if (best is None) or (adj > best["adj"]) or (abs(adj - best["adj"]) < 1e-9 and n > best["n"]):
@@ -1135,7 +1128,6 @@ def _probe_goals_best(r: dict) -> dict | None:
     env_249  = bool(xga is not None and xga >= 2.49)
     env_252  = bool(xga is not None and xga >= 2.52)
 
-    FEATURED_GOALS_MIN = 50.0
     procs = []
 
     # Tyr’s Wrath Unleashed
@@ -2182,18 +2174,64 @@ def _render_points_combat_hud(r: dict) -> None:
         note="Conf_Assists≥89 + Drought_P≥1 + Points_mu≥1.7",
     )
 
-    st.markdown("**TANK FAMILY**")
-    _row("PTS15_TWO_HANDED_HAMMER.svg", "Berserker Tank", cond=(conf_a >= 90), win=53.3, n=105, note="Conf_Assists≥90")
-    _row("PTS15_TWO_HANDED_HAMMER.svg", "Berserker Tank+", cond=(conf_a >= 92.5), win=58.6, n=58, note="Conf_Assists≥92.5")
-    _row("PTS15_BLADE_IMPALE.svg", "Rampage Tank", cond=(conf_a >= 95), win=61.1, n=36, note="Conf_Assists≥95")
-    _row("PTS15_BLOOD_EXPOSURE.svg", "Shield Bearer", cond=(conf_a >= 85 and (opp_xga is not None) and float(opp_xga) >= 2.55), win=53.3, n=75, note="Conf_Assists≥85 + opp_xGA≥2.55")
-    _row("PTS15_BLADE_IMPALE.svg", "War Machine", cond=(conf_a >= 88 and (opp_xga is not None) and float(opp_xga) >= 2.55), win=59.6, n=52, note="Conf_Assists≥88 + opp_xGA≥2.55")
-    _row("PTS15_BLADE_SLASH.svg", "Juggernaut", cond=(conf_a >= 90 and (opp_xga is not None) and float(opp_xga) >= 2.55), win=64.3, n=42, note="Conf_Assists≥90 + opp_xGA≥2.55")
-    _row("PTS15_BLADE_SLASH.svg", "Ragnarok", cond=(conf_a >= 95 and (opp_xga is not None) and float(opp_xga) >= 2.55), win=73.7, n=19, note="Conf_Assists≥95 + opp_xGA≥2.55")
-    _row("PTS15_BLADE_SLASH.svg", "Ragnarok+", cond=(conf_a >= 95 and (opp_xga is not None) and float(opp_xga) >= 2.60), win=76.5, n=17, note="Conf_Assists≥95 + opp_xGA≥2.60")
-
-
-
+    # Optional legacy kit (kept as alternate path; only shows if it procs)
+    st.markdown("**LEGACY KIT (optional path)**")
+    _row(
+        "PTS15_ENCHANTED_HAMMER.svg",
+        "Enchanted Hammer (Legacy)",
+        cond=(conf_p >= 80 and pp_ixg >= 1.7),
+        win=61.1,
+        n=18,
+        note="Conf_Points≥80 + PP_iXG60≥1.7",
+    )
+    _row(
+        "PTS15_BLADE_IMPALE.svg",
+        "Blade Impale (Legacy PP)",
+        cond=(conf_p >= 80 and pp_ixa >= 4.0),
+        win=49.2,
+        n=61,
+        note="Conf_Points≥80 + PP_iXA60≥4.0",
+    )
+    _row(
+        "PTS15_BLADE_SLASH.svg",
+        "Blade Slash (Legacy PP)",
+        cond=(conf_p >= 80 and team_pp_xgf >= 7.0),
+        win=48.1,
+        n=81,
+        note="Conf_Points≥80 + Team_PP_xGF60≥7",
+    )
+    _row(
+        "PTS15_BLOOD_EXPOSURE.svg",
+        "Blood Exposure (Legacy)",
+        cond=(conf_p >= 80 and team_pp_xgf >= 7.0 and opp_defweak >= 60),
+        win=54.5,
+        n=44,
+        note="Conf_Points≥80 + Team_PP_xGF60≥7 + Opp_DefWeak≥60",
+    )
+    _row(
+        "PTS15_BLOOD_EXPOSURE.svg",
+        "Blood Exposure II (Legacy)",
+        cond=(conf_p >= 80 and opp_defweak >= 60),
+        win=54.7,
+        n=64,
+        note="Conf_Points≥80 + Opp_DefWeak≥60",
+    )
+    _row(
+        "PTS15_POLARIZING_SMASH.svg",
+        "Polarizing Smash (Legacy)",
+        cond=(conf_p >= 80 and team_pp_xgf >= 7.0 and opp_defweak >= 70),
+        win=54.5,
+        n=33,
+        note="Conf_Points≥80 + Team_PP_xGF60≥7 + Opp_DefWeak≥70",
+    )
+    _row(
+        "PTS15_ETERNAL_SMASH.svg",
+        "Eternal Smash (Legacy)",
+        cond=(conf_p >= 80 and opp_defweak >= 70),
+        win=53.2,
+        n=47,
+        note="Conf_Points≥80 + Opp_DefWeak≥70",
+    )
 
 
 def _render_assists_combat_hud(r) -> None:
@@ -2535,8 +2573,6 @@ def _render_goals_combat_hud(r) -> None:
     drought_g = _safe_float(r.get("Drought_G", None), None)
 
     # --- DPS anchors (final from this chat) ---
-    FEATURED_GOALS_MIN = 50.0
-
     DPS = {
         "base": {"n": 423, "win": 34.3},
         "armor_shred": {"n": 189, "win": 41.8},   # xGA >= 2.49
@@ -2591,8 +2627,6 @@ def _render_goals_combat_hud(r) -> None:
         if not key or key == "base" or key not in DPS:
             return
         win = DPS[key]["win"]
-        if float(win) < FEATURED_GOALS_MIN:
-            return
         n = DPS[key]["n"]
         title = _key_titles.get(key, key)
         aw = _adj_win(win, n, k=20)
@@ -2610,8 +2644,9 @@ def _render_goals_combat_hud(r) -> None:
     if stance_ok:
         _wl_why_line(
             _svg_icon("base.svg", "Base Attack (Stance)", "wl-goals"),
-            "Base Attack active — Conf≥80 / Green / 0.5",
+            f"Base Attack active — Conf≥80 / Green / 0.5  •  DPS {DPS['base']['win']}% (n={DPS['base']['n']})",
         )
+        _wl_dps_bar(DPS["base"]["win"], "GOALS")
     else:
         _wl_why_line(
             _svg_icon("base.svg", "Base Attack (Stance)", "wl-goals"),
@@ -2636,25 +2671,11 @@ def _render_goals_combat_hud(r) -> None:
             env_key = "armor_buff"
             env_icon = "armor_buff.svg"
 
-        _env_win = float(DPS[env_key]["win"])
-        if _env_win >= FEATURED_GOALS_MIN:
-            _env_win = float(DPS[env_key]["win"])
-            if _env_win >= FEATURED_GOALS_MIN:
-                _wl_why_line(
-                    _svg_icon(env_icon, "Enemy Armor (ENV)", "wl-goals wl-keep"),
-                    f"{env_label}  •  DPS {DPS[env_key]['win']}% (n={DPS[env_key]['n']})  (Δ {DPS[env_key]['win']-base_win:+.1f})",
-                )
-                _wl_dps_bar(DPS[env_key]["win"], "GOALS")
-            else:
-                _wl_why_line(
-                    _svg_icon(env_icon, "Enemy Armor (ENV)", "wl-goals wl-keep"),
-                    f"{env_label}  •  context only (sub-50 DPS hidden)",
-                )
-        else:
-            _wl_why_line(
-                _svg_icon(env_icon, "Enemy Armor (ENV)", "wl-goals wl-keep"),
-                f"{env_label}  •  context only (sub-50 DPS hidden)",
-            )
+        _wl_why_line(
+            _svg_icon(env_icon, "Enemy Armor (ENV)", "wl-goals wl-keep"),
+            f"{env_label}  •  DPS {DPS[env_key]['win']}% (n={DPS[env_key]['n']})  (Δ {DPS[env_key]['win']-base_win:+.1f})",
+        )
+        _wl_dps_bar(DPS[env_key]["win"], "GOALS")
     else:
         _wl_why_line(
             _svg_icon("armor_buff.svg", "Enemy Armor Unknown", "wl-goals"),
@@ -2740,8 +2761,7 @@ def _render_goals_combat_hud(r) -> None:
             _svg_icon("fury.svg", "Warlord Fury", "wl-goals"),
             f"{fury_lbl}  •  DPS {DPS[fury_key]['win']}% (n={DPS[fury_key]['n']})  (Δ {DPS[fury_key]['win']-base_win:+.1f})",
         )
-        if float(DPS[fury_key]["win"]) >= FEATURED_GOALS_MIN:
-            _wl_dps_bar(DPS[fury_key]["win"], "GOALS")
+        _wl_dps_bar(DPS[fury_key]["win"], "GOALS")
 
     # 4) Fenrir lane (Finisher identity) — show highest tier only
     fenrir_on = bool(ixg is not None and ixg >= 97)
@@ -2760,8 +2780,7 @@ def _render_goals_combat_hud(r) -> None:
                 f"Fenrir’s Claw — iXG {ixg:.1f} ≥ 92  •  DPS {DPS['fenrir_34']['win']}% (n={DPS['fenrir_34']['n']})  (Δ {DPS['fenrir_34']['win']-base_win:+.1f})",
             )
             _track_best_key("fenrir_34")
-            if float(DPS["fenrir_34"]["win"]) >= FEATURED_GOALS_MIN:
-                _wl_dps_bar(DPS["fenrir_34"]["win"], "GOALS")
+            _wl_dps_bar(DPS["fenrir_34"]["win"], "GOALS")
 
     # 5) Premium tiers (Special / Ultimate) — show highest only
     armor_annihilation = bool((ixg is not None and ixg >= 97) and env_252)
@@ -2932,8 +2951,9 @@ def _render_why_it_fires_rich(mkt: str, r, tags: str = "") -> None:
         if stance_ok:
             _wl_why_line(
                 _svg_icon("base.svg", "Base Attack (Stance)", "wl-goals"),
-                "Base Attack active — Conf≥80 / Green / 0.5",
+                f"Base Attack active — Conf≥80 / Green / 0.5  •  DPS {DPS['base']['win']}% (n={DPS['base']['n']})",
             )
+            _wl_dps_bar(DPS["base"]["win"], "GOALS")
         else:
             _wl_why_line(
                 _svg_icon("base.svg", "Base Attack (Stance)", "wl-goals"),
@@ -6475,32 +6495,15 @@ elif page == "Points":
                 if _conf_a is not None and _conf_a >= 89 and _drt >= 1 and _mu >= 1.7:
                     tags.append("Delayed Hammer Smash")
 
-                if _conf_a is not None and _conf_a >= 95 and (_xga is not None) and float(_xga) >= 2.60:
-                    tags.append(_svg_inline(_svg_get("PTS15_BLADE_SLASH.svg"), size=14, title="Ragnarok+"))
-                    tags.append("Ragnarok+")
-                elif _conf_a is not None and _conf_a >= 95 and (_xga is not None) and float(_xga) >= 2.55:
-                    tags.append(_svg_inline(_svg_get("PTS15_BLADE_SLASH.svg"), size=14, title="Ragnarok"))
-                    tags.append("Ragnarok")
-                elif _conf_a is not None and _conf_a >= 90 and (_xga is not None) and float(_xga) >= 2.55:
-                    tags.append(_svg_inline(_svg_get("PTS15_BLADE_SLASH.svg"), size=14, title="Juggernaut"))
-                    tags.append("Juggernaut")
-                elif _conf_a is not None and _conf_a >= 88 and (_xga is not None) and float(_xga) >= 2.55:
-                    tags.append(_svg_inline(_svg_get("PTS15_BLADE_IMPALE.svg"), size=14, title="War Machine"))
-                    tags.append("War Machine")
-                elif _conf_a is not None and _conf_a >= 85 and (_xga is not None) and float(_xga) >= 2.55:
-                    tags.append(_svg_inline(_svg_get("PTS15_BLOOD_EXPOSURE.svg"), size=14, title="Shield Bearer"))
-                    tags.append("Shield Bearer")
-
-                if _conf_a is not None and _conf_a >= 95:
-                    tags.append(_svg_inline(_svg_get("PTS15_BLADE_IMPALE.svg"), size=14, title="Rampage Tank"))
-                    tags.append("Rampage Tank")
-                elif _conf_a is not None and _conf_a >= 92.5:
-                    tags.append(_svg_inline(_svg_get("PTS15_TWO_HANDED_HAMMER.svg"), size=14, title="Berserker Tank+"))
-                    tags.append("Berserker Tank+")
-                elif _conf_a is not None and _conf_a >= 90:
-                    tags.append(_svg_inline(_svg_get("PTS15_TWO_HANDED_HAMMER.svg"), size=14, title="Berserker Tank"))
-                    tags.append("Berserker Tank")
-
+                # Optional legacy kit icons (PP/DefWeak) — only if they proc
+                _ppixg = _safe_float(r.get("PP_iXG60")) or 0.0
+                _ppixa = _safe_float(r.get("PP_iXA60")) or 0.0
+                _teamxgf = _safe_float(r.get("Team_PP_xGF60")) or 0.0
+                _defw = _safe_float(r.get("Opp_DefWeak")) or 0.0
+                if _conf_p is not None and _conf_p >= 80 and _defw >= 60:
+                    tags.append(_svg_inline(_svg_get("PTS15_BLOOD_EXPOSURE.svg"), size=14, title="Blood Exposure II (Legacy)"))
+                if _conf_p is not None and _conf_p >= 80 and _defw >= 70:
+                    tags.append(_svg_inline(_svg_get("PTS15_POLARIZING_SMASH.svg"), size=14, title="Eternal Smash (Legacy)"))
         try:
             if float(l10r) >= 0.80: tags.append("🔥 L10 Rate ≥0.80")
             elif float(l10r) >= 0.70: tags.append("L10 Rate ≥0.70")
@@ -6754,9 +6757,7 @@ elif page == "Assists":
         "Green",
                  "Assists_Odds_Over",
         "Assists_Book",
-        "Conf_Assists", "Matrix_Assists", "Assists_Line", "iXA%",  "PP_iXA60","PP_Matchup","PPP10_total",
-        "Drought_PPP",
- "PP_TOI_Pct_Game", 
+        "Conf_Assists", "Matrix_Assists", "Assists_Line",  "PP_iXA60","PP_Matchup", "PP_TOI_Pct_Game", 
         "opp_5v5_xGA60",   
 
        
@@ -6766,10 +6767,10 @@ elif page == "Assists":
         
         "Reg_Heat_A", "Reg_Gap_A10", "Exp_A_10", "L10_A",
         "PP_Tier", "PP_Path", 
-        
+        "PP_TOI_Pct_Game",  "PP_Matchup",
 
         
-       "iXG%", "v2_player_stability",
+        "iXA%","iXG%", "v2_player_stability",
         "Opp_Goalie", "Opp_SV",
         "Goalie_Weak", "Opp_DefWeak",
 
