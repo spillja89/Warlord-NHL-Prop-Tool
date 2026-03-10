@@ -1037,9 +1037,15 @@ def _probe_assists_best(r: dict) -> dict | None:
     arcane_transcendence_on = staff_on and (conf >= 88) and (not math.isnan(ppp10) and ppp10 >= 3) and (not math.isnan(pp_toi_pct) and pp_toi_pct >= 17)
     procs.append(("Arcane Transcendence", 77.8, 45, arcane_transcendence_on))
 
-    # Arcane Supernova (heater upgrade; GF_Avg_L5 ≥ 3.9 ≈ Team_GF_L5 ≥ 20)
-    arcane_supernova_on = arcane_transcendence_on and (not math.isnan(team_gf_l5) and team_gf_l5 >= 20)
-    procs.append(("Arcane Supernova", 84.0, 25, arcane_supernova_on))
+     # Arcane Supernova (no-TOI crit path)
+    arcane_supernova_on = (
+        (conf >= 86)
+        and (not math.isnan(pp_ix) and pp_ix >= 3.4)
+        and (not math.isnan(ppp10) and ppp10 >= 0)
+        and (not math.isnan(ixa_pct) and ixa_pct >= 95.0)
+        and (not math.isnan(team_gf_l5) and team_gf_l5 >= 20)
+    )
+    procs.append(("Arcane Supernova", 83.3, 30, arcane_supernova_on))
 
     # Supernova (convergence)
     supernova_on = staff_on and (conf >= 80) and (not math.isnan(ixa_pct) and ixa_pct >= 95.0) and (not math.isnan(pp_ix) and pp_ix >= 3.7) and (not math.isnan(team_gf_l5) and team_gf_l5 >= 20)
@@ -2289,7 +2295,7 @@ def _render_assists_combat_hud(r) -> None:
         "supernova_overdrive": {"n": 64, "win": 75.0}, # convergence
 
         "arcane_transcendence": {"n": 45, "win": 77.8},  # Conf≥88 + PPP10≥3 + PP_TOI%≥17
-        "arcane_supernova": {"n": 25, "win": 84.0},       # Arcane Transcendence + Team_GF_L5≥20 (≈ GF_Avg_L5≥3.9)
+        "arcane_supernova": {"n": 30, "win": 83.3},       # Arcane Transcendence + Team_GF_L5≥20 (≈ GF_Avg_L5≥3.9)
 
         "stars_aligned_a": {"n": 163, "win": 65.6},       # Conf≥88 + iXA%≥96
         "stars_aligned_b": {"n": 118, "win": 65.3},       # Conf≥90 + iXA%≥95
@@ -6117,7 +6123,7 @@ if page == "Board":
     _rank["_odds"] = pd.to_numeric(_rank.get("Best_Odds", _rank.get("Odds", 0)), errors="coerce").fillna(0.0)
     _rank = _rank.sort_values(["_dps_adj","_dps_n","_odds"], ascending=[False, False, False])
 
-    top_n = st.slider("Show top plays", 5, 30, 12, 1, key="board_topn")
+    top_n = st.slider("Show top plays", 5, 30, 16, 1, key="board_topn")
     top = _rank.head(int(top_n)).copy()
 
     def _best_why(r: pd.Series) -> str:
@@ -6394,7 +6400,7 @@ elif page == "Points":
 
     _p = _p.sort_values(["_conf","_l10r","_l10d","_gap"], ascending=[False, False, False, False], kind="mergesort")
 
-    top_n_p = st.slider("Show top plays (Points)", 3, 30, 12, 1, key="points_smash_topn")
+    top_n_p = st.slider("Show top plays (Points)", 3, 30, 16, 1, key="points_smash_topn")
     topp = _p.head(int(top_n_p))
 
     for _, r in topp.iterrows():
@@ -6757,7 +6763,9 @@ elif page == "Assists":
         "Green",
                  "Assists_Odds_Over",
         "Assists_Book",
-        "Conf_Assists", "Matrix_Assists", "Assists_Line",  "PP_iXA60","PP_Matchup", "PP_TOI_Pct_Game", 
+        "Conf_Assists", "Matrix_Assists", "Assists_Line",  "PP_iXA60","PPP10_total",
+        "Drought_PPP",
+"PP_Matchup", "PP_TOI_Pct_Game", 
         "opp_5v5_xGA60",   
 
        
@@ -6767,7 +6775,7 @@ elif page == "Assists":
         
         "Reg_Heat_A", "Reg_Gap_A10", "Exp_A_10", "L10_A",
         "PP_Tier", "PP_Path", 
-        "PP_TOI_Pct_Game",  "PP_Matchup",
+       
 
         
         "iXA%","iXG%", "v2_player_stability",
@@ -6821,7 +6829,7 @@ elif page == "Assists":
 
     _a = _a.sort_values(["_conf","_ppixa","_ppshare"], ascending=[False, False, False], kind="mergesort")
 
-    top_n_a = st.slider("Show top plays (Assists)", 3, 30, 12, 1, key="assist_smash_topn")
+    top_n_a = st.slider("Show top plays (Assists)", 3, 30, 16, 1, key="assist_smash_topn")
     topa = _a.head(int(top_n_a))
 
     if len(topa) == 0:
