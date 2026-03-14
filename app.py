@@ -863,7 +863,7 @@ def apply_dps_filters_ui(df: pd.DataFrame, mk: str, key_prefix: str = "m") -> pd
         line_vals = [lv for lv in line_vals if lv in _allowed]
     st.sidebar.subheader(f"{mk_u} — Filters")
     line_sel = st.sidebar.multiselect("Line", line_vals, default=line_vals, key=f"{key_prefix}_line") if line_vals else []
-    max_fav_odds = int(st.sidebar.number_input("Max favorite odds (e.g. -200)", min_value=-1000, max_value=300, value=-200, step=5, key=f"{key_prefix}_maxfav"))
+    max_fav_odds = int(st.sidebar.number_input("Max favorite odds (e.g. -250)", min_value=-1000, max_value=300, value=-250, step=5, key=f"{key_prefix}_maxfav"))
     q = st.sidebar.text_input("Search", value="", key=f"{key_prefix}_q").strip().lower()
 
     # Compute helper columns for filtering
@@ -964,6 +964,11 @@ def _probe_points_best(r: dict) -> dict | None:
             ("Juggernaut", 64.3, 42, (conf_a >= 90 and (opp_xga is not None) and float(opp_xga) >= 2.55)),
             ("Ragnarok", 73.7, 19, (conf_a >= 95 and (opp_xga is not None) and float(opp_xga) >= 2.55)),
             ("Ragnarok+", 76.5, 17, (conf_a >= 95 and (opp_xga is not None) and float(opp_xga) >= 2.60)),
+            ("War Tank", 62.8, 43, (conf_p >= 75 and assists_mu >= 1.3 and (opp_xga is not None) and float(opp_xga) >= 2.50)),
+            ("Juggernaut [Replacement]", 68.6, 35, (conf_p >= 75 and assists_mu >= 1.5 and (opp_xga is not None) and float(opp_xga) >= 2.50)),
+            ("Blade Impale", 55.7, 88, (points_mu >= 1.7 and (opp_xga is not None) and float(opp_xga) >= 2.50)),
+            ("Blade Slash", 62.3, 69, (points_mu >= 1.7 and (opp_xga is not None) and float(opp_xga) >= 2.53)),
+            ("Ragnarok+ [Replacement]", 90.0, 20, (points_mu >= 1.7 and (opp_xga is not None) and float(opp_xga) >= 2.53 and (opp_gaa is not None) and float(opp_gaa) >= 3.0 and conf_p >= 75)),
         ]
 
     best = None
@@ -2181,63 +2186,47 @@ def _render_points_combat_hud(r: dict) -> None:
         note="Conf_Assists≥89 + Drought_P≥1 + Points_mu≥1.7",
     )
 
-    # Optional legacy kit (kept as alternate path; only shows if it procs)
-    st.markdown("**LEGACY KIT (optional path)**")
+    # Data-backed replacements for the retired legacy 1.5 kit.
+    st.markdown("**REPLACEMENT KIT (data-backed)**")
     _row(
         "PTS15_ENCHANTED_HAMMER.svg",
-        "Enchanted Hammer (Legacy)",
-        cond=(conf_p >= 80 and pp_ixg >= 1.7),
-        win=61.1,
-        n=18,
-        note="Conf_Points≥80 + PP_iXG60≥1.7",
+        "War Tank",
+        cond=(conf_p >= 75 and assists_mu >= 1.3 and (opp_xga is not None) and float(opp_xga) >= 2.50),
+        win=62.8,
+        n=43,
+        note="Conf_Points≥75 + Assists_mu≥1.3 + opp_5v5_xGA60≥2.50",
     )
     _row(
         "PTS15_BLADE_IMPALE.svg",
-        "Blade Impale (Legacy PP)",
-        cond=(conf_p >= 80 and pp_ixa >= 4.0),
-        win=49.2,
-        n=61,
-        note="Conf_Points≥80 + PP_iXA60≥4.0",
+        "Juggernaut",
+        cond=(conf_p >= 75 and assists_mu >= 1.5 and (opp_xga is not None) and float(opp_xga) >= 2.50),
+        win=68.6,
+        n=35,
+        note="Conf_Points≥75 + Assists_mu≥1.5 + opp_5v5_xGA60≥2.50",
+    )
+    _row(
+        "PTS15_BLADE_IMPALE.svg",
+        "Blade Impale",
+        cond=(points_mu >= 1.7 and (opp_xga is not None) and float(opp_xga) >= 2.50),
+        win=55.7,
+        n=88,
+        note="Points_mu≥1.7 + opp_5v5_xGA60≥2.50",
     )
     _row(
         "PTS15_BLADE_SLASH.svg",
-        "Blade Slash (Legacy PP)",
-        cond=(conf_p >= 80 and team_pp_xgf >= 7.0),
-        win=48.1,
-        n=81,
-        note="Conf_Points≥80 + Team_PP_xGF60≥7",
-    )
-    _row(
-        "PTS15_BLOOD_EXPOSURE.svg",
-        "Blood Exposure (Legacy)",
-        cond=(conf_p >= 80 and team_pp_xgf >= 7.0 and opp_defweak >= 60),
-        win=54.5,
-        n=44,
-        note="Conf_Points≥80 + Team_PP_xGF60≥7 + Opp_DefWeak≥60",
-    )
-    _row(
-        "PTS15_BLOOD_EXPOSURE.svg",
-        "Blood Exposure II (Legacy)",
-        cond=(conf_p >= 80 and opp_defweak >= 60),
-        win=54.7,
-        n=64,
-        note="Conf_Points≥80 + Opp_DefWeak≥60",
-    )
-    _row(
-        "PTS15_POLARIZING_SMASH.svg",
-        "Polarizing Smash (Legacy)",
-        cond=(conf_p >= 80 and team_pp_xgf >= 7.0 and opp_defweak >= 70),
-        win=54.5,
-        n=33,
-        note="Conf_Points≥80 + Team_PP_xGF60≥7 + Opp_DefWeak≥70",
+        "Blade Slash",
+        cond=(points_mu >= 1.7 and (opp_xga is not None) and float(opp_xga) >= 2.53),
+        win=62.3,
+        n=69,
+        note="Points_mu≥1.7 + opp_5v5_xGA60≥2.53",
     )
     _row(
         "PTS15_ETERNAL_SMASH.svg",
-        "Eternal Smash (Legacy)",
-        cond=(conf_p >= 80 and opp_defweak >= 70),
-        win=53.2,
-        n=47,
-        note="Conf_Points≥80 + Opp_DefWeak≥70",
+        "Ragnarok+",
+        cond=(points_mu >= 1.7 and (opp_xga is not None) and float(opp_xga) >= 2.53 and (opp_gaa is not None) and float(opp_gaa) >= 3.0 and conf_p >= 75),
+        win=90.0,
+        n=20,
+        note="Points_mu≥1.7 + opp_5v5_xGA60≥2.53 + Opp_GAA≥3.0 + Conf_Points≥75",
     )
 
 
@@ -5998,7 +5987,7 @@ if page == "Board":
     _raw_lines = pd.unique(pd.to_numeric(df_b.get("Best_Line", pd.Series([])), errors="coerce"))
     line_vals = sorted([float(x) for x in _raw_lines if (not pd.isna(x)) and (not _allowed_lines or float(x) in _allowed_lines)])
     line_sel = st.sidebar.multiselect("Line", line_vals, default=line_vals, key="board_line_sel") if len(line_vals) else []
-    max_fav_odds = int(st.sidebar.number_input("Max favorite odds (e.g. -200)", min_value=-1000, max_value=300, value=-200, step=5, key="board_max_fav"))
+    max_fav_odds = int(st.sidebar.number_input("Max favorite odds (e.g. -250)", min_value=-1000, max_value=300, value=-200, step=5, key="board_max_fav"))
     q = st.sidebar.text_input("Search", value="", key="board_search").strip().lower()
 
     df_b_filt = df_b.copy()
