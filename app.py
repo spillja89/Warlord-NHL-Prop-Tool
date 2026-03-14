@@ -956,9 +956,9 @@ def _probe_points_best(r: dict) -> dict | None:
             ("Blade Impale (Power Tier)", 60.8, 51, (conf_a >= 89 and points_mu >= 2.2)),
             ("Blade Slash (Monster)", 77.8, 18, (conf_a >= 89 and points_mu >= 2.2 and (opp_xga is not None) and float(opp_xga) >= 2.6)),
             ("Delayed Hammer Smash", 67.6, 34, (conf_a >= 89 and drought_p >= 1 and points_mu >= 1.7)),
-            ("Berserker Tank", 53.3, 105, (conf_a >= 90)),
-            ("Berserker Tank+", 58.6, 58, (conf_a >= 92.5)),
-            ("Rampage Tank", 61.1, 36, (conf_a >= 95)),
+            ("Berserker Tank", 55.0, 60, (conf_p >= 75 and points_mu >= 2.2)),
+            ("Berserker Tank+", 57.1, 49, (conf_p >= 75 and points_mu >= 2.3)),
+            ("Rampage Tank", 63.6, 33, (conf_p >= 75 and points_mu >= 2.5)),
             ("Shield Bearer", 53.3, 75, (conf_a >= 85 and (opp_xga is not None) and float(opp_xga) >= 2.55)),
             ("War Machine", 59.6, 52, (conf_a >= 88 and (opp_xga is not None) and float(opp_xga) >= 2.55)),
             ("Juggernaut", 64.3, 42, (conf_a >= 90 and (opp_xga is not None) and float(opp_xga) >= 2.55)),
@@ -966,11 +966,11 @@ def _probe_points_best(r: dict) -> dict | None:
             ("Ragnarok+", 76.5, 17, (conf_a >= 95 and (opp_xga is not None) and float(opp_xga) >= 2.60)),
             ("War Tank", 62.8, 43, (conf_p >= 75 and assists_mu >= 1.3 and (opp_xga is not None) and float(opp_xga) >= 2.50)),
             ("Juggernaut [Replacement]", 68.6, 35, (conf_p >= 75 and assists_mu >= 1.5 and (opp_xga is not None) and float(opp_xga) >= 2.50)),
-            ("Blade Impale", 55.7, 88, (points_mu >= 1.7 and (opp_xga is not None) and float(opp_xga) >= 2.50)),
-            ("Blade Slash", 62.3, 69, (points_mu >= 1.7 and (opp_xga is not None) and float(opp_xga) >= 2.53)),
-            ("Ragnarok+ [Replacement]", 90.0, 20, (points_mu >= 1.7 and (opp_xga is not None) and float(opp_xga) >= 2.53 and (opp_gaa is not None) and float(opp_gaa) >= 3.0 and conf_p >= 75)),
+            ("Blade Impale", 64.1, 64, (conf_p >= 75 and points_mu >= 1.7 and (opp_xga is not None) and float(opp_xga) >= 2.50)),
+            ("Blade Slash", 69.8, 53, (conf_p >= 75 and points_mu >= 1.7 and (opp_xga is not None) and float(opp_xga) >= 2.53)),
+            ("Ragnarok [Replacement]", 77.8, 36, (conf_p >= 75 and points_mu >= 1.7 and (opp_xga is not None) and float(opp_xga) >= 2.53 and (opp_gaa is not None) and float(opp_gaa) >= 2.7)),
+            ("Ragnarok+ [Replacement]", 90.0, 20, (conf_p >= 75 and points_mu >= 1.7 and (opp_xga is not None) and float(opp_xga) >= 2.53 and (opp_gaa is not None) and float(opp_gaa) >= 3.0)),
         ]
-
     best = None
     for title, win, n, cond in procs:
         if not cond:
@@ -2186,15 +2186,14 @@ def _render_points_combat_hud(r: dict) -> None:
         note="Conf_Assists≥89 + Drought_P≥1 + Points_mu≥1.7",
     )
 
-    # Data-backed replacements for the retired legacy 1.5 kit.
-    st.markdown("**REPLACEMENT KIT (data-backed)**")
+    st.markdown("**REPLACEMENT KIT**")
     _row(
         "PTS15_ENCHANTED_HAMMER.svg",
         "War Tank",
         cond=(conf_p >= 75 and assists_mu >= 1.3 and (opp_xga is not None) and float(opp_xga) >= 2.50),
         win=62.8,
         n=43,
-        note="Conf_Points≥75 + Assists_mu≥1.3 + opp_5v5_xGA60≥2.50",
+        note="Conf_Points≥75 + Assists_mu≥1.3 + opp_xGA≥2.50",
     )
     _row(
         "PTS15_BLADE_IMPALE.svg",
@@ -2202,31 +2201,65 @@ def _render_points_combat_hud(r: dict) -> None:
         cond=(conf_p >= 75 and assists_mu >= 1.5 and (opp_xga is not None) and float(opp_xga) >= 2.50),
         win=68.6,
         n=35,
-        note="Conf_Points≥75 + Assists_mu≥1.5 + opp_5v5_xGA60≥2.50",
+        note="Conf_Points≥75 + Assists_mu≥1.5 + opp_xGA≥2.50",
     )
     _row(
         "PTS15_BLADE_IMPALE.svg",
         "Blade Impale",
-        cond=(points_mu >= 1.7 and (opp_xga is not None) and float(opp_xga) >= 2.50),
-        win=55.7,
-        n=88,
-        note="Points_mu≥1.7 + opp_5v5_xGA60≥2.50",
+        cond=(conf_p >= 75 and points_mu >= 1.7 and (opp_xga is not None) and float(opp_xga) >= 2.50),
+        win=64.1,
+        n=64,
+        note="Conf_Points≥75 + Points_mu≥1.7 + opp_xGA≥2.50",
     )
     _row(
         "PTS15_BLADE_SLASH.svg",
         "Blade Slash",
-        cond=(points_mu >= 1.7 and (opp_xga is not None) and float(opp_xga) >= 2.53),
-        win=62.3,
-        n=69,
-        note="Points_mu≥1.7 + opp_5v5_xGA60≥2.53",
+        cond=(conf_p >= 75 and points_mu >= 1.7 and (opp_xga is not None) and float(opp_xga) >= 2.53),
+        win=69.8,
+        n=53,
+        note="Conf_Points≥75 + Points_mu≥1.7 + opp_xGA≥2.53",
+    )
+    _row(
+        "PTS15_POLARIZING_SMASH.svg",
+        "Ragnarok",
+        cond=(conf_p >= 75 and points_mu >= 1.7 and (opp_xga is not None) and float(opp_xga) >= 2.53 and (opp_gaa is not None) and float(opp_gaa) >= 2.7),
+        win=77.8,
+        n=36,
+        note="Conf_Points≥75 + Points_mu≥1.7 + opp_xGA≥2.53 + Opp_GAA≥2.7",
     )
     _row(
         "PTS15_ETERNAL_SMASH.svg",
         "Ragnarok+",
-        cond=(points_mu >= 1.7 and (opp_xga is not None) and float(opp_xga) >= 2.53 and (opp_gaa is not None) and float(opp_gaa) >= 3.0 and conf_p >= 75),
+        cond=(conf_p >= 75 and points_mu >= 1.7 and (opp_xga is not None) and float(opp_xga) >= 2.53 and (opp_gaa is not None) and float(opp_gaa) >= 3.0),
         win=90.0,
         n=20,
-        note="Points_mu≥1.7 + opp_5v5_xGA60≥2.53 + Opp_GAA≥3.0 + Conf_Points≥75",
+        note="Conf_Points≥75 + Points_mu≥1.7 + opp_xGA≥2.53 + Opp_GAA≥3.0",
+    )
+
+    st.markdown("**PROCS**")
+    _row(
+        "PTS15_ENCHANTED_HAMMER.svg",
+        "Berserker Tank",
+        cond=(conf_p >= 75 and points_mu >= 2.2),
+        win=55.0,
+        n=60,
+        note="Conf_Points≥75 + Points_mu≥2.2",
+    )
+    _row(
+        "PTS15_BLADE_IMPALE.svg",
+        "Berserker Tank+",
+        cond=(conf_p >= 75 and points_mu >= 2.3),
+        win=57.1,
+        n=49,
+        note="Conf_Points≥75 + Points_mu≥2.3",
+    )
+    _row(
+        "PTS15_BLADE_SLASH.svg",
+        "Rampage Tank",
+        cond=(conf_p >= 75 and points_mu >= 2.5),
+        win=63.6,
+        n=33,
+        note="Conf_Points≥75 + Points_mu≥2.5",
     )
 
 
@@ -5987,7 +6020,7 @@ if page == "Board":
     _raw_lines = pd.unique(pd.to_numeric(df_b.get("Best_Line", pd.Series([])), errors="coerce"))
     line_vals = sorted([float(x) for x in _raw_lines if (not pd.isna(x)) and (not _allowed_lines or float(x) in _allowed_lines)])
     line_sel = st.sidebar.multiselect("Line", line_vals, default=line_vals, key="board_line_sel") if len(line_vals) else []
-    max_fav_odds = int(st.sidebar.number_input("Max favorite odds (e.g. -250)", min_value=-1000, max_value=300, value=-200, step=5, key="board_max_fav"))
+    max_fav_odds = int(st.sidebar.number_input("Max favorite odds (e.g. -250)", min_value=-1000, max_value=300, value=-250, step=5, key="board_max_fav"))
     q = st.sidebar.text_input("Search", value="", key="board_search").strip().lower()
 
     df_b_filt = df_b.copy()
@@ -6267,19 +6300,25 @@ elif page == "Points":
     try:
         _p = _p[
             (_p.get("Matrix_Points", "").astype(str).str.strip().str.upper().isin(["GREEN","🟢"])) &
-            (pd.to_numeric(_p.get("Points_Line", 0), errors="coerce") == 0.5) &
+            (pd.to_numeric(_p.get("Points_Line", 0), errors="coerce").isin([0.5, 1.5])) &
             (_p.get("Outcome_Points", "").astype(str).str.upper().isin(["W","L"]) | (_p.get("Match_Status_Points", "").astype(str).str.upper().ne("GRADED")))
         ].copy()
     except Exception:
         pass
 
-    heat = _p.get("Reg_Heat_P", "").astype(str).str.upper().isin(["HOT","DUE","OVERDUE"])
-    gap = pd.to_numeric(_p.get("Reg_Gap_P10", np.nan), errors="coerce").fillna(-999) >= 2.5
-    drt = pd.to_numeric(_p.get("Drought_P", np.nan), errors="coerce").fillna(-999) >= 2
-    reg_valid = heat | gap | drt
-    _p = _p[reg_valid].copy()
-
+    _p["_line"] = pd.to_numeric(_p.get("Points_Line", np.nan), errors="coerce")
     _p["_conf"] = pd.to_numeric(_p.get("Conf_Points", 0), errors="coerce").fillna(0)
+
+    # Points player cards: do not pre-filter by heat/gap/drought.
+    # Keep Green 0.5 rows, and allow Green 1.5 rows through on Conf_Points >= 75.
+    try:
+        _p = _p[
+            (_p["_line"] <= 0.75) |
+            ((_p["_line"] > 0.75) & (_p["_conf"] >= 75))
+        ].copy()
+    except Exception:
+        pass
+
     _p["_l10r"] = pd.to_numeric(_p.get("L10_Rate_Points", np.nan), errors="coerce")
     _p["_l10d"] = pd.to_numeric(_p.get("L10_Diff_Points", np.nan), errors="coerce")
     _p["_gap"] = pd.to_numeric(_p.get("Reg_Gap_P10", np.nan), errors="coerce")
@@ -6370,32 +6409,47 @@ elif page == "Points":
             # 1.5 DPS spec
             else:
                 _mu = _safe_float(r.get("Points_mu")) or 0.0
+                assists_mu = _safe_float(r.get("Assists_mu")) or 0.0
                 _xga = _safe_float(r.get("opp_5v5_xGA60"))
                 _drt = _safe_float(r.get("Drought_P")) or 0.0
+                _opp_gaa = _safe_float(r.get("Opp_GAA"))
 
-                # New ladder (Backbone / Power / Monster) uses Conf_Assists >= 89 — add BOTH icon + descriptor
-                if _conf_a is not None and _conf_a >= 89 and _mu >= 2.2 and (_xga is not None) and float(_xga) >= 2.6:
-                    tags.append(_svg_inline(_svg_get("PTS15_BLADE_SLASH.svg"), size=14, title="Monster (Blade Slash)"))
-                    tags.append("Blade Slash (Monster)")
-                elif _conf_a is not None and _conf_a >= 89 and _mu >= 2.2:
-                    tags.append(_svg_inline(_svg_get("PTS15_BLADE_IMPALE.svg"), size=14, title="Power Tier (Blade Impale)"))
-                    tags.append("Blade Impale (Power Tier)")
-                elif _conf_a is not None and _conf_a >= 89 and _mu >= 1.7:
-                    tags.append(_svg_inline(_svg_get("PTS15_TWO_HANDED_HAMMER.svg"), size=14, title="Backbone"))
-                    tags.append("Backbone")
+                # Current 1.5 card lanes only: assists lane + no-goalie points lane + goalie-wombo lane.
+                # Do NOT re-surface the old Conf_Assists legacy Backbone / Power / Monster tags here.
+                if _conf_p is not None and _xga is not None and _conf_p >= 75:
+                    if assists_mu >= 1.5 and float(_xga) >= 2.50:
+                        tags.append(_svg_inline(_svg_get("PTS15_BLADE_IMPALE.svg"), size=14, title="Juggernaut"))
+                        tags.append("Juggernaut")
+                    elif assists_mu >= 1.3 and float(_xga) >= 2.50:
+                        tags.append(_svg_inline(_svg_get("PTS15_ENCHANTED_HAMMER.svg"), size=14, title="War Tank"))
+                        tags.append("War Tank")
 
-                if _conf_a is not None and _conf_a >= 89 and _drt >= 1 and _mu >= 1.7:
+                    if _mu >= 1.7 and float(_xga) >= 2.53:
+                        tags.append(_svg_inline(_svg_get("PTS15_BLADE_SLASH.svg"), size=14, title="Blade Slash"))
+                        tags.append("Blade Slash")
+                    elif _mu >= 1.7 and float(_xga) >= 2.50:
+                        tags.append(_svg_inline(_svg_get("PTS15_BLADE_IMPALE.svg"), size=14, title="Blade Impale"))
+                        tags.append("Blade Impale")
+
+                    if _mu >= 1.7 and (_opp_gaa is not None) and float(_opp_gaa) >= 3.0 and float(_xga) >= 2.53:
+                        tags.append(_svg_inline(_svg_get("PTS15_ETERNAL_SMASH.svg"), size=14, title="Ragnarok+"))
+                        tags.append("Ragnarok+")
+                    elif _mu >= 1.7 and (_opp_gaa is not None) and float(_opp_gaa) >= 2.7 and float(_xga) >= 2.53:
+                        tags.append(_svg_inline(_svg_get("PTS15_POLARIZING_SMASH.svg"), size=14, title="Ragnarok"))
+                        tags.append("Ragnarok")
+
+                    if _mu >= 2.5:
+                        tags.append(_svg_inline(_svg_get("PTS15_BLADE_SLASH.svg"), size=14, title="Rampage Tank"))
+                        tags.append("Rampage Tank")
+                    elif _mu >= 2.3:
+                        tags.append(_svg_inline(_svg_get("PTS15_BLADE_IMPALE.svg"), size=14, title="Berserker Tank+"))
+                        tags.append("Berserker Tank+")
+                    elif _mu >= 2.2:
+                        tags.append(_svg_inline(_svg_get("PTS15_ENCHANTED_HAMMER.svg"), size=14, title="Berserker Tank"))
+                        tags.append("Berserker Tank")
+
+                if _drt >= 1 and _mu >= 1.7:
                     tags.append("Delayed Hammer Smash")
-
-                # Optional legacy kit icons (PP/DefWeak) — only if they proc
-                _ppixg = _safe_float(r.get("PP_iXG60")) or 0.0
-                _ppixa = _safe_float(r.get("PP_iXA60")) or 0.0
-                _teamxgf = _safe_float(r.get("Team_PP_xGF60")) or 0.0
-                _defw = _safe_float(r.get("Opp_DefWeak")) or 0.0
-                if _conf_p is not None and _conf_p >= 80 and _defw >= 60:
-                    tags.append(_svg_inline(_svg_get("PTS15_BLOOD_EXPOSURE.svg"), size=14, title="Blood Exposure II (Legacy)"))
-                if _conf_p is not None and _conf_p >= 80 and _defw >= 70:
-                    tags.append(_svg_inline(_svg_get("PTS15_POLARIZING_SMASH.svg"), size=14, title="Eternal Smash (Legacy)"))
         try:
             if float(l10r) >= 0.80: tags.append("🔥 L10 Rate ≥0.80")
             elif float(l10r) >= 0.70: tags.append("L10 Rate ≥0.70")
