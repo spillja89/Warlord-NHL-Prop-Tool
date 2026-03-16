@@ -599,8 +599,8 @@ def _toi_str_to_minutes(x: Any) -> Optional[float]:
         if v > 200:
             return v / 60.0
         return v
-    except Exception:
-        pass
+    except Exception as e:
+        print(f"[warn] failed: {e}")
 
     # MM:SS path
     if ':' in s:
@@ -2008,8 +2008,8 @@ def save_cache(today: date, cache: Dict[str, Any]) -> None:
     try:
         with open(p, "w", encoding="utf-8") as f:
             json.dump(cache, f, ensure_ascii=False, indent=2)
-    except Exception:
-        pass
+    except Exception as e:
+        print(f"[warn] failed: {e}")
 
 def nhle_player_gamelog_now(sess: requests.Session, player_id: int) -> Optional[Dict[str, Any]]:
     url = f"https://api-web.nhle.com/v1/player/{player_id}/game-log/now"
@@ -2157,8 +2157,8 @@ def compute_lastN_features(payload: Dict[str, Any], n10: int = 10, n5: int = 5) 
             else:
                 ss2 = ss
             return datetime.fromisoformat(ss2)
-        except Exception:
-            pass
+        except Exception as e:
+            print(f"[warn] failed: {e}")
         # fallback: just take first 10 chars if looks like YYYY-MM-DD
         try:
             if len(ss) >= 10 and ss[4] == "-" and ss[7] == "-":
@@ -2766,8 +2766,8 @@ def conf_assists(
                 s2 = clamp((pp_ixA60 - 0.80) / 1.20, 0.0, 1.0)
                 s3 = clamp((pp_matchup - 50.0) / 25.0, 0.0, 1.0)
                 bonus += 5.0 * (0.45 * s1 + 0.35 * s2 + 0.20 * s3)
-    except Exception:
-        pass
+    except Exception as e:
+        print(f"[warn] failed: {e}")
 
     # ----------------------------
     # 3) Final clamp
@@ -2955,8 +2955,8 @@ def add_talent_tiers(sk: pd.DataFrame, debug: bool = False) -> pd.DataFrame:
                       "ShotIntent":round(100.0 * star_d.mean(), 1),
                       "3of4":      round(100.0 * (star_proofs >= 3).mean(), 1),
                   })
-        except Exception:
-            pass
+        except Exception as e:
+            print(f"[warn] failed: {e}")
 
     return out
 
@@ -3110,8 +3110,8 @@ def _game_team_sog_from_boxscore(sess: requests.Session, game_id: int, cache: Di
             if v is not None:
                 try:
                     return int(v)
-                except Exception:
-                    pass
+                except Exception as e:
+                    print(f"[warn] failed: {e}")
         # sometimes nested
         stats = t.get("statistics", {}) or t.get("teamStats", {}) or {}
         for k in ("shotsOnGoal", "sog", "shots"):
@@ -3119,8 +3119,8 @@ def _game_team_sog_from_boxscore(sess: requests.Session, game_id: int, cache: Di
             if v is not None:
                 try:
                     return int(v)
-                except Exception:
-                    pass
+                except Exception as e:
+                    print(f"[warn] failed: {e}")
         return None
 
     h_ab = _abbrev(home)
@@ -4085,8 +4085,8 @@ def build_tracker(today_local: date, debug: bool = False) -> str:
             for _col in ("Matrix_SOG", "Matrix_Assists", "Matrix_Goal", "Matrix_Points"):
                 if _col in sk.columns:
                     sk.loc[_elite, _col] = "Green"
-    except Exception:
-        pass
+    except Exception as e:
+        print(f"[warn] failed: {e}")
 
 
     # Confidence (base)
@@ -4847,8 +4847,8 @@ def build_tracker(today_local: date, debug: bool = False) -> str:
             tracker.loc[eng_assists, "Play_Tag"].fillna("").astype(str) + " | ASSISTS ENG",
             "ASSISTS ENG",
         )
-    except Exception:
-        pass
+    except Exception as e:
+        print(f"[warn] failed: {e}")
 
     if "Plays_SOG" not in tracker.columns:
         tracker["Plays_SOG"] = False
@@ -4900,8 +4900,8 @@ def build_tracker(today_local: date, debug: bool = False) -> str:
             tracker.loc[eng_sog, "Play_Tag"].fillna("").astype(str) + " | SOG ENG",
             "SOG ENG",
         )
-    except Exception:
-        pass
+    except Exception as e:
+        print(f"[warn] failed: {e}")
 
     # -------------------------
     # FORCE rounding right before write (for Streamlit display consistency)
@@ -5065,8 +5065,8 @@ def build_tracker(today_local: date, debug: bool = False) -> str:
     # Ensure output directory exists
     try:
         os.makedirs(OUTPUT_DIR, exist_ok=True)
-    except Exception:
-        pass
+    except Exception as e:
+        print(f"[warn] failed: {e}")
     # -------------------------
     # Display-name hygiene (do BEFORE writing CSV)
     # -------------------------
@@ -5078,8 +5078,8 @@ def build_tracker(today_local: date, debug: bool = False) -> str:
         try:
             if any(ch in t for ch in ("Ã", "Â", " ")):
                 return t.encode("latin-1", "ignore").decode("utf-8", "ignore")
-        except Exception:
-            pass
+        except Exception as e:
+            print(f"[warn] failed: {e}")
         return t
 
     if "Player" in tracker.columns:
@@ -5094,8 +5094,8 @@ def build_tracker(today_local: date, debug: bool = False) -> str:
     # True 5v5 share proxy (if we have the underlying rate). Safe no-op if missing.
     try:
         tracker = add_player_5v5_sog_share_proxy(tracker)
-    except Exception:
-        pass
+    except Exception as e:
+        print(f"[warn] failed: {e}")
 
     # Always compute a simple team-share proxy from recent SOG volume (Med10_SOG) so the ladder
     # page can explain *why* a rung is interesting even when the 5v5 feed is missing.
@@ -5125,9 +5125,9 @@ def build_tracker(today_local: date, debug: bool = False) -> str:
     # Also write a stable path for Streamlit Cloud (no more manual uploads)
     latest_out_path = os.path.join(OUTPUT_DIR, 'tracker_latest.csv')
     try:
-        tracker.to_csv(latest_out_path, index=False)
-    except Exception:
-        pass
+        shutil.copy(out_path, latest_out_path)
+    except Exception as e:
+        print(f"[warn] failed to copy latest tracker: {e}")
 
     return out_path
 

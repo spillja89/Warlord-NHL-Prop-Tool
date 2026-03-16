@@ -189,8 +189,8 @@ if "_render_why_it_fires_rich" not in globals():
                     v = r.get(k, None)
                     if v not in (None, "", np.nan):
                         st.caption(f"{k}: {v}")
-        except Exception:
-            pass
+        except Exception as e:
+            print(f"[warn] failed: {e}")
 
 
 
@@ -221,8 +221,8 @@ def _ledger_paths(output_dir: str) -> tuple[str, str, str]:
 def _ensure_dir(path: str) -> None:
     try:
         os.makedirs(path, exist_ok=True)
-    except Exception:
-        pass
+    except Exception as e:
+        print(f"[warn] failed: {e}")
 
 
 def american_to_decimal(odds: float) -> float:
@@ -863,7 +863,7 @@ def apply_dps_filters_ui(df: pd.DataFrame, mk: str, key_prefix: str = "m") -> pd
         line_vals = [lv for lv in line_vals if lv in _allowed]
     st.sidebar.subheader(f"{mk_u} — Filters")
     line_sel = st.sidebar.multiselect("Line", line_vals, default=line_vals, key=f"{key_prefix}_line") if line_vals else []
-    max_fav_odds = int(st.sidebar.number_input("Max favorite odds (e.g. -250)", min_value=-1000, max_value=300, value=-250, step=5, key=f"{key_prefix}_maxfav"))
+    max_fav_odds = int(st.sidebar.number_input("Max favorite odds (e.g. -200)", min_value=-1000, max_value=300, value=-200, step=5, key=f"{key_prefix}_maxfav"))
     q = st.sidebar.text_input("Search", value="", key=f"{key_prefix}_q").strip().lower()
 
     # Compute helper columns for filtering
@@ -956,21 +956,16 @@ def _probe_points_best(r: dict) -> dict | None:
             ("Blade Impale (Power Tier)", 60.8, 51, (conf_a >= 89 and points_mu >= 2.2)),
             ("Blade Slash (Monster)", 77.8, 18, (conf_a >= 89 and points_mu >= 2.2 and (opp_xga is not None) and float(opp_xga) >= 2.6)),
             ("Delayed Hammer Smash", 67.6, 34, (conf_a >= 89 and drought_p >= 1 and points_mu >= 1.7)),
-            ("Berserker Tank", 55.0, 60, (conf_p >= 75 and points_mu >= 2.2)),
-            ("Berserker Tank+", 57.1, 49, (conf_p >= 75 and points_mu >= 2.3)),
-            ("Rampage Tank", 63.6, 33, (conf_p >= 75 and points_mu >= 2.5)),
+            ("Berserker Tank", 53.3, 105, (conf_a >= 90)),
+            ("Berserker Tank+", 58.6, 58, (conf_a >= 92.5)),
+            ("Rampage Tank", 61.1, 36, (conf_a >= 95)),
             ("Shield Bearer", 53.3, 75, (conf_a >= 85 and (opp_xga is not None) and float(opp_xga) >= 2.55)),
             ("War Machine", 59.6, 52, (conf_a >= 88 and (opp_xga is not None) and float(opp_xga) >= 2.55)),
             ("Juggernaut", 64.3, 42, (conf_a >= 90 and (opp_xga is not None) and float(opp_xga) >= 2.55)),
             ("Ragnarok", 73.7, 19, (conf_a >= 95 and (opp_xga is not None) and float(opp_xga) >= 2.55)),
             ("Ragnarok+", 76.5, 17, (conf_a >= 95 and (opp_xga is not None) and float(opp_xga) >= 2.60)),
-            ("War Tank", 62.8, 43, (conf_p >= 75 and assists_mu >= 1.3 and (opp_xga is not None) and float(opp_xga) >= 2.50)),
-            ("Juggernaut [Replacement]", 68.6, 35, (conf_p >= 75 and assists_mu >= 1.5 and (opp_xga is not None) and float(opp_xga) >= 2.50)),
-            ("Blade Impale", 64.1, 64, (conf_p >= 75 and points_mu >= 1.7 and (opp_xga is not None) and float(opp_xga) >= 2.50)),
-            ("Blade Slash", 69.8, 53, (conf_p >= 75 and points_mu >= 1.7 and (opp_xga is not None) and float(opp_xga) >= 2.53)),
-            ("Ragnarok [Replacement]", 77.8, 36, (conf_p >= 75 and points_mu >= 1.7 and (opp_xga is not None) and float(opp_xga) >= 2.53 and (opp_gaa is not None) and float(opp_gaa) >= 2.7)),
-            ("Ragnarok+ [Replacement]", 90.0, 20, (conf_p >= 75 and points_mu >= 1.7 and (opp_xga is not None) and float(opp_xga) >= 2.53 and (opp_gaa is not None) and float(opp_gaa) >= 3.0)),
         ]
+
     best = None
     for title, win, n, cond in procs:
         if not cond:
@@ -1361,8 +1356,8 @@ def _render_sog_combat_hud(r):
             st.markdown(f"- ✅ **{name}** — {formula} — n={nn} • Win%={wp}")
             try:
                 _wl_dps_bar(float(wp), "SOG")
-            except Exception:
-                pass
+            except Exception as e:
+                print(f"[warn] failed: {e}")
 
         if not active_any:
             st.markdown("- **No 50%+ moves active — RESOLVED: BASE**")
@@ -2186,80 +2181,63 @@ def _render_points_combat_hud(r: dict) -> None:
         note="Conf_Assists≥89 + Drought_P≥1 + Points_mu≥1.7",
     )
 
-    st.markdown("**REPLACEMENT KIT**")
+    # Optional legacy kit (kept as alternate path; only shows if it procs)
+    st.markdown("**LEGACY KIT (optional path)**")
     _row(
         "PTS15_ENCHANTED_HAMMER.svg",
-        "War Tank",
-        cond=(conf_p >= 75 and assists_mu >= 1.3 and (opp_xga is not None) and float(opp_xga) >= 2.50),
-        win=62.8,
-        n=43,
-        note="Conf_Points≥75 + Assists_mu≥1.3 + opp_xGA≥2.50",
+        "Enchanted Hammer (Legacy)",
+        cond=(conf_p >= 80 and pp_ixg >= 1.7),
+        win=61.1,
+        n=18,
+        note="Conf_Points≥80 + PP_iXG60≥1.7",
     )
     _row(
         "PTS15_BLADE_IMPALE.svg",
-        "Juggernaut",
-        cond=(conf_p >= 75 and assists_mu >= 1.5 and (opp_xga is not None) and float(opp_xga) >= 2.50),
-        win=68.6,
-        n=35,
-        note="Conf_Points≥75 + Assists_mu≥1.5 + opp_xGA≥2.50",
-    )
-    _row(
-        "PTS15_BLADE_IMPALE.svg",
-        "Blade Impale",
-        cond=(conf_p >= 75 and points_mu >= 1.7 and (opp_xga is not None) and float(opp_xga) >= 2.50),
-        win=64.1,
-        n=64,
-        note="Conf_Points≥75 + Points_mu≥1.7 + opp_xGA≥2.50",
+        "Blade Impale (Legacy PP)",
+        cond=(conf_p >= 80 and pp_ixa >= 4.0),
+        win=49.2,
+        n=61,
+        note="Conf_Points≥80 + PP_iXA60≥4.0",
     )
     _row(
         "PTS15_BLADE_SLASH.svg",
-        "Blade Slash",
-        cond=(conf_p >= 75 and points_mu >= 1.7 and (opp_xga is not None) and float(opp_xga) >= 2.53),
-        win=69.8,
-        n=53,
-        note="Conf_Points≥75 + Points_mu≥1.7 + opp_xGA≥2.53",
+        "Blade Slash (Legacy PP)",
+        cond=(conf_p >= 80 and team_pp_xgf >= 7.0),
+        win=48.1,
+        n=81,
+        note="Conf_Points≥80 + Team_PP_xGF60≥7",
+    )
+    _row(
+        "PTS15_BLOOD_EXPOSURE.svg",
+        "Blood Exposure (Legacy)",
+        cond=(conf_p >= 80 and team_pp_xgf >= 7.0 and opp_defweak >= 60),
+        win=54.5,
+        n=44,
+        note="Conf_Points≥80 + Team_PP_xGF60≥7 + Opp_DefWeak≥60",
+    )
+    _row(
+        "PTS15_BLOOD_EXPOSURE.svg",
+        "Blood Exposure II (Legacy)",
+        cond=(conf_p >= 80 and opp_defweak >= 60),
+        win=54.7,
+        n=64,
+        note="Conf_Points≥80 + Opp_DefWeak≥60",
     )
     _row(
         "PTS15_POLARIZING_SMASH.svg",
-        "Ragnarok",
-        cond=(conf_p >= 75 and points_mu >= 1.7 and (opp_xga is not None) and float(opp_xga) >= 2.53 and (opp_gaa is not None) and float(opp_gaa) >= 2.7),
-        win=77.8,
-        n=36,
-        note="Conf_Points≥75 + Points_mu≥1.7 + opp_xGA≥2.53 + Opp_GAA≥2.7",
+        "Polarizing Smash (Legacy)",
+        cond=(conf_p >= 80 and team_pp_xgf >= 7.0 and opp_defweak >= 70),
+        win=54.5,
+        n=33,
+        note="Conf_Points≥80 + Team_PP_xGF60≥7 + Opp_DefWeak≥70",
     )
     _row(
         "PTS15_ETERNAL_SMASH.svg",
-        "Ragnarok+",
-        cond=(conf_p >= 75 and points_mu >= 1.7 and (opp_xga is not None) and float(opp_xga) >= 2.53 and (opp_gaa is not None) and float(opp_gaa) >= 3.0),
-        win=90.0,
-        n=20,
-        note="Conf_Points≥75 + Points_mu≥1.7 + opp_xGA≥2.53 + Opp_GAA≥3.0",
-    )
-
-    st.markdown("**PROCS**")
-    _row(
-        "PTS15_ENCHANTED_HAMMER.svg",
-        "Berserker Tank",
-        cond=(conf_p >= 75 and points_mu >= 2.2),
-        win=55.0,
-        n=60,
-        note="Conf_Points≥75 + Points_mu≥2.2",
-    )
-    _row(
-        "PTS15_BLADE_IMPALE.svg",
-        "Berserker Tank+",
-        cond=(conf_p >= 75 and points_mu >= 2.3),
-        win=57.1,
-        n=49,
-        note="Conf_Points≥75 + Points_mu≥2.3",
-    )
-    _row(
-        "PTS15_BLADE_SLASH.svg",
-        "Rampage Tank",
-        cond=(conf_p >= 75 and points_mu >= 2.5),
-        win=63.6,
-        n=33,
-        note="Conf_Points≥75 + Points_mu≥2.5",
+        "Eternal Smash (Legacy)",
+        cond=(conf_p >= 80 and opp_defweak >= 70),
+        win=53.2,
+        n=47,
+        note="Conf_Points≥80 + Opp_DefWeak≥70",
     )
 
 
@@ -3124,14 +3102,14 @@ def _render_why_it_fires_rich(mkt: str, r, tags: str = "") -> None:
                     try:
                         if _rate is not None and _rate != "" and not (isinstance(_rate, float) and math.isnan(_rate)):
                             parts.append(f"Rate {float(_rate):.2f}")
-                    except Exception:
-                        pass
+                    except Exception as e:
+                        print(f"[warn] failed: {e}")
 
                     try:
                         if _diff is not None and _diff != "" and not (isinstance(_diff, float) and math.isnan(_diff)):
                             parts.append(f"Diff {float(_diff):+.2f}")
-                    except Exception:
-                        pass
+                    except Exception as e:
+                        print(f"[warn] failed: {e}")
 
                     if parts:
                         st.caption(f"L{_w}: " + " | ".join(parts))
@@ -3174,10 +3152,10 @@ def _render_why_it_fires_rich(mkt: str, r, tags: str = "") -> None:
                             st.caption(f"Window Signal: {_badge} ({_score}/100) • Trend: {_trend}")
                         else:
                             st.caption(f"Window Signal: {_badge} ({_score}/100)")
-                except Exception:
-                    pass
-        except Exception:
-            pass
+                except Exception as e:
+                    print(f"[warn] failed: {e}")
+        except Exception as e:
+            print(f"[warn] failed: {e}")
 
     except Exception:
         st.markdown("**SUPPORT:**")
@@ -3192,14 +3170,14 @@ def _render_why_it_fires_rich(mkt: str, r, tags: str = "") -> None:
         try:
             if _gw is not None and float(_gw) >= 65:
                 tonight.append("Weak Goalie")
-        except Exception:
-            pass
+        except Exception as e:
+            print(f"[warn] failed: {e}")
         _ppm = r.get("PP_Matchup", None)
         try:
             if _ppm is not None and float(_ppm) >= 60:
                 tonight.append("PP Matchup")
-        except Exception:
-            pass
+        except Exception as e:
+            print(f"[warn] failed: {e}")
         st.markdown(f"**TONIGHT:** {' • '.join(tonight) if tonight else '—'}")
     except Exception:
         st.markdown("**TONIGHT:** —")
@@ -3811,8 +3789,8 @@ def _get(row, *keys, default=""):
             # pandas NaN
             if isinstance(v, float) and v != v:
                 continue
-        except Exception:
-            pass
+        except Exception as e:
+            print(f"[warn] failed: {e}")
         return v
     return default
 def _is_hot(reg_scored: str) -> bool:
@@ -4063,8 +4041,8 @@ if "_render_why_it_fires_rich" not in globals():
                     v = r.get(k, None)
                     if v not in (None, "", np.nan):
                         st.caption(f"{k}: {v}")
-        except Exception:
-            pass
+        except Exception as e:
+            print(f"[warn] failed: {e}")
 
 
 
@@ -4515,6 +4493,7 @@ def add_ui_columns(df: pd.DataFrame) -> pd.DataFrame:
             out["💰"] = _money_existing
 
     return out
+@st.cache_data
 def load_csv(path: str) -> pd.DataFrame:
     df = pd.read_csv(path)
 
@@ -6020,7 +5999,7 @@ if page == "Board":
     _raw_lines = pd.unique(pd.to_numeric(df_b.get("Best_Line", pd.Series([])), errors="coerce"))
     line_vals = sorted([float(x) for x in _raw_lines if (not pd.isna(x)) and (not _allowed_lines or float(x) in _allowed_lines)])
     line_sel = st.sidebar.multiselect("Line", line_vals, default=line_vals, key="board_line_sel") if len(line_vals) else []
-    max_fav_odds = int(st.sidebar.number_input("Max favorite odds (e.g. -250)", min_value=-1000, max_value=300, value=-250, step=5, key="board_max_fav"))
+    max_fav_odds = int(st.sidebar.number_input("Max favorite odds (e.g. -200)", min_value=-1000, max_value=300, value=-200, step=5, key="board_max_fav"))
     q = st.sidebar.text_input("Search", value="", key="board_search").strip().lower()
 
     df_b_filt = df_b.copy()
@@ -6273,8 +6252,8 @@ elif page == "Points":
             matrix_col="Matrix_Points",
             lock_col="LOCK",
         )
-    except Exception:
-        pass
+    except Exception as e:
+        print(f"[warn] failed: {e}")
 
 
     # --- DPS ranking + filters (Board-style; presentation only) ---
@@ -6300,25 +6279,19 @@ elif page == "Points":
     try:
         _p = _p[
             (_p.get("Matrix_Points", "").astype(str).str.strip().str.upper().isin(["GREEN","🟢"])) &
-            (pd.to_numeric(_p.get("Points_Line", 0), errors="coerce").isin([0.5, 1.5])) &
+            (pd.to_numeric(_p.get("Points_Line", 0), errors="coerce") == 0.5) &
             (_p.get("Outcome_Points", "").astype(str).str.upper().isin(["W","L"]) | (_p.get("Match_Status_Points", "").astype(str).str.upper().ne("GRADED")))
         ].copy()
-    except Exception:
-        pass
+    except Exception as e:
+        print(f"[warn] failed: {e}")
 
-    _p["_line"] = pd.to_numeric(_p.get("Points_Line", np.nan), errors="coerce")
+    heat = _p.get("Reg_Heat_P", "").astype(str).str.upper().isin(["HOT","DUE","OVERDUE"])
+    gap = pd.to_numeric(_p.get("Reg_Gap_P10", np.nan), errors="coerce").fillna(-999) >= 2.5
+    drt = pd.to_numeric(_p.get("Drought_P", np.nan), errors="coerce").fillna(-999) >= 2
+    reg_valid = heat | gap | drt
+    _p = _p[reg_valid].copy()
+
     _p["_conf"] = pd.to_numeric(_p.get("Conf_Points", 0), errors="coerce").fillna(0)
-
-    # Points player cards: do not pre-filter by heat/gap/drought.
-    # Keep Green 0.5 rows, and allow Green 1.5 rows through on Conf_Points >= 75.
-    try:
-        _p = _p[
-            (_p["_line"] <= 0.75) |
-            ((_p["_line"] > 0.75) & (_p["_conf"] >= 75))
-        ].copy()
-    except Exception:
-        pass
-
     _p["_l10r"] = pd.to_numeric(_p.get("L10_Rate_Points", np.nan), errors="coerce")
     _p["_l10d"] = pd.to_numeric(_p.get("L10_Diff_Points", np.nan), errors="coerce")
     _p["_gap"] = pd.to_numeric(_p.get("Reg_Gap_P10", np.nan), errors="coerce")
@@ -6409,66 +6382,51 @@ elif page == "Points":
             # 1.5 DPS spec
             else:
                 _mu = _safe_float(r.get("Points_mu")) or 0.0
-                assists_mu = _safe_float(r.get("Assists_mu")) or 0.0
                 _xga = _safe_float(r.get("opp_5v5_xGA60"))
                 _drt = _safe_float(r.get("Drought_P")) or 0.0
-                _opp_gaa = _safe_float(r.get("Opp_GAA"))
 
-                # Current 1.5 card lanes only: assists lane + no-goalie points lane + goalie-wombo lane.
-                # Do NOT re-surface the old Conf_Assists legacy Backbone / Power / Monster tags here.
-                if _conf_p is not None and _xga is not None and _conf_p >= 75:
-                    if assists_mu >= 1.5 and float(_xga) >= 2.50:
-                        tags.append(_svg_inline(_svg_get("PTS15_BLADE_IMPALE.svg"), size=14, title="Juggernaut"))
-                        tags.append("Juggernaut")
-                    elif assists_mu >= 1.3 and float(_xga) >= 2.50:
-                        tags.append(_svg_inline(_svg_get("PTS15_ENCHANTED_HAMMER.svg"), size=14, title="War Tank"))
-                        tags.append("War Tank")
+                # New ladder (Backbone / Power / Monster) uses Conf_Assists >= 89 — add BOTH icon + descriptor
+                if _conf_a is not None and _conf_a >= 89 and _mu >= 2.2 and (_xga is not None) and float(_xga) >= 2.6:
+                    tags.append(_svg_inline(_svg_get("PTS15_BLADE_SLASH.svg"), size=14, title="Monster (Blade Slash)"))
+                    tags.append("Blade Slash (Monster)")
+                elif _conf_a is not None and _conf_a >= 89 and _mu >= 2.2:
+                    tags.append(_svg_inline(_svg_get("PTS15_BLADE_IMPALE.svg"), size=14, title="Power Tier (Blade Impale)"))
+                    tags.append("Blade Impale (Power Tier)")
+                elif _conf_a is not None and _conf_a >= 89 and _mu >= 1.7:
+                    tags.append(_svg_inline(_svg_get("PTS15_TWO_HANDED_HAMMER.svg"), size=14, title="Backbone"))
+                    tags.append("Backbone")
 
-                    if _mu >= 1.7 and float(_xga) >= 2.53:
-                        tags.append(_svg_inline(_svg_get("PTS15_BLADE_SLASH.svg"), size=14, title="Blade Slash"))
-                        tags.append("Blade Slash")
-                    elif _mu >= 1.7 and float(_xga) >= 2.50:
-                        tags.append(_svg_inline(_svg_get("PTS15_BLADE_IMPALE.svg"), size=14, title="Blade Impale"))
-                        tags.append("Blade Impale")
-
-                    if _mu >= 1.7 and (_opp_gaa is not None) and float(_opp_gaa) >= 3.0 and float(_xga) >= 2.53:
-                        tags.append(_svg_inline(_svg_get("PTS15_ETERNAL_SMASH.svg"), size=14, title="Ragnarok+"))
-                        tags.append("Ragnarok+")
-                    elif _mu >= 1.7 and (_opp_gaa is not None) and float(_opp_gaa) >= 2.7 and float(_xga) >= 2.53:
-                        tags.append(_svg_inline(_svg_get("PTS15_POLARIZING_SMASH.svg"), size=14, title="Ragnarok"))
-                        tags.append("Ragnarok")
-
-                    if _mu >= 2.5:
-                        tags.append(_svg_inline(_svg_get("PTS15_BLADE_SLASH.svg"), size=14, title="Rampage Tank"))
-                        tags.append("Rampage Tank")
-                    elif _mu >= 2.3:
-                        tags.append(_svg_inline(_svg_get("PTS15_BLADE_IMPALE.svg"), size=14, title="Berserker Tank+"))
-                        tags.append("Berserker Tank+")
-                    elif _mu >= 2.2:
-                        tags.append(_svg_inline(_svg_get("PTS15_ENCHANTED_HAMMER.svg"), size=14, title="Berserker Tank"))
-                        tags.append("Berserker Tank")
-
-                if _drt >= 1 and _mu >= 1.7:
+                if _conf_a is not None and _conf_a >= 89 and _drt >= 1 and _mu >= 1.7:
                     tags.append("Delayed Hammer Smash")
+
+                # Optional legacy kit icons (PP/DefWeak) — only if they proc
+                _ppixg = _safe_float(r.get("PP_iXG60")) or 0.0
+                _ppixa = _safe_float(r.get("PP_iXA60")) or 0.0
+                _teamxgf = _safe_float(r.get("Team_PP_xGF60")) or 0.0
+                _defw = _safe_float(r.get("Opp_DefWeak")) or 0.0
+                if _conf_p is not None and _conf_p >= 80 and _defw >= 60:
+                    tags.append(_svg_inline(_svg_get("PTS15_BLOOD_EXPOSURE.svg"), size=14, title="Blood Exposure II (Legacy)"))
+                if _conf_p is not None and _conf_p >= 80 and _defw >= 70:
+                    tags.append(_svg_inline(_svg_get("PTS15_POLARIZING_SMASH.svg"), size=14, title="Eternal Smash (Legacy)"))
         try:
             if float(l10r) >= 0.80: tags.append("🔥 L10 Rate ≥0.80")
             elif float(l10r) >= 0.70: tags.append("L10 Rate ≥0.70")
-        except Exception:
-            pass
+        except Exception as e:
+            print(f"[warn] failed: {e}")
         try:
             if float(l10d) >= 0.25: tags.append("🧨 L10 Diff ≥0.25")
-        except Exception:
-            pass
+        except Exception as e:
+            print(f"[warn] failed: {e}")
 
         warns = []
         try:
             if float(xga) <= 2.43: warns.append("⚠️ Suppressive xGA (≤2.43)")
-        except Exception:
-            pass
+        except Exception as e:
+            print(f"[warn] failed: {e}")
         try:
             if float(hdca) <= 2.33: warns.append("⚠️ Low HDCA (≤2.33)")
-        except Exception:
-            pass
+        except Exception as e:
+            print(f"[warn] failed: {e}")
 
         def _is_nan(v) -> bool:
             try:
@@ -6487,26 +6445,26 @@ elif page == "Points":
             _g = float(gapv)
             if not math.isnan(_g):
                 meta.append(f"Gap {_g:.2f}")
-        except Exception:
-            pass
+        except Exception as e:
+            print(f"[warn] failed: {e}")
         try:
             _c = float(conf)
             if not math.isnan(_c):
                 meta.append(f"Conf {_c:.0f}")
-        except Exception:
-            pass
+        except Exception as e:
+            print(f"[warn] failed: {e}")
         try:
             _lr = float(l10r)
             if not math.isnan(_lr):
                 meta.append(f"L10Rate {_lr:.2f}")
-        except Exception:
-            pass
+        except Exception as e:
+            print(f"[warn] failed: {e}")
         try:
             _ld = float(l10d)
             if not math.isnan(_ld):
                 meta.append(f"L10Diff {_ld:.2f}")
-        except Exception:
-            pass
+        except Exception as e:
+            print(f"[warn] failed: {e}")
 
                 # --- Player card line (match GOALS/ASSISTS style): icons + bold combo + light meta ---
         proc_icons = "".join([t for t in tags if (isinstance(t, str) and ("<svg" in t or "wl-ico" in t))])
@@ -6540,40 +6498,40 @@ elif page == "Points":
             _g = float(gapv)
             if not math.isnan(_g):
                 meta.append(f"Gap {_g:.2f}")
-        except Exception:
-            pass
+        except Exception as e:
+            print(f"[warn] failed: {e}")
         try:
             _c = float(conf)
             if not math.isnan(_c):
                 meta.append(f"Conf {_c:.0f}")
-        except Exception:
-            pass
+        except Exception as e:
+            print(f"[warn] failed: {e}")
 
         # Key “up-front” stat trio for Points
         try:
             _pmu = float(r.get("Points_mu", float("nan")))
             if not math.isnan(_pmu):
                 meta.append(f"μ {_pmu:.2f}")
-        except Exception:
-            pass
+        except Exception as e:
+            print(f"[warn] failed: {e}")
         try:
             _amu = float(r.get("Assists_mu", float("nan")))
             if not math.isnan(_amu):
                 meta.append(f"Aμ {_amu:.2f}")
-        except Exception:
-            pass
+        except Exception as e:
+            print(f"[warn] failed: {e}")
         try:
             _tgf = float(r.get("Team_GF_Avg_L5", r.get("Team_GF_L5", float("nan"))))
             if not math.isnan(_tgf):
                 meta.append(f"GF_L5 {_tgf:.1f}")
-        except Exception:
-            pass
+        except Exception as e:
+            print(f"[warn] failed: {e}")
         try:
             _dr = float(r.get("Drought_P", float("nan")))
             if not math.isnan(_dr) and _dr >= 1:
                 meta.append(f"Drought {int(_dr)}")
-        except Exception:
-            pass
+        except Exception as e:
+            print(f"[warn] failed: {e}")
 
         meta.extend(meta_bits)
         meta.extend(warns)
@@ -6971,8 +6929,8 @@ elif page == "SOG":
             matrix_col="Matrix_SOG",
             lock_col="LOCK",
         )
-    except Exception:
-        pass
+    except Exception as e:
+        print(f"[warn] failed: {e}")
 
 
     # --- DPS ranking + filters (Board-style; presentation only) ---
@@ -7114,8 +7072,8 @@ elif page == "SOG":
                         tier = str(r.get("_sniper_tier", "") or "").strip()
                         if tier:
                             meta.append(tier)
-                except Exception:
-                    pass
+                except Exception as e:
+                    print(f"[warn] failed: {e}")
 
                 # Combat HUD icons (SOG) — card line (presentation-only)
                 try:
@@ -7413,8 +7371,8 @@ elif page == "GOALS (0.5)":
             matrix_col="Matrix_Goal",
             lock_col="LOCK",
         )
-    except Exception:
-        pass
+    except Exception as e:
+        print(f"[warn] failed: {e}")
 
 
     # --- DPS ranking + filters (Board-style; presentation only) ---
@@ -7908,14 +7866,14 @@ elif page == "🧪 Dagger Lab":
             try:
                 if pd.isna(v):
                     return ""
-            except Exception:
-                pass
+            except Exception as e:
+                print(f"[warn] failed: {e}")
             try:
                 import numpy as _np
                 if isinstance(v, _np.generic):
                     v = v.item()
-            except Exception:
-                pass
+            except Exception as e:
+                print(f"[warn] failed: {e}")
             return v
 
         # Back-compat: derive PP fields if missing from the tracker
@@ -8231,8 +8189,8 @@ elif page == "🪜 Ladder Alerts":
                     )
                     # Cleanup helper col so it doesn't leak into the table below
                     ladd = ladd.drop(columns=["_pick_label"], errors="ignore")
-            except Exception:
-                pass
+            except Exception as e:
+                print(f"[warn] failed: {e}")
 
             cols = ["Player","Team","Game","Market","Line","Odds","Book","Model%","EV%","Rung","DefV","SlotSA60","5v5Share%","OppSOG_L10","OppSOG_L50","Why"]
             cols = [c for c in cols if c in ladd.columns]
@@ -8658,7 +8616,9 @@ elif page == "🧾 Log Bet":
     try:
         if os.path.exists(betslip_path):
             st.markdown("### Recent logs")
-            tail = pd.read_csv(betslip_path).tail(10)
+            @st.cache_data
+            def _load_betslip(p): return pd.read_csv(p).tail(10)
+            tail = _load_betslip(betslip_path)
             st.dataframe(tail, use_container_width=True, hide_index=True)
         else:
             st.info("No betslip.csv yet — first log will create it.")
