@@ -1,4 +1,14 @@
 
+import os
+import glob
+import math
+import re
+from pathlib import Path
+from datetime import datetime, date
+
+import numpy as np
+import pandas as pd
+import streamlit as st
 # -------------------------
 # Back-compat SVG helpers (used by player-card tags / older HUD snippets)
 # -------------------------
@@ -22,16 +32,6 @@ if "_svg_inline" not in globals():
         except Exception:
             return ""
 
-import os
-import glob
-import math
-import re
-from pathlib import Path
-from datetime import datetime, date
-
-import numpy as np
-import pandas as pd
-import streamlit as st
 
 def render_odds_implied_reference(location="main", title="Odds → Implied% (break-even)"):
     """Simple reference block: American odds (+odds ladder) → implied break-even probability.
@@ -6661,7 +6661,7 @@ elif page == "Assists":
         "Green",
                  "Assists_Odds_Over",
         "Assists_Book",
-        "Conf_Assists", "Matrix_Assists", "Assists_Line",  "PP_iXA60","PPP10_total",
+        "Conf_Assists", "Matrix_Assists", "Assists_Line","iXA%",  "PP_iXA60","PPP10_total",
         "Drought_PPP",
 "PP_Matchup", "PP_TOI_Pct_Game", 
         "opp_5v5_xGA60",   
@@ -6676,7 +6676,7 @@ elif page == "Assists":
        
 
         
-        "iXA%","iXG%", "v2_player_stability",
+        "iXG%", "v2_player_stability",
         "Opp_Goalie", "Opp_SV",
         "Goalie_Weak", "Opp_DefWeak",
 
