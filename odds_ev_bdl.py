@@ -765,6 +765,31 @@ def merge_bdl_props_altlines(
 
 
         # fill alt columns (Line_1..K etc)
+        idx_pairs = list(zip(df["__player_key"].tolist(), df["__team_key"].tolist()))
+
+        # Fallback: some BDL player records may not carry a reliable team tricode (or it may differ).
+        # To avoid dropping stars (e.g., McDavid/Tage) when team keys don't align, allow a player-only fallback
+        # when there is no exact (player,team) match.
+        def _resolve_pair(idx_key: Tuple[str, str]) -> Tuple[str, str] | None:
+            if idx_key in lines_map and lines_map[idx_key]:
+                return idx_key
+            blank_key = (idx_key[0], "")
+            if blank_key in lines_map and lines_map[blank_key]:
+                return blank_key
+            cand_keys = [(pk, tk) for (pk, tk), vals in lines_map.items() if pk == idx_key[0] and vals]
+            if len(cand_keys) == 1:
+                return cand_keys[0]
+            if cand_keys:
+                cand_keys.sort(key=lambda k: len(lines_map.get(k, [])), reverse=True)
+                return cand_keys[0]
+            return None
+
+        def _lines_for_pair(kp: Tuple[str, str]) -> List[float]:
+            resolved = _resolve_pair(kp)
+            if resolved is None:
+                return []
+            return lines_map.get(resolved, [])
+
         def _get_line_at(idx_key: Tuple[str, str], i: int) -> float | None:
             arr = _lines_for_pair(idx_key)
             if not arr or i >= len(arr):
@@ -774,37 +799,20 @@ def merge_bdl_props_altlines(
         def _get_odds(idx_key: Tuple[str, str], lv: float | None) -> float | None:
             if lv is None:
                 return None
-            t = best_per_line.get((idx_key[0], idx_key[1], market, float(lv)))
+            resolved = _resolve_pair(idx_key)
+            if resolved is None:
+                return None
+            t = best_per_line.get((resolved[0], resolved[1], market, float(lv)))
             return None if t is None else float(t[0])
 
         def _get_vendor(idx_key: Tuple[str, str], lv: float | None) -> str:
             if lv is None:
                 return ""
-            t = best_per_line.get((idx_key[0], idx_key[1], market, float(lv)))
+            resolved = _resolve_pair(idx_key)
+            if resolved is None:
+                return ""
+            t = best_per_line.get((resolved[0], resolved[1], market, float(lv)))
             return "" if t is None else str(t[1] or "")
-
-        idx_pairs = list(zip(df["__player_key"].tolist(), df["__team_key"].tolist()))
-
-        # Fallback: some BDL player records may not carry a reliable team tricode (or it may differ).
-        # To avoid dropping stars (e.g., McDavid/Tage) when team keys don't align, allow a player-only fallback
-        # when there is no exact (player,team) match.
-        def _lines_for_pair(kp: Tuple[str, str]) -> List[float]:
-            arr = lines_map.get(kp)
-            if arr:
-                return arr
-            # try blank team
-            arr = lines_map.get((kp[0], ""))
-            if arr:
-                return arr
-            # try any team (unique)
-            cands = [v for (pk, _tk), v in lines_map.items() if pk == kp[0] and v]
-            if len(cands) == 1:
-                return cands[0]
-            # if multiple, prefer the one with most lines
-            if cands:
-                cands.sort(key=lambda a: len(a), reverse=True)
-                return cands[0]
-            return []
 
         K = max(1, int(top_k))
         for i in range(K):

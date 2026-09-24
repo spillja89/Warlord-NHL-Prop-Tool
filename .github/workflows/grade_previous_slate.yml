@@ -1,0 +1,62 @@
+name: Grade completed NHL slates
+
+on:
+  schedule:
+    # 13:00 UTC is 7 or 8 AM in Chicago, depending on daylight saving time.
+    - cron: "0 13 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: nhl-repository-writes
+  cancel-in-progress: false
+
+jobs:
+  grade:
+    runs-on: ubuntu-latest
+    env:
+      TZ: America/Chicago
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: requirements.txt
+
+      - name: Install dependencies
+        run: python -m pip install -r requirements.txt
+
+      - name: Grade yesterday and retry recent slates
+        shell: bash
+        run: |
+          set -euo pipefail
+          for days_ago in 1 2 3; do
+            slate_date="$(date -d "$days_ago days ago" +%F)"
+            python grade_daily_tracker.py --date "$slate_date" --skip-missing
+          done
+
+      - name: Save graded results
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          if compgen -G 'output/graded/tracker_*_GRADED.csv' > /dev/null; then
+            git add -f output/graded/tracker_*_GRADED.csv output/graded/tracker_*_summary.json
+          fi
+          if compgen -G 'output/graded/moves_*.csv' > /dev/null; then
+            git add -f output/graded/moves_*.csv
+          fi
+          if git diff --cached --quiet; then
+            echo "No grading changes"
+            exit 0
+          fi
+          git commit -m "Grade completed NHL slates"
+          git pull --rebase
+          git push

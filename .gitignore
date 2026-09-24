@@ -56,9 +56,9 @@ Thumbs.db
 .env
 .env.local
 .env.*.local
+.streamlit/secrets.toml
 
 output/
 output/ledger/
 *.csv
-
 

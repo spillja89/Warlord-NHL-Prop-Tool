@@ -34,6 +34,7 @@ import numpy as np
 import pandas as pd
 import requests
 from bs4 import BeautifulSoup
+from warlord_moves_2026 import VERSION as MOVE_KIT_VERSION, frozen_move_tags
 
 pd.options.display.float_format = "{:.2f}".format
 
@@ -220,6 +221,26 @@ def market_tier_tag(row: "pd.Series", market: str) -> str:
     rules = MARKET_TIER_RULES[market]
     t = rules["thresholds"]
 
+    # --- Dual 97.5 (iXA + iXG) ---
+    # If both iXA% and iXG% are elite-percentile, this is a hard "ON" identity signal.
+    ixg_pct = _safe_float(row.get("iXG_pct"), default=None)
+    if ixg_pct is None:
+        ixg_pct = _safe_float(row.get("iXG%"), default=None)
+
+    ixa_pct = _safe_float(row.get("iXA_pct"), default=None)
+    if ixa_pct is None:
+        ixa_pct = _safe_float(row.get("iXA%"), default=None)
+
+    dual_97_5 = (ixg_pct is not None and ixa_pct is not None and ixg_pct >= 97.5 and ixa_pct >= 97.5)
+
+    # Market Conf mapping (Elite tag integrity: ELITE implies Conf >= 80)
+    _conf_col = {"SOG": "Conf_SOG", "Points": "Conf_Points", "Assists": "Conf_Assists", "Goal": "Conf_Goal"}.get(market, "")
+    market_conf = _safe_float(row.get(_conf_col), default=None) if _conf_col else None
+
+    # Dual 97.5 => ELITE (but still enforce Conf floor for the ELITE label)
+    if dual_97_5 and (market_conf is None or market_conf >= 80):
+        return "ELITE"
+
     # --- pull from YOUR column names (and accept alternates) ---
     ppg = _safe_float(row.get("PPG"), default=None)
 
@@ -316,6 +337,9 @@ def market_tier_tag(row: "pd.Series", market: str) -> str:
     is_elite = (elite_proofs >= rules["elite_min_proofs"]) and gates_ok
 
     if is_elite:
+        # ELITE label integrity: never emit ELITE if market Conf is below 80
+        if market_conf is not None and market_conf < 80:
+            return "STAR"
         return "ELITE"
     if is_star:
         return "STAR"
@@ -576,8 +600,8 @@ def _toi_str_to_minutes(x: Any) -> Optional[float]:
         if v > 200:
             return v / 60.0
         return v
-    except Exception:
-        pass
+    except Exception as e:
+        print(f"[warn] failed: {e}")
 
     # MM:SS path
     if ':' in s:
@@ -1985,8 +2009,8 @@ def save_cache(today: date, cache: Dict[str, Any]) -> None:
     try:
         with open(p, "w", encoding="utf-8") as f:
             json.dump(cache, f, ensure_ascii=False, indent=2)
-    except Exception:
-        pass
+    except Exception as e:
+        print(f"[warn] failed: {e}")
 
 def nhle_player_gamelog_now(sess: requests.Session, player_id: int) -> Optional[Dict[str, Any]]:
     url = f"https://api-web.nhle.com/v1/player/{player_id}/game-log/now"
@@ -2134,8 +2158,8 @@ def compute_lastN_features(payload: Dict[str, Any], n10: int = 10, n5: int = 5) 
             else:
                 ss2 = ss
             return datetime.fromisoformat(ss2)
-        except Exception:
-            pass
+        except Exception as e:
+            print(f"[warn] failed: {e}")
         # fallback: just take first 10 chars if looks like YYYY-MM-DD
         try:
             if len(ss) >= 10 and ss[4] == "-" and ss[7] == "-":
@@ -2363,6 +2387,7 @@ def matrix_goal_v2(
         return "Red"
     if ixg < 88.0:
         return "Yellow"
+   
 
     if med10 is None:
         return "Yellow"
@@ -2398,23 +2423,76 @@ def matrix_goal_v3(
     avg5_sog: Optional[float] = None,
     opp_5v5_xga60: Optional[float] = None,
     opp_sog_against_l10: Optional[float] = None,
+    opp_defweak: Optional[float] = None,
+    team_gf_avg_l5: Optional[float] = None,
 ) -> str:
-    """GOALS stance matrix (environment + player readiness).
+    """GOALS stance matrix (environment permission + finisher readiness).
 
-    - Red: iXG% < 80 OR shot median far below need
-    - Yellow: iXG% 80–88 band, missing data, or not fully aligned
-    - Green: shot baseline met AND (heater OR shooter-monster) AND environment supports goals
+    Philosophy (beta):
+      - Don't miss elite finishers (iXG% 97+).
+      - Treat opponent environment as *permission* (not only "smash-tier" thresholds).
+      - Team GF L5 is a *cherry/ladder* (helpful for Crit/Valhalla), not required for Green.
 
-    Environment supports goals (OR):
-      - opp_5v5_xGA60 >= 2.52  OR
-      - Opp_SOG_Against_L10 >= 29
+    Returns:
+      - Red: iXG% < 80 OR shot median far below need.
+      - Yellow: missing key data or not aligned enough.
+      - Green: shot baseline met AND (heater OR shooter-monster OR elite finisher) AND env permission true.
+
+    Env permission (OR):
+      - opp_5v5_xGA60 >= 2.45  OR
+      - Opp_SOG_Against_L10 >= 27.5  OR
+      - Opp_DefWeak >= 60
     """
     ixg = float(ixg_pct or 0.0)
 
+    # Hard finisher floor
     if ixg < 80.0:
         return "Red"
     if ixg < 88.0:
         return "Yellow"
+    if ixg >= 94.5:
+        return "Green" 
+
+    # Need Med10 for shot-floor sanity; if missing, don't promote
+    if med10 is None:
+        return "Yellow"
+
+    need = 3.0 if not is_defense(pos) else 2.8
+    med = float(med10)
+
+    # Red if shot floor is way under
+    if med < (need - 0.5):
+        return "Red"
+
+    # Env permission: if all env signals are missing, do not promote to Green
+    if opp_5v5_xga60 is None and opp_sog_against_l10 is None and opp_defweak is None:
+        return "Yellow"
+
+    xga_ok = (opp_5v5_xga60 is not None) and (float(opp_5v5_xga60) >= 2.45)
+    sog_ok = (opp_sog_against_l10 is not None) and (float(opp_sog_against_l10) >= 27.5)
+    def_ok = (opp_defweak is not None) and (float(opp_defweak) >= 60.0)
+
+    env_ok = xga_ok or sog_ok or def_ok
+    if not env_ok:
+        return "Yellow"
+
+    # Player readiness routes
+    g5 = int(g5_total or 0)
+    si = float(shotintent or 0.0)
+    a5 = float(avg5_sog or 0.0)
+
+    heater = (g5 >= 2)
+    shooter_monster = (si >= 3.4 and a5 >= 3.5)
+    elite_finisher = (ixg >= 97.0)
+
+    # Elite finisher override: if env permission + reasonable shot floor, don't require heater
+    if elite_finisher and med >= (need - 0.2):
+        return "Green"
+
+    if med >= need and (heater or shooter_monster):
+        return "Green"
+
+    return "Yellow"
 
     if med10 is None:
         return "Yellow"
@@ -2461,9 +2539,9 @@ def matrix_points_v2(ixa_pct: float, v2_stab: Optional[float], reg_heat_p: str =
     if ixa_pct < 78:
         return "Red" if ixa_pct < 70 else "Yellow"
 
-    if ixa_pct >= 90 and stab >= 62:
+    if ixa_pct >= 90 and stab >= 60:
         return "Green"
-    if ixa_pct >= 90 and stab >= 65 and toi >= 55:
+    if ixa_pct >= 94 and toi >= 55:
         return "Green"
     if ixa_pct >= 94 and stab >= 60 and reg_heat_p == "HOT":
         return "Green"
@@ -2471,22 +2549,47 @@ def matrix_points_v2(ixa_pct: float, v2_stab: Optional[float], reg_heat_p: str =
         return "Green"
     if ixa_pct >= 90 and stab >= 63 and dw >= 60:
         return "Green"
+    if ixa_pct >= 95 and conf_v >= 80:
+        return "Green"
 
     return "Yellow"
 
-def matrix_assists_v1(ixa_pct: float, v2_stab: Optional[float], reg_heat_a: str = "COOL",
-                      toi_pct: Optional[float] = None, team_xgf_pct: Optional[float] = None,
-                      opp_defweak: Optional[float] = None, shot_assists60: Optional[float] = None) -> str:
+def matrix_assists_v1(
+    ixa_pct: float,
+    v2_stab: Optional[float],
+    reg_heat_a: str = "COOL",
+    toi_pct: Optional[float] = None,
+    team_xgf_pct: Optional[float] = None,
+    opp_defweak: Optional[float] = None,
+    shot_assists60: Optional[float] = None,
+    conf: Optional[float] = None,
+) -> str:
     stab = 50.0 if v2_stab is None else float(v2_stab)
     toi = 50.0 if toi_pct is None else float(toi_pct)
-    tx  = 50.0 if team_xgf_pct is None else float(team_xgf_pct)
-    dw  = 50.0 if opp_defweak is None else float(opp_defweak)
+    tx = 50.0 if team_xgf_pct is None else float(team_xgf_pct)
+    dw = 50.0 if opp_defweak is None else float(opp_defweak)
 
-    sa60 = 0.0 if shot_assists60 is None or (isinstance(shot_assists60, float) and math.isnan(shot_assists60)) else float(shot_assists60)
+    sa60 = (
+        0.0
+        if shot_assists60 is None
+        or (isinstance(shot_assists60, float) and math.isnan(shot_assists60))
+        else float(shot_assists60)
+    )
     sa_pct = clamp(sa60 * 20.0)
 
+    conf_v = (
+        0.0
+        if conf is None or (isinstance(conf, float) and math.isnan(conf))
+        else float(conf)
+    )
+  
     if ixa_pct < 78:
         return "Red" if ixa_pct < 70 else "Yellow"
+
+    if ixa_pct >= 97:
+        return "Green"
+
+
 
     if ixa_pct >= 94 and stab >= 68:
         return "Green"
@@ -2498,9 +2601,11 @@ def matrix_assists_v1(ixa_pct: float, v2_stab: Optional[float], reg_heat_a: str 
         return "Green"
     if ixa_pct >= 90 and stab >= 60 and sa_pct >= 70 and toi >= 60:
         return "Green"
+   
+    if ixa_pct >= 97:
+        return "Green"
 
     return "Yellow"
-
 def conf_sog(
     ixg_pct: float,
     shot_intent_pct: float,
@@ -2553,30 +2658,42 @@ def conf_goal(
     toi = 50.0 if toi_pct is None else float(toi_pct)
 
     base = (
-        0.42 * ixg
-        + 0.18 * si_pct
-        + 0.08 * si_raw
-        + 0.12 * g5s
+        0.58 * ixg
+        + 0.10 * si_pct
+        + 0.05 * si_raw
+        + 0.10 * g5s
         + 0.10 * dw
-        + 0.10 * gw
+        + 0.08 * gw
     )
 
     # identity bias: shooter vs facilitator
     if (ixg - ixa) >= 20.0:
-        base += 5.0
+        base += 3.0
 
     # TOI role nudge (small)
     base += 0.05 * (toi - 50.0)
 
     # SAFE drought proc (binary; no scaling)
     if drought_g is not None and int(drought_g) >= 2:
-        base += 4.0
+        base += 1.0
 
     return int(round(clamp(base)))
 
-def conf_points(ixa_pct: float, p10_gap: Optional[float], stab: float, defweak: float, goalieweak: float, toi_pct: float) -> int:
+def conf_points(ixa_pct: float, p10_gap: Optional[float], stab: float, defweak: float, goalieweak: float, toi_pct: float, team_gf_l5: Optional[float] = None) -> int:
     reg = 65.0 if p10_gap is None else clamp((p10_gap / 4.0) * 100.0)
-    base = 0.52 * ixa_pct + 0.10 * stab + 0.10 * defweak + 0.08 * goalieweak + 0.14 * reg
+    # Environment contribution (defweak + goalie) can get over-penalized for HOT offenses.
+    w_def, w_gw = 0.10, 0.08
+    env = w_def * defweak + w_gw * goalieweak
+
+    if team_gf_l5 is not None and not (isinstance(team_gf_l5, float) and math.isnan(team_gf_l5)):
+        hot = team_gf_l5 >= 3.8
+        ultra = team_gf_l5 >= 4.1
+        if hot:
+            neutral_env = (w_def + w_gw) * 50.0
+            cap = 2.0 if ultra else 3.0  # cap total ENV penalty under HOT offense
+            env = max(env, neutral_env - cap)
+
+    base = 0.52 * ixa_pct + 0.10 * stab + env + 0.14 * reg
     base += USAGE_WEIGHT_POINTS * (toi_pct - 50.0)
     return int(round(clamp(base)))
 
@@ -2593,16 +2710,28 @@ def conf_assists(
     pp_share_pct_game: Optional[float] = None,
     pp_ixA60: Optional[float] = None,
     pp_matchup: Optional[float] = None,
+    team_gf_l5: Optional[float] = None,
 ) -> int:
     # ----------------------------
     # 1) Baseline (cannot be penalized by optional signals)
     # ----------------------------
+    # Environment contribution (defweak + goalie) can get over-penalized for HOT offenses.
+    w_def, w_gw = 0.12, 0.06
+    env = w_def * defweak + w_gw * goalieweak
+
+    if team_gf_l5 is not None and not (isinstance(team_gf_l5, float) and math.isnan(team_gf_l5)):
+        hot = team_gf_l5 >= 3.8
+        ultra = team_gf_l5 >= 4.1
+        if hot:
+            neutral_env = (w_def + w_gw) * 50.0
+            cap = 2.0 if ultra else 3.0  # cap total ENV penalty under HOT offense
+            env = max(env, neutral_env - cap)
+
     base = (
         0.45 * ixa_pct +
         0.10 * ixg_pct +
         0.17 * stab +
-        0.12 * defweak +
-        0.06 * goalieweak
+        env
     )
     base += 0.10 * (toi_pct - 50.0)  # light usage tilt
 
@@ -2615,7 +2744,7 @@ def conf_assists(
     # (If you want "missing" to be neutral, do NOT default to 65 here.)
     if reg_gap_a10 is not None and not (isinstance(reg_gap_a10, float) and math.isnan(reg_gap_a10)):
         # Example scaling: +0 to +10
-        bonus += clamp((reg_gap_a10 / 4.0) * 10.0, 0.0, 10.0)
+        bonus += clamp((reg_gap_a10 / 4.0) * 5.0, 0.0, 5.0)
 
     # Assist volume bonus: only above neutral earns points
     if assist_vol is not None and not (isinstance(assist_vol, float) and math.isnan(assist_vol)):
@@ -2638,12 +2767,13 @@ def conf_assists(
                 s2 = clamp((pp_ixA60 - 0.80) / 1.20, 0.0, 1.0)
                 s3 = clamp((pp_matchup - 50.0) / 25.0, 0.0, 1.0)
                 bonus += 5.0 * (0.45 * s1 + 0.35 * s2 + 0.20 * s3)
-    except Exception:
-        pass
+    except Exception as e:
+        print(f"[warn] failed: {e}")
 
     # ----------------------------
     # 3) Final clamp
     # ----------------------------
+    bonus = min(bonus, 8.0)
     conf = clamp(base + bonus, 0.0, 100.0)
     return int(round(conf))
 # ============================
@@ -2826,8 +2956,8 @@ def add_talent_tiers(sk: pd.DataFrame, debug: bool = False) -> pd.DataFrame:
                       "ShotIntent":round(100.0 * star_d.mean(), 1),
                       "3of4":      round(100.0 * (star_proofs >= 3).mean(), 1),
                   })
-        except Exception:
-            pass
+        except Exception as e:
+            print(f"[warn] failed: {e}")
 
     return out
 
@@ -2981,8 +3111,8 @@ def _game_team_sog_from_boxscore(sess: requests.Session, game_id: int, cache: Di
             if v is not None:
                 try:
                     return int(v)
-                except Exception:
-                    pass
+                except Exception as e:
+                    print(f"[warn] failed: {e}")
         # sometimes nested
         stats = t.get("statistics", {}) or t.get("teamStats", {}) or {}
         for k in ("shotsOnGoal", "sog", "shots"):
@@ -2990,8 +3120,8 @@ def _game_team_sog_from_boxscore(sess: requests.Session, game_id: int, cache: Di
             if v is not None:
                 try:
                     return int(v)
-                except Exception:
-                    pass
+                except Exception as e:
+                    print(f"[warn] failed: {e}")
         return None
 
     h_ab = _abbrev(home)
@@ -3081,7 +3211,7 @@ def ga_avg_to_defweak(ga_avg: float) -> float:
     weak = 20.0 + (ga_avg - 2.0) * 30.0
     return float(max(0.0, min(100.0, weak)))
 
-def drought_bump(tier: str, market: str, drought: Optional[int]) -> tuple[int, bool]:
+def drought_bump(tier: str, market: str, drought: Optional[int], ixg_pct: Optional[float] = None) -> tuple[int, bool]:
     if drought is None:
         return 0, False
 
@@ -3108,8 +3238,11 @@ def drought_bump(tier: str, market: str, drought: Optional[int]) -> tuple[int, b
             if d >= 2: bump = 5
             if d >= 3: bump = 8; flag = True
         elif tier == "STAR":
-            if d >= 3: bump = 4
-            if d >= 4: bump = 7; flag = True
+            # Gate ALL STAR goal/assist drought lift behind elite finisher proof
+            # If not an elite finisher, drought alone should not push GOAL confidence.
+            if (ixg_pct is not None) and float(ixg_pct) >= 97.0:
+                if d >= 3: bump = 2
+                if d >= 4: bump = 4; flag = True
         else:
             if d >= 4: bump = 2
             if d >= 5: bump = 5; flag = True
@@ -3122,7 +3255,7 @@ def drought_bump(tier: str, market: str, drought: Optional[int]) -> tuple[int, b
 # MAIN build
 # ============================
 
-def build_tracker(today_local: date, debug: bool = False) -> str:
+def build_tracker(today_local: date, debug: bool = False, api_key: str | None = None) -> str:
     ensure_dirs()
     sess = http_session()
 
@@ -3137,6 +3270,7 @@ def build_tracker(today_local: date, debug: bool = False) -> str:
 
     teams_playing = set()
     game_map: Dict[str, str] = {}
+    game_id_map: Dict[str, int] = {}
     opp_map: Dict[str, str] = {}
     game_time_utc: Dict[str, str] = {}
     game_time_local: Dict[str, str] = {}
@@ -3153,6 +3287,10 @@ def build_tracker(today_local: date, debug: bool = False) -> str:
 
         game_map[away] = matchup
         game_map[home] = matchup
+        game_id = g.get("id") or g.get("gameId")
+        if game_id is not None:
+            game_id_map[away] = int(game_id)
+            game_id_map[home] = int(game_id)
         opp_map[away] = home
         opp_map[home] = away
 
@@ -3202,6 +3340,7 @@ def build_tracker(today_local: date, debug: bool = False) -> str:
 
     # Schedule columns
     sk["Game"] = sk["Team"].map(game_map).fillna("")
+    sk["Game_ID"] = sk["Team"].map(game_id_map)
     sk["Opp"] = sk["Team"].map(opp_map).fillna("")
     sk["StartTimeUTC"] = sk["Game"].map(game_time_utc).fillna("")
     sk["StartTimeLocal"] = sk["Game"].map(game_time_local).fillna("")
@@ -3319,12 +3458,10 @@ def build_tracker(today_local: date, debug: bool = False) -> str:
         sk["PP_TeamShare_pct"] = pd.to_numeric(sk.get("PP_TOI_Pct_Game"), errors="coerce")
 
     if "PP_TOI_stability" not in sk.columns:
-        # heuristic: how close PP_TOI_min is to PP_TOI (higher = more stable usage)
-        toi = pd.to_numeric(sk.get("PP_TOI"), errors="coerce")
-        toi_min = pd.to_numeric(sk.get("PP_TOI_min"), errors="coerce")
-        with np.errstate(divide="ignore", invalid="ignore"):
-            stab = 100.0 * (toi_min / toi)
-        sk["PP_TOI_stability"] = stab.clip(lower=0.0, upper=100.0)
+        # Season-total PP minutes divided by PP minutes/game is a game count,
+        # not usage stability. Leave this unavailable until game-level PP TOI
+        # history supplies a real variability measure.
+        sk["PP_TOI_stability"] = np.nan
 
  
 
@@ -3905,8 +4042,10 @@ def build_tracker(today_local: date, debug: bool = False) -> str:
             team_xgf_pct=safe_float(r.get("team_5v5_xGF60_pct")),
             opp_defweak=safe_float(r.get("Opp_DefWeak")),
             shot_assists60=safe_float(r.get("i5v5_shotAssists60")),
+            conf=safe_float(r.get("Conf_Assists")),   # <-- add this
         ),
         axis=1
+
     )
 
     sk["Matrix_Goal"] = sk.apply(
@@ -3920,6 +4059,8 @@ def build_tracker(today_local: date, debug: bool = False) -> str:
             avg5_sog=safe_float(r.get("Avg5_SOG")),
             opp_5v5_xga60=safe_float(r.get("opp_5v5_xGA60")),
             opp_sog_against_l10=safe_float(r.get("Opp_SOG_Against_L10")),
+            opp_defweak=safe_float(r.get("Opp_DefWeak")),
+            team_gf_avg_l5=safe_float(r.get("Team_GF_Avg_L5")) or safe_float(r.get("Team_GF_L5")),
         ),
         axis=1
     )
@@ -3936,6 +4077,22 @@ def build_tracker(today_local: date, debug: bool = False) -> str:
         ),
         axis=1
     )
+    # -------------------------
+    # Elite Visibility Override (Feb 2026)
+    # -------------------------
+    # Purpose: Never let elite-caliber players get "lost" due to Matrix gating.
+    # If player is tagged ELITE by Talent_Tier (or Tier_Tag contains ELITE), force all market matrices to GREEN.
+    try:
+        _tal = sk.get("Talent_Tier", "").astype(str).str.upper()
+        _tier_tag = sk.get("Tier_Tag", "").astype(str).str.upper()
+        _elite = _tal.eq("ELITE") | _tier_tag.str.contains("ELITE", na=False)
+        if _elite.any():
+            for _col in ("Matrix_SOG", "Matrix_Assists", "Matrix_Goal", "Matrix_Points"):
+                if _col in sk.columns:
+                    sk.loc[_elite, _col] = "Green"
+    except Exception as e:
+        print(f"[warn] failed: {e}")
+
 
     # Confidence (base)
     
@@ -3977,6 +4134,8 @@ def build_tracker(today_local: date, debug: bool = False) -> str:
             float(r.get("Opp_DefWeak", 50)),
             float(r.get("Goalie_Weak", 50)),
             float(r.get("TOI_Pct", 50)),
+        
+            team_gf_l5=safe_float(r.get("Team_GF_Avg_L5")),
         ),
         axis=1
     )
@@ -3994,6 +4153,7 @@ def build_tracker(today_local: date, debug: bool = False) -> str:
             pp_share_pct_game=safe_float(r.get("PP_TOI_Pct_Game")),
             pp_ixA60=safe_float(r.get("PP_iXA60")),
             pp_matchup=safe_float(r.get("PP_Matchup")),
+            team_gf_l5=safe_float(r.get("Team_GF_Avg_L5")),
         ),
         axis=1
     )
@@ -4083,10 +4243,16 @@ def build_tracker(today_local: date, debug: bool = False) -> str:
         if tier not in {"ELITE", "STAR"}:
             tier = "NONE"
 
-        b_s, f_s = drought_bump(tier, "SOG", safe_int(r.get("Drought_SOG")))
-        b_p, f_p = drought_bump(tier, "POINTS", safe_int(r.get("Drought_P")))
-        b_a, f_a = drought_bump(tier, "ASSISTS", safe_int(r.get("Drought_A")))
-        b_g, f_g = drought_bump(tier, "GOAL", safe_int(r.get("Drought_G")))
+        b_s, f_s = drought_bump(tier, "SOG", safe_int(r.get("Drought_SOG")), ixg_pct=None)
+        b_p, f_p = drought_bump(tier, "POINTS", safe_int(r.get("Drought_P")), ixg_pct=None)
+        b_a, f_a = drought_bump(tier, "ASSISTS", safe_int(r.get("Drought_A")), ixg_pct=None)
+        ixg_for_bump = (
+            safe_float(r.get("iXG%"))
+            or safe_float(r.get("iXG_Pct"))
+            or safe_float(r.get("iXG_PCT"))
+            or safe_float(r.get("iXG"))
+        )
+        b_g, f_g = drought_bump(tier, "GOAL", safe_int(r.get("Drought_G")), ixg_pct=ixg_for_bump)
 
         return pd.Series({
             "GameReg_Bump_SOG": b_s,
@@ -4279,10 +4445,12 @@ def build_tracker(today_local: date, debug: bool = False) -> str:
     tracker = pd.DataFrame({
         "Date": today_local.isoformat(),
         "Game": sk["Game"].fillna(""),
+        "Game_ID": sk.get("Game_ID"),
         "StartTimeLocal": sk.get("StartTimeLocal"),
         "StartTimeUTC": sk.get("StartTimeUTC"),
 
         "Player": sk["Player"].fillna(""),
+        "Player_ID": sk.get("playerId"),
         "Team": sk["Team"].fillna(""),
         "Pos": sk["Pos"].fillna("F"),
         "Tier": sk.get("Tier_Tag", ""),
@@ -4686,8 +4854,8 @@ def build_tracker(today_local: date, debug: bool = False) -> str:
             tracker.loc[eng_assists, "Play_Tag"].fillna("").astype(str) + " | ASSISTS ENG",
             "ASSISTS ENG",
         )
-    except Exception:
-        pass
+    except Exception as e:
+        print(f"[warn] failed: {e}")
 
     if "Plays_SOG" not in tracker.columns:
         tracker["Plays_SOG"] = False
@@ -4739,8 +4907,8 @@ def build_tracker(today_local: date, debug: bool = False) -> str:
             tracker.loc[eng_sog, "Play_Tag"].fillna("").astype(str) + " | SOG ENG",
             "SOG ENG",
         )
-    except Exception:
-        pass
+    except Exception as e:
+        print(f"[warn] failed: {e}")
 
     # -------------------------
     # FORCE rounding right before write (for Streamlit display consistency)
@@ -4775,8 +4943,8 @@ def build_tracker(today_local: date, debug: bool = False) -> str:
         # Market-aware alt-line odds merge + EV engine
         # (supports natural star lines like 1.5 Points when offered)
         # --- BDL API key (required for odds/EV) ---
-        api_key = (os.getenv("BALLDONTLIE_API_KEY","") or os.getenv("BDL_API_KEY","") or os.getenv("BALLDONTLIE_KEY","")).strip()
-        if not api_key:
+        resolved_api_key = (api_key or os.getenv("BALLDONTLIE_API_KEY", "") or os.getenv("BDL_API_KEY", "") or os.getenv("BALLDONTLIE_KEY", "")).strip()
+        if not resolved_api_key:
             raise RuntimeError("Missing BALLDONTLIE_API_KEY (or BDL_API_KEY). Set it in your shell/Streamlit secrets to enable odds + EV.")
 
         # Import EV engine (certifi optional). Try standard filename first, then patched fallback.
@@ -4789,7 +4957,7 @@ def build_tracker(today_local: date, debug: bool = False) -> str:
         tracker = merge_bdl_props_altlines(
             tracker,
             game_date=today_local.isoformat(),
-            api_key=(os.getenv("BALLDONTLIE_API_KEY") or os.getenv("BDL_API_KEY") or ""),
+            api_key=resolved_api_key,
             vendors=["draftkings", "fanduel", "caesars"],
             debug=bool(debug),
         )
@@ -4849,7 +5017,7 @@ def build_tracker(today_local: date, debug: bool = False) -> str:
 
 
         # Hard guard: if API key is present, require meaningful coverage across at least one market
-        if (os.getenv("BALLDONTLIE_API_KEY", "") or os.getenv("BDL_API_KEY", "")).strip():
+        if resolved_api_key:
             cov_cols = [
                 "SOG_Odds_Over",
                 "Points_Odds_Over",
@@ -4904,8 +5072,8 @@ def build_tracker(today_local: date, debug: bool = False) -> str:
     # Ensure output directory exists
     try:
         os.makedirs(OUTPUT_DIR, exist_ok=True)
-    except Exception:
-        pass
+    except Exception as e:
+        print(f"[warn] failed: {e}")
     # -------------------------
     # Display-name hygiene (do BEFORE writing CSV)
     # -------------------------
@@ -4917,8 +5085,8 @@ def build_tracker(today_local: date, debug: bool = False) -> str:
         try:
             if any(ch in t for ch in ("Ã", "Â", " ")):
                 return t.encode("latin-1", "ignore").decode("utf-8", "ignore")
-        except Exception:
-            pass
+        except Exception as e:
+            print(f"[warn] failed: {e}")
         return t
 
     if "Player" in tracker.columns:
@@ -4933,8 +5101,8 @@ def build_tracker(today_local: date, debug: bool = False) -> str:
     # True 5v5 share proxy (if we have the underlying rate). Safe no-op if missing.
     try:
         tracker = add_player_5v5_sog_share_proxy(tracker)
-    except Exception:
-        pass
+    except Exception as e:
+        print(f"[warn] failed: {e}")
 
     # Always compute a simple team-share proxy from recent SOG volume (Med10_SOG) so the ladder
     # page can explain *why* a rung is interesting even when the 5v5 feed is missing.
@@ -4956,6 +5124,14 @@ def build_tracker(today_local: date, debug: bool = False) -> str:
     if "Outcome" not in tracker.columns:
         tracker["Outcome"] = ""
 
+    # Freeze the displayed move rules with the pregame tracker. The grader
+    # reads these tags instead of applying future code to an old slate.
+    tracker["Move_Kit_Version"] = MOVE_KIT_VERSION
+    tracker["Fired_Moves"] = tracker.apply(
+        lambda row: json.dumps(frozen_move_tags(row), ensure_ascii=False, separators=(",", ":")),
+        axis=1,
+    )
+
     out_path = os.path.join(OUTPUT_DIR, f"tracker_{today_local.isoformat()}_{stamp}.csv")
     tracker.to_csv(out_path, index=False)
     print(f"CSV saved to: {out_path}")
@@ -4964,9 +5140,9 @@ def build_tracker(today_local: date, debug: bool = False) -> str:
     # Also write a stable path for Streamlit Cloud (no more manual uploads)
     latest_out_path = os.path.join(OUTPUT_DIR, 'tracker_latest.csv')
     try:
-        tracker.to_csv(latest_out_path, index=False)
-    except Exception:
-        pass
+        shutil.copy(out_path, latest_out_path)
+    except Exception as e:
+        print(f"[warn] failed to copy latest tracker: {e}")
 
     return out_path
 
@@ -4979,10 +5155,29 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--date", help="YYYY-MM-DD (default today)", default=None)
     parser.add_argument("--debug", action="store_true", help="Enable debug prints")
+    parser.add_argument("--allow-no-games", action="store_true", help="Exit successfully on an off day")
     args = parser.parse_args()
 
     today_local = date.fromisoformat(args.date) if args.date else date.today()
-    build_tracker(today_local, debug=bool(args.debug))
+    try:
+        build_tracker(today_local, debug=bool(args.debug))
+    except RuntimeError as error:
+        if args.allow_no_games and str(error) == "No games found for today.":
+            print(f"No NHL games on {today_local.isoformat()}; no tracker created")
+            return
+        raise
 
 if __name__ == "__main__":
+
     main()
+
+
+
+
+
+
+
+
+
+
+
