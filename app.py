@@ -3052,7 +3052,17 @@ def style_df(df: pd.DataFrame, cols: list[str]) -> "pd.io.formats.style.Styler":
             format_dict.setdefault(c, "{:.1%}")
 
     if format_dict:
-        sty = sty.format(format_dict, na_rep="")
+        def _number_formatter(pattern):
+            def render(value):
+                try:
+                    number = float(value)
+                    if math.isfinite(number):
+                        return pattern.format(number)
+                except (TypeError, ValueError):
+                    pass
+                return "" if pd.isna(value) else str(value)
+            return render
+        sty = sty.format({col: _number_formatter(pattern) for col, pattern in format_dict.items()}, na_rep="")
     if "Market" in view.columns:
         sty = sty.map(_mkt_style, subset=["Market"])
 
@@ -3889,10 +3899,15 @@ else:
 
     source = "latest"
     if latest_path is None or not os.path.exists(str(latest_path)):
-        st.warning(
-            "No tracker CSV found yet. Click **Run / Refresh slate** in the sidebar (or run `python nhl_edge.py` locally)."
-        )
-        st.stop()
+        demo_path = Path(__file__).parent / "preview_data" / "synthetic_tracker.csv"
+        if demo_path.is_file():
+            latest_path = str(demo_path)
+            source = "demo"
+        else:
+            st.warning(
+                "No tracker CSV found yet. Upload a tracker or use owner controls to refresh the slate."
+            )
+            st.stop()
 
     df = load_csv(str(latest_path))
 
@@ -4400,6 +4415,12 @@ with right:
     if "Date" in df.columns:
         st.caption(f"Date: **{df['Date'].iloc[0]}**")
     st.caption(f"Rows: **{len(df)}**")
+
+if source == "demo":
+    st.warning(
+        "**Synthetic preview · fictional players and odds.** These sample cards demonstrate the app's design; "
+        "they are not real slate picks. Upload a current tracker or use owner controls to refresh before using any picks."
+    )
 
 if source == "latest" and "Date" in df.columns:
     loaded_dates = pd.to_datetime(df["Date"], errors="coerce").dropna()
@@ -6910,6 +6931,9 @@ elif page == "📟 Calculator":
 
 elif page == "🧾 Log Bet":
     st.subheader("🧾 Log Bet — append-only Warlord Ledger")
+    if source == "demo":
+        st.info("Bet logging is disabled for the synthetic preview tracker.")
+        st.stop()
     if not owner_access:
         st.warning("Owner access is required to write the bet ledger.")
         st.stop()
