@@ -16,6 +16,7 @@ import streamlit as st
 
 from warlord_moves_2026 import VERSION as MOVE_KIT_VERSION
 from warlord_moves_2026 import best_move, points_moves, sog_moves, goals_moves as _goals_carry_moves, assists_moves as _assists_mapped_moves
+from warlords_night_board import rank_warlords, render_warlords
 from ledger_store import append_bet as _append_cloud_bet, recent_bets as _recent_cloud_bets
 # -------------------------
 # Back-compat SVG helpers (used by player-card tags / older HUD snippets)
@@ -4404,7 +4405,7 @@ with st.expander("Debug: loaded columns"):
 # Navigation
 page = st.sidebar.radio(
     "Page",
-    ["Board", "Points", "Assists", "SOG", "GOALS (0.5)", "Power Play", "📊 Results", "🧪 Dagger Lab", "🪜 Ladder Alerts", "Guide", "Ledger", "Raw CSV", "📟 Calculator", "🧾 Log Bet"],
+    ["⚔️ Warlords of the Night", "Board", "Points", "Assists", "SOG", "GOALS (0.5)", "Power Play", "📊 Results", "🧪 Dagger Lab", "🪜 Ladder Alerts", "Guide", "Ledger", "Raw CSV", "📟 Calculator", "🧾 Log Bet"],
     index=0,
     format_func=lambda x: {
         "Points": "Points (🛡️ Tank)",
@@ -4425,7 +4426,27 @@ show_games_times(df_f)
 # =========================
 # BOARD
 # =========================
-if page == "Board":
+if page == "⚔️ Warlords of the Night":
+    st.title("⚔️ Warlords of the Night")
+    st.caption("Tonight's party · top fired move for each player in Carry, Support, Tank, and Jungle")
+    if source == "upload":
+        st.info("Scouting from your uploaded tracker. Move rates are historical; save a pregame slate to freeze tags for next-day grading.")
+    dates = pd.to_datetime(df_f.get("Date", pd.Series(dtype=str)), errors="coerce").dropna().dt.date
+    night = None
+    if not dates.empty:
+        nights = sorted(dates.unique(), reverse=True)
+        night = st.selectbox("Slate night", nights, index=0, key="warlords_night_date")
+    party_size = st.slider("Players per class", 1, 12, 5, key="warlords_party_size")
+    night_df = df_f.loc[dates.eq(night)] if night is not None else df_f
+    boards = rank_warlords(night_df)
+    total = sum(len(cards) for cards in boards.values())
+    if total:
+        st.markdown(render_warlords(boards, party_size, _load_svg_icon), unsafe_allow_html=True)
+        st.caption("Ranked by each player's highest fired historical move hit rate. TRACK, EXPLORATORY, and SMALL SAMPLE labels show which rates need more forward results. A player can appear in multiple classes.")
+    else:
+        st.warning("No class moves fired on priced lines for this slate. Upload a tracker with current book lines, or refresh the slate after lines post.")
+
+elif page == "Board":
 
     with st.expander("Slate feed health and unpriced Green players", expanded=False):
         health = []
