@@ -3686,23 +3686,23 @@ def _engine_badge(mkt: str, r: dict) -> str:
     mk = str(mkt or "").strip().upper()
     try:
         if mk == "ASSISTS":
-            ev_ok = bool(r.get("Plays_EV_Assists", False))
+            ev_ok = _truthy(r.get("Plays_EV_Assists", False))
             line = float(r.get("Assists_Line", 0) or 0)
             mx = _is_matrix_green(str(r.get("Matrix_Assists", "") or ""))
-            pp = bool(r.get("Assist_PP_Proof", False))
+            pp = _truthy(r.get("Assist_PP_Proof", False))
             return "✅ENG" if (ev_ok and mx and abs(line - 0.5) < 1e-6 and pp) else ""
 
         if mk == "POINTS":
-            ev_ok = bool(r.get("Plays_EV_Points", False))
+            ev_ok = _truthy(r.get("Plays_EV_Points", False))
             line = float(r.get("Points_Line", 0) or 0)
             mx = _is_matrix_green(str(r.get("Matrix_Points", "") or ""))
             rg = _num(r.get("Reg_Gap_P10", 0), 0.0)
             return "✅ENG" if (ev_ok and mx and abs(line - 0.5) < 1e-6 and rg >= POINTS_ENGINE_REG_GAP) else ""
 
         if mk == "SOG":
-            ev_ok = bool(r.get("Plays_EV_SOG", False))
+            ev_ok = _truthy(r.get("Plays_EV_SOG", False))
             line = _num(r.get("SOG_Line", 0), 0.0)
-            mx = _mat_green  # already computed above
+            mx = _is_matrix_green(str(r.get("Matrix_SOG", "") or ""))
             rg = _num(r.get("Reg_Gap_S10", 0), 0.0)
             in_band = (rg >= SOG_ENGINE_REG_GAP_MIN) and (rg <= SOG_ENGINE_REG_GAP_MAX)
             return "✅ENG" if (ev_ok and mx and line <= SOG_ENGINE_LINE_MAX and in_band) else ""
@@ -4772,7 +4772,7 @@ elif page == "Board":
             )
             mb = calc_ev_per_dollar(_to_float(_get(r, "Model%", "Model_Prob", default="")), _to_float(_get(r, "Odds", "Odds_Amer", default="")))
             mb_txt = f"↩ {mb:+.2f}/$1" if mb is not None else ""
-            badges = " ".join([str(x) for x in [lock, evsig, mb_txt] if str(x).strip()])
+            badges = " ".join([escape(str(x)) for x in [lock, evsig, mb_txt] if str(x).strip()])
             st.markdown(f"<div class='wl-board-card {accent}'>"
                         f"<div style='display:flex;justify-content:space-between;gap:10px;'>"
                         f"<div style='font-size:16px;line-height:1.2;'>{headline}</div>"
@@ -5251,15 +5251,13 @@ elif page == "Points":
         meta_s = " | ".join([m for m in meta if m])
 
         dash = " — " if combo_s else ""
-        card_line = f"{proc_icons} <span style=\"font-weight:800;\">{combo_s}</span><span style=\"opacity:0.8;\">{dash}{meta_s}</span>"
+        card_line = f"{proc_icons} <span style=\"font-weight:800;\">{escape(combo_s)}</span><span style=\"opacity:0.8;\">{dash}{escape(meta_s)}</span>"
 
         _line_s = "" if _is_nan(line) else str(line)
         _odds_s = "" if _is_nan(odds) else str(odds)
         betline = (f"PTS {_line_s}" + (f" @ {_odds_s}" if _odds_s else "")) if _line_s else ""
         headline = f"<b>{escape(str(player))}</b> — {escape(str(game))}" if game else f"<b>{escape(str(player))}</b>"
         betline = escape(str(betline))
-        combo_s = escape(combo_s)
-        meta_s = escape(meta_s)
 
         st.markdown(
             f"""
@@ -5269,7 +5267,7 @@ elif page == "Points":
        {headline}
        <div style=\"opacity:0.9;margin-top:4px;\">{betline}</div>
      </div>
-     <div style=\"font-size:16px;white-space:nowrap;\">{_engine_badge('POINTS', r)} {str(r.get('LOCK','') or '').strip()}</div>
+     <div style=\"font-size:16px;white-space:nowrap;\">{_engine_badge('POINTS', r)} {escape(str(r.get('LOCK','') or '').strip())}</div>
    </div>
    <div style=\"margin-top:6px;font-size:12px;opacity:0.92;line-height:1.2;\">{card_line}</div>
  </div>
@@ -5517,7 +5515,8 @@ elif page == "Assists":
             proc_icons = "".join([i for i in icons if i])
 
             betline = f"A 0.5 @ {odds}" if odds != "" else "A 0.5"
-            headline = f"<b>{player}</b> — {game}" if game else f"<b>{player}</b>"
+            headline = f"<b>{escape(player)}</b> — {escape(game)}" if game else f"<b>{escape(player)}</b>"
+            betline = escape(betline)
 
             st.markdown(
                 f"""
@@ -5527,9 +5526,9 @@ elif page == "Assists":
                    {headline}
                    <div style="opacity:0.9;margin-top:4px;">{betline}</div>
                  </div>
-                 <div style="font-size:16px;white-space:nowrap;">{_engine_badge('ASSISTS', r)} {str(r.get('LOCK','') or '').strip()}</div>
+               <div style="font-size:16px;white-space:nowrap;">{_engine_badge('ASSISTS', r)} {escape(str(r.get('LOCK','') or '').strip())}</div>
                </div>
-               <div style="margin-top:6px;font-size:12px;opacity:0.95;line-height:1.2;">{proc_icons} <span style="font-weight:800;">{combo_s}</span><span style="opacity:0.8;">{" — " if combo_s else ""}{meta_s}</span></div>
+               <div style="margin-top:6px;font-size:12px;opacity:0.95;line-height:1.2;">{proc_icons} <span style="font-weight:800;">{escape(combo_s)}</span><span style="opacity:0.8;">{" — " if combo_s else ""}{escape(meta_s)}</span></div>
              </div>
                 """,
                 unsafe_allow_html=True,
@@ -5740,7 +5739,7 @@ elif page == "SOG":
                 matrix = str(r.get("Matrix_SOG", "") or "").strip()
                 expl, crit = _derive_badges(r)
                 eng = _engine_badge("SOG", r)
-                badges = f"{eng} {str(r.get('EV_Signal','') or '').strip()} {str(r.get('LOCK','') or '').strip()} {expl} {crit}".strip()
+                badges = f"{eng} {escape(str(r.get('EV_Signal','') or '').strip())} {escape(str(r.get('LOCK','') or '').strip())} {expl} {crit}".strip()
 
                 # Pretty line/odds strings
                 try:
@@ -5752,8 +5751,8 @@ elif page == "SOG":
                 except Exception:
                     o_str = str(odds)
 
-                headline = f"**{player}** — {game}"
-                betline = f"SOG {l_str}+  ({o_str})" if (l_str or o_str) else "SOG"
+                headline = f"<b>{escape(str(player))}</b> — {escape(str(game))}"
+                betline = escape(f"SOG {l_str}+  ({o_str})" if (l_str or o_str) else "SOG")
 
                 meta = []
                 if matrix:
@@ -5916,7 +5915,7 @@ elif page == "SOG":
                 combo_s = " • ".join(combo_tags[:6])
 
                 meta_s = " | ".join([m for m in meta if m])
-                card_line = f"{proc_icons} <span style=\"font-weight:800;\">{combo_s}</span><span style=\"opacity:0.8;\">{' — ' if combo_s else ''}{meta_s}</span>"
+                card_line = f"{proc_icons} <span style=\"font-weight:800;\">{escape(combo_s)}</span><span style=\"opacity:0.8;\">{' — ' if combo_s else ''}{escape(meta_s)}</span>"
                 st.markdown(
                     f"""
         <div class="wl-card wl-accent-orange">
@@ -6140,7 +6139,8 @@ elif page == "GOALS (0.5)":
         )
 
         betline = f"GOAL {line} @ {odds}" if (line or odds) else ""
-        headline = f"<b>{player}</b> — {game}" if game else f"<b>{player}</b>"
+        headline = f"<b>{escape(player)}</b> — {escape(game)}" if game else f"<b>{escape(player)}</b>"
+        betline = escape(betline)
 
         st.markdown(
             f"""
@@ -6150,9 +6150,9 @@ elif page == "GOALS (0.5)":
                {headline}
                <div style=\"opacity:0.9;margin-top:4px;\">{betline}</div>
              </div>
-             <div style=\"font-size:16px;white-space:nowrap;\">{_engine_badge('GOALS', r)} {str(r.get('LOCK','') or '').strip()}</div>
+             <div style=\"font-size:16px;white-space:nowrap;\">{_engine_badge('GOALS', r)} {escape(str(r.get('LOCK','') or '').strip())}</div>
            </div>
-           <div style=\"margin-top:6px;font-size:12px;opacity:0.95;line-height:1.2;\">{proc_icons} <span style=\"font-weight:800;\">{combo_s}</span><span style=\"opacity:0.8;\">{" — " if combo_s else ""}{meta_s}</span></div>
+           <div style=\"margin-top:6px;font-size:12px;opacity:0.95;line-height:1.2;\">{proc_icons} <span style=\"font-weight:800;\">{escape(combo_s)}</span><span style=\"opacity:0.8;\">{" — " if combo_s else ""}{escape(meta_s)}</span></div>
          </div>
                     """,
             unsafe_allow_html=True,
@@ -6629,12 +6629,12 @@ elif page == "🪜 Ladder Alerts":
                     if "OppSOG_L50" in row.index and str(row.get("OppSOG_L50","")).strip():
                         pills.append(("Opp SOG L50 " + str(row.get("OppSOG_L50")), "wl-pill-yellow"))
 
-                    pill_html = "".join([f'<span class="wl-pill {cls}">{lab}</span>' for lab, cls in pills]) or '<span class="wl-pill wl-neutral">No drivers found</span>'
+                    pill_html = "".join([f'<span class="wl-pill {cls}">{escape(lab)}</span>' for lab, cls in pills]) or '<span class="wl-pill wl-neutral">No drivers found</span>'
                     st.markdown(
                         f'''
 <div class="wl-card">
   <div style="margin-bottom:8px;">{pill_html}</div>
-  <div style="font-size:14px;line-height:1.35;opacity:0.95;"><b>Why:</b> {str(row.get("Why",""))}</div>
+  <div style="font-size:14px;line-height:1.35;opacity:0.95;"><b>Why:</b> {escape(str(row.get("Why","")))}</div>
 </div>
                         ''',
                         unsafe_allow_html=True,
