@@ -16,7 +16,7 @@ import streamlit as st
 
 from warlord_moves_2026 import VERSION as MOVE_KIT_VERSION
 from warlord_moves_2026 import best_move, points_moves, sog_moves, goals_moves as _goals_carry_moves, assists_moves as _assists_mapped_moves
-from warlords_night_board import rank_warlords, render_warlords
+from warlords_night_board import rank_warlords, render_warlords, _character_uri
 from ledger_store import append_bet as _append_cloud_bet, recent_bets as _recent_cloud_bets
 # -------------------------
 # Back-compat SVG helpers (used by player-card tags / older HUD snippets)
@@ -596,21 +596,10 @@ def _svg_icon(fname: str, title: str = "", market_cls: str = "wl-goals") -> str:
     return f'<span class="wl-ico wl-mono {market_cls}" title="{ttl}">{svg}</span>'
 
 def render_valhalla_gate(mkt: str) -> None:
-    """Presentation-only Valhalla Gate card. No logic. No gating."""
+    """Show the same market entry rules used by the frozen move kit."""
     mk = str(mkt or "").strip().upper()
     role = _role_for_market(mk)
-
-    # Baseline text per market
-    if mk == "ASSISTS":
-        baseline = "🟢 Matrix Green • Assists 0.5 • Conf_Assists ≥ 83 for named attacks"
-    elif mk == "GOALS":
-        baseline = "🟢 Matrix Green • Goals 0.5 • Conf_Points ≥ 84"
-    elif mk == "POINTS":
-        baseline = "🟢 Matrix Green • Points 0.5 Conf_Points ≥ 80, or 1.5 Conf_Points ≥ 75"
-    elif mk in ("SOG", "SHOTS"):
-        baseline = "🟢 Matrix Green • SOG 2.5 or 3.5 • Conf_SOG ≥ 75"
-    else:
-        baseline = "🟢 Matrix Green • Market baseline rules apply"
+    baseline = _CLASS_RULES.get(mk, {}).get("entry", "See the active move conditions below.")
 
     market_cls = role.get("cls", "wl-neutral")
     icon_html = _svg_icon("valhalla.svg", "Valhalla Gate", market_cls)
@@ -628,7 +617,7 @@ def render_valhalla_gate(mkt: str) -> None:
                 <b>Entry requires:</b> {baseline}
             </div>
             <div class="wl-gate-note">
-                Passing the Gate only allows entry. Moves trigger inside the board.
+                These are move entry conditions. Each named attack needs its own listed stats.
             </div>
         </div>
         """,
@@ -645,6 +634,40 @@ _ROLE_INFO = {
     "POINTS":  {"role": "Tank",    "svg": "role_tank.svg",    "cls": "wl-points",  "emoji": "🛡️"},
     "SOG":     {"role": "Jungle",  "svg": "role_jungle.svg",  "cls": "wl-sog",     "emoji": "🌿"},
 }
+
+# One description is reused by the prop headers, move gate, and Ledger.
+# Fired counts always come from warlord_moves_2026, never from this copy.
+_CLASS_RULES = {
+    "GOALS": {"role": "Carry", "market": "Goal", "entry": "Matrix_Goal Green · Goal 0.5 · Conf_Points ≥ 84", "note": "Goal_mu and opponent weaknesses unlock named attacks."},
+    "ASSISTS": {"role": "Support", "market": "Assists", "entry": "Matrix_Assists Green · Assists 0.5 · Conf_Assists ≥ 83 for named attacks", "note": "Green 0.5 alone fires Staff stance; 83 unlocks named attacks."},
+    "POINTS": {"role": "Tank", "market": "Points", "entry": "Matrix_Points Green · Points 0.5 with Conf_Points ≥ 80, or Points 1.5 with Conf_Points ≥ 75", "note": "The 0.5 and 1.5 lines have separate move trees."},
+    "SOG": {"role": "Jungle", "market": "SOG", "entry": "Matrix_SOG Green · exact SOG 2.5 or 3.5 · Conf_SOG ≥ 75", "note": "The 2.5 and 3.5 lines have separate move trees."},
+}
+
+
+def _render_class_header(mkt: str, frame: pd.DataFrame) -> None:
+    """Prop-page hero with live slate counts from the actual fired move rules."""
+    mk = mkt.upper()
+    spec = _CLASS_RULES[mk]
+    role = spec["role"]
+    cards = rank_warlords(frame)[role]
+    moves = sum(card["move_count"] for card in cards)
+    portrait = _character_uri(role)
+    art = f'<img src="{portrait}" alt="" aria-hidden="true" />' if portrait else ""
+    st.html(f"""<style>
+      .wl-prop-hero{{position:relative;isolation:isolate;overflow:hidden;min-height:150px;padding:22px 230px 20px 24px;
+        border:1px solid #334761;border-radius:16px;background:linear-gradient(110deg,#111b2b,#243149);color:#f8fafc}}
+      .wl-prop-hero img{{position:absolute;z-index:-1;right:12px;top:-45px;height:245px;opacity:.42;
+        mask-image:linear-gradient(90deg,transparent,#000 35%)}}
+      .wl-prop-kicker{{font-size:11px;letter-spacing:.18em;color:#cbd5e1;font-weight:800}}
+      .wl-prop-hero h2{{font-size:31px;line-height:1.1;margin:6px 0;color:#fff}}
+      .wl-prop-hero p{{margin:8px 0;color:#dce5f2;font-size:14px}}
+      .wl-prop-meta{{font-size:12px;color:#a9c7ec;font-weight:800;letter-spacing:.04em}}
+      @media(max-width:650px){{.wl-prop-hero{{padding:19px 120px 18px 17px;min-height:145px}}
+        .wl-prop-hero h2{{font-size:24px}}.wl-prop-hero img{{right:-55px;height:205px;opacity:.28}}}}
+    </style><section class="wl-prop-hero">{art}<div class="wl-prop-kicker">WARLORD CLASS · {escape(mk)}</div>
+      <h2>{escape(role)} · {escape(mk)}</h2><p>{escape(spec['entry'])}</p>
+      <div class="wl-prop-meta">{len(cards)} READY PLAYERS · {moves} FIRED MOVES ON THIS SLATE</div></section>""")
 
 def _role_for_market(mkt: str) -> dict:
     key = str(mkt or "").strip().upper()
@@ -4837,7 +4860,7 @@ elif page == "Board":
 # =========================
 elif page == "Points":
 
-    st.markdown(_page_title_html("Points", "POINTS"), unsafe_allow_html=True)
+    _render_class_header("POINTS", df_f)
 
     df_p = df_f.copy()
     df_p["_cp"] = safe_num(df_p, "Conf_Points", 0)
@@ -5311,7 +5334,7 @@ elif page == "Points":
 # =========================
 elif page == "Assists":
 
-    st.markdown(_page_title_html("Assists", "ASSISTS"), unsafe_allow_html=True)
+    _render_class_header("ASSISTS", df_f)
 
     df_a = df_f.copy()
     df_a["_ca"] = safe_num(df_a, "Conf_Assists", 0)
@@ -5571,7 +5594,7 @@ elif page == "Assists":
 # =========================
 elif page == "SOG":
 
-    st.markdown(_page_title_html("SOG", "SOG"), unsafe_allow_html=True)
+    _render_class_header("SOG", df_f)
 
     df_s = df_f.copy()
     df_s["_cs"] = safe_num(df_s, "Conf_SOG", 0)
@@ -5664,7 +5687,7 @@ elif page == "SOG":
     _render_badge_legend_inline()
 
     st.subheader("⭐ Smash Plays — SOG")
-    st.caption("Gates: (A) Line ≤ 2.5 • Matrix = Green • Conf ≥ 75 • (ShotIntent ≥ 3.4 OR Drought == 1)  OR  (B) Line ≥ 3.5 • Matrix = Green • Conf ≥ 75 (Jungle — Sniper Spec) • EV ignored")
+    render_valhalla_gate("SOG")
 
     top_n = st.slider("Show top plays (SOG)", 3, 25, 10, 1, key="sog_smash_topn")
 
@@ -5979,7 +6002,7 @@ elif page == "SOG":
 # =========================
 elif page == "GOALS (0.5)":
 
-    st.markdown(_page_title_html("GOALS (0.5)", "GOALS"), unsafe_allow_html=True)
+    _render_class_header("GOALS", df_f)
 
     df_g = df_f.copy()
 
@@ -7315,7 +7338,16 @@ If a market page looks blank:
 """)
 
 elif page == "Ledger":
-    st.subheader("📜 Ledger — What everything means")
+    st.subheader("📜 Ledger — Class rules and signals")
+    st.caption("Class counts reflect the current filtered slate. Historical move records appear in each player's full move list.")
+    _ledger_boards = rank_warlords(df_f)
+    for _mk in ("GOALS", "ASSISTS", "POINTS", "SOG"):
+        _spec = _CLASS_RULES[_mk]
+        _cards = _ledger_boards[_spec["role"]]
+        with st.expander(f'{_spec["role"]} · {_mk} — {len(_cards)} ready players', expanded=False):
+            st.write(f'**Entry:** {_spec["entry"]}')
+            st.write(_spec["note"])
+            st.caption(f'{sum(card["move_count"] for card in _cards)} fired moves on this slate. These are overlapping move tags, not separate bets.')
 
     st.markdown("""
 ### Core ideas
@@ -7365,7 +7397,7 @@ elif page == "Ledger":
   - OUT/IR should be filtered via **Available**
 """)
 
-    st.info("If you want, I can generate this ledger automatically from a Python dict so it stays synced when you add columns.")
+    st.info("Named moves and their exact conditions appear in each player's Full fired move list on Warlords of the Night.")
 
 
 
