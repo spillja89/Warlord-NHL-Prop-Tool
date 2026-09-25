@@ -7348,6 +7348,22 @@ elif page == "Ledger":
             st.write(f'**Entry:** {_spec["entry"]}')
             st.write(_spec["note"])
             st.caption(f'{sum(card["move_count"] for card in _cards)} fired moves on this slate. These are overlapping move tags, not separate bets.')
+            _move_rows = []
+            for _card in _cards:
+                for _move in _card["moves"]:
+                    _w, _n = int(_move["wins"]), int(_move["picks"])
+                    _lw, _ln = int(_move["later_wins"]), int(_move["later_picks"])
+                    _move_rows.append({
+                        "Player": _card["player"], "Move": _move["name"],
+                        "Type": _move["kind"], "Condition": _move.get("rule", _move.get("condition", "")),
+                        "Overall": f'{_w}/{_n} ({100 * _w / _n:.1f}%)' if _n else "—",
+                        "Later": f'{_lw}/{_ln} ({100 * _lw / _ln:.1f}%)' if _ln else "—",
+                        "Status": "TRACK" if _move.get("track") else "LAB" if _move.get("experimental") else "",
+                    })
+            if _move_rows:
+                st.dataframe(pd.DataFrame(_move_rows), hide_index=True, width="stretch")
+            else:
+                st.caption("No class moves fired on priced lines in this view.")
 
     st.markdown("""
 ### Core ideas
