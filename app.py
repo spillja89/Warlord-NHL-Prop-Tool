@@ -2833,7 +2833,25 @@ def board_best_market_ev(row) -> tuple[str, str]:
 def safe_str(df: pd.DataFrame, col: str, default="") -> pd.Series:
     if col not in df.columns:
         return pd.Series([default] * len(df), index=df.index)
-    return df[col].astype(str).fillna(default)
+    return df[col].fillna(default).astype(str)
+
+
+def column_or(df: pd.DataFrame, col: str, default=0) -> pd.Series:
+    """Keep optional tracker fields aligned with the rows when absent."""
+    if col in df.columns:
+        return df[col]
+    return pd.Series(default, index=df.index)
+
+
+def assist_dagger_mask(df: pd.DataFrame) -> pd.Series:
+    """Use one diagnostic dagger gate on Assists and Dagger Lab."""
+    proof = to_bool_series(column_or(df, "Assist_PP_Proof", False))
+    count = safe_num(df, "Assist_ProofCount", 0)
+    score = safe_num(df, "Assist_Dagger", 0)
+    tier = column_or(df, "PP_Tier", "").fillna("").astype(str).str.upper()
+    return proof | (count >= 4) | (score >= 82) | (tier.isin(["A", "B"]) & (count >= 3) & (score >= 60))
+
+
 def style_df(df: pd.DataFrame, cols: list[str]) -> "pd.io.formats.style.Styler":
     # Market color pill (Ninja Turtles palette)
     mkt_bg = {
@@ -3410,7 +3428,7 @@ def _bundle_for_market(row, market_key: str) -> dict:
 
     if mk in ("goals", "goal", "g"):
         label = "GOALS"
-        conf = _first_num("Conf_Goal", "Conf_Goals", "Conf_G", default=0)
+        conf = _first_num("Conf_Points", "Conf_P", default=0)
         matrix = _first_str("Matrix_Goal", "Matrix_Goals", "Matrix_G", default="")
         ev = _first_num("Goal_EV%", "Goal_EVpct_over", "Goals_EVpct_over", "G_EV%", "EV_Goal", "EV_Goals", default=0)
         model = _first_num("Goal_Model%", "Goals_Model%", "Model%_Goal", "Model%_Goals", default=0)
@@ -3551,12 +3569,9 @@ def _passes_engine(b: dict) -> bool:
     if label in ("GOALS","GOAL","ATG"):
         line = _num(b.get("line", 0), 0)
         conf = _num(b.get("conf", 0), 0)
-        avg5 = _num(b.get("avg5_sog", 0), 0)
         if abs(line - 0.5) > 1e-6:
             return False
-        if conf < 80:
-            return False
-        if avg5 < 3.4:
+        if conf < 84:
             return False
         return True
 
@@ -3745,7 +3760,8 @@ def show_table(df: pd.DataFrame, cols: list[str], title: str):
     missing = [c for c in cols if c not in df.columns]
 
     if missing:
-        with st.expander("Missing columns (safe to ignore)"):
+        with st.expander(f"Unavailable tracker columns ({len(missing)})"):
+            st.caption("This tracker does not contain these fields. Affected cells and moves remain unavailable.")
             st.write(missing)
 
     styled = style_df(df, existing)
@@ -4366,10 +4382,10 @@ df["Green_Assists"] = df["Plays_Assists"].fillna(False)
 # 🔥 GLOBAL PLAY FLAG (any market)
 # =========================
 df["🔥"] = (
-    df.get("Plays_Points", False).fillna(False)
-    | df.get("Plays_Assists", False).fillna(False)
-    | df.get("Green_SOG", False).fillna(False)
-    | df.get("Green_Goal", False).fillna(False)
+    to_bool_series(column_or(df, "Plays_Points", False))
+    | to_bool_series(column_or(df, "Plays_Assists", False))
+    | to_bool_series(column_or(df, "Green_SOG", False))
+    | to_bool_series(column_or(df, "Green_Goal", False))
 ).map(lambda x: "🔥" if bool(x) else "")
 
 
@@ -4399,8 +4415,9 @@ odds_columns = [col for col in ("Points_Odds_Over", "Assists_Odds_Over", "SOG_Od
 if not odds_columns or not any(pd.to_numeric(df[col], errors="coerce").notna().any() for col in odds_columns):
     st.warning("No sportsbook odds are available in this tracker. Model moves can still be reviewed, but check the line and price before placing a bet.")
 
-with st.expander("Debug: loaded columns"):
-    st.write(list(df.columns))
+if owner_access:
+    with st.expander("Tracker columns (owner)"):
+        st.write(list(df.columns))
 
 # Navigation
 page = st.sidebar.radio(
@@ -4527,9 +4544,9 @@ elif page == "Board":
         box-shadow: 0 10px 25px rgba(0,0,0,0.35);
       }
       .wl-accent-purple{ background: rgba(168,85,247,0.18); border-left: 5px solid #a855f7; }
-      .wl-accent-blue{ background: rgba(59,130,246,0.18); border-left: 5px solid #3b82f6; }  { border-left: 5px solid #0b1b3a; }
-      .wl-accent-orange{ background: rgba(34,197,94,0.18); border-left: 5px solid #22c55e; }
-      .wl-accent-red{ background: rgba(239,68,68,0.18); }   { border-left: 5px solid #ef4444; }
+      .wl-accent-blue{ background: rgba(59,130,246,0.18); border-left: 5px solid #3b82f6; }
+      .wl-accent-green{ background: rgba(34,197,94,0.18); border-left: 5px solid #22c55e; }
+      .wl-accent-red{ background: rgba(239,68,68,0.18); border-left: 5px solid #ef4444; }
     </style>
     """, unsafe_allow_html=True)
 
@@ -4588,9 +4605,8 @@ elif page == "Board":
             _lbl = str(b.get("label","") or "").upper().strip()
             if _lbl in ("GOALS","GOAL","ATG"):
                 _conf = _num(b.get("conf",0), 0)
-                _avg5 = _num(b.get("avg5_sog",0), 0)
                 _line = _num(b.get("line",0), 0)
-                if abs(_line - 0.5) > 1e-6 or _conf < 80 or _avg5 < 3.4:
+                if abs(_line - 0.5) > 1e-6 or _conf < 84:
                     continue
             rr = _r.copy()
             rr["Best_Market"] = b["label"]
@@ -4608,7 +4624,11 @@ elif page == "Board":
             rr["DPS_Adj"] = b.get("dps_adj",0.0)
             best_rows.append(rr)
 
-    df_board = pd.DataFrame(best_rows) if best_rows else df_board_src.iloc[0:0]
+    if not best_rows:
+        st.info("No picks pass the Board gates on this tracker.")
+        st.stop()
+
+    df_board = pd.DataFrame(best_rows)
     df_b = sort_board(df_board)
 
     board_cols = [
@@ -4663,15 +4683,6 @@ elif page == "Board":
 
     # === PICK SHEET (UI ONLY) ===
     st.subheader("🧾 Pick Sheet — signals-first")
-    cA, cB, cC, cD = st.columns(4)
-    with cA:
-        st.metric("Players", int(len(df_b)))
-    with cB:
-        st.metric("Locks", int((df_b["LOCK"].astype(str).str.len() > 0).sum()) if "LOCK" in df_b.columns else 0)
-    with cC:
-        st.metric("+EV", int((df_b["EV_Signal"].astype(str).str.contains("💰")).sum()) if "EV_Signal" in df_b.columns else 0)
-    with cD:
-        st.metric("Top Conf", float(df_b["Best_Conf"].max()) if "Best_Conf" in df_b.columns else 0.0)
     # === Board filter set (beta default) ===
     st.sidebar.subheader("Board Filters")
     market_sel = st.sidebar.multiselect("Market", ["POINTS","ASSISTS","SOG","GOALS"], default=["POINTS","ASSISTS","SOG","GOALS"], key="board_mkt_sel")
@@ -4686,19 +4697,29 @@ elif page == "Board":
     q = st.sidebar.text_input("Search", value="", key="board_search").strip().lower()
 
     df_b_filt = df_b.copy()
-    if market_sel:
-        df_b_filt = df_b_filt[df_b_filt["Best_Market"].astype(str).str.upper().isin([m.upper() for m in market_sel])]
-    if line_sel:
-        df_b_filt = df_b_filt[pd.to_numeric(df_b_filt.get("Best_Line", 0), errors="coerce").isin(line_sel)]
+    df_b_filt = df_b_filt[df_b_filt["Best_Market"].astype(str).str.upper().isin([m.upper() for m in market_sel])]
+    if line_vals:
+        df_b_filt = df_b_filt[pd.to_numeric(df_b_filt["Best_Line"], errors="coerce").isin(line_sel)]
     # odds filter: hide ultra-favorites (keep anything >= max_fav_odds)
     df_b_filt = df_b_filt[pd.to_numeric(df_b_filt.get("Best_Odds", df_b_filt.get("Odds", 0)), errors="coerce").fillna(0.0) >= float(max_fav_odds)]
     if q:
-        df_b_filt = df_b_filt[df_b_filt.get("Player","").astype(str).str.lower().str.contains(q)]
+        df_b_filt = df_b_filt[safe_str(df_b_filt, "Player").str.lower().str.contains(q, regex=False)]
+
+    cA, cB, cC, cD = st.columns(4)
+    with cA:
+        st.metric("Filtered picks", int(len(df_b_filt)))
+    with cB:
+        st.metric("Locks", int((column_or(df_b_filt, "LOCK", "").astype(str).str.len() > 0).sum()))
+    with cC:
+        st.metric("+EV", int(column_or(df_b_filt, "EV_Signal", "").astype(str).str.contains("💰").sum()))
+    with cD:
+        top_conf = pd.to_numeric(column_or(df_b_filt, "Best_Conf"), errors="coerce").max()
+        st.metric("Top Conf", f"{top_conf:.0f}" if pd.notna(top_conf) else "—")
 
 
 
     # Top candidates: DPS-first (presentation-only)
-    _rank = df_b.copy()
+    _rank = df_b_filt.copy()
     _rank["_dps_adj"] = pd.to_numeric(_rank.get("DPS_Adj", 0), errors="coerce").fillna(0.0)
     _rank["_dps_n"] = pd.to_numeric(_rank.get("DPS_N", 0), errors="coerce").fillna(0).astype(int)
     _rank["_odds"] = pd.to_numeric(_rank.get("Best_Odds", _rank.get("Odds", 0)), errors="coerce").fillna(0.0)
@@ -4743,11 +4764,11 @@ elif page == "Board":
             dps_w = _safe_float(r.get("DPS_Win"), 0.0) or 0.0
             dps_n = int(_safe_float(r.get("DPS_N"), 0) or 0)
             dps_a = _safe_float(r.get("DPS_Adj"), 0.0) or 0.0
+            move_summary = (f"🏆 {escape(dps_t)} · AdjWin <strong>{dps_a:.1f}</strong> "
+                            f"(Win {dps_w:.1f}% • n={dps_n})") if dps_t and dps_n > 0 else "No named move fired"
             headline = (
                 f"<strong>{escape(str(player))}</strong> — {escape(str(game))} · "
-                f"{expl}{crit} <strong>{escape(str(bm))}</strong> · "
-                f"🏆 {escape(dps_t)} · AdjWin <strong>{dps_a:.1f}</strong> "
-                f"(Win {dps_w:.1f}% • n={dps_n})"
+                f"{expl}{crit} <strong>{escape(str(bm))}</strong> · {move_summary}"
             )
             mb = calc_ev_per_dollar(_to_float(_get(r, "Model%", "Model_Prob", default="")), _to_float(_get(r, "Odds", "Odds_Amer", default="")))
             mb_txt = f"↩ {mb:+.2f}/$1" if mb is not None else ""
@@ -4786,7 +4807,7 @@ elif page == "Board":
                 _render_why_it_fires_rich(mkt, r, tags)
 
     with st.expander("Full Board Table (all rows)", expanded=False):
-        show_table(df_b, board_cols, "Board (sorted by Best_Conf)")
+        show_table(df_b_filt, board_cols, "Board (filtered picks)")
 
 
 
@@ -4964,25 +4985,23 @@ elif page == "Points":
 
 
     _p = df_p.copy()
-    try:
-        _p = _p[
-            (_p.get("Matrix_Points", "").astype(str).str.strip().str.upper().isin(["GREEN","🟢"])) &
-            (pd.to_numeric(_p.get("Points_Line", 0), errors="coerce") == 0.5) &
-            (_p.get("Outcome_Points", "").astype(str).str.upper().isin(["W","L"]) | (_p.get("Match_Status_Points", "").astype(str).str.upper().ne("GRADED")))
-        ].copy()
-    except Exception:
-        pass
+    _p = _p[
+        (safe_str(_p, "Matrix_Points").str.strip().str.upper().isin(["GREEN", "🟢"]))
+        & (safe_num(_p, "Points_Line", 0) == 0.5)
+        & (safe_str(_p, "Outcome_Points").str.upper().isin(["W", "L"])
+           | safe_str(_p, "Match_Status_Points").str.upper().ne("GRADED"))
+    ].copy()
 
-    heat = _p.get("Reg_Heat_P", "").astype(str).str.upper().isin(["HOT","DUE","OVERDUE"])
-    gap = pd.to_numeric(_p.get("Reg_Gap_P10", np.nan), errors="coerce").fillna(-999) >= 2.5
-    drt = pd.to_numeric(_p.get("Drought_P", np.nan), errors="coerce").fillna(-999) >= 2
+    heat = safe_str(_p, "Reg_Heat_P").str.upper().isin(["HOT", "DUE", "OVERDUE"])
+    gap = safe_num(_p, "Reg_Gap_P10", -999) >= 2.5
+    drt = safe_num(_p, "Drought_P", -999) >= 2
     reg_valid = heat | gap | drt
     _p = _p[reg_valid].copy()
 
-    _p["_conf"] = pd.to_numeric(_p.get("Conf_Points", 0), errors="coerce").fillna(0)
-    _p["_l10r"] = pd.to_numeric(_p.get("L10_Rate_Points", np.nan), errors="coerce")
-    _p["_l10d"] = pd.to_numeric(_p.get("L10_Diff_Points", np.nan), errors="coerce")
-    _p["_gap"] = pd.to_numeric(_p.get("Reg_Gap_P10", np.nan), errors="coerce")
+    _p["_conf"] = safe_num(_p, "Conf_Points", 0)
+    _p["_l10r"] = pd.to_numeric(column_or(_p, "L10_Rate_Points", np.nan), errors="coerce")
+    _p["_l10d"] = pd.to_numeric(column_or(_p, "L10_Diff_Points", np.nan), errors="coerce")
+    _p["_gap"] = pd.to_numeric(column_or(_p, "Reg_Gap_P10", np.nan), errors="coerce")
 
     _p = _p.sort_values(["_conf","_l10r","_l10d","_gap"], ascending=[False, False, False, False], kind="mergesort")
 
@@ -5293,8 +5312,8 @@ elif page == "Assists":
         if "Color_Assists" in df_a.columns and color_pick:
             df_a = df_a[df_a["Color_Assists"].isin(color_pick)]
 
-    df_a["Green"] = df_a.get("Green_Assists", False).map(lambda x: "🟢" if bool(x) else "")
-    df_a["PP_PROOF"] = df_a.get("Assist_PP_Proof", False).map(lambda x: "✅" if bool(x) else "")
+    df_a["Green"] = to_bool_series(column_or(df_a, "Green_Assists", False)).map(lambda x: "🟢" if x else "")
+    df_a["PP_PROOF"] = to_bool_series(column_or(df_a, "Assist_PP_Proof", False)).map(lambda x: "✅" if x else "")
 
     # --- DPS ranking + filters (Board-style; presentation only) ---
     df_a = add_best_proc_cols(df_a, 'ASSISTS')
@@ -5303,13 +5322,13 @@ elif page == "Assists":
 
     # Valhalla gate columns (Assists) — matches board text
     df_a["Valhalla_OK"] = (
-        (df_a.get("Matrix_Assists", "").astype(str).str.strip().str.lower() == "green")
-        & (pd.to_numeric(df_a.get("Assists_Line", 0), errors="coerce").fillna(0) == 0.5)
-        & (pd.to_numeric(df_a.get("Conf_Assists", 0), errors="coerce").fillna(0) >= 80)
+        (column_or(df_a, "Matrix_Assists", "").astype(str).str.strip().str.lower() == "green")
+        & (safe_num(df_a, "Assists_Line", 0) == 0.5)
+        & (safe_num(df_a, "Conf_Assists", 0) >= 80)
     ).map(lambda x: "✅" if bool(x) else "")
 
     # MAIN tier from PP_iXA60 (display)
-    _pp_ix = pd.to_numeric(df_a.get("PP_iXA60", 0), errors="coerce").fillna(0)
+    _pp_ix = safe_num(df_a, "PP_iXA60", 0)
     df_a["PP_iXA60_Tier"] = np.select(
         [_pp_ix >= 4.2, _pp_ix >= 3.0],
         ["ELITE", "STRONG"],
@@ -5317,9 +5336,9 @@ elif page == "Assists":
     )
 
     # ENV warnings (display only)
-    _opp_sv = pd.to_numeric(df_a.get("Opp_SV", 0), errors="coerce").fillna(0)
-    _xga = pd.to_numeric(df_a.get("opp_5v5_xGA60", 0), errors="coerce").fillna(0)
-    _gweak = pd.to_numeric(df_a.get("Goalie_Weak", 0), errors="coerce").fillna(0)
+    _opp_sv = safe_num(df_a, "Opp_SV", 0)
+    _xga = safe_num(df_a, "opp_5v5_xGA60", 0)
+    _gweak = safe_num(df_a, "Goalie_Weak", 0)
 
     df_a["ENV_BAD_OppSV"] = (_opp_sv >= 0.905).map(lambda x: "⚠️" if bool(x) else "")
     df_a["ENV_GOOD_OppSV"] = ((_opp_sv > 0) & (_opp_sv < 0.885)).map(lambda x: "✅" if bool(x) else "")  # SV% < 88.5% = weak goalie (good for assists)
@@ -5331,22 +5350,7 @@ elif page == "Assists":
     # Goal: daggers are rare and meaningful (PP1/proof-level assist edges only).
     df_a["🗡️"] = ""
 
-    # Safe pulls
-    proof_col = "Assist_PP_Proof" if "Assist_PP_Proof" in df_a.columns else None
-    proof = df_a[proof_col].astype(bool) if proof_col else False
-
-    apc = pd.to_numeric(df_a.get("Assist_ProofCount", 0), errors="coerce").fillna(0)
-    adg = pd.to_numeric(df_a.get("Assist_Dagger", 0), errors="coerce").fillna(0)
-    ppt = df_a.get("PP_Tier", "").astype(str).str.upper()
-
-    # HARD gate:
-    # 1) Explicit proof, OR
-    # 2) 4-of-4 assist proofs, OR
-    # 3) Elite dagger score (>=85), OR
-    # 4) PP A/B + strong proof (>=3) + decent dagger (>=70)
-    mask = (proof if isinstance(proof, pd.Series) else False)
-
-    df_a.loc[mask, "🗡️"] = "🗡️"
+    df_a.loc[assist_dagger_mask(df_a), "🗡️"] = "🗡️"
 
     assists_cols = [
 
@@ -5415,11 +5419,11 @@ elif page == "Assists":
     ].copy()
 
     # Feature pulls (safe)
-    _a["_conf"] = pd.to_numeric(_a.get("Conf_Assists", 0), errors="coerce").fillna(0)
-    _a["_ppixa"] = pd.to_numeric(_a.get("PP_iXA60", _a.get("PP_iXA_60", np.nan)), errors="coerce")
-    _a["_ppshare"] = pd.to_numeric(_a.get("PP_TeamShare_pct", _a.get("PP_TeamShare%", np.nan)), errors="coerce")
-    _a["_ixa_pct"] = pd.to_numeric(_a.get("iXA%", np.nan), errors="coerce")
-    _a["_team_gf_l5"] = pd.to_numeric(_a.get("Team_GF_L5", np.nan), errors="coerce")
+    _a["_conf"] = safe_num(_a, "Conf_Assists", 0)
+    _a["_ppixa"] = pd.to_numeric(column_or(_a, "PP_iXA60", column_or(_a, "PP_iXA_60", np.nan)), errors="coerce")
+    _a["_ppshare"] = pd.to_numeric(column_or(_a, "PP_TeamShare_pct", column_or(_a, "PP_TeamShare%", np.nan)), errors="coerce")
+    _a["_ixa_pct"] = pd.to_numeric(column_or(_a, "iXA%", np.nan), errors="coerce")
+    _a["_team_gf_l5"] = pd.to_numeric(column_or(_a, "Team_GF_L5", np.nan), errors="coerce")
 
     _a = _a.sort_values(["_conf","_ppixa","_ppshare"], ascending=[False, False, False], kind="mergesort")
 
@@ -5647,9 +5651,9 @@ elif page == "SOG":
     _rank = df_s.copy()
 
     # Global gates (always on)
-    _mx = _rank.get("Matrix_SOG", "").astype(str).str.strip().str.lower().eq("green")
-    _line = pd.to_numeric(_rank.get("SOG_Line", 0), errors="coerce").fillna(0.0)
-    _conf = pd.to_numeric(_rank.get("Conf_SOG", 0), errors="coerce").fillna(0.0)
+    _mx = safe_str(_rank, "Matrix_SOG").str.strip().str.lower().eq("green")
+    _line = safe_num(_rank, "SOG_Line", 0)
+    _conf = safe_num(_rank, "Conf_SOG", 0)
 
     # ShotIntent / SI (column may vary across builds)
     if "ShotIntent" in _rank.columns:
@@ -5661,7 +5665,7 @@ elif page == "SOG":
     elif "SI_SOG" in _rank.columns:
         _si = pd.to_numeric(_rank.get("SI_SOG", 0), errors="coerce").fillna(0.0)
     else:
-        _si = 0.0
+        _si = pd.Series(0.0, index=_rank.index)
 
     # Drought / regression timing (column may vary across builds)
     if "Drought_SOG" in _rank.columns:
@@ -5691,7 +5695,7 @@ elif page == "SOG":
     _elite_enraged = _enraged & (_share >= 20.0)
     _enraged_shatter = (_opp50 >= 29.5) & _permission_shatter
 
-    _is35 = pd.to_numeric(_rank.get("SOG_Line", 0), errors="coerce").fillna(0.0) >= 3.5
+    _is35 = safe_num(_rank, "SOG_Line", 0) >= 3.5
     _rank["_sniper_tier"] = ""
     _rank.loc[_is35 & _elite_enraged, "_sniper_tier"] = "SNIPER CRIT"
     _rank.loc[_is35 & (_rank["_sniper_tier"] == "") & _enraged, "_sniper_tier"] = "STRONG"
@@ -6000,7 +6004,7 @@ elif page == "GOALS (0.5)":
         if "Color_Goal" in df_g.columns and color_pick:
             df_g = df_g[df_g["Color_Goal"].isin(color_pick)]
 
-    df_g["Green"] = df_g.get("Green_Goal", False).map(lambda x: "🟢" if bool(x) else "")
+    df_g["Green"] = to_bool_series(column_or(df_g, "Green_Goal", False)).map(lambda x: "🟢" if x else "")
 
     goal_cols = [
         "Game",
@@ -6273,20 +6277,7 @@ elif page == "🧪 Dagger Lab":
     # Build dagger icon (HARD GATE) — recompute every time (ignore any 🗡️ column in CSV)
     df_lab["🗡️"] = ""
 
-    proof_col = "Assist_PP_Proof" if "Assist_PP_Proof" in df_lab.columns else None
-    proof = df_lab[proof_col].astype(bool) if proof_col else pd.Series(False, index=df_lab.index)
-
-    apc = pd.to_numeric(df_lab.get("Assist_ProofCount", 0), errors="coerce").fillna(0)
-    adg = pd.to_numeric(df_lab.get("Assist_Dagger", 0), errors="coerce").fillna(0)
-    ppt = df_lab.get("PP_Tier", "").astype(str).str.upper()
-
-    # HARD gate:
-    # 1) Explicit proof, OR
-    # 2) 4-of-4 assist proofs, OR
-    # 3) Elite dagger score (>=82), OR
-    # 4) PP A/B + strong proof (>=3) + decent dagger (>=60)
-    mask = (proof | (apc >= 4) | (adg >= 82) | ((ppt.isin(["A","B"])) & (apc >= 3) & (adg >= 60)))
-    df_lab.loc[mask, "🗡️"] = "🗡️"
+    df_lab.loc[assist_dagger_mask(df_lab), "🗡️"] = "🗡️"
 
     # Prefer listing dagger candidates first
     sort_cols = []
@@ -6571,8 +6562,8 @@ elif page == "🪜 Ladder Alerts":
                         ladd["Player"].astype(str) + " — " +
                         ladd["Market"].astype(str) + " " +
                         ladd["Line"].astype(str) + " (" +
-                        ladd.get("Book", "").astype(str) + " " +
-                        ladd.get("Odds", "").astype(str) + ")"
+                        safe_str(ladd, "Book") + " " +
+                        safe_str(ladd, "Odds") + ")"
                     )
                     pick = st.selectbox("Pick an alert to inspect", options=ladd["_pick_label"].tolist(), index=0, key="ladder_pick")
                     row = ladd[ladd["_pick_label"] == pick].iloc[0]
@@ -7234,9 +7225,9 @@ So “300/900” is **odds**, not the line.
 
 ### Milestone mapping (how Overs work)
 - 0.5 → **1+**
-- 1.0 → **1+**
+- 1.0 → **2+ to win** (exactly 1 pushes)
 - 1.5 → **2+**
-- 2.0 → **2+**
+- 2.0 → **3+ to win** (exactly 2 pushes)
 - 2.5 → **3+**
 - 3.0 → **4+**
 (Over X.0 = X+1)
@@ -7280,7 +7271,7 @@ Matrix green + confidence gate + involvement proofs pass.
 Matrix green + confidence gate + due/env/drought proof hits.
 
 ### 🟢 Assists
-Matrix green + Conf_Assists ≥ 77 + proof gate passes.
+Matrix green + Conf_Assists ≥ 80 + the current 0.5 line gate. Named Assists moves have their own thresholds.
 
 ---
 
