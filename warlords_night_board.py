@@ -100,69 +100,78 @@ def _odds(value):
 
 
 def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=None) -> str:
-    """Safe HTML for four responsive MMO class lanes."""
+    """Compact, escaped HTML for four responsive class lanes."""
+    descriptions = {"Carry": "Finish the fight", "Support": "Set the play",
+                    "Tank": "Hold the line", "Jungle": "Control the lanes"}
+    class_icons = {"Carry": "role_carry.svg", "Support": "role_support.svg",
+                   "Tank": "role_tank.svg", "Jungle": "role_jungle.svg"}
     lanes = []
     for role, market, symbol, color in CLASSES:
         cards = boards.get(role, [])
-        class_icon_file = {"Carry": "role_carry.svg", "Support": "role_support.svg",
-                           "Tank": "role_tank.svg", "Jungle": "role_jungle.svg"}[role]
-        class_icon = icon_loader(class_icon_file) if icon_loader else ""
-        content = []
+        class_icon = icon_loader(class_icons[role]) if icon_loader else ""
+        units = []
         for rank, card in enumerate(cards[:limit], 1):
             move = card["move"]
             wins, picks = int(move["wins"]), int(move["picks"])
             late_wins, late_picks = int(move["later_wins"]), int(move["later_picks"])
             pct = 100 * wins / picks
             late_pct = 100 * late_wins / late_picks if late_picks else 0
-            status = "TRACK" if move.get("track") else "EXPLORATORY" if move.get("experimental") or move["kind"] == "LAB CRIT" else "MOVE"
-            if picks < 30:
-                status += " · SMALL SAMPLE"
-            line = f"Over {card['line']:g} {market}" if card["line"] is not None else market
-            match = card["game"] or (f"{card['team']} vs {card['opponent']}" if card["opponent"] else card["team"])
+            status = ("TRACK" if move.get("track") else "LAB" if move.get("experimental")
+                      or move["kind"] == "LAB CRIT" else move["kind"])
+            sample = " · SMALL SAMPLE" if picks < 30 else ""
+            line = f"OVER {card['line']:g} {market.upper()}" if card["line"] is not None else market.upper()
+            matchup = card["game"] or card["team"]
             rule = move.get("rule", move.get("condition", ""))
             move_icon = icon_loader(move.get("icon", "")) if icon_loader else ""
-            content.append(f"""
-              <article class="wn-card">
-                <div class="wn-card-top"><span class="wn-rank">#{rank:02d}</span><span class="wn-status">{_h(status)}</span></div>
-                <div class="wn-battle"><span class="wn-avatar">{move_icon or symbol}</span><span class="wn-arrow">━━➤</span><span class="wn-tower">🏰</span></div>
-                <div class="wn-player">{_h(card['player'])}</div>
-                <div class="wn-match">{_h(match)}{(' · ' + _h(card['time'])) if card['time'] else ''}</div>
-                <div class="wn-move-type">{_h(move['kind'])}</div>
-                <div class="wn-move">{_h(move['name'])}</div>
-                <div class="wn-rule">{_h(rule)}</div>
-                <div class="wn-meter"><span style="width:{pct:.1f}%"></span></div>
-                <div class="wn-score"><strong>{pct:.1f}%</strong><span>{wins}/{picks} historical</span></div>
-                <div class="wn-later">Later: {late_wins}/{late_picks} · {late_pct:.1f}%</div>
-                <div class="wn-line">{_h(line)} <span>{_h(_odds(card['odds']))}{(' · ' + _h(card['book'])) if card['book'] else ''}</span></div>
-              </article>""")
-        if not content:
-            content = ['<div class="wn-empty">No priced player has a fired move in this class yet.</div>']
+            price = _odds(card["odds"])
+            units.append(f"""<article class="wn-unit">
+              <div class="wn-portrait" aria-hidden="true">{move_icon or symbol}</div>
+              <div class="wn-unit-body">
+                <div class="wn-unit-head"><span class="wn-rank">{rank:02d}</span><strong>{_h(card['player'])}</strong><span class="wn-match">{_h(matchup)}</span></div>
+                <div class="wn-attack"><span class="wn-attack-name">{_h(move['name'])}</span><span class="wn-badge">{_h(status + sample)}</span></div>
+                <div class="wn-unit-foot"><span>{_h(line)} <b>{_h(price)}</b></span><span>LATER {late_wins}/{late_picks} · {late_pct:.1f}%</span></div>
+                <details class="wn-details"><summary>Move conditions</summary><span>{_h(rule)}</span></details>
+              </div>
+              <div class="wn-record"><strong>{pct:.1f}%</strong><span>{wins}/{picks}</span><em>HISTORICAL</em></div>
+            </article>""")
+        if not units:
+            units = ['<div class="wn-empty">No move has fired on a posted line yet.</div>']
         lanes.append(f"""<section class="wn-lane" style="--accent:{color}">
-          <div class="wn-lane-head"><span class="wn-class-icon">{class_icon or symbol}</span>
-            <div><div class="wn-role">{role}</div><div class="wn-market">{market} · {len(cards)} ready</div></div>
-          </div>{''.join(content)}</section>""")
-    return """<style>
-    .wn-board,.wn-board *{box-sizing:border-box}.wn-board{font-family:Inter,system-ui,sans-serif;color:#eaf2ff}
-    .wn-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;align-items:start}
-    .wn-lane{min-width:0;background:#111c30;border:1px solid #35445d;border-top:3px solid var(--accent);border-radius:16px;padding:11px}
-    .wn-lane-head{display:flex;gap:10px;align-items:center;padding:5px 3px 14px}
-    .wn-class-icon{display:grid;place-items:center;background:#233149;border-radius:12px;width:39px;height:39px;font-size:22px}
-    .wn-class-icon svg{width:28px;height:28px;max-width:28px;max-height:28px;fill:var(--accent)}
-    .wn-role{font-size:18px;font-weight:900;color:var(--accent)}.wn-market{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:#aab9ce}
-    .wn-card{background:linear-gradient(160deg,#233149,#182538);border:1px solid #40506a;border-radius:13px;padding:13px;margin-bottom:11px;box-shadow:0 8px 20px #070e1c55}
-    .wn-card-top,.wn-score,.wn-line{display:flex;justify-content:space-between;gap:7px;align-items:center}
-    .wn-rank{font-weight:900;color:var(--accent);font-size:13px}.wn-status{font-size:9px;letter-spacing:.04em;color:#f3dc99;text-align:right}
-    .wn-battle{display:flex;align-items:center;justify-content:space-between;margin:10px 0;color:var(--accent)}
-    .wn-avatar,.wn-tower{display:grid;place-items:center;width:45px;height:45px;border-radius:11px;background:#354461;font-size:25px}
-    .wn-tower{background:#462e3a}.wn-arrow{font-size:18px;letter-spacing:4px}
-    .wn-avatar svg{width:31px;height:31px;max-width:31px;max-height:31px;fill:var(--accent)}
-    .wn-player{font-size:17px;font-weight:900;line-height:1.2}.wn-match{font-size:11px;color:#aebed3;margin:5px 0 11px}
-    .wn-move-type{font-size:9px;letter-spacing:.12em;color:var(--accent);font-weight:800}.wn-move{font-weight:800;margin:3px 0;font-size:14px}
-    .wn-rule{font-size:10px;color:#afc0d3;min-height:30px;overflow-wrap:anywhere}
-    .wn-meter{height:7px;border-radius:10px;background:#44506a;margin:10px 0 5px;overflow:hidden}.wn-meter span{display:block;height:100%;border-radius:10px;background:var(--accent)}
-    .wn-score strong{font-size:24px;color:#fff}.wn-score span,.wn-later{font-size:11px;color:#c3d0e0}.wn-later{margin-top:3px}
-    .wn-line{border-top:1px solid #43516a;margin-top:10px;padding-top:10px;font-size:11px;font-weight:800}.wn-line span{font-weight:500;color:#b8c9dc;text-align:right}
-    .wn-empty{padding:30px 12px;color:#aebed3;font-size:13px;text-align:center}
-    @media(max-width:1200px){.wn-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
-    @media(max-width:650px){.wn-grid{grid-template-columns:1fr}}
-    </style><div class="wn-board"><div class="wn-grid">""" + "".join(lanes) + "</div></div>"
+          <header class="wn-lane-head"><div class="wn-class-icon" aria-hidden="true">{class_icon or symbol}</div>
+            <div class="wn-class-text"><span class="wn-kicker">{_h(descriptions[role])}</span><h2>{_h(role)}</h2></div>
+            <div class="wn-count"><strong>{len(cards)}</strong><span>READY</span></div></header>
+          <div class="wn-lane-sub">{_h(market.upper())} <span>✦</span> TOP MOVE PER PLAYER <span>✦</span> ⚔ AGAINST THE BOOKS</div>
+          <div class="wn-units">{''.join(units)}</div></section>""")
+    total = sum(len(cards) for cards in boards.values())
+    styles = """<style>
+      .wn-board,.wn-board *{box-sizing:border-box}
+      .wn-board{font-family:Inter,system-ui,sans-serif;color:#edf1f8}
+      .wn-hero{position:relative;overflow:hidden;background:radial-gradient(circle at 89% 4%,#663c274d,transparent 36%),linear-gradient(115deg,#111a2a,#1b1a2b 64%,#261b23);border:1px solid #53516b;border-radius:14px;padding:22px 25px;margin:10px 0 15px;box-shadow:inset 0 0 50px #0005}
+      .wn-hero:after{content:'⚔';position:absolute;right:28px;top:-36px;font-size:145px;line-height:1;color:#ffffff0e;transform:rotate(-18deg)}
+      .wn-eyebrow,.wn-hero-foot{font-size:10px;letter-spacing:.23em;color:#e9b875;font-weight:800}
+      .wn-hero h1{font-size:clamp(27px,3vw,43px);letter-spacing:.06em;line-height:1.05;margin:7px 0 8px;font-weight:950;color:#fff;text-shadow:0 3px 18px #0009}
+      .wn-hero p{margin:0 0 14px;color:#cbd2df;font-size:13px}.wn-hero-foot{color:#aebbd1;letter-spacing:.11em}
+      .wn-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;align-items:start}
+      .wn-lane{min-width:0;background:#111a2a;border:1px solid #38435a;border-radius:14px;overflow:hidden;box-shadow:0 8px 28px #1018282e}
+      .wn-lane-head{display:flex;align-items:center;gap:12px;padding:14px 16px 9px;background:linear-gradient(90deg,color-mix(in srgb,var(--accent) 20%,#111a2a),#111a2a 78%);border-bottom:1px solid #ffffff16}
+      .wn-class-icon{width:42px;height:42px;flex:none;display:grid;place-items:center;border:1px solid color-mix(in srgb,var(--accent) 50%,transparent);border-radius:9px;background:#0a1425;font-size:25px}
+      .wn-class-icon svg{width:29px;height:29px;max-width:29px;max-height:29px;fill:var(--accent)}
+      .wn-class-text{flex:1}.wn-kicker{font-size:10px;text-transform:uppercase;letter-spacing:.15em;color:#c5c6d3}.wn-class-text h2{font-size:23px;line-height:1;margin:3px 0 0;color:var(--accent);font-weight:950}
+      .wn-count{display:flex;flex-direction:column;align-items:center;color:var(--accent);line-height:1}.wn-count strong{font-size:25px}.wn-count span{font-size:9px;letter-spacing:.12em;margin-top:3px}
+      .wn-lane-sub{font-size:9px;font-weight:800;letter-spacing:.12em;color:#8898b2;padding:8px 16px;background:#0d1625}.wn-lane-sub span{color:var(--accent);padding:0 4px}
+      .wn-units{padding:8px}.wn-unit{display:flex;gap:10px;min-height:104px;align-items:center;background:#1b2739;border:1px solid #3b4b64;border-left:3px solid var(--accent);border-radius:9px;padding:10px;margin-bottom:7px}
+      .wn-unit:last-child{margin-bottom:0}.wn-portrait{width:46px;height:46px;flex:none;display:grid;place-items:center;border:1px solid #ffffff2e;border-radius:9px;background:radial-gradient(circle at top left,color-mix(in srgb,var(--accent) 34%,#162035),#162035 75%);font-size:24px}
+      .wn-portrait svg{width:29px;height:29px;max-width:29px;max-height:29px;fill:var(--accent)}
+      .wn-unit-body{flex:1;min-width:0}.wn-unit-head{display:flex;align-items:baseline;gap:6px;white-space:nowrap;min-width:0}.wn-rank{font-size:10px;color:var(--accent);font-weight:900}.wn-unit-head strong{overflow:hidden;text-overflow:ellipsis;font-size:14px}.wn-match{font-size:10px;color:#a4b3c7;flex:none}
+      .wn-attack{display:flex;gap:5px;align-items:center;margin-top:5px;min-width:0}.wn-attack-name{font-size:12px;font-weight:800;color:#eac483;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.wn-badge{font-size:8px;letter-spacing:.04em;color:var(--accent);border:1px solid color-mix(in srgb,var(--accent) 40%,transparent);border-radius:4px;padding:2px 4px;white-space:nowrap}
+      .wn-unit-foot{display:flex;flex-wrap:wrap;gap:2px 10px;margin-top:5px;font-size:9px;color:#afbed0;letter-spacing:.01em}.wn-unit-foot b{color:#fff;margin-left:3px}
+      .wn-record{text-align:right;flex:none;min-width:66px;display:flex;flex-direction:column;line-height:1.1}.wn-record strong{font-size:21px;color:#fff}.wn-record span{color:var(--accent);font-size:12px;font-weight:900;margin-top:3px}.wn-record em{font-style:normal;color:#8092a9;font-size:8px;letter-spacing:.08em;margin-top:3px}
+      .wn-details{font-size:9px;color:#96a8bf;margin-top:4px}.wn-details summary{cursor:pointer;color:#9eadbf}.wn-details span{display:block;overflow-wrap:anywhere;margin-top:3px}
+      .wn-empty{padding:26px 12px;text-align:center;color:#aebbd0;font-size:12px}
+      @media(max-width:1050px){.wn-grid{grid-template-columns:1fr}}
+      @media(max-width:540px){.wn-unit{gap:7px;padding:8px}.wn-portrait{width:34px;height:34px}.wn-portrait svg{width:23px;height:23px}.wn-record{min-width:56px}.wn-record strong{font-size:17px}.wn-match{display:none}}
+    </style>"""
+    hero = f"""<div class="wn-hero"><span class="wn-eyebrow">WARLORDS OF THE NIGHT · 2026</span>
+      <h1>THE NIGHT RAID</h1><p>Choose your class. Every card shows the strongest move this player can fire.</p>
+      <div class="wn-hero-foot">⚔ {total} READY PLAYERS ACROSS FOUR CLASSES · RECORDS ARE HISTORICAL</div></div>"""
+    return styles + '<div class="wn-board">' + hero + '<div class="wn-grid">' + ''.join(lanes) + '</div></div>'

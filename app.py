@@ -602,13 +602,13 @@ def render_valhalla_gate(mkt: str) -> None:
 
     # Baseline text per market
     if mk == "ASSISTS":
-        baseline = "🟢 Matrix Green • Line 0.5 • Conf ≥ 80 • EV ignored"
+        baseline = "🟢 Matrix Green • Assists 0.5 • Conf_Assists ≥ 83 for named attacks"
     elif mk == "GOALS":
-        baseline = "🟢 Green • 0.5 • OppSOG_L10 ≥ 29 + xGA ≥ 2.49 • EV ignored"
+        baseline = "🟢 Matrix Green • Goals 0.5 • Conf_Points ≥ 84"
     elif mk == "POINTS":
-        baseline = "🟢 Matrix Green • Line 0.5 • Conf ≥ 70 • EV ignored"
+        baseline = "🟢 Matrix Green • Points 0.5 Conf_Points ≥ 80, or 1.5 Conf_Points ≥ 75"
     elif mk in ("SOG", "SHOTS"):
-        baseline = "🟢 Matrix Green • Line ≤ 2.5 • Conf ≥ 75 • EV ignored"
+        baseline = "🟢 Matrix Green • SOG 2.5 or 3.5 • Conf_SOG ≥ 75"
     else:
         baseline = "🟢 Matrix Green • Market baseline rules apply"
 
@@ -4419,30 +4419,29 @@ df_f = filter_common(df)
 
 # NOTE: Board gating is applied ONLY inside the Board page.
 # We do not shrink the global dataframe for other pages.
-# Show slate times table
-show_games_times(df_f)
+# The night board is the compact landing view; game times remain on the detailed pages.
+if page != "⚔️ Warlords of the Night":
+    show_games_times(df_f)
 
 
 # =========================
 # BOARD
 # =========================
 if page == "⚔️ Warlords of the Night":
-    st.title("⚔️ Warlords of the Night")
-    st.caption("Tonight's party · top fired move for each player in Carry, Support, Tank, and Jungle")
     if source == "upload":
-        st.info("Scouting from your uploaded tracker. Move rates are historical; save a pregame slate to freeze tags for next-day grading.")
+        st.caption("Uploaded tracker · historical move records · pregame slate tags must be frozen for forward grading")
     dates = pd.to_datetime(df_f.get("Date", pd.Series(dtype=str)), errors="coerce").dropna().dt.date
     night = None
     if not dates.empty:
         nights = sorted(dates.unique(), reverse=True)
         night = st.selectbox("Slate night", nights, index=0, key="warlords_night_date")
-    party_size = st.slider("Players per class", 1, 12, 5, key="warlords_party_size")
+    party_size = st.slider("Players per class", 1, 12, 4, key="warlords_party_size")
     night_df = df_f.loc[dates.eq(night)] if night is not None else df_f
     boards = rank_warlords(night_df)
     total = sum(len(cards) for cards in boards.values())
     if total:
-        st.markdown(render_warlords(boards, party_size, _load_svg_icon), unsafe_allow_html=True)
-        st.caption("Ranked by each player's highest fired historical move hit rate. TRACK, EXPLORATORY, and SMALL SAMPLE labels show which rates need more forward results. A player can appear in multiple classes.")
+        st.html(render_warlords(boards, party_size, _load_svg_icon))
+        st.caption("Ranked by each player's highest fired historical hit rate. Records overlap across moves; TRACK and small samples need forward results.")
     else:
         st.warning("No class moves fired on priced lines for this slate. Upload a tracker with current book lines, or refresh the slate after lines post.")
 
