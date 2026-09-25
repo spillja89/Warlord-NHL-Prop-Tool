@@ -3,7 +3,10 @@
 from __future__ import annotations
 
 import math
+import base64
+from functools import lru_cache
 from html import escape
+from pathlib import Path
 
 import pandas as pd
 
@@ -99,16 +102,24 @@ def _odds(value):
     return f"{value:+.0f}" if value > 0 else f"{value:.0f}"
 
 
+@lru_cache(maxsize=4)
+def _character_uri(role: str) -> str:
+    """Inline small artwork so class cards render behind Cloud's app proxy."""
+    image = Path(__file__).parent / "static" / "characters" / f"{role.lower()}-gorilla.webp"
+    if not image.is_file():
+        return ""
+    return "data:image/webp;base64," + base64.b64encode(image.read_bytes()).decode("ascii")
+
+
 def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=None) -> str:
     """Compact, escaped HTML for four responsive class lanes."""
     descriptions = {"Carry": "Finish the fight", "Support": "Set the play",
                     "Tank": "Hold the line", "Jungle": "Control the lanes"}
-    class_icons = {"Carry": "role_carry.svg", "Support": "role_support.svg",
-                   "Tank": "role_tank.svg", "Jungle": "role_jungle.svg"}
     lanes = []
     for role, market, symbol, color in CLASSES:
         cards = boards.get(role, [])
-        class_icon = icon_loader(class_icons[role]) if icon_loader else ""
+        character_uri = _character_uri(role)
+        class_icon = symbol
         units = []
         for rank, card in enumerate(cards[:limit], 1):
             move = card["move"]
@@ -122,10 +133,10 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
             line = f"OVER {card['line']:g} {market.upper()}" if card["line"] is not None else market.upper()
             matchup = card["game"] or card["team"]
             rule = move.get("rule", move.get("condition", ""))
-            move_icon = icon_loader(move.get("icon", "")) if icon_loader else ""
+            portrait = (f'<img src="{character_uri}" alt="" />' if character_uri else symbol)
             price = _odds(card["odds"])
             units.append(f"""<article class="wn-unit">
-              <div class="wn-portrait" aria-hidden="true">{move_icon or symbol}</div>
+              <div class="wn-portrait" aria-hidden="true">{portrait}</div>
               <div class="wn-unit-body">
                 <div class="wn-unit-head"><span class="wn-rank">{rank:02d}</span><strong>{_h(card['player'])}</strong><span class="wn-match">{_h(matchup)}</span></div>
                 <div class="wn-attack"><span class="wn-attack-name">{_h(move['name'])}</span><span class="wn-badge">{_h(status + sample)}</span></div>
@@ -136,8 +147,9 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
             </article>""")
         if not units:
             units = ['<div class="wn-empty">No move has fired on a posted line yet.</div>']
+        backdrop = f'<img class="wn-gorilla" src="{character_uri}" alt="" />' if character_uri else ""
         lanes.append(f"""<section class="wn-lane wn-lane--{role.lower()}" style="--accent:{color}">
-          <header class="wn-lane-head"><div class="wn-class-icon" aria-hidden="true">{class_icon or symbol}</div>
+          <header class="wn-lane-head">{backdrop}<div class="wn-class-icon" aria-hidden="true">{class_icon}</div>
             <div class="wn-class-text"><span class="wn-kicker">{_h(descriptions[role])}</span><h2>{_h(role)}</h2></div>
             <div class="wn-count"><strong>{len(cards)}</strong><span>READY</span></div></header>
           <div class="wn-lane-sub">{_h(market.upper())} <span>✦</span> TOP MOVE PER PLAYER <span>✦</span> ⚔ AGAINST THE BOOKS</div>
@@ -154,11 +166,7 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
       .wn-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;align-items:start}
       .wn-lane{min-width:0;background:#111a2a;border:1px solid #38435a;border-radius:14px;overflow:hidden;box-shadow:0 8px 28px #1018282e}
       .wn-lane-head{position:relative;isolation:isolate;display:flex;align-items:center;gap:12px;min-height:96px;padding:16px;background:linear-gradient(100deg,color-mix(in srgb,var(--accent) 23%,#111a2a),#111a2a 82%);border-bottom:1px solid #ffffff16;overflow:hidden}
-      .wn-lane-head::before{content:"";position:absolute;z-index:-1;inset:0;background-repeat:no-repeat;background-size:auto 250px;background-position:right 10px top -33px;opacity:.26;pointer-events:none;mask-image:linear-gradient(90deg,transparent 20%,#000 70%)}
-      .wn-lane--carry .wn-lane-head::before{background-image:url('/app/static/characters/carry-gorilla.png')}
-      .wn-lane--support .wn-lane-head::before{background-image:url('/app/static/characters/support-gorilla.png')}
-      .wn-lane--tank .wn-lane-head::before{background-image:url('/app/static/characters/tank-gorilla.png')}
-      .wn-lane--jungle .wn-lane-head::before{background-image:url('/app/static/characters/jungle-gorilla.png')}
+      .wn-gorilla{position:absolute;z-index:-1;right:8px;top:-40px;height:230px;width:auto;opacity:.28;pointer-events:none;mask-image:linear-gradient(90deg,transparent,#000 35%)}
       .wn-class-icon{width:42px;height:42px;flex:none;display:grid;place-items:center;border:1px solid color-mix(in srgb,var(--accent) 50%,transparent);border-radius:9px;background:#0a1425e8;font-size:25px}
       .wn-class-icon svg{width:29px;height:29px;max-width:29px;max-height:29px;fill:var(--accent)}
       .wn-class-text{flex:1}.wn-kicker{font-size:10px;text-transform:uppercase;letter-spacing:.15em;color:#c5c6d3}.wn-class-text h2{font-size:23px;line-height:1;margin:3px 0 0;color:var(--accent);font-weight:950}
@@ -167,6 +175,7 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
       .wn-units{padding:8px}.wn-unit{display:flex;gap:10px;min-height:104px;align-items:center;background:#1b2739;border:1px solid #3b4b64;border-left:3px solid var(--accent);border-radius:9px;padding:10px;margin-bottom:7px}
       .wn-unit:last-child{margin-bottom:0}.wn-portrait{width:46px;height:46px;flex:none;display:grid;place-items:center;border:1px solid #ffffff2e;border-radius:9px;background:radial-gradient(circle at top left,color-mix(in srgb,var(--accent) 34%,#162035),#162035 75%);font-size:24px}
       .wn-portrait svg{width:29px;height:29px;max-width:29px;max-height:29px;fill:var(--accent)}
+      .wn-portrait img{width:100%;height:100%;object-fit:cover;object-position:center top}
       .wn-unit-body{flex:1;min-width:0}.wn-unit-head{display:flex;align-items:baseline;gap:6px;white-space:nowrap;min-width:0}.wn-rank{font-size:10px;color:var(--accent);font-weight:900}.wn-unit-head strong{overflow:hidden;text-overflow:ellipsis;font-size:14px}.wn-match{font-size:10px;color:#a4b3c7;flex:none}
       .wn-attack{display:flex;gap:5px;align-items:center;margin-top:5px;min-width:0}.wn-attack-name{font-size:12px;font-weight:800;color:#eac483;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.wn-badge{font-size:8px;letter-spacing:.04em;color:var(--accent);border:1px solid color-mix(in srgb,var(--accent) 40%,transparent);border-radius:4px;padding:2px 4px;white-space:nowrap}
       .wn-unit-foot{display:flex;flex-wrap:wrap;gap:2px 10px;margin-top:5px;font-size:9px;color:#afbed0;letter-spacing:.01em}.wn-unit-foot b{color:#fff;margin-left:3px}
