@@ -113,7 +113,7 @@ def _odds(value):
 @lru_cache(maxsize=4)
 def _character_uri(role: str) -> str:
     """Inline small artwork so class cards render behind Cloud's app proxy."""
-    image = Path(__file__).parent / "static" / "characters" / f"{role.lower()}-gorilla.webp"
+    image = Path(__file__).parent / "static" / "characters" / f"{role.lower()}-gorilla-v2.webp"
     if not image.is_file():
         return ""
     return "data:image/webp;base64," + base64.b64encode(image.read_bytes()).decode("ascii")
@@ -192,7 +192,7 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
       .wn-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;align-items:start}
       .wn-lane{min-width:0;background:#111a2a;border:1px solid #38435a;border-radius:14px;overflow:hidden;box-shadow:0 8px 28px #1018282e}
       .wn-lane-head{position:relative;isolation:isolate;display:flex;align-items:center;gap:12px;min-height:96px;padding:16px;background:linear-gradient(100deg,color-mix(in srgb,var(--accent) 23%,#111a2a),#111a2a 82%);border-bottom:1px solid #ffffff16;overflow:hidden}
-      .wn-gorilla{position:absolute;z-index:-1;right:8px;top:-40px;height:230px;width:auto;opacity:.28;pointer-events:none;mask-image:linear-gradient(90deg,transparent,#000 35%)}
+      .wn-gorilla{position:absolute;z-index:-1;right:8px;top:0;height:230px;width:auto;opacity:.34;pointer-events:none;mask-image:linear-gradient(90deg,transparent,#000 35%)}
       .wn-class-icon{width:42px;height:42px;flex:none;display:grid;place-items:center;border:1px solid color-mix(in srgb,var(--accent) 50%,transparent);border-radius:9px;background:#0a1425e8;font-size:25px}
       .wn-class-icon svg{width:29px;height:29px;max-width:29px;max-height:29px;fill:var(--accent)}
       .wn-class-text{flex:1}.wn-kicker{font-size:10px;text-transform:uppercase;letter-spacing:.15em;color:#c5c6d3}.wn-class-text h2{font-size:23px;line-height:1;margin:3px 0 0;color:var(--accent);font-weight:950}

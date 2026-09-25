@@ -668,7 +668,7 @@ def _render_class_header(mkt: str, frame: pd.DataFrame) -> None:
     st.html(f"""<style>
       .wl-prop-hero{{position:relative;isolation:isolate;overflow:hidden;min-height:150px;padding:22px 230px 20px 24px;
         border:1px solid #334761;border-radius:16px;background:linear-gradient(110deg,#111b2b,#243149);color:#f8fafc}}
-      .wl-prop-hero img{{position:absolute;z-index:-1;right:12px;top:-45px;height:245px;opacity:.42;
+      .wl-prop-hero img{{position:absolute;z-index:-1;right:12px;top:0;height:245px;opacity:.42;
         mask-image:linear-gradient(90deg,transparent,#000 35%)}}
       .wl-prop-kicker{{font-size:11px;letter-spacing:.18em;color:#cbd5e1;font-weight:800}}
       .wl-prop-hero h2{{font-size:31px;line-height:1.1;margin:6px 0;color:#fff}}
