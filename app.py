@@ -645,12 +645,23 @@ _CLASS_RULES = {
 }
 
 
+def _class_slate_frame(frame: pd.DataFrame) -> tuple[pd.DataFrame, str]:
+    """Use one dated slate for class counts, even if an upload spans many dates."""
+    if "Date" in frame.columns:
+        dates = pd.to_datetime(frame["Date"], errors="coerce").dt.date
+        if dates.notna().any():
+            latest = dates.max()
+            return frame.loc[dates.eq(latest)], latest.isoformat()
+    return frame, "FILTERED VIEW"
+
+
 def _render_class_header(mkt: str, frame: pd.DataFrame) -> None:
     """Prop-page hero with live slate counts from the actual fired move rules."""
     mk = mkt.upper()
     spec = _CLASS_RULES[mk]
     role = spec["role"]
-    cards = rank_warlords(frame)[role]
+    slate_frame, slate_label = _class_slate_frame(frame)
+    cards = rank_warlords(slate_frame)[role]
     moves = sum(card["move_count"] for card in cards)
     portrait = _character_uri(role)
     art = f'<img src="{portrait}" alt="" aria-hidden="true" />' if portrait else ""
@@ -667,7 +678,7 @@ def _render_class_header(mkt: str, frame: pd.DataFrame) -> None:
         .wl-prop-hero h2{{font-size:24px}}.wl-prop-hero img{{right:-55px;height:205px;opacity:.28}}}}
     </style><section class="wl-prop-hero">{art}<div class="wl-prop-kicker">WARLORD CLASS · {escape(mk)}</div>
       <h2>{escape(role)} · {escape(mk)}</h2><p>{escape(spec['entry'])}</p>
-      <div class="wl-prop-meta">{len(cards)} READY PLAYERS · {moves} FIRED MOVES ON THIS SLATE</div></section>""")
+      <div class="wl-prop-meta">{escape(slate_label)} · {len(cards)} PRICED PLAYERS WITH MOVES · {moves} ACTIVE MOVE TAGS SHOWN</div></section>""")
 
 def _role_for_market(mkt: str) -> dict:
     key = str(mkt or "").strip().upper()
@@ -5025,7 +5036,6 @@ elif page == "Points":
 
 
     st.subheader("⭐ Smash Plays — Points")
-    render_valhalla_gate("POINTS")
 
 
     _p = df_p.copy()
@@ -5444,7 +5454,6 @@ elif page == "Assists":
     st.subheader("⭐ Smash Plays — Assists")
 
     # Valhalla Gate presentation (ASSISTS) — baseline only
-    render_valhalla_gate("ASSISTS")
 
     # Eligibility (ignore EV): Matrix Green + Line 0.5 + Conf >= 80
     _a = df_a.copy()
@@ -5687,7 +5696,6 @@ elif page == "SOG":
     _render_badge_legend_inline()
 
     st.subheader("⭐ Smash Plays — SOG")
-    render_valhalla_gate("SOG")
 
     top_n = st.slider("Show top plays (SOG)", 3, 25, 10, 1, key="sog_smash_topn")
 
@@ -7339,15 +7347,16 @@ If a market page looks blank:
 
 elif page == "Ledger":
     st.subheader("📜 Ledger — Class rules and signals")
-    st.caption("Class counts reflect the current filtered slate. Historical move records appear in each player's full move list.")
-    _ledger_boards = rank_warlords(df_f)
+    _ledger_frame, _ledger_date = _class_slate_frame(df_f)
+    st.caption(f"Class counts use the latest date in the filtered tracker: {_ledger_date}. Move tags overlap; historical records are not slate results.")
+    _ledger_boards = rank_warlords(_ledger_frame)
     for _mk in ("GOALS", "ASSISTS", "POINTS", "SOG"):
         _spec = _CLASS_RULES[_mk]
         _cards = _ledger_boards[_spec["role"]]
-        with st.expander(f'{_spec["role"]} · {_mk} — {len(_cards)} ready players', expanded=False):
+        with st.expander(f'{_spec["role"]} · {_mk} — {len(_cards)} priced players with moves', expanded=False):
             st.write(f'**Entry:** {_spec["entry"]}')
             st.write(_spec["note"])
-            st.caption(f'{sum(card["move_count"] for card in _cards)} fired moves on this slate. These are overlapping move tags, not separate bets.')
+            st.caption(f'{sum(card["move_count"] for card in _cards)} active player move tags shown for {_ledger_date}. These overlap and are not separate bets.')
             _move_rows = []
             for _card in _cards:
                 for _move in _card["moves"]:

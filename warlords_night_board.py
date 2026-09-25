@@ -45,6 +45,9 @@ def _line_price(row, market):
         if line is not None:
             odds = _number(row.get(f"{item}_Odds_Over"))
             book = _value(row, f"{item}_Book")
+            if odds is None and market == "Goal":
+                odds = _number(row.get("ATG_Odds_Over"))
+                book = book or _value(row, "ATG_Book")
             return line, odds, book
     return None, None, None
 
@@ -72,6 +75,9 @@ def rank_warlords(frame: pd.DataFrame) -> dict[str, list[dict]]:
             attacks = [move for move in moves if move["kind"] != "STANCE"]
             move = max(attacks or moves, key=_move_rank)
             line, odds, book = _line_price(row, market)
+            # A model signal without a posted price is not a ready board pick.
+            if line is None or odds is None or odds == 0:
+                continue
             player = str(row["Player"]).strip()
             team = str(_value(row, "Team") or "").strip()
             key = (team.casefold(), player.casefold())
