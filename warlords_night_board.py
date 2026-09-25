@@ -136,7 +136,7 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
             </article>""")
         if not units:
             units = ['<div class="wn-empty">No move has fired on a posted line yet.</div>']
-        lanes.append(f"""<section class="wn-lane" style="--accent:{color}">
+        lanes.append(f"""<section class="wn-lane wn-lane--{role.lower()}" style="--accent:{color}">
           <header class="wn-lane-head"><div class="wn-class-icon" aria-hidden="true">{class_icon or symbol}</div>
             <div class="wn-class-text"><span class="wn-kicker">{_h(descriptions[role])}</span><h2>{_h(role)}</h2></div>
             <div class="wn-count"><strong>{len(cards)}</strong><span>READY</span></div></header>
@@ -153,11 +153,16 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
       .wn-hero p{margin:0 0 14px;color:#cbd2df;font-size:13px}.wn-hero-foot{color:#aebbd1;letter-spacing:.11em}
       .wn-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;align-items:start}
       .wn-lane{min-width:0;background:#111a2a;border:1px solid #38435a;border-radius:14px;overflow:hidden;box-shadow:0 8px 28px #1018282e}
-      .wn-lane-head{display:flex;align-items:center;gap:12px;padding:14px 16px 9px;background:linear-gradient(90deg,color-mix(in srgb,var(--accent) 20%,#111a2a),#111a2a 78%);border-bottom:1px solid #ffffff16}
-      .wn-class-icon{width:42px;height:42px;flex:none;display:grid;place-items:center;border:1px solid color-mix(in srgb,var(--accent) 50%,transparent);border-radius:9px;background:#0a1425;font-size:25px}
+      .wn-lane-head{position:relative;isolation:isolate;display:flex;align-items:center;gap:12px;min-height:96px;padding:16px;background:linear-gradient(100deg,color-mix(in srgb,var(--accent) 23%,#111a2a),#111a2a 82%);border-bottom:1px solid #ffffff16;overflow:hidden}
+      .wn-lane-head::before{content:"";position:absolute;z-index:-1;inset:0;background-repeat:no-repeat;background-size:auto 250px;background-position:right 10px top -33px;opacity:.26;pointer-events:none;mask-image:linear-gradient(90deg,transparent 20%,#000 70%)}
+      .wn-lane--carry .wn-lane-head::before{background-image:url('/app/static/characters/carry-gorilla.png')}
+      .wn-lane--support .wn-lane-head::before{background-image:url('/app/static/characters/support-gorilla.png')}
+      .wn-lane--tank .wn-lane-head::before{background-image:url('/app/static/characters/tank-gorilla.png')}
+      .wn-lane--jungle .wn-lane-head::before{background-image:url('/app/static/characters/jungle-gorilla.png')}
+      .wn-class-icon{width:42px;height:42px;flex:none;display:grid;place-items:center;border:1px solid color-mix(in srgb,var(--accent) 50%,transparent);border-radius:9px;background:#0a1425e8;font-size:25px}
       .wn-class-icon svg{width:29px;height:29px;max-width:29px;max-height:29px;fill:var(--accent)}
       .wn-class-text{flex:1}.wn-kicker{font-size:10px;text-transform:uppercase;letter-spacing:.15em;color:#c5c6d3}.wn-class-text h2{font-size:23px;line-height:1;margin:3px 0 0;color:var(--accent);font-weight:950}
-      .wn-count{display:flex;flex-direction:column;align-items:center;color:var(--accent);line-height:1}.wn-count strong{font-size:25px}.wn-count span{font-size:9px;letter-spacing:.12em;margin-top:3px}
+      .wn-count{display:flex;flex-direction:column;align-items:center;color:var(--accent);line-height:1;background:#0a1425b8;border:1px solid #ffffff16;border-radius:8px;padding:6px 8px}.wn-count strong{font-size:25px}.wn-count span{font-size:9px;letter-spacing:.12em;margin-top:3px}
       .wn-lane-sub{font-size:9px;font-weight:800;letter-spacing:.12em;color:#8898b2;padding:8px 16px;background:#0d1625}.wn-lane-sub span{color:var(--accent);padding:0 4px}
       .wn-units{padding:8px}.wn-unit{display:flex;gap:10px;min-height:104px;align-items:center;background:#1b2739;border:1px solid #3b4b64;border-left:3px solid var(--accent);border-radius:9px;padding:10px;margin-bottom:7px}
       .wn-unit:last-child{margin-bottom:0}.wn-portrait{width:46px;height:46px;flex:none;display:grid;place-items:center;border:1px solid #ffffff2e;border-radius:9px;background:radial-gradient(circle at top left,color-mix(in srgb,var(--accent) 34%,#162035),#162035 75%);font-size:24px}
