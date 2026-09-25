@@ -81,7 +81,9 @@ def rank_warlords(frame: pd.DataFrame) -> dict[str, list[dict]]:
                 "game": str(_value(row, "Game") or "").strip(),
                 "time": str(_value(row, "Time") or "").strip(),
                 "market": market, "line": line, "odds": odds, "book": book,
-                "move": move, "move_count": len(moves),
+                "move": move, "moves": sorted(moves, key=lambda item: (
+                    item["kind"] != "STANCE", _move_rank(item)), reverse=True),
+                "move_count": len(moves),
             }
             previous = boards[role].get(key)
             if previous is None or _move_rank(move) > _move_rank(previous["move"]):
@@ -132,11 +134,26 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
             sample = " · SMALL SAMPLE" if picks < 30 else ""
             line = f"OVER {card['line']:g} {market.upper()}" if card["line"] is not None else market.upper()
             matchup = card["game"] or card["team"]
-            rule = move.get("rule", move.get("condition", ""))
             portrait = (f'<img src="{character_uri}" alt="" />' if character_uri else symbol)
             name_backdrop = (f'<img class="wn-unit-ghost" src="{character_uri}" alt="" aria-hidden="true" />'
                              if character_uri else "")
             price = _odds(card["odds"])
+            fired = card.get("moves") or [move]
+            move_rows = []
+            for fired_move in fired:
+                fired_wins, fired_picks = int(fired_move["wins"]), int(fired_move["picks"])
+                fired_late_wins = int(fired_move["later_wins"])
+                fired_late_picks = int(fired_move["later_picks"])
+                fired_pct = 100 * fired_wins / fired_picks if fired_picks else 0
+                fired_late_pct = 100 * fired_late_wins / fired_late_picks if fired_late_picks else 0
+                fired_rule = fired_move.get("rule", fired_move.get("condition", ""))
+                fired_label = ("TRACK" if fired_move.get("track") else
+                               "LAB" if fired_move.get("experimental") else fired_move["kind"])
+                move_rows.append(f'''<div class="wn-move-entry">
+                  <div class="wn-move-title"><strong>{_h(fired_move["name"])}</strong><em>{_h(fired_label)}</em></div>
+                  <div class="wn-move-record">{fired_wins}/{fired_picks} · {fired_pct:.1f}% <span>Later {fired_late_wins}/{fired_late_picks} · {fired_late_pct:.1f}%</span></div>
+                  <div class="wn-move-rule">{_h(fired_rule)}</div>
+                </div>''')
             units.append(f"""<article class="wn-unit">
               {name_backdrop}
               <div class="wn-portrait" aria-hidden="true">{portrait}</div>
@@ -144,9 +161,9 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
                 <div class="wn-unit-head"><span class="wn-rank">{rank:02d}</span><strong>{_h(card['player'])}</strong><span class="wn-match">{_h(matchup)}</span></div>
                 <div class="wn-attack"><span class="wn-attack-name">{_h(move['name'])}</span><span class="wn-badge">{_h(status + sample)}</span></div>
                 <div class="wn-unit-foot"><span>{_h(line)} <b>{_h(price)}</b></span><span>LATER {late_wins}/{late_picks} · {late_pct:.1f}%</span></div>
-                <details class="wn-details"><summary>Move conditions</summary><span>{_h(rule)}</span></details>
               </div>
               <div class="wn-record"><strong>{pct:.1f}%</strong><span>{wins}/{picks}</span><em>HISTORICAL</em></div>
+              <details class="wn-details"><summary>Full fired move list ({len(fired)})</summary><div class="wn-move-list">{''.join(move_rows)}</div></details>
             </article>""")
         if not units:
             units = ['<div class="wn-empty">No move has fired on a posted line yet.</div>']
@@ -175,7 +192,7 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
       .wn-class-text{flex:1}.wn-kicker{font-size:10px;text-transform:uppercase;letter-spacing:.15em;color:#c5c6d3}.wn-class-text h2{font-size:23px;line-height:1;margin:3px 0 0;color:var(--accent);font-weight:950}
       .wn-count{display:flex;flex-direction:column;align-items:center;color:var(--accent);line-height:1;background:#0a1425b8;border:1px solid #ffffff16;border-radius:8px;padding:6px 8px}.wn-count strong{font-size:25px}.wn-count span{font-size:9px;letter-spacing:.12em;margin-top:3px}
       .wn-lane-sub{font-size:9px;font-weight:800;letter-spacing:.12em;color:#8898b2;padding:8px 16px;background:#0d1625}.wn-lane-sub span{color:var(--accent);padding:0 4px}
-      .wn-units{padding:8px}.wn-unit{position:relative;isolation:isolate;overflow:hidden;display:flex;gap:10px;min-height:104px;align-items:center;background:#1b2739;border:1px solid #3b4b64;border-left:3px solid var(--accent);border-radius:9px;padding:10px;margin-bottom:7px}
+      .wn-units{padding:8px}.wn-unit{position:relative;isolation:isolate;overflow:hidden;display:flex;flex-wrap:wrap;gap:4px 10px;min-height:104px;align-items:center;background:#1b2739;border:1px solid #3b4b64;border-left:3px solid var(--accent);border-radius:9px;padding:10px;margin-bottom:7px}
       .wn-unit-ghost{position:absolute;z-index:0;left:65px;top:-28px;height:190px;width:auto;opacity:.16;pointer-events:none;mask-image:linear-gradient(90deg,#000 25%,transparent 95%)}
       .wn-unit:last-child{margin-bottom:0}.wn-portrait{position:relative;z-index:1;width:46px;height:46px;flex:none;display:grid;place-items:center;border:1px solid #ffffff2e;border-radius:9px;background:radial-gradient(circle at top left,color-mix(in srgb,var(--accent) 34%,#162035),#162035 75%);font-size:24px}
       .wn-portrait svg{width:29px;height:29px;max-width:29px;max-height:29px;fill:var(--accent)}
@@ -184,7 +201,8 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
       .wn-attack{display:flex;gap:5px;align-items:center;margin-top:5px;min-width:0}.wn-attack-name{font-size:12px;font-weight:800;color:#eac483;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.wn-badge{font-size:8px;letter-spacing:.04em;color:var(--accent);border:1px solid color-mix(in srgb,var(--accent) 40%,transparent);border-radius:4px;padding:2px 4px;white-space:nowrap}
       .wn-unit-foot{display:flex;flex-wrap:wrap;gap:2px 10px;margin-top:5px;font-size:9px;color:#afbed0;letter-spacing:.01em}.wn-unit-foot b{color:#fff;margin-left:3px}
       .wn-record{position:relative;z-index:1;text-align:right;flex:none;min-width:66px;display:flex;flex-direction:column;line-height:1.1}.wn-record strong{font-size:21px;color:#fff}.wn-record span{color:var(--accent);font-size:12px;font-weight:900;margin-top:3px}.wn-record em{font-style:normal;color:#8092a9;font-size:8px;letter-spacing:.08em;margin-top:3px}
-      .wn-details{font-size:9px;color:#96a8bf;margin-top:4px}.wn-details summary{cursor:pointer;color:#9eadbf}.wn-details span{display:block;overflow-wrap:anywhere;margin-top:3px}
+      .wn-details{position:relative;z-index:1;flex:0 0 100%;font-size:10px;color:#aebbd0;border-top:1px solid #ffffff14;padding-top:5px}.wn-details summary{cursor:pointer;color:var(--accent);font-weight:700}.wn-move-list{max-height:320px;overflow:auto;display:grid;gap:6px;margin-top:8px;padding-right:3px}
+      .wn-move-entry{border:1px solid #ffffff20;border-radius:6px;background:#0b1629e8;padding:7px}.wn-move-title{display:flex;align-items:center;justify-content:space-between;gap:8px}.wn-move-title strong{font-size:11px;color:#f1e4ca}.wn-move-title em{font-size:8px;font-style:normal;color:var(--accent);text-align:right}.wn-move-record{font-size:10px;font-weight:800;color:#fff;margin-top:3px}.wn-move-record span{color:#b7c7df;margin-left:5px}.wn-move-rule{font-size:9px;color:#b6c5da;overflow-wrap:anywhere;margin-top:4px}
       .wn-empty{padding:26px 12px;text-align:center;color:#aebbd0;font-size:12px}
       @media(max-width:1050px){.wn-grid{grid-template-columns:1fr}}
       @media(max-width:540px){.wn-unit{gap:7px;padding:8px}.wn-unit-ghost{left:45px;opacity:.12}.wn-portrait{width:34px;height:34px}.wn-portrait svg{width:23px;height:23px}.wn-record{min-width:56px}.wn-record strong{font-size:17px}.wn-match{display:none}}
