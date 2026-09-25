@@ -2960,15 +2960,15 @@ def style_df(df: pd.DataFrame, cols: list[str]) -> "pd.io.formats.style.Styler":
     sty = view.style
 
     if "EV_Signal" in view.columns:
-        sty = sty.applymap(ev_signal_style, subset=["EV_Signal"])
+        sty = sty.map(ev_signal_style, subset=["EV_Signal"])
 
     for c in ["Matrix_Points", "Matrix_SOG", "Matrix_Assists", "Matrix_Goal"]:
         if c in view.columns:
-            sty = sty.applymap(matrix_style, subset=[c])
+            sty = sty.map(matrix_style, subset=[c])
 
     for c in ["Reg_Heat_P", "Reg_Heat_S", "Reg_Heat_G", "Reg_Heat_A"]:
         if c in view.columns:
-            sty = sty.applymap(heat_style, subset=[c])
+            sty = sty.map(heat_style, subset=[c])
 
     # Per-market Conf coloring (keeps each market's own green threshold)
     conf_thr = {
@@ -2980,10 +2980,10 @@ def style_df(df: pd.DataFrame, cols: list[str]) -> "pd.io.formats.style.Styler":
     }
     for c, thr in conf_thr.items():
         if c in view.columns:
-            sty = sty.applymap(_conf_style_for(thr), subset=[c])
+            sty = sty.map(_conf_style_for(thr), subset=[c])
 
     for c in [c for c in view.columns if c.endswith("EVpct_over")]:
-        sty = sty.applymap(ev_style, subset=[c])
+        sty = sty.map(ev_style, subset=[c])
 
     # 🗡️ Dagger highlight
     def dagger_tag_style(v):
@@ -3001,16 +3001,16 @@ def style_df(df: pd.DataFrame, cols: list[str]) -> "pd.io.formats.style.Styler":
         return ""
 
     if "🗡️" in view.columns:
-        sty = sty.applymap(dagger_tag_style, subset=["🗡️"])
+        sty = sty.map(dagger_tag_style, subset=["🗡️"])
     if "Assist_Dagger" in view.columns:
-        sty = sty.applymap(dagger_score_style, subset=["Assist_Dagger"])
+        sty = sty.map(dagger_score_style, subset=["Assist_Dagger"])
 
     for c in [c for c in view.columns if c.startswith("Plays_EV_")]:
-        sty = sty.applymap(play_ev_style, subset=[c])
+        sty = sty.map(play_ev_style, subset=[c])
 
     for c in ["Goalie_Weak", "Opp_DefWeak"]:
         if c in view.columns:
-            sty = sty.applymap(weak_style, subset=[c])
+            sty = sty.map(weak_style, subset=[c])
 
     fmt2_cols = [
         "Exp_A_10", "Reg_Gap_A10",
@@ -3054,7 +3054,7 @@ def style_df(df: pd.DataFrame, cols: list[str]) -> "pd.io.formats.style.Styler":
     if format_dict:
         sty = sty.format(format_dict, na_rep="")
     if "Market" in view.columns:
-        sty = sty.applymap(_mkt_style, subset=["Market"])
+        sty = sty.map(_mkt_style, subset=["Market"])
 
 
     return sty
@@ -4486,10 +4486,10 @@ elif page == "Board":
                                       "Player": candidate.get("Player", ""),
                                       "Team": candidate.get("Team", ""),
                                       "Conf": candidate.get(conf_col)})
-        st.dataframe(pd.DataFrame(health), use_container_width=True, hide_index=True)
+        st.dataframe(pd.DataFrame(health), width="stretch", hide_index=True)
         if missing_green:
             st.caption("These are model signals awaiting a real book line. They are not graded picks or fired moves.")
-            st.dataframe(pd.DataFrame(missing_green), use_container_width=True, hide_index=True)
+            st.dataframe(pd.DataFrame(missing_green), width="stretch", hide_index=True)
         else:
             st.caption("Every Green player in this view has a line for these markets.")
 
@@ -6187,7 +6187,7 @@ elif page == "Power Play":
         available = pd.to_numeric(df_f.get(column, pd.Series(index=df_f.index, dtype=float)), errors="coerce").notna().sum()
         pp_health.append({"Feed": label, "Available players": int(available), "Total players": len(df_f)})
     with st.expander("Power Play feed coverage"):
-        st.dataframe(pd.DataFrame(pp_health), use_container_width=True, hide_index=True)
+        st.dataframe(pd.DataFrame(pp_health), width="stretch", hide_index=True)
 
     # Aliases (engine naming -> app naming)
     alias_map = {
@@ -7037,7 +7037,7 @@ elif page == "🧾 Log Bet":
             st.caption("Note: CSV already flagged this as 💰 at its listed odds — ledger uses the odds you took.")
 
     # Log button
-    if st.button("🧾 Log Bet (append)", use_container_width=True):
+    if st.button("🧾 Log Bet (append)", width="stretch"):
         dt_now = datetime.now(timezone.utc).isoformat()
         date_str = auto_date or datetime.now().strftime('%Y-%m-%d')
         bet_id = make_bet_id(date_str, player_sel, market, line, odds_taken)
@@ -7085,13 +7085,13 @@ elif page == "🧾 Log Bet":
             recent = _recent_cloud_bets(ledger_database_url, 10)
             if recent:
                 st.markdown("### Recent logs")
-                st.dataframe(pd.DataFrame(recent), use_container_width=True, hide_index=True)
+                st.dataframe(pd.DataFrame(recent), width="stretch", hide_index=True)
             else:
                 st.info("No bets logged yet.")
         elif os.path.exists(betslip_path):
             st.markdown("### Recent logs")
             tail = pd.read_csv(betslip_path).tail(10)
-            st.dataframe(tail, use_container_width=True, hide_index=True)
+            st.dataframe(tail, width="stretch", hide_index=True)
         else:
             st.info("No betslip.csv yet — first log will create it.")
     except Exception:
@@ -7134,7 +7134,7 @@ elif page == "📊 Results":
                                            "Rule": rule, "Kit": version})
                     if board_rows:
                         move_board = pd.DataFrame(board_rows).sort_values(["Picks", "Hit %"], ascending=False)
-                        st.dataframe(move_board, use_container_width=True, hide_index=True)
+                        st.dataframe(move_board, width="stretch", hide_index=True)
                     else:
                         st.info("No named move has a settled pick at this volume yet.")
                 else:
@@ -7160,7 +7160,7 @@ elif page == "📊 Results":
             m3.metric("Unresolved rows", len(graded) - status_counts.get("FINAL", 0))
             unresolved = [{"Reason": reason, "Rows": count} for reason, count in status_counts.items() if reason != "FINAL"]
             if unresolved:
-                st.dataframe(pd.DataFrame(unresolved), use_container_width=True, hide_index=True)
+                st.dataframe(pd.DataFrame(unresolved), width="stretch", hide_index=True)
             st.caption("Goals and ATG are separate line columns for the same scoring stat; a player may appear in both. Do not add their sample counts together.")
             market_results = summary.get("markets", {})
             market_rows = []
@@ -7173,7 +7173,7 @@ elif page == "📊 Results":
                     "Hit %": round(100 * wins / settled, 1) if settled else None,
                     "Rows without a settled line": int(counts.get("UNSET", 0)),
                 })
-            st.dataframe(pd.DataFrame(market_rows), use_container_width=True, hide_index=True)
+            st.dataframe(pd.DataFrame(market_rows), width="stretch", hide_index=True)
             st.caption(f"Source: {summary.get('source_file', 'dated tracker')} · Grader: {summary.get('grader_version', 'unknown')}")
             status_filter = st.selectbox("Show rows", ["All", "Final stats", "Unresolved"])
             if status_filter == "Final stats":
@@ -7186,7 +7186,7 @@ elif page == "📊 Results":
                 "Points_Line", "Outcome_Points", "Assists_Line", "Outcome_Assists",
                 "SOG_Line", "Outcome_SOG", "Goal_Line", "Outcome_Goal", "ATG_Line", "Outcome_ATG",
             ) if column in graded.columns]
-            st.dataframe(graded[result_columns], use_container_width=True, hide_index=True)
+            st.dataframe(graded[result_columns], width="stretch", hide_index=True)
 
 elif page == "Guide":
     st.subheader("📘 Guide — How to use")
