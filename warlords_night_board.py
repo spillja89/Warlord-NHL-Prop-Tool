@@ -119,12 +119,14 @@ def _character_uri(role: str) -> str:
     return "data:image/webp;base64," + base64.b64encode(image.read_bytes()).decode("ascii")
 
 
-def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=None) -> str:
-    """Compact, escaped HTML for four responsive class lanes."""
+def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=None,
+                    roles: tuple[str, ...] | None = None, show_hero: bool = True) -> str:
+    """Compact, escaped HTML for the raid board or selected class lanes."""
     descriptions = {"Carry": "Finish the fight", "Support": "Set the play",
                     "Tank": "Hold the line", "Jungle": "Control the lanes"}
+    selected = tuple(item for item in CLASSES if roles is None or item[0] in roles)
     lanes = []
-    for role, market, symbol, color in CLASSES:
+    for role, market, symbol, color in selected:
         cards = boards.get(role, [])
         character_uri = _character_uri(role)
         class_icon = symbol
@@ -210,10 +212,13 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
       .wn-details{position:relative;z-index:1;flex:0 0 100%;font-size:10px;color:#aebbd0;border-top:1px solid #ffffff14;padding-top:5px}.wn-details summary{cursor:pointer;color:var(--accent);font-weight:700}.wn-move-list{max-height:320px;overflow:auto;display:grid;gap:6px;margin-top:8px;padding-right:3px}
       .wn-move-entry{border:1px solid #ffffff20;border-radius:6px;background:#0b1629e8;padding:7px}.wn-move-title{display:flex;align-items:center;justify-content:space-between;gap:8px}.wn-move-title strong{font-size:11px;color:#f1e4ca}.wn-move-title em{font-size:8px;font-style:normal;color:var(--accent);text-align:right}.wn-move-record{font-size:10px;font-weight:800;color:#fff;margin-top:3px}.wn-move-record span{color:#b7c7df;margin-left:5px}.wn-move-rule{font-size:9px;color:#b6c5da;overflow-wrap:anywhere;margin-top:4px}
       .wn-empty{padding:26px 12px;text-align:center;color:#aebbd0;font-size:12px}
+      .wn-board--compact .wn-grid{grid-template-columns:1fr}
+      .wn-board--compact .wn-lane-head{display:none}
       @media(max-width:1050px){.wn-grid{grid-template-columns:1fr}}
       @media(max-width:540px){.wn-unit{gap:7px;padding:8px}.wn-unit-ghost{left:45px;opacity:.12}.wn-portrait{width:34px;height:34px}.wn-portrait svg{width:23px;height:23px}.wn-record{min-width:56px}.wn-record strong{font-size:17px}.wn-match{display:none}}
     </style>"""
     hero = f"""<div class="wn-hero"><span class="wn-eyebrow">WARLORDS OF THE NIGHT · 2026</span>
       <h1>THE NIGHT RAID</h1><p>Choose your class. Every card shows the strongest move this player can fire.</p>
       <div class="wn-hero-foot">⚔ {total} READY PLAYERS ACROSS FOUR CLASSES · RECORDS ARE HISTORICAL</div></div>"""
-    return styles + '<div class="wn-board">' + hero + '<div class="wn-grid">' + ''.join(lanes) + '</div></div>'
+    board_class = "wn-board" if show_hero else "wn-board wn-board--compact"
+    return styles + f'<div class="{board_class}">' + (hero if show_hero else "") + '<div class="wn-grid">' + ''.join(lanes) + '</div></div>'

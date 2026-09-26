@@ -680,6 +680,21 @@ def _render_class_header(mkt: str, frame: pd.DataFrame) -> None:
       <h2>{escape(role)} · {escape(mk)}</h2><p>{escape(spec['entry'])}</p>
       <div class="wl-prop-meta">{escape(slate_label)} · {len(cards)} PRICED PLAYERS WITH MOVES · {moves} ACTIVE MOVE TAGS SHOWN</div></section>""")
 
+
+def _render_class_shortlist(frame: pd.DataFrame, role: str) -> None:
+    """Show the same fired, priced moves used by Warlords of the Night."""
+    slate_frame, _ = _class_slate_frame(frame)
+    boards = rank_warlords(slate_frame)
+    total = len(boards[role])
+    st.subheader(f"{role} moves on this slate")
+    if total == 0:
+        st.info("No class move fired on a posted line in this view.")
+        return
+    limit = st.slider("Players to show", 1, min(30, total), min(10, total),
+                      key=f"{role.lower()}_class_limit") if total > 1 else 1
+    st.html(render_warlords(boards, limit=limit, roles=(role,), show_hero=False))
+    st.caption("Historical move records overlap. Open a player's card for every move that fired.")
+
 def _role_for_market(mkt: str) -> dict:
     key = str(mkt or "").strip().upper()
     if key in {"GOAL", "GOALS (0.5)", "GOALS1P", "GOALS_1P", "GOALS 1+", "GOALS (1+)"}:
@@ -3696,35 +3711,6 @@ def _flames_from_heat(heat: str) -> str:
         return "🔥🔥"
     return ""
 
-def _count_markets_from_pills(html: str) -> int:
-    s = str(html or "")
-    hits = set()
-    for key, tag in [("SOG", "SOG"), ("PTS", "PTS"), ("POINT", "PTS"), ("ASSIST", "AST"), ("AST", "AST"), ("GOAL", "G"), ("ATG", "G")]:
-        if key in s.upper():
-            hits.add(tag)
-    return len(hits)
-
-def _derive_badges(row: dict) -> tuple[str, str]:
-    """Return (explosion_badge, critical_badge) based on *visible* multi-market signals.
-    We intentionally avoid changing gates/math here; this is presentation only.
-    """
-    markets_html = row.get("Markets","")
-    mcount = _count_markets_from_pills(markets_html)
-    explosion = "🧨" if mcount >= 2 else ""
-    tier = str(row.get("Tier_Tag","") or "")
-    # Critical Strike: multi-market + STAR/ELITE + strong confidence on best market OR bonkers heat somewhere
-    best_conf = 0
-    try:
-        best_conf = int(float(row.get("Best_Conf", 0) or 0))
-    except Exception:
-        best_conf = 0
-    # bonkers if any heat column says OVERDUE
-    heats = " ".join([str(row.get(c,"") or "") for c in ["Reg_Heat_P","Reg_Heat_S","Reg_Heat_A","Reg_Heat_G"]]).upper()
-    bonkers = ("OVERDUE" in heats) or ("BONKERS" in heats)
-    critical = "⚔️" if (mcount >= 2 and ("ELITE" in tier.upper() or "STAR" in tier.upper()) and (best_conf >= 85 or bonkers)) else ""
-    return explosion, critical
-
-
 def _engine_badge(mkt: str, r: dict) -> str:
     """Return an engine badge (✅ENG) if the market-specific engine criteria are met."""
     mk = str(mkt or "").strip().upper()
@@ -3760,20 +3746,6 @@ def _engine_badge(mkt: str, r: dict) -> str:
 
 
 
-def _render_badge_legend_inline() -> None:
-    """Inline legend for 🧨 / ⚔️. Presentation-only."""
-    st.markdown(
-        """
-        <div style="padding:10px 14px;border-radius:12px;
-                    background:#f8f8f8;border:1px solid #ddd;
-                    margin:6px 0 12px 0;font-size:14px;line-height:1.35;">
-          <b>Badges</b><br>
-          🧨 <b>Dynamite</b> — explosive ceiling edge (multi-market signal)<br>
-          ⚔️ <b>Critical Strike</b> — STAR/ELITE + multi-market + strong confidence/heat alignment
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
 def show_table(df: pd.DataFrame, cols: list[str], title: str):
     st.subheader(title)
 
@@ -4477,7 +4449,7 @@ if owner_access:
 # Navigation
 page = st.sidebar.radio(
     "Page",
-    ["⚔️ Warlords of the Night", "Board", "Points", "Assists", "SOG", "GOALS (0.5)", "Power Play", "📊 Results", "🧪 Dagger Lab", "🪜 Ladder Alerts", "Guide", "Ledger", "Raw CSV", "📟 Calculator", "🧾 Log Bet"],
+    ["⚔️ Warlords of the Night", "Scout Board", "Points", "Assists", "SOG", "GOALS (0.5)", "Power Play", "📊 Results", "🧪 Dagger Lab", "🪜 Ladder Alerts", "Guide", "Ledger", "Raw CSV", "📟 Calculator", "🧾 Log Bet"],
     index=0,
     format_func=lambda x: {
         "Points": "Points (🛡️ Tank)",
@@ -4517,7 +4489,7 @@ if page == "⚔️ Warlords of the Night":
     else:
         st.warning("No class moves fired on priced lines for this slate. Upload a tracker with current book lines, or refresh the slate after lines post.")
 
-elif page == "Board":
+elif page == "Scout Board":
 
     with st.expander("Slate feed health and unpriced Green players", expanded=False):
         health = []
@@ -4548,18 +4520,7 @@ elif page == "Board":
         else:
             st.caption("Every Green player in this view has a line for these markets.")
 
-    st.markdown(
-        """
-        <div style="padding:10px 14px;border-radius:12px;
-                    background:#f8f8f8;border:1px solid #ddd;
-                    margin-bottom:12px;font-size:14px;">
-          <b>Board Signals</b><br>
-          🧨 <b>Dynamite</b> — explosive ceiling edge (high-impact, volatile)<br>
-          ⚔️ <b>Critical Strike</b> — precision edge with multiple proofs aligned
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
+
 
 
     # -------------------------
@@ -4737,7 +4698,8 @@ elif page == "Board":
 
 
     # === PICK SHEET (UI ONLY) ===
-    st.subheader("🧾 Pick Sheet — signals-first")
+    st.subheader("Scout sheet · model signals")
+    st.caption("This screen explores model signals. Tested class moves and historical records are on Warlords of the Night.")
     # === Board filter set (beta default) ===
     st.sidebar.subheader("Board Filters")
     market_sel = st.sidebar.multiselect("Market", ["POINTS","ASSISTS","SOG","GOALS"], default=["POINTS","ASSISTS","SOG","GOALS"], key="board_mkt_sel")
@@ -4760,27 +4722,21 @@ elif page == "Board":
     if q:
         df_b_filt = df_b_filt[safe_str(df_b_filt, "Player").str.lower().str.contains(q, regex=False)]
 
-    cA, cB, cC, cD = st.columns(4)
+    cA, cB = st.columns(2)
     with cA:
-        st.metric("Filtered picks", int(len(df_b_filt)))
+        st.metric("Filtered signals", int(len(df_b_filt)))
     with cB:
-        st.metric("Locks", int((column_or(df_b_filt, "LOCK", "").astype(str).str.len() > 0).sum()))
-    with cC:
-        st.metric("+EV", int(column_or(df_b_filt, "EV_Signal", "").astype(str).str.contains("💰").sum()))
-    with cD:
         top_conf = pd.to_numeric(column_or(df_b_filt, "Best_Conf"), errors="coerce").max()
         st.metric("Top Conf", f"{top_conf:.0f}" if pd.notna(top_conf) else "—")
 
 
-
-    # Top candidates: DPS-first (presentation-only)
+    # Model confidence ranks scout signals; tested move ranking lives on the raid board.
     _rank = df_b_filt.copy()
-    _rank["_dps_adj"] = pd.to_numeric(_rank.get("DPS_Adj", 0), errors="coerce").fillna(0.0)
-    _rank["_dps_n"] = pd.to_numeric(_rank.get("DPS_N", 0), errors="coerce").fillna(0).astype(int)
+    _rank["_conf"] = pd.to_numeric(_rank.get("Best_Conf", 0), errors="coerce").fillna(0.0)
     _rank["_odds"] = pd.to_numeric(_rank.get("Best_Odds", _rank.get("Odds", 0)), errors="coerce").fillna(0.0)
-    _rank = _rank.sort_values(["_dps_adj","_dps_n","_odds"], ascending=[False, False, False])
+    _rank = _rank.sort_values(["_conf", "_odds"], ascending=[False, False])
 
-    top_n = st.slider("Show top plays", 5, 30, 16, 1, key="board_topn")
+    top_n = st.slider("Show top signals", 5, 30, 16, 1, key="board_topn")
     top = _rank.head(int(top_n)).copy()
 
     def _best_why(r: pd.Series) -> str:
@@ -4797,12 +4753,9 @@ elif page == "Board":
             bm = r.get("Best_Market","")
             accent = _board_market_accent(bm)
             bc = r.get("Best_Conf","")
-            evsig = r.get("EV_Signal","")
-            lock = r.get("LOCK","")
             markets = r.get("Markets","")
             why = _best_why(r)
 
-            expl, crit = _derive_badges(r)
             # Flames are best-market regression heat (visual only; logic already exists upstream)
             bm_heat = ""
             if str(bm or "").upper().startswith("SOG"):
@@ -4815,19 +4768,12 @@ elif page == "Board":
                 bm_heat = r.get("Reg_Heat_G","")
             flames = _flames_from_heat(bm_heat)
 
-            dps_t = str(r.get("DPS_Title","") or "").strip()
-            dps_w = _safe_float(r.get("DPS_Win"), 0.0) or 0.0
-            dps_n = int(_safe_float(r.get("DPS_N"), 0) or 0)
-            dps_a = _safe_float(r.get("DPS_Adj"), 0.0) or 0.0
-            move_summary = (f"🏆 {escape(dps_t)} · AdjWin <strong>{dps_a:.1f}</strong> "
-                            f"(Win {dps_w:.1f}% • n={dps_n})") if dps_t and dps_n > 0 else "No named move fired"
+            best_conf = _safe_float(bc, 0.0) or 0.0
             headline = (
                 f"<strong>{escape(str(player))}</strong> — {escape(str(game))} · "
-                f"{expl}{crit} <strong>{escape(str(bm))}</strong> · {move_summary}"
+                f"<strong>{escape(str(bm))}</strong> · Conf {best_conf:.0f}"
             )
-            mb = calc_ev_per_dollar(_to_float(_get(r, "Model%", "Model_Prob", default="")), _to_float(_get(r, "Odds", "Odds_Amer", default="")))
-            mb_txt = f"↩ {mb:+.2f}/$1" if mb is not None else ""
-            badges = " ".join([escape(str(x)) for x in [lock, evsig, mb_txt] if str(x).strip()])
+            badges = escape(str(tier or ""))
             st.markdown(f"<div class='wl-board-card {accent}'>"
                         f"<div style='display:flex;justify-content:space-between;gap:10px;'>"
                         f"<div style='font-size:16px;line-height:1.2;'>{headline}</div>"
@@ -4836,7 +4782,7 @@ elif page == "Board":
                         f"<div style='margin-top:6px;opacity:0.95;'>{markets}</div>"
                         f"</div>", unsafe_allow_html=True)
 
-            with st.expander("🔥 Why it fires", expanded=False):
+            with st.expander("Why the model flagged it", expanded=False):
                 # Market-aware combat HUD (presentation only)
                 mkt_raw = str(bm or "").strip().upper()
                 if mkt_raw.startswith("SOG"):
@@ -4862,7 +4808,7 @@ elif page == "Board":
                 _render_why_it_fires_rich(mkt, r, tags)
 
     with st.expander("Full Board Table (all rows)", expanded=False):
-        show_table(df_b_filt, board_cols, "Board (filtered picks)")
+        show_table(df_b_filt, board_cols, "Scout signals (filtered)")
 
 
 
@@ -5031,308 +4977,7 @@ elif page == "Points":
 
 
 
-    # === SMASH PLAYS (POINTS) ===
-    _render_badge_legend_inline()
-
-
-    st.subheader("⭐ Smash Plays — Points")
-
-
-    _p = df_p.copy()
-    _p = _p[
-        (safe_str(_p, "Matrix_Points").str.strip().str.upper().isin(["GREEN", "🟢"]))
-        & (safe_num(_p, "Points_Line", 0) == 0.5)
-        & (safe_str(_p, "Outcome_Points").str.upper().isin(["W", "L"])
-           | safe_str(_p, "Match_Status_Points").str.upper().ne("GRADED"))
-    ].copy()
-
-    heat = safe_str(_p, "Reg_Heat_P").str.upper().isin(["HOT", "DUE", "OVERDUE"])
-    gap = safe_num(_p, "Reg_Gap_P10", -999) >= 2.5
-    drt = safe_num(_p, "Drought_P", -999) >= 2
-    reg_valid = heat | gap | drt
-    _p = _p[reg_valid].copy()
-
-    _p["_conf"] = safe_num(_p, "Conf_Points", 0)
-    _p["_l10r"] = pd.to_numeric(column_or(_p, "L10_Rate_Points", np.nan), errors="coerce")
-    _p["_l10d"] = pd.to_numeric(column_or(_p, "L10_Diff_Points", np.nan), errors="coerce")
-    _p["_gap"] = pd.to_numeric(column_or(_p, "Reg_Gap_P10", np.nan), errors="coerce")
-
-    _p = _p.sort_values(["_conf","_l10r","_l10d","_gap"], ascending=[False, False, False, False], kind="mergesort")
-
-    top_n_p = st.slider("Show top plays (Points)", 3, 30, 16, 1, key="points_smash_topn")
-    topp = _p.head(int(top_n_p))
-
-    for _, r in topp.iterrows():
-        player = str(r.get("Player", "") or "").strip()
-        game = str(r.get("Game", "") or "").strip()
-        line = r.get("Points_Line", "")
-        odds = r.get("Points_Odds_Over", r.get("Points_Odds", ""))
-        conf = r.get("Conf_Points", "")
-        gapv = r.get("Reg_Gap_P10", "")
-        heatv = str(r.get("Reg_Heat_P", "") or "").strip()
-        l10r = r.get("L10_Rate_Points", "")
-        l10d = r.get("L10_Diff_Points", "")
-        xga = r.get("opp_5v5_xGA60", "")
-        hdca = r.get("opp_5v5_HDCA60", "")
-
-        tags = []
-        _conf_p = _safe_float(conf)
-        _conf_a = _safe_float(r.get("Conf_Assists"))
-        # Conf tags (visual only)
-        if _conf_p is not None:
-            if _conf_p >= 80:
-                tags.append("⚔️ Conf 80+")
-            elif _conf_p >= 70:
-                tags.append("Conf 70+")
-        if _conf_a is not None and _conf_a >= 89:
-            tags.append("⚔️ A-Conf 89+")
-
-        # Combat HUD icons (POINTS) — on player card (match other markets)
-        try:
-            _line = float(line)
-        except Exception:
-            _line = None
-
-        # NOTE: these are visual-only symbols; they do NOT change ranking/EV/conf.
-        if _line is not None:
-            # 0.5 Fortress spec
-            if _line <= 0.75:
-                _ppp = _safe_float(r.get("PPP10_total")) or 0.0
-                _ppixg = _safe_float(r.get("PP_iXG60")) or 0.0
-                _amu = _safe_float(r.get("Assists_mu")) or 0.0
-                _oppgaa = _safe_float(r.get("Opp_GAA"))
-
-                if _conf_p is not None and _conf_p >= 70:
-                    tags.append(_svg_inline(_svg_get("PTS05_HAMMER_FISTS.svg"), size=14, title="Hammer Fists"))
-                if _conf_p is not None and _conf_p >= 70 and _ppp >= 3:
-                    tags.append(_svg_inline(_svg_get("PTS05_HAMMER_STOMP.svg"), size=14, title="Echo Stomp I"))
-                if _conf_p is not None and _conf_p >= 78 and _amu >= 1.0:
-                    tags.append(_svg_inline(_svg_get("PTS05_ENRAGED_FURY.svg"), size=14, title="Enraged Fury"))
-                if _conf_p is not None and _conf_p >= 78 and (_oppgaa is not None) and (2.5 <= float(_oppgaa) <= 3.0):
-                    tags.append(_svg_inline(_svg_get("PTS05_ENRAGED_FURY.svg"), size=14, title="Blood Stomp"))
-
-                # Gaia's Blessing v2 ladder (Conf 75/77/82 + Assists_mu>=0.7) — add BOTH icon + descriptor
-                gaia_active = (_conf_p is not None) and (_amu >= 0.7) and (_conf_p >= 75)
-                if gaia_active:
-                    if _conf_p >= 82:
-                        tags.append(_svg_inline(_svg_get("PTS05_GAIAS_BLESSING.svg"), size=14, title="Gaia’s Blessing++ (82+)"))
-                        tags.append("Gaia’s Blessing++")
-                    elif _conf_p >= 77:
-                        tags.append(_svg_inline(_svg_get("PTS05_GAIAS_BLESSING.svg"), size=14, title="Gaia’s Blessing+ (77+)"))
-                        tags.append("Gaia’s Blessing+")
-                    else:  # 75+
-                        tags.append(_svg_inline(_svg_get("PTS05_GAIAS_BLESSING.svg"), size=14, title="Gaia’s Blessing (75+)"))
-                        tags.append("Gaia’s Blessing")
-
-                    # BONUS: Gaia Heat Ladder (context labels; show highest active rung)
-                    _tgf = _safe_float(r.get("Team_GF_Avg_L5", r.get("Team_GF_L5")))
-                    _osog = _safe_float(r.get("Opp_SOG_Against_L10"))
-                    if (_tgf is not None) and (_tgf >= 3.7) and (_osog is not None) and (_osog >= 27.5):
-                        tags.append("Gaia’s Floodgate")
-                    elif (_tgf is not None) and (_tgf >= 3.9):
-                        tags.append("Gaia’s Ascension")
-                    elif (_tgf is not None) and (_tgf >= 3.7):
-                        tags.append("Gaia’s Wrath")
-                    elif (_tgf is not None) and (_tgf >= 3.5):
-                        tags.append("Gaia’s Favor")
-
-                # Bleed ENV (label-only)
-                if _conf_p is not None and _conf_p >= 70 and _ppixg >= 1.5:
-                    tags.append(_svg_inline(_svg_get("PTS05_BLEED_ENV.svg"), size=14, title="Bleed ENV (Label)"))
-
-            # 1.5 DPS spec
-            else:
-                _mu = _safe_float(r.get("Points_mu")) or 0.0
-                assists_mu = _safe_float(r.get("Assists_mu")) or 0.0
-                _xga = _safe_float(r.get("opp_5v5_xGA60"))
-                _drt = _safe_float(r.get("Drought_P")) or 0.0
-                _opp_gaa = _safe_float(r.get("Opp_GAA"))
-
-                # Current 1.5 card lanes only: assists lane + no-goalie points lane + goalie-wombo lane.
-                # Do NOT re-surface the old Conf_Assists legacy Backbone / Power / Monster tags here.
-                if _conf_p is not None and _xga is not None and _conf_p >= 75:
-                    if assists_mu >= 1.5 and float(_xga) >= 2.50:
-                        tags.append(_svg_inline(_svg_get("PTS15_BLADE_IMPALE.svg"), size=14, title="Juggernaut"))
-                        tags.append("Juggernaut")
-                    elif assists_mu >= 1.3 and float(_xga) >= 2.50:
-                        tags.append(_svg_inline(_svg_get("PTS15_ENCHANTED_HAMMER.svg"), size=14, title="War Tank"))
-                        tags.append("War Tank")
-
-                    if _mu >= 1.7 and float(_xga) >= 2.53:
-                        tags.append(_svg_inline(_svg_get("PTS15_BLADE_SLASH.svg"), size=14, title="Blade Slash"))
-                        tags.append("Blade Slash")
-                    elif _mu >= 1.7 and float(_xga) >= 2.50:
-                        tags.append(_svg_inline(_svg_get("PTS15_BLADE_IMPALE.svg"), size=14, title="Blade Impale"))
-                        tags.append("Blade Impale")
-
-                    if _mu >= 1.7 and (_opp_gaa is not None) and float(_opp_gaa) >= 3.0 and float(_xga) >= 2.53:
-                        tags.append(_svg_inline(_svg_get("PTS15_ETERNAL_SMASH.svg"), size=14, title="Ragnarok+"))
-                        tags.append("Ragnarok+")
-                    elif _mu >= 1.7 and (_opp_gaa is not None) and float(_opp_gaa) >= 2.7 and float(_xga) >= 2.53:
-                        tags.append(_svg_inline(_svg_get("PTS15_POLARIZING_SMASH.svg"), size=14, title="Ragnarok"))
-                        tags.append("Ragnarok")
-
-                if _drt >= 1 and _mu >= 1.7:
-                    tags.append("Delayed Hammer Smash")
-        try:
-            if float(l10r) >= 0.80: tags.append("🔥 L10 Rate ≥0.80")
-            elif float(l10r) >= 0.70: tags.append("L10 Rate ≥0.70")
-        except Exception:
-            pass
-        try:
-            if float(l10d) >= 0.25: tags.append("🧨 L10 Diff ≥0.25")
-        except Exception:
-            pass
-
-        warns = []
-        try:
-            if float(xga) <= 2.43: warns.append("⚠️ Suppressive xGA (≤2.43)")
-        except Exception:
-            pass
-        try:
-            if float(hdca) <= 2.33: warns.append("⚠️ Low HDCA (≤2.33)")
-        except Exception:
-            pass
-
-        def _is_nan(v) -> bool:
-            try:
-                if v is None:
-                    return True
-                if isinstance(v, float) and math.isnan(v):
-                    return True
-                return str(v).strip().lower() == "nan"
-            except Exception:
-                return True
-
-        meta = []
-        if heatv:
-            meta.append(f"Heat {heatv}")
-        try:
-            _g = float(gapv)
-            if not math.isnan(_g):
-                meta.append(f"Gap {_g:.2f}")
-        except Exception:
-            pass
-        try:
-            _c = float(conf)
-            if not math.isnan(_c):
-                meta.append(f"Conf {_c:.0f}")
-        except Exception:
-            pass
-        try:
-            _lr = float(l10r)
-            if not math.isnan(_lr):
-                meta.append(f"L10Rate {_lr:.2f}")
-        except Exception:
-            pass
-        try:
-            _ld = float(l10d)
-            if not math.isnan(_ld):
-                meta.append(f"L10Diff {_ld:.2f}")
-        except Exception:
-            pass
-
-                # --- Player card line (match GOALS/ASSISTS style): icons + bold combo + light meta ---
-        proc_icons = "".join([t for t in tags if (isinstance(t, str) and ("<svg" in t or "wl-ico" in t))])
-
-        # Separate combo descriptors from meta-like tags (keep L10 tags as meta; keep core move names as combo)
-        combo_bits = []
-        meta_bits = []
-        for t in tags:
-            if not isinstance(t, str):
-                continue
-            if "<svg" in t or "wl-ico" in t:
-                continue
-            s = t.strip()
-            if not s:
-                continue
-            if s.startswith(("🔥", "🧨", "Heat", "Gap", "Conf", "L10")):
-                meta_bits.append(s)
-            else:
-                combo_bits.append(s)
-
-        combo_s = " • ".join(combo_bits[:3])
-
-        # Build compact meta (no NaNs)
-        meta = []
-        _mx = str(r.get("Matrix_Points", r.get("Matrix", "")) or "").strip()
-        if _mx:
-            meta.append(_mx)
-        if heatv:
-            meta.append(f"Heat {heatv}")
-        try:
-            _g = float(gapv)
-            if not math.isnan(_g):
-                meta.append(f"Gap {_g:.2f}")
-        except Exception:
-            pass
-        try:
-            _c = float(conf)
-            if not math.isnan(_c):
-                meta.append(f"Conf {_c:.0f}")
-        except Exception:
-            pass
-
-        # Key “up-front” stat trio for Points
-        try:
-            _pmu = float(r.get("Points_mu", float("nan")))
-            if not math.isnan(_pmu):
-                meta.append(f"μ {_pmu:.2f}")
-        except Exception:
-            pass
-        try:
-            _amu = float(r.get("Assists_mu", float("nan")))
-            if not math.isnan(_amu):
-                meta.append(f"Aμ {_amu:.2f}")
-        except Exception:
-            pass
-        try:
-            _tgf = float(r.get("Team_GF_Avg_L5", r.get("Team_GF_L5", float("nan"))))
-            if not math.isnan(_tgf):
-                meta.append(f"GF_L5 {_tgf:.1f}")
-        except Exception:
-            pass
-        try:
-            _dr = float(r.get("Drought_P", float("nan")))
-            if not math.isnan(_dr) and _dr >= 1:
-                meta.append(f"Drought {int(_dr)}")
-        except Exception:
-            pass
-
-        meta.extend(meta_bits)
-        meta.extend(warns)
-
-        meta_s = " | ".join([m for m in meta if m])
-
-        dash = " — " if combo_s else ""
-        card_line = f"{proc_icons} <span style=\"font-weight:800;\">{escape(combo_s)}</span><span style=\"opacity:0.8;\">{dash}{escape(meta_s)}</span>"
-
-        _line_s = "" if _is_nan(line) else str(line)
-        _odds_s = "" if _is_nan(odds) else str(odds)
-        betline = (f"PTS {_line_s}" + (f" @ {_odds_s}" if _odds_s else "")) if _line_s else ""
-        headline = f"<b>{escape(str(player))}</b> — {escape(str(game))}" if game else f"<b>{escape(str(player))}</b>"
-        betline = escape(str(betline))
-
-        st.markdown(
-            f"""
- <div class=\"wl-card wl-accent-blue\">
-   <div style=\"display:flex;justify-content:space-between;gap:10px;\">
-     <div style=\"font-size:16px;line-height:1.2;\">
-       {headline}
-       <div style=\"opacity:0.9;margin-top:4px;\">{betline}</div>
-     </div>
-     <div style=\"font-size:16px;white-space:nowrap;\">{_engine_badge('POINTS', r)} {escape(str(r.get('LOCK','') or '').strip())}</div>
-   </div>
-   <div style=\"margin-top:6px;font-size:12px;opacity:0.92;line-height:1.2;\">{card_line}</div>
- </div>
-            """,
-            unsafe_allow_html=True,
-        )
-
-        _why_tags = str(r.get("Points_Why", r.get("Why", "")) or "").strip()
-        with st.expander("Why it fires", expanded=False):
-            _why_sections_header("POINTS")
-            _render_why_it_fires_rich("POINTS", r, _why_tags)
+    _render_class_shortlist(df_p, "Tank")
 
     st.markdown("---")
 
@@ -5451,149 +5096,7 @@ elif page == "Assists":
     e = df_a["Plays_EV_Assists"] if "Plays_EV_Assists" in df_a.columns else pd.Series([""]*len(df_a), index=df_a.index)
 
     p = df_a["Assists_EV%"] if "Assists_EV%" in df_a.columns else pd.Series([None]*len(df_a), index=df_a.index)
-    st.subheader("⭐ Smash Plays — Assists")
-
-    # Valhalla Gate presentation (ASSISTS) — baseline only
-
-    # Eligibility (ignore EV): Matrix Green + Line 0.5 + Conf >= 80
-    _a = df_a.copy()
-
-    _mat = _a["Matrix_Assists"] if "Matrix_Assists" in _a.columns else (_a["Matrix_A"] if "Matrix_A" in _a.columns else pd.Series("", index=_a.index))
-    _line = _a["Assists_Line"] if "Assists_Line" in _a.columns else (_a["Line_Assists"] if "Line_Assists" in _a.columns else pd.Series([np.nan]*len(_a), index=_a.index))
-    _conf = _a["Conf_Assists"] if "Conf_Assists" in _a.columns else (_a["Conf_A"] if "Conf_A" in _a.columns else pd.Series([0]*len(_a), index=_a.index))
-
-    # NOTE: don't block on Outcome/Match_Status for today's slate — Gate is just stance + floor.
-    _a = _a[
-        (_mat.astype(str).str.strip().str.upper().isin(["GREEN", "🟢"])) &
-        ((pd.to_numeric(_line, errors="coerce") == 0.5) | (pd.to_numeric(_line, errors="coerce").isna())) &
-        (pd.to_numeric(_conf, errors="coerce").fillna(0) >= 80)
-    ].copy()
-
-    # Feature pulls (safe)
-    _a["_conf"] = safe_num(_a, "Conf_Assists", 0)
-    _a["_ppixa"] = pd.to_numeric(column_or(_a, "PP_iXA60", column_or(_a, "PP_iXA_60", np.nan)), errors="coerce")
-    _a["_ppshare"] = pd.to_numeric(column_or(_a, "PP_TeamShare_pct", column_or(_a, "PP_TeamShare%", np.nan)), errors="coerce")
-    _a["_ixa_pct"] = pd.to_numeric(column_or(_a, "iXA%", np.nan), errors="coerce")
-    _a["_team_gf_l5"] = pd.to_numeric(column_or(_a, "Team_GF_L5", np.nan), errors="coerce")
-
-    _a = _a.sort_values(["_conf","_ppixa","_ppshare"], ascending=[False, False, False], kind="mergesort")
-
-    top_n_a = st.slider("Show top plays (Assists)", 3, 30, 16, 1, key="assist_smash_topn")
-    topa = _a.head(int(top_n_a))
-
-    if len(topa) == 0:
-        st.info("No assists currently pass the Valhalla Gate (Matrix Green + 0.5 line + Conf ≥ 80).")
-    else:
-        for _, r in topa.iterrows():
-            player = str(r.get("Player", "") or "").strip()
-            game = str(r.get("Game", "") or "").strip()
-
-            odds = r.get("Assists_Odds_Over", r.get("Assists_Odds", r.get("Odds", "")))
-            conf = float(r.get("Conf_Assists", 0) or 0)
-
-            # Core features for moves
-            ixa_pct = float(r.get("_ixa_pct", np.nan)) if not pd.isna(r.get("_ixa_pct", np.nan)) else float("nan")
-            pp_ix   = float(r.get("_ppixa", np.nan)) if not pd.isna(r.get("_ppixa", np.nan)) else float("nan")
-            team_gf = float(r.get("_team_gf_l5", np.nan)) if not pd.isna(r.get("_team_gf_l5", np.nan)) else float("nan")
-
-            # New move logic (signals only; no gating)
-            # Stars Aligned: Conf ≥ 88 + iXA% ≥ 96  (n=163, 65.6% in your test)
-            stars_aligned = (conf >= 88) and (not math.isnan(ixa_pct)) and (ixa_pct >= 96)
-
-            # Supernova Overdrive: Conf ≥ 80 + iXA% ≥ 95 + PP_iXA60 ≥ 3.7 + Team_GF_L5 ≥ 20  (n=64, 75.0%)
-            supernova_overdrive = (
-                (conf >= 80)
-                and (not math.isnan(ixa_pct)) and (ixa_pct >= 95)
-                and (not math.isnan(pp_ix)) and (pp_ix >= 3.7)
-                and (not math.isnan(team_gf)) and (team_gf >= 20)
-            )
-
-            # Magic Man: Conf ≥ 87 + iXA% ≥ 99 (kept as Mythic)
-            magic_on = (conf >= 87) and (not math.isnan(ixa_pct)) and (ixa_pct >= 99)
-
-                        # --- Card (match other markets: wl-card + accent) ---
-            meta = []
-            try: meta.append(f"Conf {float(conf):.0f}")
-            except Exception: pass
-            if not math.isnan(ixa_pct):
-                meta.append(f"iXA% {ixa_pct:.1f}")
-            if not math.isnan(pp_ix):
-                meta.append(f"PP_iXA60 {pp_ix:.2f}")
-            if not math.isnan(team_gf):
-                meta.append(f"Team_GF_L5 {team_gf:.0f}")
-
-            meta_s = " | ".join([m for m in meta if m])
-
-            # --- Card procs (icons + short combo reads) ---
-            ppp10 = _safe_float(r.get("PPP10_total"), default=float("nan"))
-            assists_mu = _safe_float(r.get("Assists_mu"), default=float("nan"))
-            goalie_weak = _safe_float(r.get("Goalie_Weak"), default=float("nan"))
-
-            creator_role = (not math.isnan(ixa_pct)) and (ixa_pct >= 95.0)
-            elite_creator = (not math.isnan(ixa_pct)) and (ixa_pct >= 99.0)
-            pp_engine = (not math.isnan(pp_ix)) and (pp_ix >= 4.0)
-            pp_hot = (not math.isnan(ppp10)) and (ppp10 >= 5.0)
-            on_heater = (not math.isnan(team_gf)) and (team_gf >= 20.0)
-            playmaking_pace = (not math.isnan(assists_mu)) and (assists_mu >= 1.30)
-            conf_spike = False  # GOALS tiers are conf-free (beta)
-            soft_goalie = (not math.isnan(goalie_weak)) and (goalie_weak >= 90.0)
-
-            # Short combo tags (2–3 words)
-            combo_tags = []
-            if elite_creator: combo_tags.append("Elite Creator")
-            elif creator_role: combo_tags.append("Creator Role")
-            if pp_engine: combo_tags.append("PP Engine")
-            if pp_hot: combo_tags.append("PP Hot")
-            if on_heater: combo_tags.append("On Heater")
-            if playmaking_pace: combo_tags.append("Playmaking Pace")
-            if conf_spike: combo_tags.append("Conf Spike")
-            if soft_goalie: combo_tags.append("Soft Goalie")
-
-            combo_s = " • ".join(combo_tags[:6])  # keep it tight
-
-            # Icons (show only what fired)
-            icons = []
-            icons.append(_svg_icon("staff.svg", "Base Shell", "wl-assists"))
-            if creator_role: icons.append(_svg_icon("odins_arcane_orb.svg", "Creator Role", "wl-assists"))
-            if pp_engine: icons.append(_svg_icon("runic_infusion.svg", "PP Engine", "wl-assists"))
-            if pp_hot: icons.append(_svg_icon("arcane_channel_iii.svg", "PP Hot", "wl-assists"))
-            if playmaking_pace: icons.append(_svg_icon("arcane_channel_ii.svg", "Playmaking Pace", "wl-assists"))
-            if on_heater: icons.append(_svg_icon("stars.svg", "On Heater", "wl-assists"))
-            if conf_spike: icons.append(_svg_icon("valhalla.svg", "Conf Spike", "wl-assists"))
-            if soft_goalie: icons.append(_svg_icon("odins-eye.svg", "Soft Goalie", "wl-assists"))
-            if stars_aligned: icons.append(_svg_icon("stars.svg", "Stars Aligned", "wl-assists"))
-            if supernova_overdrive: icons.append(_svg_icon("supernova.svg", "Wombo Stack", "wl-assists"))
-            if magic_on: icons.append(_svg_icon("magic_mans_transcendence.svg", "Elite Creator", "wl-assists"))
-
-            proc_icons = "".join([i for i in icons if i])
-
-            betline = f"A 0.5 @ {odds}" if odds != "" else "A 0.5"
-            headline = f"<b>{escape(player)}</b> — {escape(game)}" if game else f"<b>{escape(player)}</b>"
-            betline = escape(betline)
-
-            st.markdown(
-                f"""
-             <div class="wl-card wl-accent-purple">
-               <div style="display:flex;justify-content:space-between;gap:10px;">
-                 <div style="font-size:16px;line-height:1.2;">
-                   {headline}
-                   <div style="opacity:0.9;margin-top:4px;">{betline}</div>
-                 </div>
-               <div style="font-size:16px;white-space:nowrap;">{_engine_badge('ASSISTS', r)} {escape(str(r.get('LOCK','') or '').strip())}</div>
-               </div>
-               <div style="margin-top:6px;font-size:12px;opacity:0.95;line-height:1.2;">{proc_icons} <span style="font-weight:800;">{escape(combo_s)}</span><span style="opacity:0.8;">{" — " if combo_s else ""}{escape(meta_s)}</span></div>
-             </div>
-                """,
-                unsafe_allow_html=True,
-            )
-
-            # --- Why it fires (use rich HUD renderer like other markets) ---
-            _why_tags = str(r.get("Assists_Why", r.get("Why", "")) or "").strip()
-            with st.expander("Why it fires", expanded=False):
-                _why_sections_header("ASSISTS")
-                _render_why_it_fires_rich("ASSISTS", r, _why_tags)
-
-
+    _render_class_shortlist(df_a, "Support")
 
     # Full table (Assists)
     show_table(df_a, assists_cols, "Assists View")
@@ -5693,312 +5196,7 @@ elif page == "SOG":
     # SOG Smash (cards) — Berserker kit (EV ignored)
     # -------------------------
 
-    _render_badge_legend_inline()
-
-    st.subheader("⭐ Smash Plays — SOG")
-
-    top_n = st.slider("Show top plays (SOG)", 3, 25, 10, 1, key="sog_smash_topn")
-
-    _rank = df_s.copy()
-
-    # Global gates (always on)
-    _mx = safe_str(_rank, "Matrix_SOG").str.strip().str.lower().eq("green")
-    _line = safe_num(_rank, "SOG_Line", 0)
-    _conf = safe_num(_rank, "Conf_SOG", 0)
-
-    # ShotIntent / SI (column may vary across builds)
-    if "ShotIntent" in _rank.columns:
-        _si = pd.to_numeric(_rank.get("ShotIntent", 0), errors="coerce").fillna(0.0)
-    elif "SI" in _rank.columns:
-        _si = pd.to_numeric(_rank.get("SI", 0), errors="coerce").fillna(0.0)
-    elif "ShotIntent_SOG" in _rank.columns:
-        _si = pd.to_numeric(_rank.get("ShotIntent_SOG", 0), errors="coerce").fillna(0.0)
-    elif "SI_SOG" in _rank.columns:
-        _si = pd.to_numeric(_rank.get("SI_SOG", 0), errors="coerce").fillna(0.0)
-    else:
-        _si = pd.Series(0.0, index=_rank.index)
-
-    # Drought / regression timing (column may vary across builds)
-    if "Drought_SOG" in _rank.columns:
-        _dr = pd.to_numeric(_rank.get("Drought_SOG", 0), errors="coerce").fillna(0.0).astype(int)
-    elif "Drought_S" in _rank.columns:
-        _dr = pd.to_numeric(_rank.get("Drought_S", 0), errors="coerce").fillna(0.0).astype(int)
-    else:
-        _dr = pd.Series(0, index=_rank.index, dtype=int)
-
-    # ---- Path A (Jungle main) — SOG 2.5 shell
-    _base25 = _mx & (_line <= 2.5) & (_conf >= 75) & ((_si >= 3.4) | (_dr == 1))
-
-    # ---- Path B (Jungle — Sniper Spec) — SOG 3.5 shell
-    _base35 = _mx & (_line >= 3.5) & (_conf >= 75)
-
-    _rank = _rank[_base25 | _base35].copy()
-
-    # Sniper tiering (only applies to 3.5 lines; used for sorting + label)
-    _xga = pd.to_numeric(_rank.get("opp_5v5_xGA60", pd.Series(0.0, index=_rank.index)), errors="coerce").fillna(0.0)
-    _hdca = pd.to_numeric(_rank.get("opp_5v5_HDCA60", pd.Series(0.0, index=_rank.index)), errors="coerce").fillna(0.0)
-    _l40 = pd.to_numeric(_rank.get("L40_Rate_SOG", pd.Series(0.0, index=_rank.index)), errors="coerce").fillna(0.0)
-    _share = pd.to_numeric(_rank.get("Player_5v5_SOG_Share", pd.Series(0.0, index=_rank.index)), errors="coerce").fillna(0.0)
-    _opp50 = pd.to_numeric(_rank.get("Opp_SOG_Against_L50", pd.Series(0.0, index=_rank.index)), errors="coerce").fillna(0.0)
-
-    _permission_shatter = (_xga >= 2.50) | (_hdca >= 2.20)
-    _enraged = (_l40 >= 3.0) & (_xga >= 2.50)
-    _elite_enraged = _enraged & (_share >= 20.0)
-    _enraged_shatter = (_opp50 >= 29.5) & _permission_shatter
-
-    _is35 = safe_num(_rank, "SOG_Line", 0) >= 3.5
-    _rank["_sniper_tier"] = ""
-    _rank.loc[_is35 & _elite_enraged, "_sniper_tier"] = "SNIPER CRIT"
-    _rank.loc[_is35 & (_rank["_sniper_tier"] == "") & _enraged, "_sniper_tier"] = "STRONG"
-    _rank.loc[_is35 & (_rank["_sniper_tier"] == "") & _enraged_shatter, "_sniper_tier"] = "PERMISSION SPECIAL"
-    _rank.loc[_is35 & (_rank["_sniper_tier"] == ""), "_sniper_tier"] = "BASE"
-
-    _tier_rank = {"SNIPER CRIT": 4, "STRONG": 3, "PERMISSION SPECIAL": 2, "BASE": 1, "": 0}
-    _rank["_tier_rank"] = _rank["_sniper_tier"].map(_tier_rank).fillna(0).astype(int)
-
-
-
-    # 3.5 Sniper Spec: do NOT show BASE on the Smash board (only show 50%+ move procs).
-    _rank = _rank[~(_is35 & (_rank["_sniper_tier"] == "BASE"))].copy()
-
-    # Rank: Locks (if present) -> Sniper tier (3.5 only) -> Conf (no EV)
-    if "LOCK" in _rank.columns:
-        _rank["_is_lock"] = (_rank.get("LOCK", "").astype(str).str.strip() == "🔒").astype(int)
-        if "_tier_rank" in _rank.columns:
-            _rank = _rank.sort_values(["_is_lock", "_tier_rank", "Conf_SOG"], ascending=[False, False, False], kind="mergesort")
-        else:
-            _rank = _rank.sort_values(["_is_lock", "Conf_SOG"], ascending=[False, False], kind="mergesort")
-    else:
-        if "_tier_rank" in _rank.columns:
-            _rank = _rank.sort_values(["_tier_rank", "Conf_SOG"], ascending=[False, False], kind="mergesort")
-        else:
-            _rank = _rank.sort_values(["Conf_SOG"], ascending=[False], kind="mergesort")
-
-    top = _rank.head(int(top_n))
-
-    if top.empty:
-        st.info("No SOG plays meet the Berserker gates on this slate.")
-    else:
-        for _, r in top.iterrows():
-                player = str(r.get("Player", "") or "").strip()
-                game = str(r.get("Game", "") or "").strip()
-
-                line = r.get("SOG_Line", "")
-                odds = r.get("SOG_Odds_Over", "")
-                call = str(r.get("SOG_Call", "") or "").strip()
-
-                conf = r.get("Conf_SOG", "")
-                matrix = str(r.get("Matrix_SOG", "") or "").strip()
-                expl, crit = _derive_badges(r)
-                eng = _engine_badge("SOG", r)
-                badges = f"{eng} {escape(str(r.get('EV_Signal','') or '').strip())} {escape(str(r.get('LOCK','') or '').strip())} {expl} {crit}".strip()
-
-                # Pretty line/odds strings
-                try:
-                    l_str = "" if line is None or (isinstance(line, float) and math.isnan(line)) else f"{float(line):.1f}"
-                except Exception:
-                    l_str = str(line)
-                try:
-                    o_str = "" if odds is None or (isinstance(odds, float) and math.isnan(odds)) else f"{int(round(float(odds))):d}"
-                except Exception:
-                    o_str = str(odds)
-
-                headline = f"<b>{escape(str(player))}</b> — {escape(str(game))}"
-                betline = escape(f"SOG {l_str}+  ({o_str})" if (l_str or o_str) else "SOG")
-
-                meta = []
-                if matrix:
-                    meta.append(matrix)
-                if conf != "" and conf is not None:
-                    try:
-                        meta.append(f"Conf {float(conf):.0f}")
-                    except Exception:
-                        meta.append(f"Conf {conf}")
-                if call:
-                    meta.append(call)  # includes Shot Anchor / DUE labels when present
-
-                # SOG 3.5 Sniper tier label
-                try:
-                    if float(r.get("SOG_Line", 0) or 0) >= 3.5:
-                        tier = str(r.get("_sniper_tier", "") or "").strip()
-                        if tier:
-                            meta.append(tier)
-                except Exception:
-                    pass
-
-                # Combat HUD icons (SOG) — card line (presentation-only)
-                try:
-                    _line_s = float(r.get("SOG_Line", float("nan")))
-                except Exception:
-                    _line_s = float("nan")
-                try:
-                    _conf_s = float(r.get("Conf_SOG", 0) or 0)
-                except Exception:
-                    _conf_s = 0.0
-                _mat_s = str(r.get("Matrix_SOG", r.get("Matrix", "")) or "").strip().lower()
-                try:
-                    _si = float(r.get("ShotIntent", r.get("SI", r.get("ShotIntent_SOG", r.get("SI_SOG", float("nan"))))))
-                except Exception:
-                    _si = float("nan")
-                try:
-                    _sipct = float(r.get("ShotIntent_Pct", r.get("ShotIntentPct", r.get("SI_Pct", float("nan")))))
-                except Exception:
-                    _sipct = float("nan")
-                try:
-                    _mu = float(r.get("SOG_mu", r.get("SOG_Mu", r.get("mu_sog", float("nan")))))
-                except Exception:
-                    _mu = float("nan")
-                try:
-                    _xga = float(r.get("opp_5v5_xGA60", r.get("Opp_5v5_xGA60", float("nan"))))
-                except Exception:
-                    _xga = float("nan")
-                try:
-                    _rg = float(r.get("Reg_Gap_S10", r.get("RegGap_S10", float("nan"))))
-                except Exception:
-                    _rg = float("nan")                # Card-line logic mirrors the NEW SOG Jungle (2.5) HUD:
-                # Universe: line<=2.5 + Matrix=Green + Conf>=75 (EV ignored)
-                _mat_green = (_mat_s == "green")  # strict match for card line
-
-                _base25 = (
-                    _mat_green
-                    and (not math.isnan(_line_s)) and (_line_s > 0) and (_line_s <= 2.5)
-                    and (_conf_s >= 75)
-                )
-
-                # Core inputs (safe)
-                _l20 = _num(r.get("L20_Rate_SOG", r.get("L20_Rate_S", r.get("L20_Rate", float("nan")))) , float("nan"))
-                _share = _num(r.get("Player_5v5_SOG_Share", r.get("Player_5v5_SOG_SOG_Share", r.get("Player_5v5_SOGShare", float("nan")))) , float("nan"))
-                _oppsa = _num(r.get("Opp_SOG_Against_L50", r.get("OppSA_L50", r.get("Opp_SA_L50", float("nan")))) , float("nan"))
-                _drought = _num(r.get("Drought_SOG", r.get("Drought_S", 0)), 0.0)
-
-                # Moves (presentation-only; same keys as HUD)
-                swipe_on = _base25 and (not math.isnan(_l20)) and (_l20 >= 3.0)
-                volley_on = _base25 and (not math.isnan(_share)) and (_share >= 16.0)
-                rage_on = swipe_on and volley_on
-                overdrive_on = _base25 and (not math.isnan(_l20)) and (_l20 >= 3.4) and volley_on
-
-                locked_loaded_on = _base25 and (_conf_s >= 82.0)  # macro bar starts at 82
-                patience_on = _base25 and (int(_drought) == 1)
-                bloodthirst_on = patience_on and (not math.isnan(_xga)) and (_xga >= 2.48)
-
-                # Armor tiers (xGA)
-                armor_iii = (not math.isnan(_xga)) and (_xga >= 2.55)
-                armor_ii  = (not math.isnan(_xga)) and (_xga >= 2.50)
-                armor_i   = (not math.isnan(_xga)) and (_xga >= 2.46)
-
-                # Shots allowed badge
-                barrage_on = _base25 and (not math.isnan(_oppsa)) and (_oppsa >= 27.5)
-
-                # Siege + killer specials (2.5)
-                siege_on = _base25 and swipe_on and volley_on and (_conf_s >= 83.0) and (not math.isnan(_xga)) and (_xga >= 2.50)
-                mythic_siege_on = _base25 and (not math.isnan(_l20)) and (_l20 >= 3.2) and volley_on and (_conf_s >= 83.0) and (not math.isnan(_xga)) and (_xga >= 2.50)
-                shots_allowed_siege_on = _base25 and barrage_on and volley_on and (not math.isnan(_xga)) and (_xga >= 2.50) and swipe_on
-
-                # Icons (keep existing SOG icon set)
-                _hud = []
-                if swipe_on:
-                    _hud.append(_svg_icon("sog_basic_swipe.svg", "Backbone (L20)", "wl-sog"))
-                if volley_on:
-                    _hud.append(_svg_icon("sog_berserker_volley.svg", "Role (Share)", "wl-sog"))
-                if rage_on:
-                    _hud.append(_svg_icon("sog_berserkers_rage.svg", "Strong (L20+Share)", "wl-sog"))
-                if overdrive_on:
-                    _hud.append(_svg_icon("sog_enraged_strike.svg", "Elite Shooter", "wl-sog"))
-                if locked_loaded_on:
-                    _hud.append(_svg_icon("sog_locked_loaded.svg", "Locked & Loaded (Conf Spike)", "wl-sog"))
-                if patience_on:
-                    _hud.append(_svg_icon("sog_berserkers_patience.svg", "Drought", "wl-sog"))
-                if bloodthirst_on:
-                    _hud.append(_svg_icon("sog_bloodthirst.svg", "Drought+Armor", "wl-sog"))
-                if armor_iii:
-                    _hud.append(_svg_icon("sog_env_paralysis.svg", "Armor III (xGA)", "wl-sog"))
-                elif armor_ii:
-                    _hud.append(_svg_icon("sog_env_paralysis.svg", "Armor II (xGA)", "wl-sog"))
-                elif armor_i:
-                    _hud.append(_svg_icon("sog_env_paralysis.svg", "Armor I (xGA)", "wl-sog"))
-                if barrage_on:
-                    _hud.append(_svg_icon("sog_berserker_siege.svg", "Shots Allowed", "wl-sog"))
-                if siege_on:
-                    _hud.append(_svg_icon("sog_berserker_siege.svg", "SIEGE", "wl-sog"))
-
-                proc_icons = "".join(_hud)
-
-                # Card descriptors (match GOALS/ASSISTS: PLAYABLE • tags — meta)
-                combo_tags = ["PLAYABLE"]
-
-                # Specials first
-                if mythic_siege_on:
-                    combo_tags.append("Mythic Siege")
-                elif shots_allowed_siege_on:
-                    combo_tags.append("Shots-Allowed Siege")
-                elif siege_on:
-                    combo_tags.append("SIEGE")
-
-                # Tier-ish labels (2.5)
-                if overdrive_on:
-                    combo_tags.append("Elite Shooter")
-                elif rage_on:
-                    combo_tags.append("Strong")
-                elif volley_on:
-                    combo_tags.append("Role")
-                elif swipe_on:
-                    combo_tags.append("Backbone")
-
-                # Macro / timing / env descriptors
-                if swipe_on and (_conf_s >= 80.0):
-                    combo_tags.append("Backbone+Conf Spike")
-                elif locked_loaded_on:
-                    combo_tags.append("Conf Spike")
-
-                if bloodthirst_on:
-                    combo_tags.append("Drought+Armor")
-                elif patience_on:
-                    combo_tags.append("Drought")
-
-                # Armor tier tag (highest only)
-                if armor_iii:
-                    combo_tags.append("Armor III")
-                elif armor_ii:
-                    combo_tags.append("Armor II")
-                elif armor_i:
-                    combo_tags.append("Armor I")
-
-                # Keep it tight like GOALS/ASSISTS
-                combo_s = " • ".join(combo_tags[:6])
-
-                meta_s = " | ".join([m for m in meta if m])
-                card_line = f"{proc_icons} <span style=\"font-weight:800;\">{escape(combo_s)}</span><span style=\"opacity:0.8;\">{' — ' if combo_s else ''}{escape(meta_s)}</span>"
-                st.markdown(
-                    f"""
-        <div class="wl-card wl-accent-orange">
-          <div style="display:flex;justify-content:space-between;gap:10px;">
-            <div style="font-size:16px;line-height:1.2;">
-              {headline}
-              <div style="opacity:0.9;margin-top:4px;">{betline}</div>
-            </div>
-            <div style="font-size:16px;white-space:nowrap;">{badges}</div>
-          </div>
-          <div style="margin-top:6px;font-size:12px;opacity:0.92;line-height:1.2;">{card_line}</div>
-        </div>
-                    """,
-                    unsafe_allow_html=True,
-                )
-
-                # Why it fires (SOG)
-                _v = r.get("SOG_Why", "")
-                _why_tags = "" if (_v is None or (isinstance(_v, float) and math.isnan(_v))) else str(_v).strip()
-                if not _why_tags:
-                    try:
-                        _why_tags = _sog_why(r)
-                    except Exception:
-                        _why_tags = ""
-                with st.expander("Why it fires", expanded=False):
-                    _render_why_it_fires_rich("SOG", r, _why_tags)
-
-
-
-
-
+    _render_class_shortlist(df_s, "Jungle")
 
     st.markdown("---")
 
@@ -6136,84 +5334,7 @@ elif page == "GOALS (0.5)":
 
 
 
-    # === SMASH PLAYS (GOALS) ===
-    _render_badge_legend_inline()
-    st.subheader("⭐ Smash Plays — Goals")
-
-    st.caption("Carry shell: Goal 0.5 + Matrix Green + Points confidence 84. Opponent stats are Weak Defense effects.")
-
-
-    _g = df_g.copy()
-
-    # Show current attacks and opponent weakness effects only.
-    if not _g.empty:
-        _g = _g[_g.apply(lambda row: bool(_goals_carry_moves(row)), axis=1)].copy()
-        if not _g.empty:
-            _g = _g.sort_values(["DPS_Adj", "DPS_N"], ascending=[False, False], kind="mergesort")
-    if _g.empty:
-        st.info("No Goals Carry moves meet the Green 0.5 + Points confidence 84 shell on this slate.")
-
-    top_n_g = st.slider("Show top plays (Goals)", 3, 25, 10, 1, key="goal_smash_topn")
-    topg = _g.head(int(top_n_g))
-
-    for _, r in topg.iterrows():
-        player = str(r.get("Player", "") or "").strip()
-        game = str(r.get("Game", "") or "").strip()
-        line = r.get("Goal_Line", r.get("ATG_Line", ""))
-        odds = r.get("Goal_Odds_Over", r.get("Goal_Odds_Over", r.get("Goals_Odds_Over", "")))
-        conf = r.get("Conf_Goal", "")
-        avg5 = r.get("Avg5_SOG", "")
-        xga = r.get("opp_5v5_xGA60", "")
-
-        moves = _goals_carry_moves(r)
-        specials = [move for move in moves if move["kind"] == "SPECIAL ATTACK"]
-        heavies = [move for move in moves if move["kind"] == "HEAVY ATTACK"]
-        lab = [move for move in moves if move["experimental"]]
-        featured = specials or heavies or moves
-        shown = sorted(featured, key=lambda move: (move["crit"], move["wins"]/move["picks"]), reverse=True)[:2]
-        if lab:
-            shown = shown[:1] + sorted(lab, key=lambda move: move["wins"]/move["picks"], reverse=True)[:1]
-        combo_tags = [f"{move['kind'].title()}{' Crit' if move['crit'] and not move['experimental'] else ''}: {move['name']}" for move in shown]
-        combo_s = " • ".join(combo_tags)
-        proc_icons = "".join(_svg_icon(move["icon"], move["name"], "wl-goals") for move in shown)
-        cp = _safe_float(r.get("Conf_Points"), None)
-        mu = _safe_float(r.get("Goal_mu"), None)
-        pk = _safe_float(r.get("Opp_PK_xGA60"), None)
-        sog50 = _safe_float(r.get("Opp_SOG_Against_L50"), None)
-        ga = _safe_float(r.get("Opp_GAA"), None)
-        ixg = _safe_float(r.get("iXG%"), None)
-        hdca = _safe_float(r.get("opp_5v5_HDCA60"), None)
-        meta_s = " | ".join(
-            f"{label} {value:.2f}" for label, value in
-            (("Points Conf", cp), ("Goal_mu", mu), ("Opp PK", pk),
-             ("Opp SOG L50", sog50), ("Opp GAA", ga), ("iXG%", ixg),
-             ("Opp HDCA60", hdca)) if value is not None
-        )
-
-        betline = f"GOAL {line} @ {odds}" if (line or odds) else ""
-        headline = f"<b>{escape(player)}</b> — {escape(game)}" if game else f"<b>{escape(player)}</b>"
-        betline = escape(betline)
-
-        st.markdown(
-            f"""
-         <div class=\"wl-card wl-accent-red\">
-           <div style=\"display:flex;justify-content:space-between;gap:10px;\">
-             <div style=\"font-size:16px;line-height:1.2;\">
-               {headline}
-               <div style=\"opacity:0.9;margin-top:4px;\">{betline}</div>
-             </div>
-             <div style=\"font-size:16px;white-space:nowrap;\">{_engine_badge('GOALS', r)} {escape(str(r.get('LOCK','') or '').strip())}</div>
-           </div>
-           <div style=\"margin-top:6px;font-size:12px;opacity:0.95;line-height:1.2;\">{proc_icons} <span style=\"font-weight:800;\">{escape(combo_s)}</span><span style=\"opacity:0.8;\">{" — " if combo_s else ""}{escape(meta_s)}</span></div>
-         </div>
-                    """,
-            unsafe_allow_html=True,
-        )
-
-        _why_tags = str(r.get("Goal_Why", r.get("Why", "")) or "").strip()
-        with st.expander("Why it fires", expanded=False):
-            _why_sections_header("GOALS")
-            _render_why_it_fires_rich("GOALS", r, _why_tags)
+    _render_class_shortlist(df_g, "Carry")
 
     st.markdown("---")
 
