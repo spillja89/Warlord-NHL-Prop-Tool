@@ -5320,7 +5320,7 @@ elif page == "GOALS (0.5)":
 elif page == "Power Play":
     st.subheader("⚡ Power Play (PPP / 5v4)")
     st.caption("Read-only view: PP usage + PP creation + team PP vs opponent PK + PPP drought. Does not change model probabilities yet.")
-    st.caption("Opportunity counts and PP usage stability are not in this tracker; the table shows only measured PP fields.")
+    st.caption("This page shows the PP fields available in the loaded tracker. Opportunity counts are not calculated by the current engine.")
     pp_health = []
     for label, column in (("Player PP time/game", "PP_TOI_per_game"),
                           ("Player PP creation", "PP_iXA60"),
