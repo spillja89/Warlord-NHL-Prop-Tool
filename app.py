@@ -5067,14 +5067,6 @@ elif page == "Assists":
         "Opp_Goalie", "Opp_SV",
         "Goalie_Weak", "Opp_DefWeak",
 
-        # --- EV / Odds ---
-       
-        "Assists_Model%",
-        "Assists_Imp%",
-        "Assists_EV%",
-        "Plays_EV_Assists",
-
-        "Line", "Odds", "Result",
     ]
 
     # Signals-first extras
@@ -5138,7 +5130,6 @@ elif page == "SOG":
         "Reg_Heat_S", "Reg_Gap_S10", "Exp_S_10", "L10_S",
         "Opp_Goalie", "Opp_SV",
         "Goalie_Weak", "Opp_DefWeak",
-        "Line", "Odds", "Result",
     ]
 
 
@@ -5275,14 +5266,8 @@ elif page == "GOALS (0.5)":
         # --- WHY IT FIRES (label) ---
         "ATG_Call",
 
-        # --- EV / MODEL (display only) ---
-        "ATG_Model%", "ATG_Imp%", "ATG_EV%", "Plays_EV_ATG",
-
         # --- GOALIE / CONTEXT ---
         "Opp_Goalie", "Opp_SV", "Opp_GAA", "Goalie_Weak",
-
-        # --- result / bookkeeping ---
-        "Line", "Odds", "Result",
     ]
 # Signals-first extras
 
