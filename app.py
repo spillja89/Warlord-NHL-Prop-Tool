@@ -316,23 +316,19 @@ def make_bet_id(date_str: str, player: str, market: str, line: float, odds_taken
     return f"{d}_{_slug(player)}_{_slug(market)}_{_slug(line)}_{_slug(int(odds_taken) if float(odds_taken).is_integer() else odds_taken)}_{uuid.uuid4().hex[:12]}"
 
 def render_market_filter_bar(default_min_conf: int = 60, key_prefix: str = "m"):
-    c1, c2, c3, c4, c5, c6 = st.columns([1.1,1.1,1.2,1.2,1.1,1.6])
+    c1, c2, c3, c4 = st.columns([1.1, 1.2, 1.1, 1.6])
     with c1:
         greens_only = st.toggle("🟢 Greens", value=False, key=f"{key_prefix}_greens")
     with c2:
-        ev_only = st.toggle("💰 +EV", value=False, key=f"{key_prefix}_ev")
-    with c3:
-        locks_only = st.toggle("🔒 Locks", value=False, key=f"{key_prefix}_locks")
-    with c4:
         plays_first = st.toggle("⭐ Plays first", value=True, key=f"{key_prefix}_playsfirst")
-    with c5:
+    with c3:
         hide_reds = st.toggle("Hide 🔴", value=True, key=f"{key_prefix}_hidered")
-    with c6:
+    with c4:
         min_conf = st.slider("Min Conf", 0, 100, int(default_min_conf), 1, key=f"{key_prefix}_minconf")
     return {
         "greens_only": greens_only,
-        "ev_only": ev_only,
-        "locks_only": locks_only,
+        "ev_only": False,
+        "locks_only": False,
         "plays_first": plays_first,
         "hide_reds": hide_reds,
         "min_conf": min_conf,
@@ -3251,10 +3247,6 @@ def filter_common(df: pd.DataFrame) -> pd.DataFrame:
     if only_fire and "🔥" in out.columns:
         out = out[out["🔥"] == "🔥"]
 
-    only_ev = st.sidebar.checkbox("Only 💰 plays", value=False)
-    if only_ev and "💰" in out.columns:
-        out = out[out["💰"] == "💰"]
-
     return out
 def sort_board(df: pd.DataFrame) -> pd.DataFrame:
     out = df.copy()
@@ -4948,8 +4940,6 @@ elif page == "Points":
 
 
     df_p["LOCK"] = [build_lock_badge(gg, ee) for gg, ee in zip(g, e)]
-    legend_signals()
-    render_odds_implied_reference(location="main")
     _f = render_market_filter_bar(default_min_conf=60, key_prefix="pts")
 
     try:
@@ -5170,8 +5160,6 @@ elif page == "SOG":
     df_s["EV_Signal"] = [build_ev_signal(gg, ee, pp) for gg, ee, pp in zip(g, e, p if hasattr(p, "__iter__") else [p]*len(df_s))]
 
     df_s["LOCK"] = [build_lock_badge(gg, ee) for gg, ee in zip(g, e)]
-    legend_signals()
-    render_odds_implied_reference(location="main")
     _f = render_market_filter_bar(default_min_conf=60, key_prefix="sog")
 
     try:
@@ -5309,8 +5297,6 @@ elif page == "GOALS (0.5)":
     df_g["EV_Signal"] = [build_ev_signal(gg, ee, pp) for gg, ee, pp in zip(g, e, p if hasattr(p, "__iter__") else [p]*len(df_g))]
 
     df_g["LOCK"] = [build_lock_badge(gg, ee) for gg, ee in zip(g, e)]
-    legend_signals()
-    render_odds_implied_reference(location="main")
     _f = render_market_filter_bar(default_min_conf=84, key_prefix="goal")
 
     try:
