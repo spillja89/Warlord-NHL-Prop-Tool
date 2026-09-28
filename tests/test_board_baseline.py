@@ -5,10 +5,42 @@ from unittest.mock import patch
 import pandas as pd
 
 import nhl_edge
-from warlords_night_board import baseline_audit, rank_warlords, render_warlords
+from warlords_night_board import (baseline_audit, featured_warlords,
+                                  rank_priced_slate, rank_warlords, render_warlords)
 
 
 class BoardBaselineTests(unittest.TestCase):
+    def test_priced_pool_is_complete_but_cards_require_baseline_and_half_rate_move(self):
+        strong = {"name": "Strong Move", "kind": "HEAVY", "rule": "test",
+                  "wins": 6, "picks": 10, "later_wins": 3, "later_picks": 5}
+        weak = {**strong, "name": "Weak Move", "wins": 4}
+        rows = [
+            {"Player": "Strong", "Team": "BOS", "Goal_Line": 0.5,
+             "Goal_Odds_Over": 120, "Matrix_Goal": "Green", "Conf_Points": 84,
+             "Conf_Goal": 88},
+            {"Player": "Yellow", "Team": "BOS", "Goal_Line": 0.5,
+             "Goal_Odds_Over": 140, "Matrix_Goal": "Yellow", "Conf_Points": 95,
+             "Conf_Goal": 93},
+            {"Player": "Weak", "Team": "CAR", "Goal_Line": 0.5,
+             "Goal_Odds_Over": 130, "Matrix_Goal": "Green", "Conf_Points": 85,
+             "Conf_Goal": 85},
+            {"Player": "Alternate", "Team": "FLA", "Goal_Line": 1.5,
+             "Goal_Odds_Over": 500, "Matrix_Goal": "Green", "Conf_Points": 90,
+             "Conf_Goal": 90},
+        ]
+        def moves(row):
+            goal = [strong] if row["Player"] in {"Strong", "Yellow", "Alternate"} else [weak]
+            return {"Goal": goal, "Assists": [], "Points": [], "SOG": []}
+        with patch("warlords_night_board.fired_moves", side_effect=moves):
+            pool = rank_priced_slate(pd.DataFrame(rows))
+        self.assertEqual(len(pool["Carry"]), 4)
+        self.assertEqual(pool["Carry"][0]["player"], "Yellow")
+        featured = featured_warlords(pool)
+        self.assertEqual([card["player"] for card in featured["Carry"]], ["Strong"])
+        html = render_warlords(featured, roles=("Carry",))
+        self.assertIn("MODEL CONF", html)
+        self.assertIn("Full fired move list (1)", html)
+
     def test_priced_baselines_are_audited_even_without_named_moves(self):
         rows = [
             {"Player": "Goal Scout", "Team": "BOS", "Game": "NYR@BOS",

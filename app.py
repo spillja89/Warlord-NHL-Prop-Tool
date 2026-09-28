@@ -16,7 +16,7 @@ import streamlit as st
 
 from warlord_moves_2026 import VERSION as MOVE_KIT_VERSION
 from warlord_moves_2026 import best_move, points_moves, sog_moves, goals_moves as _goals_carry_moves, assists_moves as _assists_mapped_moves
-from warlords_night_board import baseline_audit, rank_warlords, render_warlords, _character_uri
+from warlords_night_board import CLASSES, baseline_audit, rank_warlords, rank_priced_slate, featured_warlords, render_warlords, _character_uri
 from ledger_store import append_bet as _append_cloud_bet, recent_bets as _recent_cloud_bets
 # -------------------------
 # Back-compat SVG helpers (used by player-card tags / older HUD snippets)
@@ -657,7 +657,7 @@ def _render_class_header(mkt: str, frame: pd.DataFrame) -> None:
     spec = _CLASS_RULES[mk]
     role = spec["role"]
     slate_frame, slate_label = _class_slate_frame(frame)
-    cards = rank_warlords(slate_frame)[role]
+    cards = rank_priced_slate(slate_frame)[role]
     moves = sum(card["move_count"] for card in cards)
     portrait = _character_uri(role)
     art = f'<img src="{portrait}" alt="" aria-hidden="true" />' if portrait else ""
@@ -673,23 +673,52 @@ def _render_class_header(mkt: str, frame: pd.DataFrame) -> None:
       @media(max-width:650px){{.wl-prop-hero{{padding:19px 120px 18px 17px;min-height:145px}}
         .wl-prop-hero h2{{font-size:24px}}.wl-prop-hero img{{right:-55px;height:205px;opacity:.28}}}}
     </style><section class="wl-prop-hero">{art}<div class="wl-prop-kicker">WARLORD CLASS · {escape(mk)}</div>
-      <h2>{escape(role)} · {escape(mk)}</h2><p>{escape(spec['entry'])}</p>
-      <div class="wl-prop-meta">{escape(slate_label)} · {len(cards)} PRICED BASELINE PLAYERS · {moves} ACTIVE MOVE TAGS</div></section>""")
+      <h2>{escape(role)} · {escape(mk)}</h2><p>Posted lines ranked by current model confidence · tested moves shown when fired</p>
+      <div class="wl-prop-meta">{escape(slate_label)} · {len(cards)} PRICED PLAYERS · {moves} ACTIVE MOVE TAGS</div></section>""")
+
+
+def _priced_pool_table(cards: list[dict]) -> pd.DataFrame:
+    rows = []
+    for card in cards:
+        qualified = [move for move in card["moves"] if int(move["picks"]) > 0
+                     and int(move["wins"]) / int(move["picks"]) >= 0.5]
+        move = max(qualified, key=lambda item: (int(item["wins"]) / int(item["picks"]),
+                                                 int(item["picks"]))) if qualified else None
+        featured = bool(card.get("baseline_rule") and qualified)
+        rows.append({
+            "Player": card["player"], "Team": card["team"], "Game": card["game"],
+            "Line": card["line"], "Over odds": int(card["odds"]),
+            "Book": card["book"] or "", "Model conf": card.get("confidence"),
+            "Matrix": card.get("matrix") or "Unknown",
+            "Featured": "Yes" if featured else "",
+            "Move ≥50%": move["name"] if move else "",
+            "Move record": f'{move["wins"]}/{move["picks"]}' if move else "",
+            "Reason": "Featured" if featured else (
+                "Below current baseline" if not card.get("baseline_rule") else
+                "No 50%+ tested move"),
+        })
+    return pd.DataFrame(rows, columns=("Player", "Team", "Game", "Line", "Over odds",
+                                        "Book", "Model conf", "Matrix", "Featured",
+                                        "Move ≥50%", "Move record", "Reason"))
 
 
 def _render_class_shortlist(frame: pd.DataFrame, role: str) -> None:
-    """Show the same fired, priced moves used by Warlords of the Night."""
+    """Show every priced player, with move tags as context."""
     slate_frame, _ = _class_slate_frame(frame)
-    boards = rank_warlords(slate_frame)
-    total = len(boards[role])
-    st.subheader(f"{role} moves on this slate")
+    priced = rank_priced_slate(slate_frame)
+    featured = featured_warlords(priced)
+    total = len(priced[role])
+    st.subheader(f"{role} · {len(featured[role])} featured of {total} priced players")
     if total == 0:
-        st.info("No class move fired on a posted line in this view.")
+        st.info("No posted player line and price for this class yet.")
         return
-    limit = st.slider("Players to show", 1, min(30, total), min(10, total),
-                      key=f"{role.lower()}_class_limit") if total > 1 else 1
-    st.html(render_warlords(boards, limit=limit, roles=(role,), show_hero=False))
-    st.caption("Historical move records overlap. Open a player's card for every move that fired.")
+    if featured[role]:
+        st.html(render_warlords(featured, limit=len(featured[role]), roles=(role,), show_hero=False))
+    else:
+        st.caption("No player clears both the current baseline and a tested move at 50%+ on this slate.")
+    st.caption("Character cards require the current Green baseline and a historical move at 50%+. Model confidence is a ranking score, not a hit probability.")
+    with st.expander(f"Every priced {role} player ({total})", expanded=True):
+        st.dataframe(_priced_pool_table(priced[role]), hide_index=True, use_container_width=True)
 
 def _role_for_market(mkt: str) -> dict:
     key = str(mkt or "").strip().upper()
@@ -912,13 +941,11 @@ def apply_dps_filters_ui(df: pd.DataFrame, mk: str, key_prefix: str = "m") -> pd
         line_vals = sorted({lv for lv in (out.apply(lambda r: _line_value_for_row(r.to_dict(), mk_u), axis=1).tolist()) if lv is not None})
     except Exception:
                 line_vals = []
-    # Restrict to hard-allowed lines for this market (prevents NaN/off-board options)
-    _allowed = set(_allowed_lines_for_market(mk_u) or [])
-    if _allowed and line_vals:
-        line_vals = [lv for lv in line_vals if lv in _allowed]
     st.sidebar.subheader(f"{mk_u} — Filters")
-    line_sel = st.sidebar.multiselect("Line", line_vals, default=line_vals, key=f"{key_prefix}_line") if line_vals else []
+    line_sel = st.sidebar.multiselect("Line (optional)", line_vals, default=[], key=f"{key_prefix}_line") if line_vals else []
     default_max_fav = -1000 if mk_u == "GOALS" else -250
+    use_favorite_limit = st.sidebar.checkbox("Limit favorite odds", value=False,
+                                             key=f"{key_prefix}_use_maxfav")
     max_fav_odds = int(st.sidebar.number_input("Max favorite odds (e.g. -250)", min_value=-1000, max_value=300, value=default_max_fav, step=5, key=f"{key_prefix}_maxfav"))
     q = st.sidebar.text_input("Search", value="", key=f"{key_prefix}_q").strip().lower()
 
@@ -942,7 +969,8 @@ def apply_dps_filters_ui(df: pd.DataFrame, mk: str, key_prefix: str = "m") -> pd
             return True
         except Exception:
             return True
-    out = out[out["_Odds"].apply(_odds_ok)]
+    if use_favorite_limit:
+        out = out[out["_Odds"].apply(_odds_ok)]
 
     # Sort by DPS ranking (presentation only)
     out["_dps_adj"] = pd.to_numeric(out.get("DPS_Adj", 0), errors="coerce").fillna(0.0)
@@ -4483,9 +4511,8 @@ page = st.sidebar.radio(
 
 df_f = filter_common(df)
 
-# NOTE: Board gating is applied ONLY inside the Board page.
-# We do not shrink the global dataframe for other pages.
-# The night board is the compact landing view; game times remain on the detailed pages.
+# Common search, team, and matchup controls apply to every page. Class move
+# thresholds never remove a player from the priced slate tables.
 if page != "⚔️ Warlords of the Night":
     show_games_times(df_f)
 
@@ -4502,16 +4529,27 @@ if page == "⚔️ Warlords of the Night":
         nights = sorted(dates.unique(), reverse=True)
         night = st.selectbox("Slate night", nights, index=0, key="warlords_night_date")
     night_df = df_f.loc[dates.eq(night)] if night is not None else df_f
-    boards = rank_warlords(night_df)
-    max_players = max(1, *(len(cards) for cards in boards.values()))
-    party_size = (st.slider("Players per class", 1, max_players, max_players,
-                            key="warlords_party_size_v2") if max_players > 1 else 1)
-    total = sum(len(cards) for cards in boards.values())
-    if total:
-        st.html(render_warlords(boards, party_size, _load_svg_icon))
-        st.caption("Named moves rank by historical hit rate; baseline-only players appear after them. Records overlap across moves; TRACK and small samples need forward results.")
+    priced_boards = rank_priced_slate(night_df)
+    featured_boards = featured_warlords(priced_boards)
+    priced_total = sum(len(cards) for cards in priced_boards.values())
+    featured_total = sum(len(cards) for cards in featured_boards.values())
+    if featured_total:
+        st.html(render_warlords(featured_boards, max(map(len, featured_boards.values())), _load_svg_icon))
+        st.caption(f"{featured_total} featured cards from {priced_total} priced prop entries. Cards require the current Green baseline and a historical move at 50%+. Model confidence ranks cards; it is not a hit probability.")
     else:
-        st.warning("No priced player meets a class baseline on this slate. Upload a tracker with current book lines, or refresh after lines post.")
+        st.info(f"{priced_total} priced prop entries. No player currently clears both the baseline and a 50%+ historical move; see the complete slate below.")
+
+    with st.expander(f"Complete priced slate · {priced_total} prop entries", expanded=True):
+        st.caption("Every player's displayed priced prop appears here. The Reason column explains why a player is not on a character card. A historical move rate is not a forecast.")
+        pool_tabs = st.tabs([f"{role} ({len(priced_boards[role])})" for role, *_ in CLASSES])
+        for pool_tab, (role, *_rest) in zip(pool_tabs, CLASSES):
+            with pool_tab:
+                st.dataframe(_priced_pool_table(priced_boards[role]), hide_index=True,
+                             use_container_width=True)
+
+    if source != "upload" and latest_path and os.path.isfile(latest_path):
+        last_run = datetime.fromtimestamp(os.path.getmtime(latest_path), ZoneInfo("America/Chicago"))
+        st.caption(f"Tracker last refreshed {last_run:%b %d, %Y at %I:%M %p} CT. Odds are the saved snapshot from that run; owner refresh checks currently posted books again.")
 
     if {"Opp", "Opp_Goalie_Status"}.issubset(night_df.columns):
         goalie_teams = night_df[["Opp", "Opp_Goalie_Status"]].drop_duplicates("Opp")
@@ -4520,8 +4558,8 @@ if page == "⚔️ Warlords of the Night":
                    "Likely, unconfirmed, and unknown starters are provisional; rerun the slate to refresh them.")
 
     summary, by_team, baseline_roster = baseline_audit(night_df)
-    with st.expander("Baseline roster and why players drop out", expanded=True):
-        st.caption("Counts use posted prices and the exact tested line for each class. Baseline players remain visible even when no stronger named move fires. Each stage narrows the previous one.")
+    with st.expander("Baseline and historical move audit", expanded=False):
+        st.caption("These older tested thresholds explain the featured tier; they do not remove players from the complete priced slate above.")
         st.dataframe(summary, hide_index=True, use_container_width=True)
         tabs = st.tabs(["Goals", "Assists", "Points", "Shots"])
         for tab, prop in zip(tabs, ("Goals", "Assists", "Points", "Shots")):
@@ -4870,7 +4908,7 @@ elif page == "Points":
     df_p = df_p.sort_values(["_cp"], ascending=[False]).drop(columns=["_cp"], errors="ignore")
 
     st.sidebar.subheader("Points Filters")
-    show_all = st.sidebar.checkbox("Show all players (ignore filters)", value=False, key="show_all_points")
+    show_all = st.sidebar.checkbox("Show all players (ignore optional filters)", value=True, key="show_all_points")
     min_conf = st.sidebar.slider("Min Conf (Points)", 0, 100, 70, 1)
     color_pick = st.sidebar.multiselect(
         "Colors (Points)",
@@ -5021,7 +5059,7 @@ elif page == "Points":
 
 
 
-    _render_class_shortlist(df_p, "Tank")
+    _render_class_shortlist(df_f, "Tank")
 
     st.markdown("---")
 
@@ -5040,7 +5078,7 @@ elif page == "Assists":
     df_a = df_a.sort_values(["_ca"], ascending=[False]).drop(columns=["_ca"], errors="ignore")
 
     st.sidebar.subheader("Assists Filters")
-    show_all = st.sidebar.checkbox("Show all players (ignore filters)", value=False, key="show_all_assists")
+    show_all = st.sidebar.checkbox("Show all players (ignore optional filters)", value=True, key="show_all_assists")
     min_conf = st.sidebar.slider("Min Conf (Assists)", 0, 100, 80, 1)
     color_pick = st.sidebar.multiselect(
         "Colors (Assists)",
@@ -5132,7 +5170,7 @@ elif page == "Assists":
     e = df_a["Plays_EV_Assists"] if "Plays_EV_Assists" in df_a.columns else pd.Series([""]*len(df_a), index=df_a.index)
 
     p = df_a["Assists_EV%"] if "Assists_EV%" in df_a.columns else pd.Series([None]*len(df_a), index=df_a.index)
-    _render_class_shortlist(df_a, "Support")
+    _render_class_shortlist(df_f, "Support")
 
     # Full table (Assists)
     show_table(df_a, assists_cols, "Assists View")
@@ -5149,7 +5187,7 @@ elif page == "SOG":
     df_s = df_s.sort_values(["_cs"], ascending=[False]).drop(columns=["_cs"], errors="ignore")
 
     st.sidebar.subheader("SOG Filters")
-    show_all = st.sidebar.checkbox("Show all players (ignore filters)", value=False, key="show_all_sog")
+    show_all = st.sidebar.checkbox("Show all players (ignore optional filters)", value=True, key="show_all_sog")
     min_conf = st.sidebar.slider("Min Conf (SOG)", 0, 100, 75, 1)
     color_pick = st.sidebar.multiselect(
         "Colors (SOG)",
@@ -5229,7 +5267,7 @@ elif page == "SOG":
     # SOG Smash (cards) — Berserker kit (EV ignored)
     # -------------------------
 
-    _render_class_shortlist(df_s, "Jungle")
+    _render_class_shortlist(df_f, "Jungle")
 
     st.markdown("---")
 
@@ -5272,7 +5310,7 @@ elif page == "GOALS (0.5)":
     df_g = df_g.sort_values(["_cp"], ascending=[False]).drop(columns=["_cp"], errors="ignore")
 
     st.sidebar.subheader("Goal Filters")
-    show_all = st.sidebar.checkbox("Show all players (ignore filters)", value=False)
+    show_all = st.sidebar.checkbox("Show all players (ignore optional filters)", value=True)
     min_conf = st.sidebar.slider("Min Points Conf (Goals)", 0, 100, 84, 1)
     color_pick = st.sidebar.multiselect(
         "Colors (Goal)",
@@ -5359,7 +5397,7 @@ elif page == "GOALS (0.5)":
 
 
 
-    _render_class_shortlist(df_g, "Carry")
+    _render_class_shortlist(df_f, "Carry")
 
     st.markdown("---")
 

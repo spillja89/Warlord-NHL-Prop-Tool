@@ -127,6 +127,76 @@ def rank_warlords(frame: pd.DataFrame) -> dict[str, list[dict]]:
             for role, players in boards.items()}
 
 
+def rank_priced_slate(frame: pd.DataFrame) -> dict[str, list[dict]]:
+    """Each player's displayed priced prop, ordered by current model confidence.
+
+    Historical moves and baseline rules annotate cards; neither admits nor
+    excludes a player from this board.
+    """
+    boards = {role: {} for role, *_ in CLASSES}
+    if frame.empty:
+        return {role: [] for role in boards}
+    for row in frame.to_dict("records"):
+        player = str(_value(row, "Player") or "").strip()
+        if not player:
+            continue
+        team = str(_value(row, "Team") or "").strip()
+        active = fired_moves(row)
+        for role, market, _, _ in CLASSES:
+            line, odds, book = _line_price(row, market)
+            if line is None or odds is None or odds == 0:
+                continue
+            moves = active[market]
+            attacks = [move for move in moves if move["kind"] != "STANCE"]
+            best = max(attacks or moves, key=_move_rank) if moves else None
+            baseline = _baseline_rule(row, market, line)
+            confidence = _number(row.get(f"Conf_{market}"))
+            matrix = str(_value(row, f"Matrix_{market}") or "Unknown").strip()
+            candidate = {
+                "player": player, "team": team,
+                "opponent": str(_value(row, "Opp") or "").strip(),
+                "game": str(_value(row, "Game") or "").strip(),
+                "time": str(_value(row, "Time") or "").strip(),
+                "market": market, "line": line, "odds": odds, "book": book,
+                "confidence": confidence, "matrix": matrix,
+                "baseline_rule": baseline, "baseline_only": bool(baseline and not best),
+                "goalie": str(_value(row, "Opp_Goalie") or ""),
+                "goalie_status": str(_value(row, "Opp_Goalie_Status") or "Unknown"),
+                "move": best,
+                "moves": sorted(moves, key=lambda item: (
+                    item["kind"] != "STANCE", _move_rank(item)), reverse=True),
+                "move_count": len(moves),
+            }
+            key = (team.casefold(), player.casefold())
+            previous = boards[role].get(key)
+            if previous is None or (
+                confidence is not None, confidence or -1,
+                matrix.casefold() == "green", odds is not None
+            ) > (
+                previous["confidence"] is not None,
+                previous["confidence"] or -1,
+                previous["matrix"].casefold() == "green",
+                previous["odds"] is not None,
+            ):
+                boards[role][key] = candidate
+    return {role: sorted(players.values(), key=lambda card: (
+        card["confidence"] is not None, card["confidence"] or -1,
+        card["matrix"].casefold() == "green", card["player"].casefold()
+    ), reverse=True) for role, players in boards.items()}
+
+
+def featured_warlords(boards: dict[str, list[dict]]) -> dict[str, list[dict]]:
+    """Character cards for current baseline players with a 50%+ move.
+
+    The complete priced slate stays in ``boards`` for the searchable tables.
+    Historical rates select a display tier, not a claim of future probability.
+    """
+    return {role: [card for card in cards if card.get("baseline_rule") and any(
+        int(move["picks"]) > 0 and int(move["wins"]) / int(move["picks"]) >= 0.5
+        for move in card["moves"]
+    )] for role, cards in boards.items()}
+
+
 def baseline_audit(frame: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     """Show each priced baseline and where the other posted lines drop out.
 
@@ -236,13 +306,15 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
         class_icon = symbol
         units = []
         for rank, card in enumerate(cards[:limit], 1):
-            move = card["move"]
+            move = card.get("move")
             baseline_only = bool(card.get("baseline_only"))
-            wins, picks = int(move["wins"]), int(move["picks"])
-            late_wins, late_picks = int(move["later_wins"]), int(move["later_picks"])
+            wins, picks = (int(move["wins"]), int(move["picks"])) if move else (0, 0)
+            late_wins, late_picks = ((int(move["later_wins"]), int(move["later_picks"]))
+                                     if move else (0, 0))
             pct = 100 * wins / picks if picks else 0
             late_pct = 100 * late_wins / late_picks if late_picks else 0
-            status = ("BASELINE ONLY" if baseline_only else
+            status = (("BASELINE" if "confidence" in card else "BASELINE ONLY") if baseline_only
+                      else "OPEN POOL" if not move else
                       "TRACK" if move.get("track") else "LAB" if move.get("experimental")
                       or move["kind"] == "LAB CRIT" else move["kind"])
             sample = " · SMALL SAMPLE" if 0 < picks < 30 else ""
@@ -256,7 +328,7 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
             goalie_status = str(card.get("goalie_status") or "Unknown").strip()
             goalie_note = (f'<div class="wn-goalie">Opp goalie: {_h(goalie_name)} · {_h(goalie_status)}</div>'
                            if goalie_name else '<div class="wn-goalie">Opp goalie: unknown</div>')
-            fired = card.get("moves") or ([] if baseline_only else [move])
+            fired = card.get("moves") or ([] if not move or baseline_only else [move])
             move_rows = []
             for fired_move in fired:
                 fired_wins, fired_picks = int(fired_move["wins"]), int(fired_move["picks"])
@@ -272,19 +344,27 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
                   <div class="wn-move-record">{fired_wins}/{fired_picks} · {fired_pct:.1f}% <span>Later {fired_late_wins}/{fired_late_picks} · {fired_late_pct:.1f}%</span></div>
                   <div class="wn-move-rule">{_h(fired_rule)}</div>
                 </div>''')
-            later_note = (f"LATER {late_wins}/{late_picks} · {late_pct:.1f}%"
-                          if late_picks else "Baseline screen · no upgraded move")
-            record_html = (f'<div class="wn-record"><strong>{pct:.1f}%</strong><span>{wins}/{picks}</span><em>HISTORICAL</em></div>'
-                           if picks else '<div class="wn-record"><strong>BASE</strong><em>SCREEN ONLY</em></div>')
+            later_note = (f"MOVE {wins}/{picks} · LATER {late_wins}/{late_picks}"
+                          if picks else "No tested move · posted line" if "confidence" in card
+                          else "Baseline screen · no upgraded move")
+            confidence = card.get("confidence")
+            if "confidence" in card:
+                record_html = (f'<div class="wn-record"><strong>{confidence:.0f}</strong><span>{_h(card.get("matrix") or "Unknown")}</span><em>MODEL CONF</em></div>'
+                               if confidence is not None else
+                               f'<div class="wn-record"><strong>—</strong><span>{_h(card.get("matrix") or "Unknown")}</span><em>MODEL CONF</em></div>')
+            else:
+                record_html = (f'<div class="wn-record"><strong>{pct:.1f}%</strong><span>{wins}/{picks}</span><em>HISTORICAL</em></div>'
+                               if picks else '<div class="wn-record"><strong>BASE</strong><em>SCREEN ONLY</em></div>')
             details_html = (f'<details class="wn-details"><summary>Full fired move list ({len(fired)})</summary>'
                             f'<div class="wn-move-list">{"".join(move_rows)}</div></details>' if fired else
-                            f'<div class="wn-details">{_h(move["rule"])}</div>')
+                            f'<div class="wn-details">{_h(card.get("baseline_rule") or (move or {}).get("rule") or "No tested move fired")}</div>')
+            move_name = move["name"] if move else ("Green Baseline" if baseline_only else "Scouting pool")
             units.append(f"""<article class="wn-unit">
               {name_backdrop}
               <div class="wn-portrait" aria-hidden="true">{portrait}</div>
               <div class="wn-unit-body">
                 <div class="wn-unit-head"><span class="wn-rank">{rank:02d}</span><strong>{_h(card['player'])}</strong><span class="wn-match">{_h(matchup)}</span></div>
-                <div class="wn-attack"><span class="wn-attack-name">{_h(move['name'])}</span><span class="wn-badge">{_h(status + sample)}</span></div>
+                <div class="wn-attack"><span class="wn-attack-name">{_h(move_name)}</span><span class="wn-badge">{_h(status + sample)}</span></div>
                 <div class="wn-unit-foot"><span>{_h(line)} <b>{_h(price)}</b></span><span>{_h(later_note)}</span></div>
                 {goalie_note}
               </div>
@@ -292,13 +372,13 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
               {details_html}
             </article>""")
         if not units:
-            units = ['<div class="wn-empty">No priced player meets this class baseline yet.</div>']
+            units = ['<div class="wn-empty">No posted player line and price for this class yet.</div>']
         backdrop = f'<img class="wn-gorilla" src="{character_uri}" alt="" />' if character_uri else ""
         lanes.append(f"""<section class="wn-lane wn-lane--{role.lower()}" style="--accent:{color}">
           <header class="wn-lane-head">{backdrop}<div class="wn-class-icon" aria-hidden="true">{class_icon}</div>
             <div class="wn-class-text"><span class="wn-kicker">{_h(descriptions[role])}</span><h2>{_h(role)}</h2></div>
             <div class="wn-count"><strong>{len(cards)}</strong><span>PRICED</span></div></header>
-          <div class="wn-lane-sub">{_h(market.upper())} <span>✦</span> TOP MOVE OR BASELINE PER PLAYER <span>✦</span> ⚔ AGAINST THE BOOKS</div>
+          <div class="wn-lane-sub">{_h(market.upper())} <span>✦</span> POSTED PLAYER LINES RANKED BY MODEL CONF <span>✦</span> MOVES SHOWN WHEN FIRED</div>
           <div class="wn-units">{''.join(units)}</div></section>""")
     total = sum(len(cards) for cards in boards.values())
     styles = """<style>
@@ -337,7 +417,7 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
       @media(max-width:540px){.wn-unit{gap:7px;padding:8px}.wn-unit-ghost{left:45px;opacity:.12}.wn-portrait{width:34px;height:34px}.wn-portrait svg{width:23px;height:23px}.wn-record{min-width:56px}.wn-record strong{font-size:17px}.wn-match{display:none}}
     </style>"""
     hero = f"""<div class="wn-hero"><span class="wn-eyebrow">WARLORDS OF THE NIGHT · 2026</span>
-      <h1>THE NIGHT RAID</h1><p>Choose your class. Every priced baseline player appears; stronger moves take the lead when they fire.</p>
-      <div class="wn-hero-foot">⚔ {total} PRICED BASELINE PROP ENTRIES ACROSS FOUR CLASSES · PLAYERS MAY APPEAR IN MULTIPLE CLASSES · MOVE RECORDS ARE HISTORICAL</div></div>"""
+      <h1>THE NIGHT RAID</h1><p>Every player with a displayed price appears in the slate pool. Featured cards meet the Green baseline and a 50%+ historical move.</p>
+      <div class="wn-hero-foot">⚔ {total} PRICED PROP ENTRIES ACROSS FOUR CLASSES · PLAYERS MAY APPEAR IN MULTIPLE CLASSES · MODEL CONF IS NOT A HIT PROBABILITY</div></div>"""
     board_class = "wn-board" if show_hero else "wn-board wn-board--compact"
     return styles + f'<div class="{board_class}">' + (hero if show_hero else "") + '<div class="wn-grid">' + ''.join(lanes) + '</div></div>'
