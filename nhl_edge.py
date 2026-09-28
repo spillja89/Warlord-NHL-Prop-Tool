@@ -775,7 +775,14 @@ def load_moneypuck_best_effort(sess: requests.Session, kind: str) -> pd.DataFram
     for y in (start, start - 1):
         url = moneypuck_url(kind, y)
         try:
-            return load_moneypuck_csv(sess, url)
+            data = load_moneypuck_csv(sess, url)
+            if data.empty:
+                last_err = f"{url} -> empty season file"
+                continue
+            if y != start:
+                print(f"[MoneyPuck] {kind}: {start} season unavailable; using {y} season data")
+            data.attrs["moneypuck_start_year"] = y
+            return data
         except Exception as e:
             last_err = f"{url} -> {type(e).__name__}: {e}"
     raise RuntimeError(f"Could not download MoneyPuck {kind}.csv. Last error: {last_err}")
@@ -3322,6 +3329,7 @@ def build_tracker(today_local: date, debug: bool = False, api_key: str | None = 
 
     # MoneyPuck skaters
     sk_raw = load_moneypuck_best_effort(sess, "skaters")
+    sk_stats_year = int(sk_raw.attrs.get("moneypuck_start_year", current_season_start_year(today_local)))
     sk = normalize_skaters_all(sk_raw, debug=debug)
     sk = sk[sk["Team"].isin(teams_playing)].copy()
     if sk.empty:
@@ -5063,6 +5071,8 @@ def build_tracker(today_local: date, debug: bool = False, api_key: str | None = 
 
         print("[odds/ev] merged BDL odds + EV")
     except Exception as e:
+        if str(e).startswith(("BallDontLie NHL odds access denied", "Missing BALLDONTLIE_API_KEY")):
+            raise RuntimeError(str(e)) from e
         print(f"[odds/ev] skipped: {e}")
 
 
@@ -5131,6 +5141,7 @@ def build_tracker(today_local: date, debug: bool = False, api_key: str | None = 
         lambda row: json.dumps(frozen_move_tags(row), ensure_ascii=False, separators=(",", ":")),
         axis=1,
     )
+    tracker["Model_Stats_Season"] = f"{sk_stats_year}-{sk_stats_year + 1}"
 
     out_path = os.path.join(OUTPUT_DIR, f"tracker_{today_local.isoformat()}_{stamp}.csv")
     tracker.to_csv(out_path, index=False)

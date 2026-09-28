@@ -592,6 +592,8 @@ def merge_bdl_props_altlines(
         games_2 = fetch_bdl_games_for_date(_next_day(game_date), api_key=api_key) or []
         games = games_1 + games_2
     except Exception as e:
+        if isinstance(e, requests.HTTPError) and getattr(e.response, "status_code", None) in (401, 403):
+            raise RuntimeError(f"BallDontLie NHL odds access denied (HTTP {e.response.status_code}); check the API key and NHL access.") from e
         if debug:
             print(f"[odds/ev] BDL games fetch failed: {e}")
         return df
@@ -605,6 +607,8 @@ def merge_bdl_props_altlines(
         try:
             all_props.extend(fetch_bdl_props_for_game(int(gid), api_key=api_key, vendors=vendors))
         except Exception as e:
+            if isinstance(e, requests.HTTPError) and getattr(e.response, "status_code", None) in (401, 403):
+                raise RuntimeError(f"BallDontLie NHL odds access denied (HTTP {e.response.status_code}); check the API key and NHL access.") from e
             if debug:
                 print(f"[odds/ev] props fetch failed for game_id={gid}: {e}")
 

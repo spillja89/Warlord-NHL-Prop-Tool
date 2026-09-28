@@ -4420,6 +4420,17 @@ if source == "demo":
         "they are not real slate picks. Upload a current tracker or use owner controls to refresh before using any picks."
     )
 
+if "Model_Stats_Season" in df.columns and "Date" in df.columns and not df.empty:
+    stats_season = str(df["Model_Stats_Season"].iloc[0]).strip()
+    tracker_day = pd.to_datetime(df["Date"].iloc[0], errors="coerce")
+    if stats_season[:4].isdigit() and pd.notna(tracker_day):
+        current_start = tracker_day.year if tracker_day.month >= 7 else tracker_day.year - 1
+        if int(stats_season[:4]) < current_start:
+            st.warning(
+                f"**Early-season model inputs:** skater stats are from {stats_season}. "
+                "Current rosters and roles may differ; review the tracker before using its move cards."
+            )
+
 if source == "latest" and "Date" in df.columns:
     loaded_dates = pd.to_datetime(df["Date"], errors="coerce").dropna()
     if not loaded_dates.empty:
