@@ -5050,7 +5050,10 @@ def build_tracker(today_local: date, debug: bool = False, api_key: str | None = 
 
             required = min(50, max(10, int(round(0.20 * slate_n)))) if slate_n > 0 else 10
             if cov < required:
-                raise RuntimeError(f"BDL odds coverage too low: {cov} players (<{required})")
+                raise RuntimeError(
+                    f"BDL odds coverage too low: {cov} priced players for {today_local.isoformat()} "
+                    f"(need {required}). No new tracker was saved; retry when player props are posted."
+                )
 
         # $EV play flags (so every $EV column has a companion Plays_EV_* column)
         def _mk_play(col_ev: str) -> pd.Series:
