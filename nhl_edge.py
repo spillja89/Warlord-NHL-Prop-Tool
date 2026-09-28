@@ -856,7 +856,9 @@ def dfo_team_to_abbr(team_full: str) -> str | None:
 # DailyFaceoff starting goalies
 # ============================
 def fetch_dailyfaceoff_starters(today_local: date, debug: bool = False) -> dict[str, dict[str, str]]:
-    url = "https://www.dailyfaceoff.com/starting-goalies"
+    # The undated landing page follows the site's current day, which may not
+    # match the slate being built (especially the night before puck drop).
+    url = f"https://www.dailyfaceoff.com/starting-goalies/{today_local.isoformat()}"
     html = http_get_text(http_session(), url)
     soup = BeautifulSoup(html, "html.parser")
 
@@ -1951,7 +1953,8 @@ def resolve_goalie_for_team(
 
     fallback = team_goalie_map.get(team_abbr, {}).copy()
     if fallback:
-        fallback["Source"] = "moneypuck_team_proxy"
+        # The team's most-used goalie is context, not a confirmed starter.
+        fallback["Source"] = "moneypuck_team_proxy_unconfirmed"
     else:
         fallback = {"Goalie": "", "GP": None, "SV": None, "GAA": None, "Source": "none"}
 
@@ -1960,23 +1963,18 @@ def resolve_goalie_for_team(
 
     sub = gdf[gdf["Team"] == team_abbr].copy()
     if sub.empty:
-        fallback["Goalie"] = starter_name
-        fallback["Source"] = "dailyfaceoff_name_only"
-        return fallback
+        return {"Goalie": starter_name, "GP": None, "SV": None,
+                "GAA": None, "Source": "dailyfaceoff_name_only"}
 
     want = _norm_name(starter_name)
     sub["__n"] = sub["Goalie"].astype(str).map(_norm_name)
 
     hit = sub[sub["__n"] == want]
-    if hit.empty:
-        want_last = want.split(" ")[-1] if want else ""
-        if want_last:
-            hit = sub[sub["__n"].str.contains(rf"\b{re.escape(want_last)}\b", regex=True, na=False)]
 
     if hit.empty:
-        fallback["Goalie"] = starter_name
-        fallback["Source"] = "dailyfaceoff_name_fallback_stats"
-        return fallback
+        # Never attach a different goalie's save percentage/GAA to this name.
+        return {"Goalie": starter_name, "GP": None, "SV": None,
+                "GAA": None, "Source": "dailyfaceoff_name_only"}
 
     hit_row = hit.sort_values("GP", ascending=False).iloc[0]
     return {

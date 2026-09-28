@@ -16,7 +16,7 @@ import streamlit as st
 
 from warlord_moves_2026 import VERSION as MOVE_KIT_VERSION
 from warlord_moves_2026 import best_move, points_moves, sog_moves, goals_moves as _goals_carry_moves, assists_moves as _assists_mapped_moves
-from warlords_night_board import rank_warlords, render_warlords, _character_uri
+from warlords_night_board import baseline_audit, rank_warlords, render_warlords, _character_uri
 from ledger_store import append_bet as _append_cloud_bet, recent_bets as _recent_cloud_bets
 # -------------------------
 # Back-compat SVG helpers (used by player-card tags / older HUD snippets)
@@ -674,7 +674,7 @@ def _render_class_header(mkt: str, frame: pd.DataFrame) -> None:
         .wl-prop-hero h2{{font-size:24px}}.wl-prop-hero img{{right:-55px;height:205px;opacity:.28}}}}
     </style><section class="wl-prop-hero">{art}<div class="wl-prop-kicker">WARLORD CLASS · {escape(mk)}</div>
       <h2>{escape(role)} · {escape(mk)}</h2><p>{escape(spec['entry'])}</p>
-      <div class="wl-prop-meta">{escape(slate_label)} · {len(cards)} PRICED PLAYERS WITH MOVES · {moves} ACTIVE MOVE TAGS SHOWN</div></section>""")
+      <div class="wl-prop-meta">{escape(slate_label)} · {len(cards)} PRICED BASELINE PLAYERS · {moves} ACTIVE MOVE TAGS</div></section>""")
 
 
 def _render_class_shortlist(frame: pd.DataFrame, role: str) -> None:
@@ -4501,15 +4501,39 @@ if page == "⚔️ Warlords of the Night":
     if not dates.empty:
         nights = sorted(dates.unique(), reverse=True)
         night = st.selectbox("Slate night", nights, index=0, key="warlords_night_date")
-    party_size = st.slider("Players per class", 1, 12, 4, key="warlords_party_size")
     night_df = df_f.loc[dates.eq(night)] if night is not None else df_f
     boards = rank_warlords(night_df)
+    max_players = max(1, *(len(cards) for cards in boards.values()))
+    party_size = (st.slider("Players per class", 1, max_players, max_players,
+                            key="warlords_party_size_v2") if max_players > 1 else 1)
     total = sum(len(cards) for cards in boards.values())
     if total:
         st.html(render_warlords(boards, party_size, _load_svg_icon))
-        st.caption("Ranked by each player's highest fired historical hit rate. Records overlap across moves; TRACK and small samples need forward results.")
+        st.caption("Named moves rank by historical hit rate; baseline-only players appear after them. Records overlap across moves; TRACK and small samples need forward results.")
     else:
-        st.warning("No class moves fired on priced lines for this slate. Upload a tracker with current book lines, or refresh the slate after lines post.")
+        st.warning("No priced player meets a class baseline on this slate. Upload a tracker with current book lines, or refresh after lines post.")
+
+    if {"Opp", "Opp_Goalie_Status"}.issubset(night_df.columns):
+        goalie_teams = night_df[["Opp", "Opp_Goalie_Status"]].drop_duplicates("Opp")
+        confirmed = goalie_teams["Opp_Goalie_Status"].astype(str).str.casefold().eq("confirmed").sum()
+        st.caption(f"Goalie snapshot: {confirmed}/{len(goalie_teams)} opposing teams confirmed. "
+                   "Likely, unconfirmed, and unknown starters are provisional; rerun the slate to refresh them.")
+
+    summary, by_team, baseline_roster = baseline_audit(night_df)
+    with st.expander("Baseline roster and why players drop out", expanded=True):
+        st.caption("Counts use posted prices and the exact tested line for each class. Baseline players remain visible even when no stronger named move fires. Each stage narrows the previous one.")
+        st.dataframe(summary, hide_index=True, use_container_width=True)
+        tabs = st.tabs(["Goals", "Assists", "Points", "Shots"])
+        for tab, prop in zip(tabs, ("Goals", "Assists", "Points", "Shots")):
+            with tab:
+                shown = baseline_roster.loc[baseline_roster["Prop"].eq(prop)]
+                if shown.empty:
+                    st.info("No priced player meets this class baseline on this slate.")
+                else:
+                    st.dataframe(shown.drop(columns="Prop"), hide_index=True,
+                                 use_container_width=True)
+    with st.expander("By team: priced → supported line → Green → baseline → named move"):
+        st.dataframe(by_team, hide_index=True, use_container_width=True)
 
 elif page == "Scout Board":
 
