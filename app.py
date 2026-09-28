@@ -3839,6 +3839,10 @@ with st.sidebar.expander("Owner controls"):
     else:
         st.caption("Refresh and bet logging are locked until WARLORD_ADMIN_PASSWORD is configured.")
 owner_access = bool(owner_password) and hmac.compare_digest(owner_entry, owner_password)
+st.sidebar.caption(
+    "Multi-book odds: connected" if _owner_setting("ODDS_API_KEY")
+    else "Multi-book odds: add ODDS_API_KEY to this app's Secrets"
+)
 
 # Preferred stable path written by nhl_edge.py
 latest_stable = os.path.join(OUTPUT_DIR, "tracker_latest.csv")
@@ -3865,7 +3869,10 @@ def _run_model_cached(d: date, code_stamp: float) -> str:
     import importlib
     import nhl_edge
     importlib.reload(nhl_edge)
-    return str(nhl_edge.build_tracker(d, debug=False, api_key=_owner_setting("BALLDONTLIE_API_KEY")))
+    return str(nhl_edge.build_tracker(
+        d, debug=False, api_key=_owner_setting("BALLDONTLIE_API_KEY"),
+        odds_api_key=_owner_setting("ODDS_API_KEY"),
+    ))
 
 source = None
 if uploaded is not None:
@@ -4442,6 +4449,17 @@ if source == "latest" and "Date" in df.columns:
             )
 
 odds_columns = [col for col in ("Points_Odds_Over", "Assists_Odds_Over", "SOG_Odds_Over", "Goal_Odds_Over", "ATG_Odds_Over") if col in df.columns]
+if source == "latest":
+    market_counts = {
+        label: int(pd.to_numeric(df.get(column, pd.Series(dtype=float)), errors="coerce").notna().sum())
+        for label, column in (
+            ("Goals", "Goal_Odds_Over"), ("Assists", "Assists_Odds_Over"),
+            ("Points", "Points_Odds_Over"), ("Shots", "SOG_Odds_Over"),
+        )
+    }
+    st.caption("Priced players · " + " · ".join(f"{name}: {count}" for name, count in market_counts.items()))
+    if any(count == 0 for count in market_counts.values()) and any(market_counts.values()):
+        st.info("This is a partial odds slate. Check back as sportsbooks post the remaining player markets.")
 if not odds_columns or not any(pd.to_numeric(df[col], errors="coerce").notna().any() for col in odds_columns):
     st.warning("No sportsbook odds are available in this tracker. Model moves can still be reviewed, but check the line and price before placing a bet.")
 

@@ -569,10 +569,9 @@ def merge_bdl_props_altlines(
     if df.empty:
         return df
 
-    # IMPORTANT (beta stability): if vendors is None/empty, fetch ALL available books.
-    # Restricting to a short list (e.g., DK/FD/CZR) can yield *zero* coverage on some slates
-    # even when odds exist widely (ESPN Bet, BetMGM, BetRivers, Hard Rock, etc.).
-    # `fetch_bdl_props_for_game()` only includes vendors[] params when a non-empty list is provided.
+    # Fetch all books BallDontLie offers for NHL player props.  Passing no
+    # vendor filter cannot add sportsbooks BallDontLie does not cover.
+    # `fetch_bdl_props_for_game()` only includes vendors[] when non-empty.
     if vendors is not None and len(vendors) == 0:
         vendors = None
 

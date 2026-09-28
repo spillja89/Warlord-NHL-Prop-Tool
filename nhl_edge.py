@@ -3262,7 +3262,7 @@ def drought_bump(tier: str, market: str, drought: Optional[int], ixg_pct: Option
 # MAIN build
 # ============================
 
-def build_tracker(today_local: date, debug: bool = False, api_key: str | None = None) -> str:
+def build_tracker(today_local: date, debug: bool = False, api_key: str | None = None, odds_api_key: str | None = None) -> str:
     ensure_dirs()
     sess = http_session()
 
@@ -4952,8 +4952,9 @@ def build_tracker(today_local: date, debug: bool = False, api_key: str | None = 
         # (supports natural star lines like 1.5 Points when offered)
         # --- BDL API key (required for odds/EV) ---
         resolved_api_key = (api_key or os.getenv("BALLDONTLIE_API_KEY", "") or os.getenv("BDL_API_KEY", "") or os.getenv("BALLDONTLIE_KEY", "")).strip()
-        if not resolved_api_key:
-            raise RuntimeError("Missing BALLDONTLIE_API_KEY (or BDL_API_KEY). Set it in your shell/Streamlit secrets to enable odds + EV.")
+        resolved_odds_key = (odds_api_key or os.getenv("ODDS_API_KEY", "")).strip()
+        if not resolved_api_key and not resolved_odds_key:
+            raise RuntimeError("Missing odds feed key. Set BALLDONTLIE_API_KEY or ODDS_API_KEY in Streamlit Secrets.")
 
         # Import EV engine (certifi optional). Try standard filename first, then patched fallback.
         try:
@@ -4962,13 +4963,17 @@ def build_tracker(today_local: date, debug: bool = False, api_key: str | None = 
             from odds_ev_bdl_PATCHED import merge_bdl_props_altlines, add_bdl_ev_all
 
 
-        tracker = merge_bdl_props_altlines(
-            tracker,
-            game_date=today_local.isoformat(),
-            api_key=resolved_api_key,
-            vendors=["draftkings", "fanduel", "caesars"],
-            debug=bool(debug),
-        )
+        if resolved_api_key:
+            tracker = merge_bdl_props_altlines(
+                tracker,
+                game_date=today_local.isoformat(),
+                api_key=resolved_api_key,
+                vendors=None,
+                debug=bool(debug),
+            )
+        if resolved_odds_key:
+            from odds_api_nhl import merge_odds_api_props
+            tracker = merge_odds_api_props(tracker, today_local, resolved_odds_key, debug=bool(debug))
         tracker = add_bdl_ev_all(tracker)
         # -------------------------------
         # L10 Support Tiers (presentation helper columns)
@@ -5025,7 +5030,7 @@ def build_tracker(today_local: date, debug: bool = False, api_key: str | None = 
 
 
         # Hard guard: if API key is present, require meaningful coverage across at least one market
-        if resolved_api_key:
+        if resolved_api_key or resolved_odds_key:
             cov_cols = [
                 "SOG_Odds_Over",
                 "Points_Odds_Over",
@@ -5040,19 +5045,12 @@ def build_tracker(today_local: date, debug: bool = False, api_key: str | None = 
             if bool(debug):
                 print(f"[odds/ev] max odds coverage across markets: {cov}")
 
-            # Coverage guard: scale with slate size.
-            # Small slates (few games) will naturally have fewer priced players.
-            # We only want to fail hard when coverage is effectively zero.
-            try:
-                slate_n = int(len(tracker))
-            except Exception:
-                slate_n = 0
-
-            required = min(50, max(10, int(round(0.20 * slate_n)))) if slate_n > 0 else 10
-            if cov < required:
+            # Early slates may have only Goals posted.  Save a partial tracker
+            # when at least one real player price exists; never save zero odds.
+            if cov == 0:
                 raise RuntimeError(
-                    f"BDL odds coverage too low: {cov} priced players for {today_local.isoformat()} "
-                    f"(need {required}). No new tracker was saved; retry when player props are posted."
+                    f"Player prop odds coverage too low: {cov} priced players for {today_local.isoformat()} "
+                    "No new tracker was saved; retry when player props are posted."
                 )
 
         # $EV play flags (so every $EV column has a companion Plays_EV_* column)
@@ -5076,8 +5074,11 @@ def build_tracker(today_local: date, debug: bool = False, api_key: str | None = 
     except Exception as e:
         if str(e).startswith((
             "BallDontLie NHL odds access denied",
-            "Missing BALLDONTLIE_API_KEY",
-            "BDL odds coverage too low",
+            "Missing odds feed key",
+            "Player prop odds coverage too low",
+            "The Odds API HTTP",
+            "The Odds API could not be reached",
+            "The Odds API returned invalid data",
         )):
             raise RuntimeError(str(e)) from e
         print(f"[odds/ev] skipped: {e}")
