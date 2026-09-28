@@ -4448,13 +4448,14 @@ if source == "latest" and "Date" in df.columns:
                 "Choose today's slate date and click Run / Refresh slate before using the board."
             )
 
-odds_columns = [col for col in ("Points_Odds_Over", "Assists_Odds_Over", "SOG_Odds_Over", "Goal_Odds_Over", "ATG_Odds_Over") if col in df.columns]
+odds_columns = [col for col in ("Points_Odds_Over", "Assists_Odds_Over", "SOG_Odds_Over", "Goal_Odds_Over", "ATG_Odds_Over", "BDL_PPP_Odds") if col in df.columns]
 if source == "latest":
     market_counts = {
         label: int(pd.to_numeric(df.get(column, pd.Series(dtype=float)), errors="coerce").notna().sum())
         for label, column in (
             ("Goals", "Goal_Odds_Over"), ("Assists", "Assists_Odds_Over"),
             ("Points", "Points_Odds_Over"), ("Shots", "SOG_Odds_Over"),
+            ("Power play", "BDL_PPP_Odds"),
         )
     }
     st.caption("Priced players · " + " · ".join(f"{name}: {count}" for name, count in market_counts.items()))

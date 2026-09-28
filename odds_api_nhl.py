@@ -22,12 +22,14 @@ from odds_ev_bdl import _norm_name, _safe_float
 BASE = "https://api.the-odds-api.com/v4/sports/icehockey_nhl"
 MARKETS = (
     "player_points", "player_assists", "player_shots_on_goal", "player_goals",
+    "player_power_play_points", "player_power_play_points_alternate",
     "player_goal_scorer_anytime", "player_points_alternate",
     "player_assists_alternate", "player_shots_on_goal_alternate",
 )
 MARKET_NAMES = {
     "player_points": "Points", "player_points_alternate": "Points",
     "player_assists": "Assists", "player_assists_alternate": "Assists",
+    "player_power_play_points": "PPP", "player_power_play_points_alternate": "PPP",
     "player_shots_on_goal": "SOG", "player_shots_on_goal_alternate": "SOG",
     "player_goals": "Goal", "player_goal_scorer_anytime": "ATG",
 }
@@ -162,7 +164,7 @@ def merge_odds_api_props(
         opp = str(row.get("Opp") or "").strip().upper()
         if not player or not team or not opp:
             continue
-        for market in {"Points", "Assists", "SOG", "Goal", "ATG"}:
+        for market in {"Points", "Assists", "SOG", "Goal", "ATG", "PPP"}:
             by_line: dict[float, tuple[float, str]] = {}
             source_by_line: dict[float, str] = {}
             for (p, m, line), available in quotes.items():

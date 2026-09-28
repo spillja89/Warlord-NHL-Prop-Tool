@@ -19,6 +19,10 @@ class OddsAPINHLTests(unittest.TestCase):
             _market_quote("player_goal_scorer_anytime", {"name": "Leon Draisaitl", "price": 125}),
             ("ATG", "leon draisaitl", 0.5, 125.0),
         )
+        self.assertEqual(
+            _market_quote("player_power_play_points", {"name": "Over", "description": "Cole Caufield", "point": 0.5, "price": 175}),
+            ("PPP", "cole caufield", 0.5, 175.0),
+        )
 
     @patch("odds_api_nhl._get")
     def test_uses_matching_game_and_best_book_with_bdl_fallback(self, get):

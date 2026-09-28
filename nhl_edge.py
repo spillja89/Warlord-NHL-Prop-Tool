@@ -5037,6 +5037,7 @@ def build_tracker(today_local: date, debug: bool = False, api_key: str | None = 
                 "Goal_Odds_Over",
                 "ATG_Odds_Over",
                 "Assists_Odds_Over",
+                "BDL_PPP_Odds",
             ]
             cov = 0
             for c in cov_cols:
