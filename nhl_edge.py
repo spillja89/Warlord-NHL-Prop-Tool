@@ -5071,7 +5071,11 @@ def build_tracker(today_local: date, debug: bool = False, api_key: str | None = 
 
         print("[odds/ev] merged BDL odds + EV")
     except Exception as e:
-        if str(e).startswith(("BallDontLie NHL odds access denied", "Missing BALLDONTLIE_API_KEY")):
+        if str(e).startswith((
+            "BallDontLie NHL odds access denied",
+            "Missing BALLDONTLIE_API_KEY",
+            "BDL odds coverage too low",
+        )):
             raise RuntimeError(str(e)) from e
         print(f"[odds/ev] skipped: {e}")
 
