@@ -18,6 +18,7 @@ from warlord_moves_2026 import VERSION as MOVE_KIT_VERSION
 from warlord_moves_2026 import best_move, points_moves, sog_moves, goals_moves as _goals_carry_moves, assists_moves as _assists_mapped_moves
 from warlords_night_board import CLASSES, baseline_audit, rank_warlords, rank_priced_slate, featured_warlords, render_warlords, _character_uri
 from ledger_store import append_bet as _append_cloud_bet, recent_bets as _recent_cloud_bets
+from power_play_quotes import priced_ppp_quotes
 # -------------------------
 # Back-compat SVG helpers (used by player-card tags / older HUD snippets)
 # -------------------------
@@ -3932,15 +3933,12 @@ else:
 
     source = "latest"
     if latest_path is None or not os.path.exists(str(latest_path)):
-        demo_path = Path(__file__).parent / "preview_data" / "synthetic_tracker.csv"
-        if demo_path.is_file():
-            latest_path = str(demo_path)
-            source = "demo"
-        else:
-            st.warning(
-                "No tracker CSV found yet. Upload a tracker or use owner controls to refresh the slate."
-            )
-            st.stop()
+        st.warning(
+            "No live tracker is saved on this app instance. A reboot clears its local run. "
+            "Enter the owner password, choose the slate date, and click Run / Refresh slate "
+            "to pull current player props and odds."
+        )
+        st.stop()
 
     df = load_csv(str(latest_path))
 
@@ -5411,7 +5409,7 @@ elif page == "GOALS (0.5)":
 # =========================
 elif page == "Power Play":
     st.subheader("⚡ Power Play (PPP / 5v4)")
-    st.caption("Read-only view: PP usage + PP creation + team PP vs opponent PK + PPP drought. Does not change model probabilities yet.")
+    st.caption("Power play point prices from connected sportsbooks, alongside PP usage and opponent PK context. These prices do not change model probabilities.")
     st.caption("This page shows the PP fields available in the loaded tracker. Opportunity counts are not calculated by the current engine.")
     pp_health = []
     for label, column in (("Player PP time/game", "PP_TOI_per_game"),
@@ -5447,6 +5445,17 @@ elif page == "Power Play":
         df_f["PP_Unit"] = df_f["PP_UnitTag"].map({"PP1": "🔌 PP1", "PP2": "🔋 PP2"}).fillna("")
     else:
         df_f["PP_Unit"] = ""
+
+    ppp_quotes = priced_ppp_quotes(df_f)
+    st.subheader(f"Power play point odds · {len(ppp_quotes)} posted lines")
+    if source == "latest" and latest_path and os.path.isfile(latest_path):
+        pp_checked = datetime.fromtimestamp(os.path.getmtime(latest_path), ZoneInfo("America/Chicago"))
+        st.caption(f"Odds snapshot checked {pp_checked:%b %d, %Y at %I:%M %p} CT. "
+                   "The best observed Over price is shown for each posted line; refresh the slate for new quotes.")
+    if ppp_quotes.empty:
+        st.info("No power play point prices are in this tracker yet. The feed requests the main and alternate PPP markets; refresh after books post them.")
+    else:
+        st.dataframe(ppp_quotes, hide_index=True, use_container_width=True)
 
     st.sidebar.subheader("Power Play Filters")
     unit_sel = st.sidebar.multiselect("PP Unit", ["PP1", "PP2"], default=["PP1", "PP2"], key="pp_unit_sel")
