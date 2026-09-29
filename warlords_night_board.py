@@ -47,8 +47,12 @@ def _line_price(row, market):
             odds = _number(row.get(f"{item}_Odds_Over"))
             book = _value(row, f"{item}_Book")
             if odds is None and market == "Goal":
-                odds = _number(row.get("ATG_Odds_Over"))
-                book = book or _value(row, "ATG_Book")
+                atg_line = _number(row.get("ATG_Line"))
+                if atg_line is not None and math.isclose(atg_line, line):
+                    odds = _number(row.get("ATG_Odds_Over"))
+                    book = book or _value(row, "ATG_Book")
+            if odds is None:
+                continue
             return line, odds, book
     return None, None, None
 
