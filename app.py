@@ -4533,7 +4533,7 @@ if page == "⚔️ Warlords of the Night":
     featured_total = sum(len(cards) for cards in featured_boards.values())
     if featured_total:
         st.html(render_warlords(featured_boards, max(map(len, featured_boards.values())), _load_svg_icon))
-        st.caption(f"{featured_total} featured cards from {priced_total} priced prop entries. Cards require the current Green baseline and a historical move at 50%+. Model confidence ranks cards; it is not a hit probability.")
+        st.caption(f"{featured_total} featured cards from {priced_total} priced prop entries. Cards require the current Green baseline and a fired move at 50%+ historically. Classes rank by the strongest qualifying move; model confidence is shown separately. Historical rates are not forecasts.")
     else:
         st.info(f"{priced_total} priced prop entries. No player currently clears both the baseline and a 50%+ historical move; see the complete slate below.")
 

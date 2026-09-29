@@ -38,8 +38,32 @@ class BoardBaselineTests(unittest.TestCase):
         featured = featured_warlords(pool)
         self.assertEqual([card["player"] for card in featured["Carry"]], ["Strong"])
         html = render_warlords(featured, roles=("Carry",))
-        self.assertIn("MODEL CONF", html)
+        self.assertIn("60.0%", html)
+        self.assertIn("HISTORICAL MOVE", html)
+        self.assertIn("CONF 88 Green", html)
         self.assertIn("Full fired move list (1)", html)
+
+    def test_featured_cards_show_and_rank_by_best_qualifying_move(self):
+        common = {"kind": "HEAVY", "rule": "test", "later_wins": 3,
+                  "later_picks": 5}
+        weaker = {**common, "name": "Weaker", "wins": 6, "picks": 10}
+        stronger = {**common, "name": "Stronger", "wins": 8, "picks": 10}
+        cards = {"Carry": [
+            {"player": "High Conf", "baseline_rule": "Green", "confidence": 99,
+             "matrix": "Green", "moves": [weaker], "move": weaker},
+            {"player": "High Move", "baseline_rule": "Green", "confidence": 84,
+             "matrix": "Green", "moves": [weaker, stronger], "move": weaker},
+        ]}
+        featured = featured_warlords(cards)
+        self.assertEqual([card["player"] for card in featured["Carry"]],
+                         ["High Move", "High Conf"])
+        self.assertEqual(featured["Carry"][0]["move"]["name"], "Stronger")
+        display = {**featured["Carry"][0], "team": "BOS", "game": "NYR@BOS",
+                   "market": "Goal", "line": 0.5, "odds": 120, "goalie": "",
+                   "goalie_status": "Unknown"}
+        html = render_warlords({"Carry": [display]}, roles=("Carry",))
+        self.assertIn("80.0%", html)
+        self.assertIn("CONF 84 Green", html)
 
     def test_priced_baselines_are_audited_even_without_named_moves(self):
         rows = [
