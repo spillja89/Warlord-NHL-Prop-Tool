@@ -435,7 +435,7 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
           <header class="wn-lane-head">{backdrop}<div class="wn-class-icon" aria-hidden="true">{class_icon}</div>
             <div class="wn-class-text"><span class="wn-kicker">{_h(descriptions[role])}</span><h2>{_h(role)}</h2></div>
             <div class="wn-count"><strong>{len(cards)}</strong><span>{count_label}</span></div></header>
-          <div class="wn-lane-sub">{_h(market.upper())} <span>✦</span> FEATURED PLAYERS RANKED BY TOP HISTORICAL MOVE % <span>✦</span> MODEL CONF SHOWN SEPARATELY</div>
+          <div class="wn-lane-sub">{_h(market.upper())} <span>✦</span> HISTORICAL MOVE % <span>✦</span> BOOK BREAK-EVEN % FROM POSTED ODDS</div>
           <div class="wn-units">{''.join(units)}</div></section>""")
     total = sum(len(cards) for cards in boards.values())
     styles = """<style>
@@ -476,7 +476,7 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
       @media(max-width:540px){.wn-unit{gap:7px;padding:8px}.wn-unit-ghost{left:45px;opacity:.12}.wn-portrait{width:34px;height:34px}.wn-portrait svg{width:23px;height:23px}.wn-record{min-width:56px}.wn-record strong{font-size:17px}.wn-match{display:none}}
     </style>"""
     hero = f"""<div class="wn-hero"><span class="wn-eyebrow">WARLORDS OF THE NIGHT · 2026</span>
-      <h1>THE NIGHT RAID</h1><p>Featured cards require a Green baseline and a fired move with a historical hit rate of at least 50%. Each class is ranked by its strongest qualifying move; overall and later move results are shown on each card.</p>
+      <h1>THE NIGHT RAID</h1><p>Featured cards require a Green baseline and a fired move with a historical hit rate of at least 50%. Compare each move's past results with the break-even percentage of the posted book price.</p>
       <div class="wn-hero-foot">⚔ {total} FEATURED PLAYER PROP ENTRIES ACROSS FOUR CLASSES · HISTORICAL MOVE RATE IS NOT A FORECAST</div></div>"""
     board_class = "wn-board" if show_hero else "wn-board wn-board--compact"
     return styles + f'<div class="{board_class}">' + (hero if show_hero else "") + '<div class="wn-grid">' + ''.join(lanes) + '</div></div>'
