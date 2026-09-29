@@ -52,7 +52,8 @@ class BoardBaselineTests(unittest.TestCase):
     def test_board_price_gap_uses_the_displayed_line_and_american_odds(self):
         rows = pd.DataFrame([
             {"Player": "Priced", "Team": "BOS", "Goal_Line": 0.5,
-             "Goal_Odds_Over": 130, "Goal_p_model_over": 0.50,
+             "Goal_Odds_Over": 130, "Goal_Book": "Book & Co",
+             "Goal_p_model_over": 0.50,
              "Matrix_Goal": "Green", "Conf_Points": 90},
             {"Player": "Mismatched Model", "Team": "CAR", "Goal_Line": 0.5,
              "Goal_Odds_Over": -150, "ATG_Line": 1.5,
@@ -66,6 +67,7 @@ class BoardBaselineTests(unittest.TestCase):
         self.assertIn("Model 50.0%", html)
         self.assertIn("Book break-even 43.5%", html)
         self.assertIn("Gap +6.5 pp", html)
+        self.assertIn("BEST PRICE · Book &amp; Co", html)
 
     def test_priced_pool_is_complete_but_cards_require_baseline_and_half_rate_move(self):
         strong = {"name": "Strong Move", "kind": "HEAVY", "rule": "test",

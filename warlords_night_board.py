@@ -377,6 +377,8 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
             name_backdrop = (f'<img class="wn-unit-ghost" src="{character_uri}" alt="" aria-hidden="true" />'
                              if character_uri else "")
             price = _odds(card["odds"])
+            book = str(card.get("book") or "").strip()
+            book_note = f' <small class="wn-book">BEST PRICE · {_h(book)}</small>' if book else ""
             goalie_name = str(card.get("goalie") or "").strip()
             goalie_status = str(card.get("goalie_status") or "Unknown").strip()
             goalie_note = (f'<div class="wn-goalie">Opp goalie: {_h(goalie_name)} · {_h(goalie_status)}</div>'
@@ -424,7 +426,7 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
               <div class="wn-unit-body">
                 <div class="wn-unit-head"><span class="wn-rank">{rank:02d}</span><strong>{_h(card['player'])}</strong><span class="wn-match">{_h(matchup)}</span></div>
                 <div class="wn-attack"><span class="wn-attack-name">{_h(move_name)}</span><span class="wn-badge">{_h(status + sample)}</span></div>
-                <div class="wn-unit-foot"><span>{_h(line)} <b>{_h(price)}</b></span><span>{_h(later_note)}{confidence_note}</span></div>
+                <div class="wn-unit-foot"><span>{_h(line)} <b>{_h(price)}</b>{book_note}</span><span>{_h(later_note)}{confidence_note}</span></div>
                 {price_note}
                 {goalie_note}
               </div>
@@ -467,6 +469,7 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
       .wn-unit-body{position:relative;z-index:1;flex:1;min-width:0}.wn-unit-head{display:flex;align-items:baseline;gap:6px;white-space:nowrap;min-width:0}.wn-rank{font-size:10px;color:var(--accent);font-weight:900}.wn-unit-head strong{overflow:hidden;text-overflow:ellipsis;font-size:14px;text-shadow:0 1px 9px #091321}.wn-match{font-size:10px;color:#a4b3c7;flex:none}
       .wn-attack{display:flex;gap:5px;align-items:center;margin-top:5px;min-width:0}.wn-attack-name{font-size:12px;font-weight:800;color:#eac483;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.wn-badge{font-size:8px;letter-spacing:.04em;color:var(--accent);border:1px solid color-mix(in srgb,var(--accent) 40%,transparent);border-radius:4px;padding:2px 4px;white-space:nowrap}
       .wn-unit-foot{display:flex;flex-wrap:wrap;gap:2px 10px;margin-top:5px;font-size:9px;color:#afbed0;letter-spacing:.01em}.wn-unit-foot b{color:#fff;margin-left:3px}
+      .wn-book{font-size:9px;color:var(--accent);font-weight:800;white-space:nowrap;margin-left:5px}
       .wn-goalie{font-size:9px;color:#9fb6cb;margin-top:3px}
       .wn-price{font-size:10px;color:#bdcce0;margin-top:4px;font-weight:700}.wn-price-positive{color:#88dbab}.wn-price-negative{color:#f2baad}
       .wn-record{position:relative;z-index:1;text-align:right;flex:none;min-width:66px;display:flex;flex-direction:column;line-height:1.1}.wn-record strong{font-size:21px;color:#fff}.wn-record span{color:var(--accent);font-size:12px;font-weight:900;margin-top:3px}.wn-record em{font-style:normal;color:#8092a9;font-size:8px;letter-spacing:.08em;margin-top:3px}
