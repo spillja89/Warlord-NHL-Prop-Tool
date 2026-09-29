@@ -19,6 +19,7 @@ from warlord_moves_2026 import best_move, points_moves, sog_moves, goals_moves a
 from warlords_night_board import CLASSES, baseline_audit, rank_warlords, rank_priced_slate, featured_warlords, render_warlords, _character_uri
 from ledger_store import append_bet as _append_cloud_bet, recent_bets as _recent_cloud_bets
 from power_play_quotes import priced_ppp_quotes
+from player_availability import unavailable_mask
 # -------------------------
 # Back-compat SVG helpers (used by player-card tags / older HUD snippets)
 # -------------------------
@@ -690,6 +691,9 @@ def _priced_pool_table(cards: list[dict]) -> pd.DataFrame:
             "Player": card["player"], "Team": card["team"], "Game": card["game"],
             "Line": card["line"], "Over odds": int(card["odds"]),
             "Book": card["book"] or "", "Model conf": card.get("confidence"),
+            "Model Over %": round(card["model_prob"] * 100, 1) if card.get("model_prob") is not None else None,
+            "Book break-even %": round(card["book_prob"] * 100, 1) if card.get("book_prob") is not None else None,
+            "Gap (pp)": round(card["price_gap"] * 100, 1) if card.get("price_gap") is not None else None,
             "Matrix": card.get("matrix") or "Unknown",
             "Featured": "Yes" if featured else "",
             "Move ≥50%": move["name"] if move else "",
@@ -699,7 +703,8 @@ def _priced_pool_table(cards: list[dict]) -> pd.DataFrame:
                 "No 50%+ tested move"),
         })
     return pd.DataFrame(rows, columns=("Player", "Team", "Game", "Line", "Over odds",
-                                        "Book", "Model conf", "Matrix", "Featured",
+                                        "Book", "Model Over %", "Book break-even %", "Gap (pp)",
+                                        "Model conf", "Matrix", "Featured",
                                         "Move ≥50%", "Move record", "Reason"))
 
 
@@ -717,7 +722,7 @@ def _render_class_shortlist(frame: pd.DataFrame, role: str) -> None:
         st.html(render_warlords(featured, limit=len(featured[role]), roles=(role,), show_hero=False))
     else:
         st.caption("No player clears both the current baseline and a tested move at 50%+ on this slate.")
-    st.caption("Character cards require the current Green baseline and a historical move at 50%+. Model confidence is a ranking score, not a hit probability.")
+    st.caption("Character cards require the current Green baseline and a historical move at 50%+. Model vs book compares the model's Over probability with the posted odds' break-even rate; Gap is in percentage points. Model confidence is a ranking score, not a hit probability.")
     with st.expander(f"Every priced {role} player ({total})", expanded=True):
         st.dataframe(_priced_pool_table(priced[role]), hide_index=True, use_container_width=True)
 
@@ -2584,92 +2589,61 @@ def render_vengeance_banner():
         if st.button("🔄", help="Refresh the clock"):
             st.rerun()
 
-    # Compute strike datetime (today if upcoming, else tomorrow)
-    strike_dt = now.replace(hour=target_h, minute=target_m, second=0, microsecond=0)
-    if now >= strike_dt and (now - strike_dt).total_seconds() > 0:
-        # if already past strike today, treat as "today's strike" only if not completed and we want live;
-        # else roll to next day for countdown
-        pass
+    # Refresh only the banner every second; a full app rerun would repeat the
+    # model/odds views and make the countdown appear frozen between reruns.
+    @st.fragment(run_every="1s")
+    def _render_clock():
+        clock_now = datetime.now(tz) if tz else datetime.now()
+        strike_dt = clock_now.replace(hour=target_h, minute=target_m, second=0, microsecond=0)
+        strike_key = f"{strike_dt.date().isoformat()}@{target_h:02d}:{target_m:02d}"
+        is_completed = st.session_state.vengeance_completed_for == strike_key
 
-    strike_key = f"{strike_dt.date().isoformat()}@{target_h:02d}:{target_m:02d}"
-    completed_key = st.session_state.vengeance_completed_for
-
-    # If completed_key is different and now is after strike_dt by a lot, we may be looking at next day.
-    # We'll treat "live" as: now >= strike_dt and not completed for this strike_key.
-    is_completed = (completed_key == strike_key)
-
-    # If now is past today's strike and it's completed, next strike is tomorrow.
-    # If now is past today's strike and it's NOT completed, we are LIVE until user completes.
-    # If now is before today's strike, we are PRE.
-    if now < strike_dt:
-        state = "pre"
-        t_delta = int((strike_dt - now).total_seconds())
-        big_timer = _fmt_hms(t_delta)
-        kicker = "VENGEANCE IS COMING"
-        head = "VENGEANCE IS COMING"
-        sub = f"Clock strikes at {target_h%12 or 12}:{target_m:02d} {'PM' if target_h>=12 else 'AM'} CT"
-        right_timer = f"STRIKES IN {big_timer}"
-        pill = "MODELS: ARMING"
-        wrap_class = "vengeance-wrap vengeance-pre"
-        action_line = "Sharpening the blades…"
-    else:
-        if not is_completed:
+        if clock_now < strike_dt:
+            state = "pre"
+            big_timer = _fmt_hms(math.ceil((strike_dt - clock_now).total_seconds()))
+            kicker = head = "VENGEANCE IS COMING"
+            sub = f"Clock strikes at {target_h%12 or 12}:{target_m:02d} {'PM' if target_h>=12 else 'AM'} CT"
+            right_timer = f"STRIKES IN {big_timer}"
+            pill, wrap_class, action_line = "MODELS: ARMING", "vengeance-wrap vengeance-pre", "Sharpening the blades…"
+        elif not is_completed:
             state = "live"
-            elapsed = int((now - strike_dt).total_seconds())
-            kicker = "THE CLOCK STRIKES VENGEANCE"
-            head = "COOK THE BOOKS."
+            kicker, head = "THE CLOCK STRIKES VENGEANCE", "COOK THE BOOKS."
             sub = "Slate is live — build the board."
-            right_timer = f"LIVE {_fmt_hms(elapsed)}"
-            pill = "LEDGER: RECORDING"
-            wrap_class = "vengeance-wrap vengeance-live"
-            action_line = "Punish the lines."
+            right_timer = f"LIVE {_fmt_hms((clock_now - strike_dt).total_seconds())}"
+            pill, wrap_class, action_line = "LEDGER: RECORDING", "vengeance-wrap vengeance-live", "Punish the lines."
         else:
             state = "post"
             next_dt = strike_dt + timedelta(days=1)
-            remaining = int((next_dt - now).total_seconds())
-            kicker = "VENGEANCE HAS BEEN SERVED"
-            head = "TALLY THE DAMAGE."
+            kicker, head = "VENGEANCE HAS BEEN SERVED", "TALLY THE DAMAGE."
             sub = f"Next strike at {next_dt.hour%12 or 12}:{next_dt.minute:02d} {'PM' if next_dt.hour>=12 else 'AM'} CT"
-            right_timer = f"NEXT {_fmt_hms(remaining)}"
-            pill = "REVIEW: ACTIVE"
-            wrap_class = "vengeance-wrap vengeance-post"
-            action_line = "Post-mortem underway."
+            right_timer = f"NEXT {_fmt_hms(math.ceil((next_dt - clock_now).total_seconds()))}"
+            pill, wrap_class, action_line = "REVIEW: ACTIVE", "vengeance-wrap vengeance-post", "Post-mortem underway."
 
-    # Banner layout
-    left, right = st.columns([3.2, 1.2], gap="small")
-    with left:
-        st.markdown(
-            f"""
-            <div class="{wrap_class}">
-              <div class="vengeance-kicker">{kicker}</div>
-              <div class="vengeance-head">{head}</div>
-              <div class="vengeance-sub">{sub} <span style="opacity:.7">•</span> {action_line} <span style="opacity:.7">•</span> <span class="vengeance-pill">{pill}</span></div>
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
-    with right:
-        st.markdown(
-            f"""
-            <div class="{wrap_class}" style="display:flex; flex-direction:column; justify-content:center;">
-              <div class="vengeance-timer">{right_timer}</div>
-              <div style="text-align:right; margin-top:6px; opacity:.85; font-size:12px;">
-                Strike key: {strike_key}
-              </div>
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
+        left, right = st.columns([3.2, 1.2], gap="small")
+        with left:
+            st.markdown(
+                f"""<div class="{wrap_class}">
+                  <div class="vengeance-kicker">{kicker}</div>
+                  <div class="vengeance-head">{head}</div>
+                  <div class="vengeance-sub">{sub} <span style="opacity:.7">•</span> {action_line} <span style="opacity:.7">•</span> <span class="vengeance-pill">{pill}</span></div>
+                </div>""", unsafe_allow_html=True)
+        with right:
+            st.markdown(
+                f"""<div class="{wrap_class}" style="display:flex; flex-direction:column; justify-content:center;">
+                  <div class="vengeance-timer">{right_timer}</div>
+                  <div style="text-align:right; margin-top:6px; opacity:.85; font-size:12px;">Strike key: {strike_key}</div>
+                </div>""", unsafe_allow_html=True)
 
-    # Manual slate complete (Option 2)
-    if state == "live":
-        b1, b2 = st.columns([1, 5])
-        with b1:
-            if st.button("✅ Slate Complete", help="Ends the live state until the next strike time"):
-                st.session_state.vengeance_completed_for = strike_key
-                st.rerun()
-        with b2:
-            st.caption("Live until you mark it complete. Keeps the vibe right even when real slate end-times vary.")
+        if state == "live":
+            b1, b2 = st.columns([1, 5])
+            with b1:
+                if st.button("✅ Slate Complete", help="Ends the live state until the next strike time"):
+                    st.session_state.vengeance_completed_for = strike_key
+                    st.rerun()
+            with b2:
+                st.caption("Live until you mark it complete. Keeps the vibe right even when real slate end-times vary.")
+
+    _render_clock()
 
 
 
@@ -3958,6 +3932,22 @@ if df.columns.duplicated().any():
     st.warning(f"Duplicate columns detected and removed: {dupes}")
     df = df.loc[:, ~df.columns.duplicated()].copy()
 
+# Apply availability to every page, including uploaded and older tracker files.
+# The engine also removes confirmed out players when creating a fresh tracker.
+has_availability = "Injury_Status" in df.columns or "Available" in df.columns
+unavailable = unavailable_mask(df)
+if unavailable.any():
+    excluded = df.loc[unavailable, [c for c in ("Player", "Team", "Injury_Status") if c in df.columns]]
+    df = df.loc[~unavailable].copy().reset_index(drop=True)
+    st.warning(f"Excluded {len(excluded)} unavailable player(s) from all boards and prop pages (Out/IR/Scratch).")
+    with st.expander("Excluded players"):
+        st.dataframe(excluded, hide_index=True, use_container_width=True)
+elif source == "latest" and not has_availability:
+    st.warning("This saved tracker has no injury status fields. Refresh the slate before using its boards.")
+if df.empty:
+    st.warning("No available players remain in this tracker after the injury check.")
+    st.stop()
+
 
 # -------------------------
 # Ensure injury columns exist (older CSV safe)
@@ -4447,6 +4437,14 @@ with right:
         st.caption(f"Date: **{df['Date'].iloc[0]}**")
     st.caption(f"Rows: **{len(df)}**")
 
+if source == "latest" and "Injury_Reports_Count" in df.columns and not df.empty:
+    reported = pd.to_numeric(df["Injury_Reports_Count"], errors="coerce").iloc[0]
+    excluded_count = pd.to_numeric(df.get("Injury_Excluded_Count", pd.Series(0, index=df.index)), errors="coerce").iloc[0]
+    if pd.notna(reported) and reported > 0:
+        st.caption(f"Injury check: {int(reported)} status reports · {int(excluded_count) if pd.notna(excluded_count) else 0} unavailable skaters removed before this tracker was saved.")
+    else:
+        st.warning("Injury feed returned no status reports on this run. Verify lineups before using the board.")
+
 if source == "demo":
     st.warning(
         "**Synthetic preview · fictional players and odds.** These sample cards demonstrate the app's design; "
@@ -4538,7 +4536,7 @@ if page == "⚔️ Warlords of the Night":
         st.info(f"{priced_total} priced prop entries. No player currently clears both the baseline and a 50%+ historical move; see the complete slate below.")
 
     with st.expander(f"Complete priced slate · {priced_total} prop entries", expanded=True):
-        st.caption("Every player's displayed priced prop appears here. The Reason column explains why a player is not on a character card. A historical move rate is not a forecast.")
+        st.caption("Every player's displayed priced prop appears here. Model Over % is the model's probability for that line; Book break-even % comes from the displayed odds. Gap is model minus book in percentage points. The Reason column explains why a player is not on a character card. Historical move rates are separate, not forecasts.")
         pool_tabs = st.tabs([f"{role} ({len(priced_boards[role])})" for role, *_ in CLASSES])
         for pool_tab, (role, *_rest) in zip(pool_tabs, CLASSES):
             with pool_tab:

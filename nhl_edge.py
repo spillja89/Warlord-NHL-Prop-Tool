@@ -1220,6 +1220,15 @@ def fetch_dfo_injuries_for_teams(teams: set[str], debug: bool = False) -> pd.Dat
     if not rows:
         return pd.DataFrame(columns=["Team", "Player", "Status", "Injury", "Expected_Return", "Player_norm"])
 
+    injuries = pd.DataFrame(rows)
+    injuries["Team"] = injuries["Team"].map(norm_team)
+    injuries["Player_norm"] = injuries["Player"].map(_norm_name)
+    injuries["Status"] = injuries["Status"].map(_dfo_norm_status)
+    injuries = injuries.drop_duplicates(subset=["Team", "Player_norm"], keep="last")
+    if debug:
+        print(f"[DFO INJ] collected {len(injuries)} injury reports across {len(teams)} slate teams")
+    return injuries.reset_index(drop=True)
+
 def merge_bdl_mainlines(df: pd.DataFrame, path: str = "data/cache/bdl_mainlines_best.json") -> pd.DataFrame:
     import json
     import pandas as pd
@@ -1391,7 +1400,7 @@ def apply_injury_dfo(sk: pd.DataFrame, inj_df: pd.DataFrame, debug: bool = False
     out["Injury_DFO_Score"] = out["Injury_Status"].apply(base_score)
 
     # ROLE+ bump: if team is missing 2+ and this guy is high-usage, they often get extra run
-    toi_pct = pd.to_numeric(out.get("TOI_Pct", 50.0), errors="coerce").fillna(50.0)
+    toi_pct = pd.to_numeric(out.get("TOI_Pct", pd.Series(50.0, index=out.index)), errors="coerce").fillna(50.0)
     bump = (
         (out["Injury_Status"] == "Healthy") &
         (pd.to_numeric(out["Team_Out_Count"], errors="coerce").fillna(0) >= 2) &
@@ -3343,6 +3352,8 @@ def build_tracker(today_local: date, debug: bool = False, api_key: str | None = 
 
     # DFO injuries
     inj_df = fetch_dfo_injuries_for_teams(teams_playing, debug=debug)
+    injury_reports_count = len(inj_df)
+    injury_check_utc = datetime.now(timezone.utc).isoformat(timespec="seconds")
 
     # Schedule columns
     sk["Game"] = sk["Team"].map(game_map).fillna("")
@@ -4444,6 +4455,7 @@ def build_tracker(today_local: date, debug: bool = False, api_key: str | None = 
     sk["Best_Conf"] = best[1]
 
     # Filter unavailable players
+    injury_excluded_count = int((~sk["Available"]).sum())
     sk = sk[sk["Available"]].reset_index(drop=True)
     # -------------------------
     # Output tracker
@@ -4469,6 +4481,9 @@ def build_tracker(today_local: date, debug: bool = False, api_key: str | None = 
         "Team_Out_Count": sk.get("Team_Out_Count", 0),
         "Injury_DFO_Score": sk.get("Injury_DFO_Score", 0.0),
         "Injury_Badge": sk.get("Injury_Badge", ""),
+        "Injury_Reports_Count": injury_reports_count,
+        "Injury_Excluded_Count": injury_excluded_count,
+        "Injury_Check_UTC": injury_check_utc,
 
         "Opp": sk["Opp"].fillna(""),
         "Opp_Goalie": sk["Opp_Goalie"].fillna(""),

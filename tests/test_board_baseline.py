@@ -5,11 +5,68 @@ from unittest.mock import patch
 import pandas as pd
 
 import nhl_edge
+from player_availability import unavailable_mask
 from warlords_night_board import (baseline_audit, featured_warlords,
                                   rank_priced_slate, rank_warlords, render_warlords)
 
 
 class BoardBaselineTests(unittest.TestCase):
+    def test_injury_feed_returns_matches_and_blocks_out_players(self):
+        reports = {
+            "BOS": [{"Team": "BOS", "Player": "Out Player", "Status": "out",
+                     "Injury": "Lower Body", "Expected_Return": ""}],
+            "CAR": [{"Team": "CAR", "Player": "Questionable Player", "Status": "DTD",
+                     "Injury": "Upper Body", "Expected_Return": ""}],
+        }
+        with patch.object(nhl_edge, "fetch_dfo_injuries_for_team",
+                          side_effect=lambda team, debug=False: reports[team]), patch.object(
+                              nhl_edge.time, "sleep"):
+            injuries = nhl_edge.fetch_dfo_injuries_for_teams({"BOS", "CAR"})
+        self.assertEqual(len(injuries), 2)
+        self.assertEqual(injuries.set_index("Player").loc["Out Player", "Player_norm"], "out player")
+        skaters = pd.DataFrame([
+            {"Player": "Out Player", "Team": "BOS", "Goal_Line": 0.5,
+             "Goal_Odds_Over": 120, "Matrix_Goal": "Green", "Conf_Points": 90},
+            {"Player": "Questionable Player", "Team": "CAR", "Goal_Line": 0.5,
+             "Goal_Odds_Over": 120, "Matrix_Goal": "Green", "Conf_Points": 90},
+        ])
+        tagged = nhl_edge.apply_injury_dfo(skaters, injuries)
+        self.assertEqual(tagged["Injury_Status"].tolist(), ["Out", "GTD"])
+        self.assertEqual(unavailable_mask(tagged).tolist(), [True, False])
+        board = rank_priced_slate(tagged)["Carry"]
+        self.assertEqual([card["player"] for card in board], ["Questionable Player"])
+
+    def test_saved_tracker_available_false_is_excluded_from_board(self):
+        rows = pd.DataFrame([
+            {"Player": "Out Player", "Team": "BOS", "Available": False,
+             "Goal_Line": 0.5, "Goal_Odds_Over": 120,
+             "Matrix_Goal": "Green", "Conf_Points": 90},
+            {"Player": "Active Player", "Team": "BOS", "Available": True,
+             "Goal_Line": 0.5, "Goal_Odds_Over": 120,
+             "Matrix_Goal": "Green", "Conf_Points": 90},
+        ])
+        self.assertEqual(unavailable_mask(rows).tolist(), [True, False])
+        self.assertEqual([card["player"] for card in rank_priced_slate(rows)["Carry"]],
+                         ["Active Player"])
+
+    def test_board_price_gap_uses_the_displayed_line_and_american_odds(self):
+        rows = pd.DataFrame([
+            {"Player": "Priced", "Team": "BOS", "Goal_Line": 0.5,
+             "Goal_Odds_Over": 130, "Goal_p_model_over": 0.50,
+             "Matrix_Goal": "Green", "Conf_Points": 90},
+            {"Player": "Mismatched Model", "Team": "CAR", "Goal_Line": 0.5,
+             "Goal_Odds_Over": -150, "ATG_Line": 1.5,
+             "ATG_p_model_over": 0.40, "Matrix_Goal": "Green", "Conf_Points": 90},
+        ])
+        cards = {card["player"]: card for card in rank_priced_slate(rows)["Carry"]}
+        self.assertAlmostEqual(cards["Priced"]["book_prob"], 100 / 230)
+        self.assertAlmostEqual(cards["Priced"]["price_gap"], 0.50 - 100 / 230)
+        self.assertIsNone(cards["Mismatched Model"]["model_prob"])
+        html = render_warlords({"Carry": [cards["Priced"]]}, roles=("Carry",))
+        self.assertIn("Model 50.0%", html)
+        self.assertIn("Book break-even 43.5%", html)
+        self.assertIn("Gap +6.5 pp", html)
+
     def test_priced_pool_is_complete_but_cards_require_baseline_and_half_rate_move(self):
         strong = {"name": "Strong Move", "kind": "HEAVY", "rule": "test",
                   "wins": 6, "picks": 10, "later_wins": 3, "later_picks": 5}

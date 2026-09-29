@@ -11,6 +11,7 @@ from pathlib import Path
 import pandas as pd
 
 from warlord_moves_2026 import fired_moves
+from player_availability import is_unavailable
 
 
 CLASSES = (
@@ -52,6 +53,27 @@ def _line_price(row, market):
     return None, None, None
 
 
+def _price_comparison(row, market, line, odds):
+    """Model Over probability and break-even rate for this exact posted line."""
+    if line is None or odds is None or odds == 0:
+        return None, None, None
+    prefixes = ("Goal", "ATG") if market == "Goal" else (market,)
+    model_prob = None
+    for prefix in prefixes:
+        quoted_line = _number(row.get(f"{prefix}_Line"))
+        if quoted_line is None or not math.isclose(quoted_line, line):
+            continue
+        raw = _number(row.get(f"{prefix}_p_model_over"))
+        if raw is None:
+            pct = _number(row.get(f"{prefix}_Model%"))
+            raw = pct / 100 if pct is not None else None
+        if raw is not None and 0 < raw < 1:
+            model_prob = raw
+            break
+    book_prob = 100 / (100 + odds) if odds > 0 else abs(odds) / (100 + abs(odds))
+    return model_prob, book_prob, (model_prob - book_prob) if model_prob is not None else None
+
+
 def _move_rank(move):
     wins, picks = int(move["wins"]), int(move["picks"])
     later_wins, later_picks = int(move["later_wins"]), int(move["later_picks"])
@@ -83,6 +105,8 @@ def rank_warlords(frame: pd.DataFrame) -> dict[str, list[dict]]:
     if frame.empty:
         return {role: [] for role in boards}
     for row in frame.to_dict("records"):
+        if is_unavailable(row):
+            continue
         if not _value(row, "Player"):
             continue
         active = fired_moves(row)
@@ -92,6 +116,7 @@ def rank_warlords(frame: pd.DataFrame) -> dict[str, list[dict]]:
             # A model signal without a posted price is not a ready board pick.
             if line is None or odds is None or odds == 0:
                 continue
+            model_prob, book_prob, price_gap = _price_comparison(row, market, line, odds)
             baseline_rule = _baseline_rule(row, market, line)
             if not moves and not baseline_rule:
                 continue
@@ -111,6 +136,7 @@ def rank_warlords(frame: pd.DataFrame) -> dict[str, list[dict]]:
                 "game": str(_value(row, "Game") or "").strip(),
                 "time": str(_value(row, "Time") or "").strip(),
                 "market": market, "line": line, "odds": odds, "book": book,
+                "model_prob": model_prob, "book_prob": book_prob, "price_gap": price_gap,
                 "goalie": str(_value(row, "Opp_Goalie") or ""),
                 "goalie_status": str(_value(row, "Opp_Goalie_Status") or "Unknown"),
                 "baseline_only": baseline_only,
@@ -137,6 +163,8 @@ def rank_priced_slate(frame: pd.DataFrame) -> dict[str, list[dict]]:
     if frame.empty:
         return {role: [] for role in boards}
     for row in frame.to_dict("records"):
+        if is_unavailable(row):
+            continue
         player = str(_value(row, "Player") or "").strip()
         if not player:
             continue
@@ -146,6 +174,7 @@ def rank_priced_slate(frame: pd.DataFrame) -> dict[str, list[dict]]:
             line, odds, book = _line_price(row, market)
             if line is None or odds is None or odds == 0:
                 continue
+            model_prob, book_prob, price_gap = _price_comparison(row, market, line, odds)
             moves = active[market]
             attacks = [move for move in moves if move["kind"] != "STANCE"]
             best = max(attacks or moves, key=_move_rank) if moves else None
@@ -158,6 +187,7 @@ def rank_priced_slate(frame: pd.DataFrame) -> dict[str, list[dict]]:
                 "game": str(_value(row, "Game") or "").strip(),
                 "time": str(_value(row, "Time") or "").strip(),
                 "market": market, "line": line, "odds": odds, "book": book,
+                "model_prob": model_prob, "book_prob": book_prob, "price_gap": price_gap,
                 "confidence": confidence, "matrix": matrix,
                 "baseline_rule": baseline, "baseline_only": bool(baseline and not best),
                 "goalie": str(_value(row, "Opp_Goalie") or ""),
@@ -227,6 +257,8 @@ def baseline_audit(frame: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame, pd.
     for label, market, lines, matrix_col, conf_col in specs:
         totals[label] = {stage: set() for stage in stages}
         for row in frame.to_dict("records"):
+            if is_unavailable(row):
+                continue
             player = str(_value(row, "Player") or "").strip()
             if not player:
                 continue
@@ -339,6 +371,15 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
             goalie_status = str(card.get("goalie_status") or "Unknown").strip()
             goalie_note = (f'<div class="wn-goalie">Opp goalie: {_h(goalie_name)} · {_h(goalie_status)}</div>'
                            if goalie_name else '<div class="wn-goalie">Opp goalie: unknown</div>')
+            model_prob, book_prob, price_gap = (card.get("model_prob"), card.get("book_prob"), card.get("price_gap"))
+            if model_prob is not None and book_prob is not None and price_gap is not None:
+                gap_class = "wn-price-positive" if price_gap >= 0 else "wn-price-negative"
+                price_note = (f'<div class="wn-price {gap_class}">Model {model_prob*100:.1f}% · '
+                              f'Book break-even {book_prob*100:.1f}% · Gap {price_gap*100:+.1f} pp</div>')
+            elif book_prob is not None:
+                price_note = f'<div class="wn-price">Book break-even {book_prob*100:.1f}% · Model unavailable</div>'
+            else:
+                price_note = ""
             fired = card.get("moves") or ([] if not move or baseline_only else [move])
             move_rows = []
             for fired_move in fired:
@@ -374,6 +415,7 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
                 <div class="wn-unit-head"><span class="wn-rank">{rank:02d}</span><strong>{_h(card['player'])}</strong><span class="wn-match">{_h(matchup)}</span></div>
                 <div class="wn-attack"><span class="wn-attack-name">{_h(move_name)}</span><span class="wn-badge">{_h(status + sample)}</span></div>
                 <div class="wn-unit-foot"><span>{_h(line)} <b>{_h(price)}</b></span><span>{_h(later_note)}{confidence_note}</span></div>
+                {price_note}
                 {goalie_note}
               </div>
               {record_html}
@@ -416,6 +458,7 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
       .wn-attack{display:flex;gap:5px;align-items:center;margin-top:5px;min-width:0}.wn-attack-name{font-size:12px;font-weight:800;color:#eac483;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.wn-badge{font-size:8px;letter-spacing:.04em;color:var(--accent);border:1px solid color-mix(in srgb,var(--accent) 40%,transparent);border-radius:4px;padding:2px 4px;white-space:nowrap}
       .wn-unit-foot{display:flex;flex-wrap:wrap;gap:2px 10px;margin-top:5px;font-size:9px;color:#afbed0;letter-spacing:.01em}.wn-unit-foot b{color:#fff;margin-left:3px}
       .wn-goalie{font-size:9px;color:#9fb6cb;margin-top:3px}
+      .wn-price{font-size:10px;color:#bdcce0;margin-top:4px;font-weight:700}.wn-price-positive{color:#88dbab}.wn-price-negative{color:#f2baad}
       .wn-record{position:relative;z-index:1;text-align:right;flex:none;min-width:66px;display:flex;flex-direction:column;line-height:1.1}.wn-record strong{font-size:21px;color:#fff}.wn-record span{color:var(--accent);font-size:12px;font-weight:900;margin-top:3px}.wn-record em{font-style:normal;color:#8092a9;font-size:8px;letter-spacing:.08em;margin-top:3px}
       .wn-details{position:relative;z-index:1;flex:0 0 100%;font-size:10px;color:#aebbd0;border-top:1px solid #ffffff14;padding-top:5px}.wn-details summary{cursor:pointer;color:var(--accent);font-weight:700}.wn-move-list{max-height:320px;overflow:auto;display:grid;gap:6px;margin-top:8px;padding-right:3px}
       .wn-move-entry{border:1px solid #ffffff20;border-radius:6px;background:#0b1629e8;padding:7px}.wn-move-title{display:flex;align-items:center;justify-content:space-between;gap:8px}.wn-move-title strong{font-size:11px;color:#f1e4ca}.wn-move-title em{font-size:8px;font-style:normal;color:var(--accent);text-align:right}.wn-move-record{font-size:10px;font-weight:800;color:#fff;margin-top:3px}.wn-move-record span{color:#b7c7df;margin-left:5px}.wn-move-rule{font-size:9px;color:#b6c5da;overflow-wrap:anywhere;margin-top:4px}
@@ -426,7 +469,7 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
       @media(max-width:540px){.wn-unit{gap:7px;padding:8px}.wn-unit-ghost{left:45px;opacity:.12}.wn-portrait{width:34px;height:34px}.wn-portrait svg{width:23px;height:23px}.wn-record{min-width:56px}.wn-record strong{font-size:17px}.wn-match{display:none}}
     </style>"""
     hero = f"""<div class="wn-hero"><span class="wn-eyebrow">WARLORDS OF THE NIGHT · 2026</span>
-      <h1>THE NIGHT RAID</h1><p>Featured cards require a Green baseline and a fired move with a historical hit rate of at least 50%. Each class is ranked by its strongest qualifying move.</p>
+      <h1>THE NIGHT RAID</h1><p>Featured cards require a Green baseline and a fired move with a historical hit rate of at least 50%. Each class is ranked by its strongest qualifying move. Model vs book compares the model's Over probability with the posted odds' break-even rate.</p>
       <div class="wn-hero-foot">⚔ {total} FEATURED PLAYER PROP ENTRIES ACROSS FOUR CLASSES · HISTORICAL MOVE RATE IS NOT A FORECAST</div></div>"""
     board_class = "wn-board" if show_hero else "wn-board wn-board--compact"
     return styles + f'<div class="{board_class}">' + (hero if show_hero else "") + '<div class="wn-grid">' + ''.join(lanes) + '</div></div>'
