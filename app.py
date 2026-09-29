@@ -691,21 +691,24 @@ def _priced_pool_table(cards: list[dict]) -> pd.DataFrame:
             "Player": card["player"], "Team": card["team"], "Game": card["game"],
             "Line": card["line"], "Over odds": int(card["odds"]),
             "Book": card["book"] or "", "Model conf": card.get("confidence"),
-            "Model Over %": round(card["model_prob"] * 100, 1) if card.get("model_prob") is not None else None,
             "Book break-even %": round(card["book_prob"] * 100, 1) if card.get("book_prob") is not None else None,
-            "Gap (pp)": round(card["price_gap"] * 100, 1) if card.get("price_gap") is not None else None,
             "Matrix": card.get("matrix") or "Unknown",
             "Featured": "Yes" if featured else "",
             "Move ≥50%": move["name"] if move else "",
             "Move record": f'{move["wins"]}/{move["picks"]}' if move else "",
+            "Move %": round(100 * int(move["wins"]) / int(move["picks"]), 1) if move else None,
+            "Later record": f'{move["later_wins"]}/{move["later_picks"]}' if move and int(move["later_picks"]) else "",
+            "Later %": round(100 * int(move["later_wins"]) / int(move["later_picks"]), 1)
+            if move and int(move["later_picks"]) else None,
             "Reason": "Active roster · odds only; model history missing" if card.get("roster_watch") else "Featured" if featured else (
                 "Below current baseline" if not card.get("baseline_rule") else
                 "No 50%+ tested move"),
         })
     return pd.DataFrame(rows, columns=("Player", "Team", "Game", "Line", "Over odds",
-                                        "Book", "Model Over %", "Book break-even %", "Gap (pp)",
+                                        "Book", "Book break-even %",
                                         "Model conf", "Matrix", "Featured",
-                                        "Move ≥50%", "Move record", "Reason"))
+                                        "Move ≥50%", "Move record", "Move %",
+                                        "Later record", "Later %", "Reason"))
 
 
 def _render_class_shortlist(frame: pd.DataFrame, role: str) -> None:
@@ -722,7 +725,7 @@ def _render_class_shortlist(frame: pd.DataFrame, role: str) -> None:
         st.html(render_warlords(featured, limit=len(featured[role]), roles=(role,), show_hero=False))
     else:
         st.caption("No player clears both the current baseline and a tested move at 50%+ on this slate.")
-    st.caption("Character cards require the current Green baseline and a historical move at 50%+. Model vs book compares the model's Over probability with the posted odds' break-even rate; Gap is in percentage points. Model confidence is a ranking score, not a hit probability.")
+    st.caption("Character cards require the current Green baseline and a historical move at 50%+. Book break-even % comes from the posted odds; move percentages describe past results for that rule, not a forecast. Model confidence is a separate ranking score.")
     with st.expander(f"Every priced {role} player ({total})", expanded=True):
         st.dataframe(_priced_pool_table(priced[role]), hide_index=True, use_container_width=True)
 
@@ -4545,7 +4548,7 @@ if page == "⚔️ Warlords of the Night":
         st.info(f"{priced_total} priced prop entries. No player currently clears both the baseline and a 50%+ historical move; see the complete slate below.")
 
     with st.expander(f"Complete priced slate · {priced_total} prop entries", expanded=True):
-        st.caption("Every player's displayed priced prop appears here. Active roster players without model history are marked odds only; they receive no model probability or tested move. NHL roster membership does not confirm tonight's dressed lineup. Model Over % is the model's probability for that line; Book break-even % comes from the displayed odds. Gap is model minus book in percentage points. Historical move rates are separate, not forecasts.")
+        st.caption("Every player's displayed priced prop appears here. Book break-even % comes from the displayed odds; Move % and Later % are historical results for the named rule, not forecasts. Active roster players without model history are marked odds only and have no tested move. NHL roster membership does not confirm tonight's dressed lineup.")
         pool_tabs = st.tabs([f"{role} ({len(priced_boards[role])})" for role, *_ in CLASSES])
         for pool_tab, (role, *_rest) in zip(pool_tabs, CLASSES):
             with pool_tab:

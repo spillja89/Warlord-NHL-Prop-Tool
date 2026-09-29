@@ -64,9 +64,8 @@ class BoardBaselineTests(unittest.TestCase):
         self.assertAlmostEqual(cards["Priced"]["price_gap"], 0.50 - 100 / 230)
         self.assertIsNone(cards["Mismatched Model"]["model_prob"])
         html = render_warlords({"Carry": [cards["Priced"]]}, roles=("Carry",))
-        self.assertIn("Model 50.0%", html)
-        self.assertIn("Book break-even 43.5%", html)
-        self.assertIn("Gap +6.5 pp", html)
+        self.assertNotIn("Model 50.0%", html)
+        self.assertIn("BOOK BREAK-EVEN 43.5%", html)
         self.assertIn("BEST PRICE · Book &amp; Co", html)
 
     def test_priced_pool_is_complete_but_cards_require_baseline_and_half_rate_move(self):
@@ -98,6 +97,8 @@ class BoardBaselineTests(unittest.TestCase):
         self.assertEqual([card["player"] for card in featured["Carry"]], ["Strong"])
         html = render_warlords(featured, roles=("Carry",))
         self.assertIn("60.0%", html)
+        self.assertIn("LATER 3/5 (60.0%)", html)
+        self.assertIn("BOOK BREAK-EVEN 45.5%", html)
         self.assertIn("HISTORICAL MOVE", html)
         self.assertIn("CONF 88 Green", html)
         self.assertIn("Full fired move list (1)", html)
