@@ -698,7 +698,7 @@ def _priced_pool_table(cards: list[dict]) -> pd.DataFrame:
             "Featured": "Yes" if featured else "",
             "Move ≥50%": move["name"] if move else "",
             "Move record": f'{move["wins"]}/{move["picks"]}' if move else "",
-            "Reason": "Featured" if featured else (
+            "Reason": "Active roster · odds only; model history missing" if card.get("roster_watch") else "Featured" if featured else (
                 "Below current baseline" if not card.get("baseline_rule") else
                 "No 50%+ tested move"),
         })
@@ -4445,6 +4445,15 @@ if source == "latest" and "Injury_Reports_Count" in df.columns and not df.empty:
     else:
         st.warning("Injury feed returned no status reports on this run. Verify lineups before using the board.")
 
+if source == "latest" and "Roster_Status" in df.columns and not df.empty:
+    statuses = df["Roster_Status"].fillna("Unverified").astype(str)
+    verified = int(statuses.eq("Active roster").sum())
+    unverified = int((~statuses.eq("Active roster")).sum())
+    watch = int(df.get("Roster_Watch", pd.Series(False, index=df.index)).fillna(False).astype(str).str.casefold().isin({"true", "1"}).sum())
+    st.caption(f"Official NHL roster check: {verified} active skaters verified · {watch} odds-only returners/newcomers.")
+    if unverified:
+        st.warning(f"{unverified} skaters could not be roster verified. Check tonight's lineup before using their cards.")
+
 if source == "demo":
     st.warning(
         "**Synthetic preview · fictional players and odds.** These sample cards demonstrate the app's design; "
@@ -4536,7 +4545,7 @@ if page == "⚔️ Warlords of the Night":
         st.info(f"{priced_total} priced prop entries. No player currently clears both the baseline and a 50%+ historical move; see the complete slate below.")
 
     with st.expander(f"Complete priced slate · {priced_total} prop entries", expanded=True):
-        st.caption("Every player's displayed priced prop appears here. Model Over % is the model's probability for that line; Book break-even % comes from the displayed odds. Gap is model minus book in percentage points. The Reason column explains why a player is not on a character card. Historical move rates are separate, not forecasts.")
+        st.caption("Every player's displayed priced prop appears here. Active roster players without model history are marked odds only; they receive no model probability or tested move. NHL roster membership does not confirm tonight's dressed lineup. Model Over % is the model's probability for that line; Book break-even % comes from the displayed odds. Gap is model minus book in percentage points. Historical move rates are separate, not forecasts.")
         pool_tabs = st.tabs([f"{role} ({len(priced_boards[role])})" for role, *_ in CLASSES])
         for pool_tab, (role, *_rest) in zip(pool_tabs, CLASSES):
             with pool_tab:

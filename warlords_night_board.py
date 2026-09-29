@@ -111,6 +111,8 @@ def rank_warlords(frame: pd.DataFrame) -> dict[str, list[dict]]:
     for row in frame.to_dict("records"):
         if is_unavailable(row):
             continue
+        if str(row.get("Roster_Watch", "")).strip().casefold() in {"true", "1"}:
+            continue
         if not _value(row, "Player"):
             continue
         active = fired_moves(row)
@@ -173,7 +175,8 @@ def rank_priced_slate(frame: pd.DataFrame) -> dict[str, list[dict]]:
         if not player:
             continue
         team = str(_value(row, "Team") or "").strip()
-        active = fired_moves(row)
+        watch = str(row.get("Roster_Watch", "")).strip().casefold() in {"true", "1"}
+        active = {market: [] for _, market, *_ in CLASSES} if watch else fired_moves(row)
         for role, market, _, _ in CLASSES:
             line, odds, book = _line_price(row, market)
             if line is None or odds is None or odds == 0:
@@ -182,7 +185,7 @@ def rank_priced_slate(frame: pd.DataFrame) -> dict[str, list[dict]]:
             moves = active[market]
             attacks = [move for move in moves if move["kind"] != "STANCE"]
             best = max(attacks or moves, key=_move_rank) if moves else None
-            baseline = _baseline_rule(row, market, line)
+            baseline = None if watch else _baseline_rule(row, market, line)
             confidence = _number(row.get(f"Conf_{market}"))
             matrix = str(_value(row, f"Matrix_{market}") or "Unknown").strip()
             candidate = {
@@ -200,6 +203,7 @@ def rank_priced_slate(frame: pd.DataFrame) -> dict[str, list[dict]]:
                 "moves": sorted(moves, key=lambda item: (
                     item["kind"] != "STANCE", _move_rank(item)), reverse=True),
                 "move_count": len(moves),
+                "roster_watch": watch,
             }
             key = (team.casefold(), player.casefold())
             previous = boards[role].get(key)
@@ -274,6 +278,8 @@ def baseline_audit(frame: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame, pd.
                 continue
             for counts in (totals[label], bucket):
                 counts["Priced"].add(identity)
+            if str(row.get("Roster_Watch", "")).strip().casefold() in {"true", "1"}:
+                continue
             if line not in lines:
                 continue
             for counts in (totals[label], bucket):

@@ -5156,14 +5156,25 @@ def build_tracker(today_local: date, debug: bool = False, api_key: str | None = 
     if "Outcome" not in tracker.columns:
         tracker["Outcome"] = ""
 
+    # Check today's official club rosters and keep priced returners visible as
+    # odds-only watch rows when the model's season file has no skater history.
+    from roster_watchlist import add_roster_watchlist
+    tracker = add_roster_watchlist(
+        tracker, sess, teams_playing, game_map, today_local,
+        api_key or os.getenv("BALLDONTLIE_API_KEY") or os.getenv("BDL_API_KEY"),
+        injury_reports=inj_df,
+        debug=debug,
+    )
+
     # Freeze the displayed move rules with the pregame tracker. The grader
     # reads these tags instead of applying future code to an old slate.
     tracker["Move_Kit_Version"] = MOVE_KIT_VERSION
     tracker["Fired_Moves"] = tracker.apply(
-        lambda row: json.dumps(frozen_move_tags(row), ensure_ascii=False, separators=(",", ":")),
+        lambda row: "[]" if bool(row.get("Roster_Watch")) else
+        json.dumps(frozen_move_tags(row), ensure_ascii=False, separators=(",", ":")),
         axis=1,
     )
-    tracker["Model_Stats_Season"] = f"{sk_stats_year}-{sk_stats_year + 1}"
+    tracker["Model_Stats_Season"] = tracker["Model_Stats_Season"].fillna(f"{sk_stats_year}-{sk_stats_year + 1}") if "Model_Stats_Season" in tracker else f"{sk_stats_year}-{sk_stats_year + 1}"
 
     out_path = os.path.join(OUTPUT_DIR, f"tracker_{today_local.isoformat()}_{stamp}.csv")
     tracker.to_csv(out_path, index=False)
