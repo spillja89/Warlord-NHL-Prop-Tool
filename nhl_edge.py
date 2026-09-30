@@ -737,7 +737,7 @@ def nhl_schedule_today(sess: requests.Session, today_local: date) -> List[Dict[s
                 start_utc = str(g.get("startTimeUTC", ""))
                 local_d = parse_utc_to_local_date(start_utc, LOCAL_TZ)
                 if local_d == today_local and away and home:
-                    out.append({"away": norm_team(away), "home": norm_team(home), "startTimeUTC": start_utc})
+                    out.append({"away": norm_team(away), "home": norm_team(home), "startTimeUTC": start_utc, "id": g.get("id")})
 
     consume(data_today)
     consume(data_tom)
@@ -769,8 +769,9 @@ def load_moneypuck_csv(sess: requests.Session, url: str) -> pd.DataFrame:
     df.columns = df.columns.str.strip()
     return df
 
-def load_moneypuck_best_effort(sess: requests.Session, kind: str) -> pd.DataFrame:
+def load_moneypuck_best_effort(sess: requests.Session, kind: str, required_teams: set[str] | None = None) -> pd.DataFrame:
     start = current_season_start_year(date.today())
+    min_current_games = 10  # Recent-form inputs need a meaningful current-season window.
     last_err = None
     for y in (start, start - 1):
         url = moneypuck_url(kind, y)
@@ -779,8 +780,29 @@ def load_moneypuck_best_effort(sess: requests.Session, kind: str) -> pd.DataFram
             if data.empty:
                 last_err = f"{url} -> empty season file"
                 continue
+            if required_teams:
+                if "team" not in data.columns:
+                    last_err = f"{url} -> no team column"
+                    continue
+                covered = {norm_team(str(team)) for team in data["team"].dropna().unique()}
+                missing = required_teams - covered
+                if missing:
+                    last_err = f"{url} -> missing slate teams {sorted(missing)}"
+                    print(f"[MoneyPuck] {kind}: {y} file is incomplete for this slate; trying prior season")
+                    continue
+                if y == start:
+                    if "games_played" not in data.columns:
+                        last_err = f"{url} -> no games_played column"
+                        continue
+                    games = pd.to_numeric(data["games_played"], errors="coerce")
+                    played = data.assign(_games=games, _team=data["team"].map(norm_team)).groupby("_team")["_games"].max()
+                    thin = sorted(team for team in required_teams if played.get(team, 0) < min_current_games)
+                    if thin:
+                        last_err = f"{url} -> fewer than {min_current_games} games for {thin}"
+                        print(f"[MoneyPuck] {kind}: {y} slate teams have fewer than {min_current_games} games; trying prior season")
+                        continue
             if y != start:
-                print(f"[MoneyPuck] {kind}: {start} season unavailable; using {y} season data")
+                print(f"[MoneyPuck] {kind}: using {y} season data for this slate")
             data.attrs["moneypuck_start_year"] = y
             return data
         except Exception as e:
@@ -3335,7 +3357,7 @@ def build_tracker(today_local: date, debug: bool = False, api_key: str | None = 
 
 
     # MoneyPuck skaters
-    sk_raw = load_moneypuck_best_effort(sess, "skaters")
+    sk_raw = load_moneypuck_best_effort(sess, "skaters", teams_playing)
     sk_stats_year = int(sk_raw.attrs.get("moneypuck_start_year", current_season_start_year(today_local)))
     sk = normalize_skaters_all(sk_raw, debug=debug)
     sk = sk[sk["Team"].isin(teams_playing)].copy()
@@ -3343,7 +3365,7 @@ def build_tracker(today_local: date, debug: bool = False, api_key: str | None = 
         raise RuntimeError("No skaters matched today's teams. Team abbrev mismatch.")
 
     # Goalies (MoneyPuck)
-    g_raw = load_moneypuck_best_effort(sess, "goalies")
+    g_raw = load_moneypuck_best_effort(sess, "goalies", teams_playing)
     gdf = normalize_goalies(g_raw)
     team_goalie = build_team_goalie_map(gdf)
 
@@ -3504,7 +3526,7 @@ def build_tracker(today_local: date, debug: bool = False, api_key: str | None = 
 
     # 5v5 teams
     try:
-        teams_raw = load_moneypuck_best_effort(sess, "teams")
+        teams_raw = load_moneypuck_best_effort(sess, "teams", teams_playing)
         t5 = normalize_teams_5v5(teams_raw, debug=debug)
 
 
@@ -5165,6 +5187,11 @@ def build_tracker(today_local: date, debug: bool = False, api_key: str | None = 
         injury_reports=inj_df,
         debug=debug,
     )
+    # The roster watchlist appends priced players missing from the season file.
+    # Give those rows the same official game identity and start time as model rows.
+    tracker["Game_ID"] = tracker["Team"].map(game_id_map)
+    tracker["StartTimeUTC"] = tracker["Game"].map(game_time_utc)
+    tracker["StartTimeLocal"] = tracker["Game"].map(game_time_local)
 
     # Freeze the displayed move rules with the pregame tracker. The grader
     # reads these tags instead of applying future code to an old slate.
