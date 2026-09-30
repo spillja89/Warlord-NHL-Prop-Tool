@@ -48,11 +48,13 @@ jobs:
           restore-keys: forward-cache-${{ runner.os }}-
 
       - name: Build and preserve today's pregame slate
+        id: capture
+        continue-on-error: true
         shell: bash
         run: |
           set -euo pipefail
-          if [[ -z "$BALLDONTLIE_API_KEY" ]]; then
-            echo "::error::BALLDONTLIE_API_KEY is missing from repository Actions secrets"
+          if [[ -z "$BALLDONTLIE_API_KEY" && -z "$ODDS_API_KEY" ]]; then
+            echo "::error::Both BALLDONTLIE_API_KEY and ODDS_API_KEY are missing from repository Actions secrets"
             exit 1
           fi
           today="$(date +%F)"
@@ -124,3 +126,9 @@ jobs:
             git pull --rebase origin launch/2026-warlord-readiness
             git push origin HEAD:launch/2026-warlord-readiness
           fi
+
+      - name: Report capture failure after grading
+        if: steps.capture.outcome == 'failure'
+        run: |
+          echo "::error::Today's slate capture failed; previous frozen slates were still graded"
+          exit 1
