@@ -14,6 +14,7 @@ import numpy as np
 import pandas as pd
 import streamlit as st
 
+from published_output import fetch_grade_file, fetch_tracker, list_grade_files, local_matches_sha, save_if_changed
 from warlord_moves_2026 import VERSION as MOVE_KIT_VERSION
 from warlord_moves_2026 import best_move, points_moves, sog_moves, goals_moves as _goals_carry_moves, assists_moves as _assists_mapped_moves
 from warlords_night_board import CLASSES, baseline_audit, rank_warlords, rank_priced_slate, featured_warlords, render_warlords, _character_uri
@@ -3850,6 +3851,40 @@ st.sidebar.caption(
     else "Multi-book odds: add ODDS_API_KEY to this app's Secrets"
 )
 
+
+@st.cache_data(ttl=300, show_spinner=False)
+def _published_tracker_bytes() -> bytes | None:
+    try:
+        return fetch_tracker()
+    except (OSError, ValueError):
+        return None
+
+
+@st.cache_data(ttl=300, show_spinner=False)
+def _published_grade_manifest() -> list[tuple[str, str]]:
+    try:
+        return list_grade_files()
+    except (OSError, ValueError):
+        return []
+
+
+@st.cache_data(ttl=600, show_spinner=False)
+def _published_grade_bytes(name: str, sha: str) -> bytes | None:
+    # sha is part of the cache key, so a corrected grade is fetched again.
+    try:
+        return fetch_grade_file(name)
+    except (OSError, ValueError):
+        return None
+
+
+if uploaded is None and not st.session_state.get("latest_path_override"):
+    published_tracker = _published_tracker_bytes()
+    if published_tracker:
+        try:
+            save_if_changed(Path(OUTPUT_DIR) / "tracker_latest.csv", published_tracker)
+        except OSError:
+            pass  # The app can still use its local tracker if this instance is read-only.
+
 # Preferred stable path written by nhl_edge.py
 latest_stable = os.path.join(OUTPUT_DIR, "tracker_latest.csv")
 latest_path = latest_stable if os.path.exists(latest_stable) else find_latest_tracker_csv(OUTPUT_DIR)
@@ -6359,6 +6394,16 @@ elif page == "📊 Results":
     st.subheader("📊 Graded slates")
     st.caption("Every saved model row is matched to a final NHL box score. W/L/P applies only when that market had a line. Missing players, unfinished games, and missing lines stay ungraded.")
     graded_dir = Path(OUTPUT_DIR) / "graded"
+    for grade_name, grade_sha in _published_grade_manifest():
+        grade_path = graded_dir / grade_name
+        if local_matches_sha(grade_path, grade_sha):
+            continue
+        grade_content = _published_grade_bytes(grade_name, grade_sha)
+        if grade_content:
+            try:
+                save_if_changed(grade_path, grade_content)
+            except OSError:
+                pass
     move_files = sorted(graded_dir.glob("moves_*.csv"))
     if move_files:
         with st.expander("Forward results by named move", expanded=True):
