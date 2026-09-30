@@ -771,6 +771,7 @@ def load_moneypuck_csv(sess: requests.Session, url: str) -> pd.DataFrame:
 
 def load_moneypuck_best_effort(sess: requests.Session, kind: str, required_teams: set[str] | None = None) -> pd.DataFrame:
     start = current_season_start_year(date.today())
+    min_current_games = 10  # Recent-form inputs need a meaningful current-season window.
     last_err = None
     for y in (start, start - 1):
         url = moneypuck_url(kind, y)
@@ -789,8 +790,19 @@ def load_moneypuck_best_effort(sess: requests.Session, kind: str, required_teams
                     last_err = f"{url} -> missing slate teams {sorted(missing)}"
                     print(f"[MoneyPuck] {kind}: {y} file is incomplete for this slate; trying prior season")
                     continue
+                if y == start:
+                    if "games_played" not in data.columns:
+                        last_err = f"{url} -> no games_played column"
+                        continue
+                    games = pd.to_numeric(data["games_played"], errors="coerce")
+                    played = data.assign(_games=games, _team=data["team"].map(norm_team)).groupby("_team")["_games"].max()
+                    thin = sorted(team for team in required_teams if played.get(team, 0) < min_current_games)
+                    if thin:
+                        last_err = f"{url} -> fewer than {min_current_games} games for {thin}"
+                        print(f"[MoneyPuck] {kind}: {y} slate teams have fewer than {min_current_games} games; trying prior season")
+                        continue
             if y != start:
-                print(f"[MoneyPuck] {kind}: {start} season unavailable; using {y} season data")
+                print(f"[MoneyPuck] {kind}: using {y} season data for this slate")
             data.attrs["moneypuck_start_year"] = y
             return data
         except Exception as e:
