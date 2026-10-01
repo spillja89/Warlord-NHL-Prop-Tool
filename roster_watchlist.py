@@ -32,6 +32,30 @@ def _roster_players(session, team: str) -> dict[str, dict]:
     return found
 
 
+def load_active_rosters(session, teams: set[str], *, debug: bool = False) -> dict[str, dict[str, dict]]:
+    """Fetch today's official skater rosters once for modeling and verification."""
+    rosters = {}
+    for team in sorted(teams):
+        try:
+            rosters[team] = _roster_players(session, team)
+        except Exception as exc:
+            if debug:
+                print(f"[roster] {team}: {exc}")
+    return rosters
+
+
+def current_roster_teams_by_id(rosters: dict[str, dict[str, dict]]) -> dict[int, str]:
+    """Match a skater's prior stats to his current club by stable NHL player ID."""
+    clubs: dict[int, set[str]] = {}
+    for team, players in rosters.items():
+        for player in players.values():
+            try:
+                clubs.setdefault(int(player["id"]), set()).add(team)
+            except (TypeError, ValueError, KeyError):
+                continue
+    return {player_id: next(iter(teams)) for player_id, teams in clubs.items() if len(teams) == 1}
+
+
 def _best_price(props: list[dict], kind: str, wanted: tuple[float, ...]) -> tuple[float, int, str] | None:
     candidates = []
     for prop in props:
@@ -62,7 +86,8 @@ def _best_price(props: list[dict], kind: str, wanted: tuple[float, ...]) -> tupl
 def add_roster_watchlist(tracker: pd.DataFrame, session, teams: set[str],
                          game_map: dict[str, str], today, api_key: str | None,
                          *, injury_reports: pd.DataFrame | None = None,
-                         debug: bool = False) -> pd.DataFrame:
+                         debug: bool = False,
+                         rosters: dict[str, dict[str, dict]] | None = None) -> pd.DataFrame:
     """Verify known rows and append active, priced players missing from model data.
 
     A missing skater has no model probability, confidence, Green label, or move.
@@ -72,13 +97,8 @@ def add_roster_watchlist(tracker: pd.DataFrame, session, teams: set[str],
     tracker["Roster_Status"] = "Unverified"
     tracker["Roster_Check_UTC"] = datetime.now(timezone.utc).isoformat(timespec="seconds")
     tracker["Roster_Watch"] = False
-    rosters: dict[str, dict[str, dict]] = {}
-    for team in sorted(teams):
-        try:
-            rosters[team] = _roster_players(session, team)
-        except Exception as exc:
-            if debug:
-                print(f"[roster] {team}: {exc}")
+    if rosters is None:
+        rosters = load_active_rosters(session, teams, debug=debug)
 
     if rosters:
         known = tracker["Team"].astype(str).isin(rosters)

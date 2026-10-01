@@ -23,6 +23,9 @@ class PowerPlayQuotesTests(unittest.TestCase):
         self.assertEqual(quotes["PPP line"].tolist(), [0.5, 1.5])
         self.assertEqual(quotes["Over odds"].tolist(), [150, 650])
         self.assertEqual(quotes["Book"].tolist(), ["Book B", "Book C"])
+        half_quotes = priced_ppp_quotes(tracker, line_filter=0.5)
+        self.assertEqual(half_quotes["PPP line"].tolist(), [0.5])
+        self.assertEqual(half_quotes["Over odds"].tolist(), [150])
 
     def test_empty_tracker_has_no_fabricated_quotes(self):
         self.assertTrue(priced_ppp_quotes(pd.DataFrame()).empty)

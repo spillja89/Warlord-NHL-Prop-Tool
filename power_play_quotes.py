@@ -19,7 +19,7 @@ def _finite(value):
         return None
 
 
-def priced_ppp_quotes(frame: pd.DataFrame) -> pd.DataFrame:
+def priced_ppp_quotes(frame: pd.DataFrame, *, line_filter: float | None = None) -> pd.DataFrame:
     """One best observed quote per player and PPP line, including alternates."""
     if frame.empty:
         return pd.DataFrame(columns=COLUMNS)
@@ -33,6 +33,8 @@ def priced_ppp_quotes(frame: pd.DataFrame) -> pd.DataFrame:
             line = _finite(row.get(f"BDL_PPP_Line{suffix}"))
             odds = _finite(row.get(f"BDL_PPP_Odds{suffix}"))
             if line is None or odds is None or odds == 0:
+                continue
+            if line_filter is not None and not math.isclose(line, line_filter):
                 continue
             book = str(row.get(f"BDL_PPP_Book{suffix}") or "").strip()
             key = (team.casefold(), player.casefold(), line)

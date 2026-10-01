@@ -5484,23 +5484,25 @@ elif page == "Power Play":
             try:
                 v = int(float(x))
             except Exception:
-                return "PP0"
+                return "Unconfirmed"
             return "PP1" if v >= 2 else ("PP2" if v == 1 else "PP0")
         df_f["PP_UnitTag"] = df_f["PP_Role"].apply(_pp_role_tag)
-        df_f["PP_Unit"] = df_f["PP_UnitTag"].map({"PP1": "🔌 PP1", "PP2": "🔋 PP2"}).fillna("")
+        df_f["PP_Unit"] = df_f["PP_UnitTag"].map({"PP1": "🔌 PP1", "PP2": "🔋 PP2", "Unconfirmed": "Unit unconfirmed"}).fillna("")
     else:
         df_f["PP_Unit"] = ""
 
-    ppp_quotes = priced_ppp_quotes(df_f)
-    st.subheader(f"Power play point odds · {len(ppp_quotes)} posted lines")
+    ppp_quotes = priced_ppp_quotes(df_f, line_filter=0.5)
+    st.subheader(f"Power play point odds · over 0.5 · {len(ppp_quotes)} posted players")
     if source == "latest" and latest_path and os.path.isfile(latest_path):
         pp_checked = datetime.fromtimestamp(os.path.getmtime(latest_path), ZoneInfo("America/Chicago"))
         st.caption(f"Odds snapshot checked {pp_checked:%b %d, %Y at %I:%M %p} CT. "
-                   "The best observed Over price is shown for each posted line; refresh the slate for new quotes.")
+                   "The best observed Over 0.5 price is shown for each player; refresh the slate for new quotes.")
     if ppp_quotes.empty:
-        st.info("No power play point prices are in this tracker yet. The feed requests the main and alternate PPP markets; refresh after books post them.")
+        st.info("No over 0.5 power play point prices are in this tracker yet. Refresh after books post them.")
     else:
         st.dataframe(ppp_quotes, hide_index=True, use_container_width=True)
+
+    st.caption("Matchup checklist: verify the current PP unit and time, then compare the opponent PK context and the posted price. An Assist Green or fired assist move is extra context for a distributor; it does not establish a tested PPP hit rate or a bet by itself. Historical PP time from a former club leaves the current unit unconfirmed.")
 
     st.sidebar.subheader("Power Play Filters")
     unit_sel = st.sidebar.multiselect("PP Unit", ["PP1", "PP2"], default=["PP1", "PP2"], key="pp_unit_sel")

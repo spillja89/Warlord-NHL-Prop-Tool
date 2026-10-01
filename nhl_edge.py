@@ -811,6 +811,34 @@ def load_moneypuck_best_effort(sess: requests.Session, kind: str, required_teams
     raise RuntimeError(f"Could not download MoneyPuck {kind}.csv. Last error: {last_err}")
 
 
+def align_skater_stats_team(frame: pd.DataFrame, current_team_by_id: dict[int, str],
+                            *, keep_source: bool = False,
+                            preferred_source: dict[int, str] | None = None,
+                            weight_column: str | None = None) -> pd.DataFrame:
+    """Keep a player's historical stats when the official roster lists a new club.
+
+    Only the club identity changes. Player performance remains from the source
+    season and the original club is retained for provenance on the main frame.
+    """
+    out = frame.copy()
+    original_team = out["Team"].copy()
+    player_ids = pd.to_numeric(out["playerId"], errors="coerce")
+    roster_team = player_ids.map(current_team_by_id)
+    out["Team"] = roster_team.fillna(original_team)
+    if keep_source:
+        out["Model_Stats_Team"] = original_team
+        out["Team_Changed"] = roster_team.notna() & original_team.ne(out["Team"])
+    duplicates = out.duplicated(["playerId", "Team"], keep=False)
+    if duplicates.any():
+        source_priority = player_ids.map(preferred_source or {}).eq(original_team) if preferred_source else pd.Series(False, index=out.index)
+        out["_source_priority"] = source_priority.astype(int)
+        out["_source_weight"] = pd.to_numeric(out[weight_column], errors="coerce").fillna(0) if weight_column in out else 0
+        out = out.sort_values(["_source_priority", "_source_weight"], ascending=False, kind="stable")
+        out = out.drop_duplicates(["playerId", "Team"], keep="first")
+        out = out.drop(columns=["_source_priority", "_source_weight"])
+    return out
+
+
 # ============================
 # DailyFaceoff team mapping
 # ============================
@@ -3363,12 +3391,26 @@ def build_tracker(today_local: date, debug: bool = False, api_key: str | None = 
         bad = {k: v for k, v in team_gf.items() if not v.get("GF_Gate")}
         print(f"[TEAM_GF] gate={TEAM_GF_MIN_AVG:.2f} window={TEAM_GF_WINDOW} | failing teams:", bad)
 
+    # The early-season stats fallback is from last year, when traded players
+    # may have worn a different sweater. Match by stable NHL ID to today's
+    # official club before filtering the slate by team.
+    from roster_watchlist import load_active_rosters, current_roster_teams_by_id
+    active_rosters = load_active_rosters(sess, teams_playing, debug=debug)
+    current_team_by_id = current_roster_teams_by_id(active_rosters)
 
     # MoneyPuck skaters
     sk_raw = load_moneypuck_best_effort(sess, "skaters", teams_playing)
     sk_stats_year = int(sk_raw.attrs.get("moneypuck_start_year", current_season_start_year(today_local)))
     sk = normalize_skaters_all(sk_raw, debug=debug)
+    sk = align_skater_stats_team(sk, current_team_by_id, keep_source=True,
+                                 weight_column="icetime")
     sk = sk[sk["Team"].isin(teams_playing)].copy()
+    known_sk = sk.dropna(subset=["playerId"])
+    preferred_stats_team = dict(zip(known_sk["playerId"].astype(int), known_sk["Model_Stats_Team"]))
+    if debug:
+        moved = sk.loc[sk["Team_Changed"], ["Player", "Model_Stats_Team", "Team"]]
+        if not moved.empty:
+            print("[roster] linked transferred skater history:\n", moved.to_string(index=False))
     if sk.empty:
         raise RuntimeError("No skaters matched today's teams. Team abbrev mismatch.")
 
@@ -3428,6 +3470,8 @@ def build_tracker(today_local: date, debug: bool = False, api_key: str | None = 
     # 5v5 player
     try:
         sk5 = normalize_skaters_5v5(sk_raw, debug=debug)
+        sk5 = align_skater_stats_team(sk5, current_team_by_id,
+                                      preferred_source=preferred_stats_team)
         sk = sk.merge(sk5, on=["playerId", "Team"], how="left")
     except Exception as e:
         print(f"WARNING: Player 5v5 unavailable; continuing neutral. ({type(e).__name__}: {e})")
@@ -3450,6 +3494,13 @@ def build_tracker(today_local: date, debug: bool = False, api_key: str | None = 
     # POWER PLAY skaters (5v4)
     try:
         skpp = normalize_skaters_pp(sk_raw, debug=debug)
+        skpp = align_skater_stats_team(skpp, current_team_by_id,
+                                       preferred_source=preferred_stats_team,
+                                       weight_column="PP_TOI_min")
+        # A PP-unit rank earned with the old club does not establish the
+        # player's unit on the new club; retain rates but leave that tag open.
+        moved_ids = set(sk.loc[sk["Team_Changed"], "playerId"].dropna().astype(int))
+        skpp.loc[skpp["playerId"].isin(moved_ids), "PP_Role"] = np.nan
         sk = sk.merge(skpp, on=["playerId", "Team"], how="left")
     except Exception as e:
         if debug:
@@ -4529,6 +4580,8 @@ def build_tracker(today_local: date, debug: bool = False, api_key: str | None = 
 
         "Player": sk["Player"].fillna(""),
         "Player_ID": sk.get("playerId"),
+        "Model_Stats_Team": sk.get("Model_Stats_Team"),
+        "Team_Changed": sk.get("Team_Changed"),
         "Form_Log": sk.get("Form_Log", ""),
         "Form_Season": f"{season_start}-{str(season_start + 1)[-2:]}",
         "Team": sk["Team"].fillna(""),
@@ -5226,6 +5279,7 @@ def build_tracker(today_local: date, debug: bool = False, api_key: str | None = 
         api_key or os.getenv("BALLDONTLIE_API_KEY") or os.getenv("BDL_API_KEY"),
         injury_reports=inj_df,
         debug=debug,
+        rosters=active_rosters,
     )
     # The roster watchlist appends priced players missing from the season file.
     # Give those rows the same official game identity and start time as model rows.
