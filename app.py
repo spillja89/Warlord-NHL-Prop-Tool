@@ -5540,6 +5540,8 @@ elif page == "Power Play":
                                      "Opp PK xGA/60": "Opp PK xGA/60 in stats",
                                      "PP matchup /100": "PP context /100",
                                  })
+        for column in ("PP min/game in stats", "Opp PK xGA/60 in stats", "PP context /100"):
+            display_quotes[column] = pd.to_numeric(display_quotes[column], errors="coerce").round(1)
         st.dataframe(display_quotes, hide_index=True, width="stretch")
         with st.expander("How to read these numbers"):
             st.markdown("- **Book break-even %** is the hit rate required by that posted price. We cannot compare it to a PPP model rate yet.\n- **PP unit and PP TOI/game** come from the stats season shown in the tracker; they do not confirm tonight's unit. A player on a new team needs a fresh unit check.\n- **Opp PK xGA/60** is expected goals allowed by the opponent's penalty kill per 60 minutes in the source stats. Higher gives a more favorable opponent context, not a guaranteed point. **PP matchup /100** blends team PP strength with opponent PK weakness; 50 can be a neutral fallback, so it is blank here when source inputs are missing.\n- **Assists cross-check** names a separately tested assist move when one fires. Its record is for assists over 0.5, not PPP over 0.5.\n- **Odds only** means the player has a price but lacks usable model history. Leave the matchup columns blank rather than assuming neutral is good.")
