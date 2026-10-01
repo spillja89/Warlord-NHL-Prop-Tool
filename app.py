@@ -5453,9 +5453,9 @@ elif page == "GOALS (0.5)":
 # POWER PLAY
 # =========================
 elif page == "Power Play":
-    st.subheader("⚡ Power Play (PPP / 5v4)")
-    st.caption("Power play point prices from connected sportsbooks, alongside PP usage and opponent PK context. These prices do not change model probabilities.")
-    st.caption("This page shows the PP fields available in the loaded tracker. Opportunity counts are not calculated by the current engine.")
+    st.subheader("⚡ Power Play · over 0.5 point")
+    st.info("This page is for **finding a power-play setup**, not a graded PPP pick. We have sportsbook prices and PP context, but no tested PPP move or calibrated PPP hit probability. There is no honest model-versus-book edge number for this market yet.")
+    st.markdown("**Read it in this order:** PP opportunity (unit and minutes) → opponent penalty kill → best posted price. An Assist move can support the player's overall creation profile, but its hit rate is for assists, not power-play points.")
     pp_health = []
     for label, column in (("Player PP time/game", "PP_TOI_per_game"),
                           ("Player PP creation", "PP_iXA60"),
@@ -5492,7 +5492,7 @@ elif page == "Power Play":
         df_f["PP_Unit"] = ""
 
     ppp_quotes = priced_ppp_quotes(df_f, line_filter=0.5)
-    st.subheader(f"Power play point odds · over 0.5 · {len(ppp_quotes)} posted players")
+    st.subheader(f"Power play scouting board · {len(ppp_quotes)} posted players")
     if source == "latest" and latest_path and os.path.isfile(latest_path):
         pp_checked = datetime.fromtimestamp(os.path.getmtime(latest_path), ZoneInfo("America/Chicago"))
         st.caption(f"Odds snapshot checked {pp_checked:%b %d, %Y at %I:%M %p} CT. "
@@ -5500,63 +5500,87 @@ elif page == "Power Play":
     if ppp_quotes.empty:
         st.info("No over 0.5 power play point prices are in this tracker yet. Refresh after books post them.")
     else:
-        st.dataframe(ppp_quotes, hide_index=True, use_container_width=True)
+        assist_cards = {
+            (card["team"].casefold(), card["player"].casefold()): card
+            for card in rank_priced_slate(df_f).get("Support", [])
+        }
 
-    st.caption("Matchup checklist: verify the current PP unit and time, then compare the opponent PK context and the posted price. An Assist Green or fired assist move is extra context for a distributor; it does not establish a tested PPP hit rate or a bet by itself. Historical PP time from a former club leaves the current unit unconfirmed.")
+        def _assist_crosscheck(row):
+            card = assist_cards.get((str(row["Team"]).casefold(), str(row["Player"]).casefold()))
+            if card is None:
+                return "No priced assist card"
+            if not card.get("baseline_rule"):
+                return "No assist baseline"
+            moves = [move for move in card.get("moves", [])
+                     if int(move.get("picks", 0)) > 0
+                     and int(move.get("wins", 0)) / int(move["picks"]) >= 0.5]
+            if not moves:
+                return "Assist Green only"
+            move = max(moves, key=lambda item: (int(item["wins"]) / int(item["picks"]), int(item["picks"])))
+            return f'{move["name"]} · {move["wins"]}/{move["picks"]} assists'
 
-    st.sidebar.subheader("Power Play Filters")
-    unit_sel = st.sidebar.multiselect("PP Unit", ["PP1", "PP2"], default=["PP1", "PP2"], key="pp_unit_sel")
-    min_pp_toi = st.sidebar.slider("Min PP TOI / game", 0.0, 10.0, 1.0, 0.25, key="pp_min_toi")
-    min_ppp_drought = st.sidebar.slider("Min PPP Drought (games)", 0, 12, 0, 1, key="pp_min_ppp_drought")
-    tier_opts = ["A","B","C"] if "PP_Tier" in df_f.columns else []
-    tier_sel = st.sidebar.multiselect("PP Tier", tier_opts, default=tier_opts, key="pp_tier_sel") if tier_opts else []
-    path_opts = ["Shooter","Distributor","Hybrid","Passenger"] if "PP_Path" in df_f.columns else []
-    path_sel = st.sidebar.multiselect("PP Path", path_opts, default=path_opts, key="pp_path_sel") if path_opts else []
+        ppp_quotes["Assists cross-check"] = ppp_quotes.apply(_assist_crosscheck, axis=1)
+        ppp_quotes["_pp1"] = ppp_quotes["PP unit"].eq("PP1 history").astype(int)
+        ppp_quotes["_complete"] = ppp_quotes["Context"].eq("Usage + PK context").astype(int)
+        ppp_quotes["_matchup"] = pd.to_numeric(ppp_quotes["PP matchup /100"], errors="coerce").fillna(-1)
+        ppp_quotes = ppp_quotes.sort_values(["_pp1", "_complete", "_matchup", "PP TOI/game"],
+                                            ascending=[False, False, False, False], kind="stable")
+        ppp_quotes["Best price"] = ppp_quotes.apply(
+            lambda row: f'{int(row["Over odds"]):+d} · {row["Book"]}', axis=1)
+        stats_seasons = sorted({str(value) for value in ppp_quotes["Stats season"]
+                                if str(value).strip() and str(value).casefold() not in {"nan", "unavailable"}})
+        if stats_seasons:
+            st.caption(f'Usage and matchup stats source: {", ".join(stats_seasons)}. Prices are from the current saved odds snapshot.')
+        st.caption("Scouting order: historical PP1 usage, available matchup evidence, then the PP context score. This order is not a predicted hit rate. Blank context means the tracker lacks that stat; it is not a poor matchup.")
+        display_quotes = ppp_quotes[["Player", "Game", "Best price", "Book break-even %",
+                                 "PP unit", "PP TOI/game", "Opp PK xGA/60",
+                                 "PP matchup /100", "Assists cross-check", "Context"]].rename(columns={
+                                     "PP unit": "PP unit in stats",
+                                     "PP TOI/game": "PP min/game in stats",
+                                     "Opp PK xGA/60": "Opp PK xGA/60 in stats",
+                                     "PP matchup /100": "PP context /100",
+                                 })
+        st.dataframe(display_quotes, hide_index=True, width="stretch")
+        with st.expander("How to read these numbers"):
+            st.markdown("- **Book break-even %** is the hit rate required by that posted price. We cannot compare it to a PPP model rate yet.\n- **PP unit and PP TOI/game** come from the stats season shown in the tracker; they do not confirm tonight's unit. A player on a new team needs a fresh unit check.\n- **Opp PK xGA/60** is expected goals allowed by the opponent's penalty kill per 60 minutes in the source stats. Higher gives a more favorable opponent context, not a guaranteed point. **PP matchup /100** blends team PP strength with opponent PK weakness; 50 can be a neutral fallback, so it is blank here when source inputs are missing.\n- **Assists cross-check** names a separately tested assist move when one fires. Its record is for assists over 0.5, not PPP over 0.5.\n- **Odds only** means the player has a price but lacks usable model history. Leave the matchup columns blank rather than assuming neutral is good.")
+
+    with st.expander("Detailed PP stats and filters"):
+        unit_sel = st.multiselect("Historical PP Unit", ["PP1", "PP2", "Unconfirmed"],
+                                  default=["PP1", "PP2", "Unconfirmed"], key="pp_unit_sel")
+        min_pp_toi = st.slider("Min historical PP TOI / game", 0.0, 10.0, 1.0, 0.25, key="pp_min_toi")
+        min_ppp_drought = st.slider("Min PPP drought (games)", 0, 12, 0, 1, key="pp_min_ppp_drought")
+        tier_opts = ["A", "B", "C"] if "PP_Tier" in df_f.columns else []
+        tier_sel = st.multiselect("PP Tier", tier_opts, default=tier_opts, key="pp_tier_sel") if tier_opts else []
+        path_opts = ["Shooter", "Distributor", "Hybrid", "Passenger"] if "PP_Path" in df_f.columns else []
+        path_sel = st.multiselect("PP Path", path_opts, default=path_opts, key="pp_path_sel") if path_opts else []
 
 
-    df_pp = df_f.copy()
-    if "PP_UnitTag" in df_pp.columns:
-        df_pp = df_pp[df_pp["PP_UnitTag"].isin(unit_sel)]
+        df_pp = df_f.copy()
+        if "PP_UnitTag" in df_pp.columns:
+            df_pp = df_pp[df_pp["PP_UnitTag"].isin(unit_sel)]
 
-    if "PP_TOI_PG" in df_pp.columns:
-        df_pp = df_pp[pd.to_numeric(df_pp["PP_TOI_PG"], errors="coerce").fillna(0.0) >= float(min_pp_toi)]
+        if "PP_TOI_PG" in df_pp.columns:
+            df_pp = df_pp[pd.to_numeric(df_pp["PP_TOI_PG"], errors="coerce").fillna(0.0) >= float(min_pp_toi)]
 
-    if "Drought_PPP" in df_pp.columns:
-        df_pp = df_pp[pd.to_numeric(df_pp["Drought_PPP"], errors="coerce").fillna(0).astype(int) >= int(min_ppp_drought)]
-    if "PP_Tier" in df_pp.columns and tier_sel:
-        df_pp = df_pp[df_pp["PP_Tier"].astype(str).str.upper().isin([t.upper() for t in tier_sel])]
-    if "PP_Path" in df_pp.columns and path_sel:
-        df_pp = df_pp[df_pp["PP_Path"].astype(str).isin(path_sel)]
+        if "Drought_PPP" in df_pp.columns:
+            df_pp = df_pp[pd.to_numeric(df_pp["Drought_PPP"], errors="coerce").fillna(0).astype(int) >= int(min_ppp_drought)]
+        if "PP_Tier" in df_pp.columns and tier_sel:
+            df_pp = df_pp[df_pp["PP_Tier"].astype(str).str.upper().isin([t.upper() for t in tier_sel])]
+        if "PP_Path" in df_pp.columns and path_sel:
+            df_pp = df_pp[df_pp["PP_Path"].astype(str).isin(path_sel)]
 
 
-    # Sort best-first (only by columns that exist)
-    sort_cols = [c for c in ["PP_Matchup", "PP_BOOST", "PP_Points60", "PP_TOI_PG", "Drought_PPP"] if c in df_pp.columns]
-    if sort_cols:
-        df_pp = df_pp.sort_values(sort_cols, ascending=[False] * len(sort_cols))
+        sort_cols = [c for c in ["PP_Matchup", "PP_BOOST", "PP_Points60", "PP_TOI_PG", "Drought_PPP"] if c in df_pp.columns]
+        if sort_cols:
+            df_pp = df_pp.sort_values(sort_cols, ascending=[False] * len(sort_cols))
 
-    pp_cols = [
-        "Game",
-        "Player", "Pos", "Team", "Opp",
-        "Tier_Tag",
-        "PP_Unit",
-        "PP_TOI_PG",
-        "PP_TeamShare_pct",
-        "PP_Tier",
-        "PP_Path",
-        "PP_BOOST",
-        "PP_TOI_Pct",
-        "PP_Points60",
-        "PP_iXG60",
-        "PP_iXA60",
-        "Team_PP_xGF60",
-        "Opp_PK_xGA60",
-
-        "PP_Matchup",
-        "PPP10_total",
-        "Drought_PPP",
-    ]
-
-    show_table(df_pp, pp_cols, "Power Play (5v4) — Usage, creation, matchup, PPP drought")
+        pp_cols = [
+            "Game", "Player", "Pos", "Team", "Opp", "Tier_Tag", "PP_Unit",
+            "PP_TOI_PG", "PP_TeamShare_pct", "PP_Tier", "PP_Path", "PP_BOOST",
+            "PP_TOI_Pct", "PP_Points60", "PP_iXG60", "PP_iXA60",
+            "Team_PP_xGF60", "Opp_PK_xGA60", "PP_Matchup", "PPP10_total", "Drought_PPP",
+        ]
+        show_table(df_pp, pp_cols, "Power Play (5v4) — Usage, creation, matchup, PPP drought")
 
 
 elif page == "🧪 Dagger Lab":

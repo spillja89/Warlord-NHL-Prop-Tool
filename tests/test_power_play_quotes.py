@@ -26,6 +26,29 @@ class PowerPlayQuotesTests(unittest.TestCase):
         half_quotes = priced_ppp_quotes(tracker, line_filter=0.5)
         self.assertEqual(half_quotes["PPP line"].tolist(), [0.5])
         self.assertEqual(half_quotes["Over odds"].tolist(), [150])
+        self.assertEqual(half_quotes["Book break-even %"].tolist(), [40.0])
+        self.assertEqual(half_quotes["PP unit"].tolist(), ["Unit unknown"])
+
+    def test_history_and_matchup_are_labeled_without_inventing_an_edge(self):
+        tracker = pd.DataFrame([{
+            "Player": "New Club", "Team": "BOS", "Game": "NYR@BOS",
+            "BDL_PPP_Line": 0.5, "BDL_PPP_Odds": -125,
+            "BDL_PPP_Book": "Book A", "Team_Changed": True,
+            "PP_Role": None, "PP_TOI_per_game": 3.2,
+            "Opp_PK_xGA60": 7.4, "Team_PP_xGF60": 8.1,
+            "PP_Matchup": 63, "Model_Stats_Season": "2025-2026",
+        }, {
+            "Player": "Odds Only", "Team": "NYR", "Game": "NYR@BOS",
+            "BDL_PPP_Line": 0.5, "BDL_PPP_Odds": 200,
+            "BDL_PPP_Book": "Book B", "Roster_Watch": True,
+            "Model_Stats_Season": "Unavailable", "PP_Matchup": 50,
+        }])
+        quotes = priced_ppp_quotes(tracker, line_filter=0.5).set_index("Player")
+        self.assertEqual(quotes.loc["New Club", "Book break-even %"], 55.6)
+        self.assertEqual(quotes.loc["New Club", "PP unit"], "New team · verify unit")
+        self.assertEqual(quotes.loc["New Club", "PP matchup /100"], 63)
+        self.assertEqual(quotes.loc["Odds Only", "Context"], "Odds only · history missing")
+        self.assertTrue(pd.isna(quotes.loc["Odds Only", "PP matchup /100"]))
 
     def test_empty_tracker_has_no_fabricated_quotes(self):
         self.assertTrue(priced_ppp_quotes(pd.DataFrame()).empty)

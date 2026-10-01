@@ -8,7 +8,9 @@ import pandas as pd
 
 
 COLUMNS = ("Game", "Player", "Team", "Opponent", "PPP line", "Over odds",
-           "Book", "PP unit", "PP TOI/game", "PPP last 10", "Opp PK xGA/60")
+           "Book", "Book break-even %", "PP unit", "PP TOI/game",
+           "Opp PK xGA/60", "PP matchup /100", "PPP last 10",
+           "Stats season", "Context")
 
 
 def _finite(value):
@@ -17,6 +19,37 @@ def _finite(value):
         return number if math.isfinite(number) else None
     except (TypeError, ValueError):
         return None
+
+
+def _break_even_pct(odds: float) -> float:
+    return round(100 * (100 / (odds + 100) if odds > 0 else -odds / (-odds + 100)), 1)
+
+
+def _is_true(value) -> bool:
+    return str(value).strip().casefold() in {"true", "1", "yes"}
+
+
+def _unit_label(row: dict) -> str:
+    if _is_true(row.get("Team_Changed")):
+        return "New team · verify unit"
+    role = _finite(row.get("PP_Role"))
+    if role is None:
+        return "Unit unknown"
+    return "PP1 history" if role >= 2 else ("PP2 history" if role >= 1 else "No PP unit in history")
+
+
+def _context_label(row: dict) -> str:
+    if _is_true(row.get("Roster_Watch")) or str(row.get("Model_Stats_Season") or "").casefold() == "unavailable":
+        return "Odds only · history missing"
+    usage = _finite(row.get("PP_TOI_per_game")) is not None
+    pk = _finite(row.get("Opp_PK_xGA60")) is not None
+    if usage and pk:
+        return "Usage + PK context"
+    if usage:
+        return "PK context missing"
+    if pk:
+        return "PP usage missing"
+    return "Usage + PK missing"
 
 
 def priced_ppp_quotes(frame: pd.DataFrame, *, line_filter: float | None = None) -> pd.DataFrame:
@@ -42,10 +75,16 @@ def priced_ppp_quotes(frame: pd.DataFrame, *, line_filter: float | None = None) 
                 "Game": str(row.get("Game") or ""), "Player": player,
                 "Team": team, "Opponent": str(row.get("Opp") or ""),
                 "PPP line": line, "Over odds": int(odds), "Book": book,
-                "PP unit": str(row.get("PP_Unit") or row.get("PP_Role") or ""),
+                "Book break-even %": _break_even_pct(odds),
+                "PP unit": _unit_label(row),
                 "PP TOI/game": _finite(row.get("PP_TOI_per_game")),
                 "PPP last 10": _finite(row.get("PPP10_total")),
                 "Opp PK xGA/60": _finite(row.get("Opp_PK_xGA60")),
+                "PP matchup /100": _finite(row.get("PP_Matchup"))
+                if _finite(row.get("Opp_PK_xGA60")) is not None
+                and _finite(row.get("Team_PP_xGF60")) is not None else None,
+                "Stats season": str(row.get("Model_Stats_Season") or ""),
+                "Context": _context_label(row),
             }
             if key not in quotes or odds > quotes[key]["Over odds"]:
                 quotes[key] = candidate
