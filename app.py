@@ -6420,7 +6420,7 @@ elif page == "🧾 Log Bet":
 
 elif page == "📊 Results":
     st.subheader("📊 Graded slates")
-    st.caption("Every saved model row is matched to a final NHL box score. W/L/P applies only when that market had a line. Missing players, unfinished games, and missing lines stay ungraded.")
+    st.caption("Every saved model row is matched to final NHL game records. W/L/P applies only when that market had a line. Missing players, unfinished games, and missing lines stay ungraded. PPP uses officially credited goals and assists on power-play goals; it has no tested move yet.")
     graded_dir = Path(OUTPUT_DIR) / "graded"
     for grade_name, grade_sha in _published_grade_manifest():
         grade_path = graded_dir / grade_name
@@ -6495,7 +6495,9 @@ elif page == "📊 Results":
             st.caption("Goals and ATG are separate line columns for the same scoring stat; a player may appear in both. Do not add their sample counts together.")
             market_results = summary.get("markets", {})
             market_rows = []
-            for market in ("Points", "Assists", "SOG", "Goal", "ATG"):
+            for market in ("Points", "Assists", "SOG", "Goal", "ATG", "PPP"):
+                if market not in market_results:
+                    continue
                 counts = market_results.get(market, {})
                 wins, losses, pushes = (int(counts.get(key, 0)) for key in ("W", "L", "P"))
                 settled = wins + losses
@@ -6513,9 +6515,10 @@ elif page == "📊 Results":
                 graded = graded[graded["Grade_Status"] != "FINAL"]
             result_columns = [column for column in (
                 "Date", "Game", "Player", "Team", "Grade_Status", "Player_Match_Method",
-                "Actual_Points", "Actual_Assists", "Actual_Goal", "Actual_SOG",
+                "Actual_Points", "Actual_Assists", "Actual_Goal", "Actual_SOG", "Actual_PPP",
                 "Points_Line", "Outcome_Points", "Assists_Line", "Outcome_Assists",
                 "SOG_Line", "Outcome_SOG", "Goal_Line", "Outcome_Goal", "ATG_Line", "Outcome_ATG",
+                "BDL_PPP_Line", "BDL_PPP_Odds", "BDL_PPP_Book", "Outcome_PPP",
             ) if column in graded.columns]
             st.dataframe(graded[result_columns], width="stretch", hide_index=True)
 

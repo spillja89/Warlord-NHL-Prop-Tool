@@ -25,7 +25,7 @@ from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 
 
-VERSION = "2026-09-23-v1"
+VERSION = "2026-10-01-v2"
 API = "https://api-web.nhle.com/v1"
 MARKETS = {
     "Points": ("Points_Line", "points"),
@@ -33,6 +33,7 @@ MARKETS = {
     "SOG": ("SOG_Line", "sog"),
     "Goal": ("Goal_Line", "goals"),
     "ATG": ("ATG_Line", "goals"),
+    "PPP": ("BDL_PPP_Line", "ppp"),
 }
 MOVE_MARKETS = {"Points": "Points", "Assists": "Assists", "SOG": "SOG", "Goal": "Goal"}
 FINAL_STATES = {"OFF", "FINAL"}
@@ -175,6 +176,30 @@ def _actuals(player: dict[str, Any]) -> dict[str, float | None]:
     return {"goals": goals, "assists": assists, "points": points, "sog": sog}
 
 
+def _power_play_points(landing: dict[str, Any]) -> dict[int, int] | None:
+    """Count scorer and credited assists on official power-play goals."""
+    scoring = (landing.get("summary") or {}).get("scoring")
+    if not isinstance(scoring, list):
+        return None
+    points: Counter[int] = Counter()
+    for period in scoring:
+        if not isinstance(period, dict) or not isinstance(period.get("goals"), list):
+            return None
+        for goal in period["goals"]:
+            if not isinstance(goal, dict) or str(goal.get("strength") or "").lower() != "pp":
+                continue
+            scorer = _number(goal.get("playerId"))
+            if scorer is None or not isinstance(goal.get("assists"), list):
+                return None
+            points[int(scorer)] += 1
+            for assist in goal["assists"]:
+                player_id = _number(assist.get("playerId")) if isinstance(assist, dict) else None
+                if player_id is None:
+                    return None
+                points[int(player_id)] += 1
+    return dict(points)
+
+
 def grade_tracker(frame: pd.DataFrame, slate_day: str, session: requests.Session) -> tuple[pd.DataFrame, dict[str, Any]]:
     if frame.empty or not {"Date", "Player", "Team"}.issubset(frame.columns):
         raise ValueError("Tracker must have player rows and Date, Player, Team columns")
@@ -185,11 +210,17 @@ def grade_tracker(frame: pd.DataFrame, slate_day: str, session: requests.Session
     rows = frame.to_dict("records")
     game_ids = {_game_id(row, schedule) for row in rows}
     boxes: dict[int, dict[str, Any] | None] = {}
+    pp_points: dict[int, dict[int, int] | None] = {}
     for gid in sorted(gid for gid in game_ids if gid is not None):
         try:
             boxes[gid] = _json(session, f"/gamecenter/{gid}/boxscore")
         except (requests.RequestException, ValueError):
             boxes[gid] = None
+        try:
+            landing = _json(session, f"/gamecenter/{gid}/landing")
+            pp_points[gid] = _power_play_points(landing) if str(landing.get("gameState") or "").upper() in FINAL_STATES else None
+        except (requests.RequestException, ValueError):
+            pp_points[gid] = None
 
     additions: list[dict[str, Any]] = []
     for row in rows:
@@ -218,6 +249,10 @@ def grade_tracker(frame: pd.DataFrame, slate_day: str, session: requests.Session
                 added["Resolved_Player_ID"] = player.get("playerId")
                 added["Player_Match_Method"] = method
                 stats = _actuals(player)
+                player_id = _number(player.get("playerId"))
+                game_pp_points = pp_points.get(gid)
+                stats["ppp"] = (game_pp_points.get(int(player_id), 0)
+                                if game_pp_points is not None and player_id is not None else None)
         added["Grade_Status"] = status
         for suffix, (line_col, stat_key) in MARKETS.items():
             actual = stats.get(stat_key) if status == "FINAL" else None

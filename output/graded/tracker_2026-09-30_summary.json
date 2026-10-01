@@ -5,7 +5,7 @@
     "FINAL": 106,
     "NO_PLAYER": 13
   },
-  "grader_version": "2026-09-23-v1",
+  "grader_version": "2026-10-01-v2",
   "markets": {
     "ATG": {
       "L": 67,
@@ -21,6 +21,11 @@
       "L": 85,
       "UNSET": 16,
       "W": 18
+    },
+    "PPP": {
+      "L": 34,
+      "UNSET": 79,
+      "W": 6
     },
     "Points": {
       "L": 43,
