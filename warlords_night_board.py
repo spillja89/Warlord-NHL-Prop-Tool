@@ -12,6 +12,7 @@ import pandas as pd
 
 from warlord_moves_2026 import fired_moves
 from player_availability import is_unavailable
+from player_form import summarize_form
 
 
 CLASSES = (
@@ -142,6 +143,8 @@ def rank_warlords(frame: pd.DataFrame) -> dict[str, list[dict]]:
                 "game": str(_value(row, "Game") or "").strip(),
                 "time": str(_value(row, "Time") or "").strip(),
                 "market": market, "line": line, "odds": odds, "book": book,
+                "form_log": _value(row, "Form_Log"),
+                "form_season": _value(row, "Form_Season"),
                 "model_prob": model_prob, "book_prob": book_prob, "price_gap": price_gap,
                 "goalie": str(_value(row, "Opp_Goalie") or ""),
                 "goalie_status": str(_value(row, "Opp_Goalie_Status") or "Unknown"),
@@ -194,6 +197,8 @@ def rank_priced_slate(frame: pd.DataFrame) -> dict[str, list[dict]]:
                 "game": str(_value(row, "Game") or "").strip(),
                 "time": str(_value(row, "Time") or "").strip(),
                 "market": market, "line": line, "odds": odds, "book": book,
+                "form_log": _value(row, "Form_Log"),
+                "form_season": _value(row, "Form_Season"),
                 "model_prob": model_prob, "book_prob": book_prob, "price_gap": price_gap,
                 "confidence": confidence, "matrix": matrix,
                 "baseline_rule": baseline, "baseline_only": bool(baseline and not best),
@@ -337,6 +342,45 @@ def _odds(value):
     return f"{value:+.0f}" if value > 0 else f"{value:.0f}"
 
 
+def _form_html(card):
+    form = summarize_form(card.get("form_log"), card["market"], card["line"])
+    if not form:
+        season = _h(card.get("form_season") or "Current")
+        return f'<div class="wn-form-empty">{season} regular-season form unavailable right now.</div>'
+    if form.get("empty"):
+        return f'<div class="wn-form-empty">{_h(form["season"])} regular season · awaiting completed games.</div>'
+    l10_w, l10_n = form["l10"]
+    l5_w, l5_n = form["l5"]
+    season_w, season_n = form["season_rate"]
+    avg, med = form["average"], form["median"]
+    line = card["line"]
+    tiles = (
+        (f"LAST {l10_n}", f"{l10_w}/{l10_n} · {100*l10_w/l10_n:.0f}%"),
+        ("AVG / MEDIAN", f"{avg:.1f} / {med:.1f}"),
+        ("VS TODAY'S LINE", f"Avg {avg-line:+.1f} · Med {med-line:+.1f}"),
+        (f"LAST {l5_n}", f"{l5_w}/{l5_n} · {100*l5_w/l5_n:.0f}%"),
+        ("SEASON", f"{season_w}/{season_n} · {100*season_w/season_n:.0f}%"),
+    )
+    tiles_html = "".join(f'<div><small>{_h(label)}</small><strong>{_h(value)}</strong></div>'
+                         for label, value in tiles)
+    splits = " · ".join(f"{label} {won}/{count} ({100*won/count:.0f}%)"
+                        for label, (won, count) in form["splits"].items())
+    opportunity = []
+    if form["shots"] is not None:
+        opportunity.append(f"L{l10_n} shots {form['shots']:.1f}/game")
+    if form["toi"] is not None:
+        opportunity.append(f"ice time {form['toi']:.1f} min/game")
+    strip = "".join(f'<span class="{"hit" if hit else "miss"}" title="{value} {card["market"]}">'
+                    f'{"✓" if hit else "×"} {value}</span>' for value, hit in form["recent"])
+    return (f'<details class="wn-form"><summary>Recent form · {_h(form["season"])} regular season</summary>'
+            f'<p>Against today\'s over {line:g} line · games shown newest first. '
+            'Historical results are context, not the move record.</p>'
+            f'<div class="wn-form-tiles">{tiles_html}</div>'
+            f'<div class="wn-form-meta">{_h(splits)}</div>'
+            f'<div class="wn-form-meta">{_h(" · ".join(opportunity))}</div>'
+            f'<div class="wn-form-strip">{strip}</div></details>')
+
+
 @lru_cache(maxsize=4)
 def _character_uri(role: str) -> str:
     """Inline small artwork so class cards render behind Cloud's app proxy."""
@@ -425,6 +469,7 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
                 {goalie_note}
               </div>
               {record_html}
+              {_form_html(card)}
               {details_html}
             </article>""")
         if not units:
@@ -468,6 +513,7 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
       .wn-goalie{font-size:9px;color:#9fb6cb;margin-top:3px}
       .wn-record{position:relative;z-index:1;text-align:right;flex:none;min-width:66px;display:flex;flex-direction:column;line-height:1.1}.wn-record strong{font-size:21px;color:#fff}.wn-record span{color:var(--accent);font-size:12px;font-weight:900;margin-top:3px}.wn-record em{font-style:normal;color:#8092a9;font-size:8px;letter-spacing:.08em;margin-top:3px}
       .wn-details{position:relative;z-index:1;flex:0 0 100%;font-size:10px;color:#aebbd0;border-top:1px solid #ffffff14;padding-top:5px}.wn-details summary{cursor:pointer;color:var(--accent);font-weight:700}.wn-move-list{max-height:320px;overflow:auto;display:grid;gap:6px;margin-top:8px;padding-right:3px}
+      .wn-form,.wn-form-empty{position:relative;z-index:1;flex:0 0 100%;font-size:10px;color:#b9c9dc;border-top:1px solid #ffffff14;padding-top:5px}.wn-form summary{cursor:pointer;color:#e4c892;font-weight:800}.wn-form p{margin:7px 0;color:#aebbd0}.wn-form-tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(102px,1fr));gap:5px;margin:8px 0}.wn-form-tiles>div{border:1px solid #ffffff1d;border-radius:5px;padding:6px;background:#0b1629a8}.wn-form-tiles small{display:block;color:#98adc6;font-size:8px;letter-spacing:.07em}.wn-form-tiles strong{display:block;color:#fff;font-size:11px;margin-top:3px}.wn-form-meta{margin:4px 0}.wn-form-strip{display:flex;flex-wrap:wrap;gap:4px;margin:8px 0}.wn-form-strip span{border-radius:4px;padding:3px 5px;font-weight:800}.wn-form-strip .hit{background:#1d6145;color:#c4ffde}.wn-form-strip .miss{background:#603036;color:#ffd7d7}
       .wn-move-entry{border:1px solid #ffffff20;border-radius:6px;background:#0b1629e8;padding:7px}.wn-move-title{display:flex;align-items:center;justify-content:space-between;gap:8px}.wn-move-title strong{font-size:11px;color:#f1e4ca}.wn-move-title em{font-size:8px;font-style:normal;color:var(--accent);text-align:right}.wn-move-record{font-size:10px;font-weight:800;color:#fff;margin-top:3px}.wn-move-record span{color:#b7c7df;margin-left:5px}.wn-move-rule{font-size:9px;color:#b6c5da;overflow-wrap:anywhere;margin-top:4px}
       .wn-empty{padding:26px 12px;text-align:center;color:#aebbd0;font-size:12px}
       .wn-board--compact .wn-grid{grid-template-columns:1fr}

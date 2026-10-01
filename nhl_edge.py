@@ -34,6 +34,7 @@ import numpy as np
 import pandas as pd
 import requests
 from bs4 import BeautifulSoup
+from player_form import compact_regular_log
 from warlord_moves_2026 import VERSION as MOVE_KIT_VERSION, frozen_move_tags
 
 pd.options.display.float_format = "{:.2f}".format
@@ -2055,6 +2056,13 @@ def nhle_player_gamelog_now(sess: requests.Session, player_id: int) -> Optional[
     except Exception:
         return None
 
+def nhle_player_regular_log(sess: requests.Session, player_id: int, season: int) -> Optional[Dict[str, Any]]:
+    """Explicit regular-season log; /now may instead return playoff games."""
+    try:
+        return http_get_json(sess, f"https://api-web.nhle.com/v1/player/{player_id}/game-log/{season}/2")
+    except Exception:
+        return None
+
 def _extract_game_rows(payload: Dict[str, Any]) -> List[Dict[str, Any]]:
     for k in ("gameLog", "gameLogs", "games", "gamelog", "game-log"):
         v = payload.get(k)
@@ -3875,16 +3883,46 @@ def build_tracker(today_local: date, debug: bool = False, api_key: str | None = 
             except Exception:
                 fetched[pid] = None
 
+    # The /now endpoint can return playoff or prior-season games. Form cards
+    # use only this season's regular-season games and never fill with last year.
+    season_start = today_local.year if today_local.month >= 9 else today_local.year - 1
+    current_season = int(f"{season_start}{season_start + 1}")
+
+    def form_for(pid: int):
+        current = compact_regular_log(fetched.get(pid), today_local.isoformat())
+        if current and current["season"] == f"{season_start}-{str(season_start + 1)[-2:]}":
+            return pid, current
+        key = f"regular_form:{pid}:{current_season}:{today_local.isoformat()}"
+        if key not in cache:
+            payload = nhle_player_regular_log(sess, pid, current_season)
+            cache[key] = compact_regular_log(payload, today_local.isoformat())
+            time.sleep(HTTP_SLEEP_SEC)
+        return pid, cache[key]
+
+    form_logs = {}
+    with ThreadPoolExecutor(max_workers=MAX_WORKERS) as ex:
+        futures = {ex.submit(form_for, pid): pid for pid in cand_ids}
+        for fut in as_completed(futures):
+            try:
+                pid, form = fut.result()
+                form_logs[pid] = form
+            except Exception:
+                form_logs[futures[fut]] = None
+
     save_cache(today_local, cache)
 
     feats_rows: List[Dict[str, Any]] = []
     for pid in cand_ids:
         payload = fetched.get(pid)
         if payload is None:
-            feats_rows.append({"playerId": pid})
+            feats_rows.append({"playerId": pid,
+                               "Form_Log": json.dumps(form_logs[pid], separators=(",", ":"))
+                               if form_logs.get(pid) else ""})
             continue
         feats = compute_lastN_features(payload, 10, 5)
-        feats_rows.append({"playerId": pid, **feats})
+        feats_rows.append({"playerId": pid, **feats,
+                           "Form_Log": json.dumps(form_logs[pid], separators=(",", ":"))
+                           if form_logs.get(pid) else ""})
 
     feats_df = pd.DataFrame(feats_rows)
     sk = sk.merge(feats_df, on="playerId", how="left")
@@ -4491,6 +4529,8 @@ def build_tracker(today_local: date, debug: bool = False, api_key: str | None = 
 
         "Player": sk["Player"].fillna(""),
         "Player_ID": sk.get("playerId"),
+        "Form_Log": sk.get("Form_Log", ""),
+        "Form_Season": f"{season_start}-{str(season_start + 1)[-2:]}",
         "Team": sk["Team"].fillna(""),
         "Pos": sk["Pos"].fillna("F"),
         "Tier": sk.get("Tier_Tag", ""),
