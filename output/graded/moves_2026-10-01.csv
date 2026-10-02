@@ -1,0 +1,202 @@
+Date,Game,Game_ID,Player,Player_ID,Team,Market,Move,Kind,Rule,Icon,Kit_Version,Line,Actual,Outcome,Grade_Status,Match_Status
+2026-10-01,BUF@CBJ,2026020011,Rasmus Dahlin,8480839.0,BUF,Assists,Staff (Green Stance),STANCE,Green + Assists 0.5,staff.svg,2026-09-24-frozen-v2,0.5,0.0,L,FINAL,OK
+2026-10-01,BUF@CBJ,2026020011,Ryan McLeod,8480802.0,BUF,Assists,Staff (Green Stance),STANCE,Green + Assists 0.5,staff.svg,2026-09-24-frozen-v2,0.5,1.0,W,FINAL,OK
+2026-10-01,BUF@CBJ,2026020011,Tage Thompson,8479420.0,BUF,Assists,Staff (Green Stance),STANCE,Green + Assists 0.5,staff.svg,2026-09-24-frozen-v2,0.5,0.0,L,FINAL,OK
+2026-10-01,BUF@CBJ,2026020011,Charlie Coyle,8475745.0,CBJ,Points,Hammer Fists,FLOOR,Conf_Points >= 80,PTS05_HAMMER_FISTS.svg,2026-09-24-frozen-v2,0.5,3.0,W,FINAL,OK
+2026-10-01,BUF@CBJ,2026020011,Charlie Coyle,8475745.0,CBJ,Assists,Staff (Green Stance),STANCE,Green + Assists 0.5,staff.svg,2026-09-24-frozen-v2,0.5,3.0,W,FINAL,OK
+2026-10-01,BUF@CBJ,2026020011,Charlie Coyle,8475745.0,CBJ,Assists,Staff Awakened,STANCE,Green + Assists 0.5 + Conf_Assists ≥ 83,staff.svg,2026-09-24-frozen-v2,0.5,3.0,W,FINAL,OK
+2026-10-01,BUF@CBJ,2026020011,Matthew Knies,8482720.0,CBJ,Points,Hammer Fists,FLOOR,Conf_Points >= 80,PTS05_HAMMER_FISTS.svg,2026-09-24-frozen-v2,0.5,3.0,W,FINAL,OK
+2026-10-01,BUF@CBJ,2026020011,Matthew Knies,8482720.0,CBJ,Assists,Staff (Green Stance),STANCE,Green + Assists 0.5,staff.svg,2026-09-24-frozen-v2,0.5,1.0,W,FINAL,OK
+2026-10-01,BUF@CBJ,2026020011,Zach Werenski,8478460.0,CBJ,Points,Hammer Fists,FLOOR,Conf_Points >= 80,PTS05_HAMMER_FISTS.svg,2026-09-24-frozen-v2,0.5,2.0,W,FINAL,OK
+2026-10-01,BUF@CBJ,2026020011,Zach Werenski,8478460.0,CBJ,Points,Echo Stomp I,TIER,Conf_Points >= 80 + L10_S >= 17,PTS05_HAMMER_STOMP.svg,2026-09-24-frozen-v2,0.5,2.0,W,FINAL,OK
+2026-10-01,BUF@CBJ,2026020011,Zach Werenski,8478460.0,CBJ,Points,Echo Stomp II,TIER,Conf_Points >= 80 + TOI_per_game >= 19.18,PTS05_HAMMER_STOMP.svg,2026-09-24-frozen-v2,0.5,2.0,W,FINAL,OK
+2026-10-01,BUF@CBJ,2026020011,Zach Werenski,8478460.0,CBJ,Points,Gaia’s Blessing,TIER,Conf_Points >= 80 + Assists_mu >= 0.746,PTS05_GAIAS_BLESSING.svg,2026-09-24-frozen-v2,0.5,2.0,W,FINAL,OK
+2026-10-01,BUF@CBJ,2026020011,Zach Werenski,8478460.0,CBJ,Points,Gaia’s Blessing+ (Press),HEAVY,Conf_Points >= 81 + Assists_mu >= 0.746,PTS05_GAIAS_BLESSING.svg,2026-09-24-frozen-v2,0.5,2.0,W,FINAL,OK
+2026-10-01,BUF@CBJ,2026020011,Zach Werenski,8478460.0,CBJ,Points,Gaia’s Blessing++ (Smash),HEAVY,Conf_Points >= 83 + Assists_mu >= 0.746,PTS05_GAIAS_BLESSING.svg,2026-09-24-frozen-v2,0.5,2.0,W,FINAL,OK
+2026-10-01,BUF@CBJ,2026020011,Zach Werenski,8478460.0,CBJ,Points,Hammer Fists II,HEAVY,Conf_Points >= 80 + TOI_per_game >= 19.18 + L10_S >= 17,PTS05_HAMMER_FISTS.svg,2026-09-24-frozen-v2,0.5,2.0,W,FINAL,OK
+2026-10-01,BUF@CBJ,2026020011,Zach Werenski,8478460.0,CBJ,Assists,Staff (Green Stance),STANCE,Green + Assists 0.5,staff.svg,2026-09-24-frozen-v2,0.5,2.0,W,FINAL,OK
+2026-10-01,BUF@CBJ,2026020011,Zach Werenski,8478460.0,CBJ,Assists,Staff Awakened,STANCE,Green + Assists 0.5 + Conf_Assists ≥ 83,staff.svg,2026-09-24-frozen-v2,0.5,2.0,W,FINAL,OK
+2026-10-01,BUF@CBJ,2026020011,Zach Werenski,8478460.0,CBJ,Assists,Odin's Arcane Orb,VOLUME,Green + Assists 0.5 + Conf_Assists ≥ 83 + L40_A ≥ 32,odins_arcane_orb.svg,2026-09-24-frozen-v2,0.5,2.0,W,FINAL,OK
+2026-10-01,CHI@UTA,2026020013,Patrick Kane,8474141.0,CHI,Assists,Staff (Green Stance),STANCE,Green + Assists 0.5,staff.svg,2026-09-24-frozen-v2,0.5,0.0,L,FINAL,OK
+2026-10-01,CHI@UTA,2026020013,Clayton Keller,8479343.0,UTA,Points,DPS Tank stance,STANCE,Conf_Points >= 75,PTS15_TWO_HANDED_HAMMER.svg,2026-09-24-frozen-v2,1.5,2.0,W,FINAL,OK
+2026-10-01,CHI@UTA,2026020013,Clayton Keller,8479343.0,UTA,Points,Backbone,FLOOR,Conf_Points >= 75 + Conf_Goal <= 88 + Conf_SOG >= 80,PTS15_TWO_HANDED_HAMMER.svg,2026-09-24-frozen-v2,1.5,2.0,W,FINAL,OK
+2026-10-01,CHI@UTA,2026020013,Clayton Keller,8479343.0,UTA,Points,Blade Impale (Power Tier),HEAVY,Backbone + Assists_mu <= 1.55,PTS15_BLADE_IMPALE.svg,2026-09-24-frozen-v2,1.5,2.0,W,FINAL,OK
+2026-10-01,CHI@UTA,2026020013,Clayton Keller,8479343.0,UTA,Assists,Staff (Green Stance),STANCE,Green + Assists 0.5,staff.svg,2026-09-24-frozen-v2,0.5,2.0,W,FINAL,OK
+2026-10-01,CHI@UTA,2026020013,Clayton Keller,8479343.0,UTA,Assists,Staff Awakened,STANCE,Green + Assists 0.5 + Conf_Assists ≥ 83,staff.svg,2026-09-24-frozen-v2,0.5,2.0,W,FINAL,OK
+2026-10-01,CHI@UTA,2026020013,Clayton Keller,8479343.0,UTA,Assists,Runic Infusion,VOLUME,Green + Assists 0.5 + Conf_Assists ≥ 83 + PP_iXA60 ≥ 4.4,runic_infusion.svg,2026-09-24-frozen-v2,0.5,2.0,W,FINAL,OK
+2026-10-01,CHI@UTA,2026020013,Clayton Keller,8479343.0,UTA,Assists,Assist Dagger,VOLUME,Green + Assists 0.5 + Conf_Assists ≥ 83 + Assist_Dagger ≥ 86,magic-dagger.svg,2026-09-24-frozen-v2,0.5,2.0,W,FINAL,OK
+2026-10-01,CHI@UTA,2026020013,Dylan Guenther,8482699.0,UTA,SOG,Jungle Stance,STANCE,Green + SOG 2.5 + Conf_SOG >= 75,sog_basic_swipe.svg,2026-09-24-frozen-v2,2.5,5.0,W,FINAL,OK
+2026-10-01,CHI@UTA,2026020013,Dylan Guenther,8482699.0,UTA,SOG,Berserker Swipe,FLOOR,iXG% >= 93.2,sog_basic_swipe.svg,2026-09-24-frozen-v2,2.5,5.0,W,FINAL,OK
+2026-10-01,CHI@UTA,2026020013,Dylan Guenther,8482699.0,UTA,SOG,Bloodthirst,HEAVY,PP_TOI_Pct >= 15.9 + iXG% >= 93.2,sog_bloodthirst.svg,2026-09-24-frozen-v2,2.5,5.0,W,FINAL,OK
+2026-10-01,CHI@UTA,2026020013,Mikhail Sergachev,8479410.0,UTA,Points,Hammer Fists,FLOOR,Conf_Points >= 80,PTS05_HAMMER_FISTS.svg,2026-09-24-frozen-v2,0.5,1.0,W,FINAL,OK
+2026-10-01,CHI@UTA,2026020013,Mikhail Sergachev,8479410.0,UTA,Points,Echo Stomp II,TIER,Conf_Points >= 80 + TOI_per_game >= 19.18,PTS05_HAMMER_STOMP.svg,2026-09-24-frozen-v2,0.5,1.0,W,FINAL,OK
+2026-10-01,CHI@UTA,2026020013,Mikhail Sergachev,8479410.0,UTA,Points,Gaia’s Blessing,TIER,Conf_Points >= 80 + Assists_mu >= 0.746,PTS05_GAIAS_BLESSING.svg,2026-09-24-frozen-v2,0.5,1.0,W,FINAL,OK
+2026-10-01,CHI@UTA,2026020013,Mikhail Sergachev,8479410.0,UTA,Points,Gaia’s Blessing+ (Press),HEAVY,Conf_Points >= 81 + Assists_mu >= 0.746,PTS05_GAIAS_BLESSING.svg,2026-09-24-frozen-v2,0.5,1.0,W,FINAL,OK
+2026-10-01,CHI@UTA,2026020013,Mikhail Sergachev,8479410.0,UTA,Points,Gaia’s Blessing++ (Smash),HEAVY,Conf_Points >= 83 + Assists_mu >= 0.746,PTS05_GAIAS_BLESSING.svg,2026-09-24-frozen-v2,0.5,1.0,W,FINAL,OK
+2026-10-01,CHI@UTA,2026020013,Nick Schmaltz,8477951.0,UTA,Points,Hammer Fists,FLOOR,Conf_Points >= 80,PTS05_HAMMER_FISTS.svg,2026-09-24-frozen-v2,0.5,1.0,W,FINAL,OK
+2026-10-01,CHI@UTA,2026020013,Nick Schmaltz,8477951.0,UTA,Points,Echo Stomp II,TIER,Conf_Points >= 80 + TOI_per_game >= 19.18,PTS05_HAMMER_STOMP.svg,2026-09-24-frozen-v2,0.5,1.0,W,FINAL,OK
+2026-10-01,CHI@UTA,2026020013,Nick Schmaltz,8477951.0,UTA,Points,Gaia’s Blessing,TIER,Conf_Points >= 80 + Assists_mu >= 0.746,PTS05_GAIAS_BLESSING.svg,2026-09-24-frozen-v2,0.5,1.0,W,FINAL,OK
+2026-10-01,CHI@UTA,2026020013,Nick Schmaltz,8477951.0,UTA,Points,Gaia’s Blessing+ (Press),HEAVY,Conf_Points >= 81 + Assists_mu >= 0.746,PTS05_GAIAS_BLESSING.svg,2026-09-24-frozen-v2,0.5,1.0,W,FINAL,OK
+2026-10-01,CHI@UTA,2026020013,Nick Schmaltz,8477951.0,UTA,Points,Gaia’s Blessing++ (Smash),HEAVY,Conf_Points >= 83 + Assists_mu >= 0.746,PTS05_GAIAS_BLESSING.svg,2026-09-24-frozen-v2,0.5,1.0,W,FINAL,OK
+2026-10-01,CHI@UTA,2026020013,Nick Schmaltz,8477951.0,UTA,Assists,Staff (Green Stance),STANCE,Green + Assists 0.5,staff.svg,2026-09-24-frozen-v2,0.5,0.0,L,FINAL,OK
+2026-10-01,CHI@UTA,2026020013,Nick Schmaltz,8477951.0,UTA,Assists,Staff Awakened,STANCE,Green + Assists 0.5 + Conf_Assists ≥ 83,staff.svg,2026-09-24-frozen-v2,0.5,0.0,L,FINAL,OK
+2026-10-01,CHI@UTA,2026020013,Nick Schmaltz,8477951.0,UTA,Goal,Weakened Armor,WEAK DEFENSE,Opp_PK_xGA60 >= 7.3,shattered_armor.svg,2026-09-24-frozen-v2,0.5,1.0,W,FINAL,OK
+2026-10-01,CHI@UTA,2026020013,Nick Schmaltz,8477951.0,UTA,Goal,Open Lanes,WEAK DEFENSE,Opp_SOG_Against_L50 >= 29.2,armor_shred.svg,2026-09-24-frozen-v2,0.5,1.0,W,FINAL,OK
+2026-10-01,CHI@UTA,2026020013,Nick Schmaltz,8477951.0,UTA,Goal,Bloodlust,HEAVY ATTACK,Opp_SOG_Against_L50 >= 29.2 + Opp_PK_xGA60 >= 7.3,armor_shred.svg,2026-09-24-frozen-v2,0.5,1.0,W,FINAL,OK
+2026-10-01,CHI@UTA,2026020013,Nick Schmaltz,8477951.0,UTA,Goal,Finisher Strike,HEAVY ATTACK,Opp_SOG_Against_L50 >= 29.2 + iXG% >= 93.2,fenrir_claw.svg,2026-09-24-frozen-v2,0.5,1.0,W,FINAL,OK
+2026-10-01,CHI@UTA,2026020013,Nick Schmaltz,8477951.0,UTA,Goal,Tyr’s Wrath Unleashed,SPECIAL ATTACK,Opp_SOG_Against_L50 >= 29.2 + Opp_PK_xGA60 >= 7.3 + iXG% >= 95,fury.svg,2026-09-24-frozen-v2,0.5,1.0,W,FINAL,OK
+2026-10-01,CHI@UTA,2026020013,Nick Schmaltz,8477951.0,UTA,Goal,Armor Annihilation,SPECIAL ATTACK,Opp_SOG_Against_L50 >= 29.2 + Opp_PK_xGA60 >= 7.3 + opp_5v5_HDCA60 >= 2.5,stack_armor_annihilation.svg,2026-09-24-frozen-v2,0.5,1.0,W,FINAL,OK
+2026-10-01,CHI@UTA,2026020013,Nick Schmaltz,8477951.0,UTA,Goal,Bloodlusted,LAB CRIT,Bloodlust + TOI_per_game <= 21.2,armor_shred.svg,2026-09-24-frozen-v2,0.5,1.0,W,FINAL,OK
+2026-10-01,CHI@UTA,2026020013,Vincent Trocheck,8476389.0,UTA,Points,Hammer Fists,FLOOR,Conf_Points >= 80,PTS05_HAMMER_FISTS.svg,2026-09-24-frozen-v2,0.5,1.0,W,FINAL,OK
+2026-10-01,CHI@UTA,2026020013,Vincent Trocheck,8476389.0,UTA,Points,Echo Stomp II,TIER,Conf_Points >= 80 + TOI_per_game >= 19.18,PTS05_HAMMER_STOMP.svg,2026-09-24-frozen-v2,0.5,1.0,W,FINAL,OK
+2026-10-01,CHI@UTA,2026020013,Vincent Trocheck,8476389.0,UTA,Assists,Staff (Green Stance),STANCE,Green + Assists 0.5,staff.svg,2026-09-24-frozen-v2,0.5,1.0,W,FINAL,OK
+2026-10-01,EDM@VAN,2026020015,Connor McDavid,8478402.0,EDM,Points,DPS Tank stance,STANCE,Conf_Points >= 75,PTS15_TWO_HANDED_HAMMER.svg,2026-09-24-frozen-v2,1.5,5.0,W,FINAL,OK
+2026-10-01,EDM@VAN,2026020015,Connor McDavid,8478402.0,EDM,Points,Backbone,FLOOR,Conf_Points >= 75 + Conf_Goal <= 88 + Conf_SOG >= 80,PTS15_TWO_HANDED_HAMMER.svg,2026-09-24-frozen-v2,1.5,5.0,W,FINAL,OK
+2026-10-01,EDM@VAN,2026020015,Connor McDavid,8478402.0,EDM,Points,Blade Impale,SPECIAL,Conf_Points >= 83 + Goal_ProofCount >= 3,PTS15_BLADE_IMPALE.svg,2026-09-24-frozen-v2,1.5,5.0,W,FINAL,OK
+2026-10-01,EDM@VAN,2026020015,Connor McDavid,8478402.0,EDM,Points,Blade Slash,SPECIAL,Conf_Points >= 75 + Goal_Model% >= 33.4 + Opp_PK_xGA60 >= 7.38249,PTS15_BLADE_SLASH.svg,2026-09-24-frozen-v2,1.5,5.0,W,FINAL,OK
+2026-10-01,EDM@VAN,2026020015,Connor McDavid,8478402.0,EDM,Points,Ragnarok,ULTIMATE,Blade Impale + Blade Slash,PTS15_POLARIZING_SMASH.svg,2026-09-24-frozen-v2,1.5,5.0,W,FINAL,OK
+2026-10-01,EDM@VAN,2026020015,Connor McDavid,8478402.0,EDM,SOG,Sniper Stance,STANCE,Green + SOG 3.5 + Conf_SOG >= 75,sog_class_shooter.svg,2026-09-24-frozen-v2,3.5,3.0,L,FINAL,OK
+2026-10-01,EDM@VAN,2026020015,Connor McDavid,8478402.0,EDM,SOG,Permission Special,SUPPORT,Best_Conf >= 89 + opp_5v5_HDCA60 >= 2.36,sog_env_paralysis.svg,2026-09-24-frozen-v2,3.5,3.0,L,FINAL,OK
+2026-10-01,EDM@VAN,2026020015,Connor McDavid,8478402.0,EDM,Goal,Base Attack,BASE ATTACK,Goal_mu >= 0.4048,base.svg,2026-09-24-frozen-v2,0.5,1.0,W,FINAL,OK
+2026-10-01,EDM@VAN,2026020015,Connor McDavid,8478402.0,EDM,Goal,Weakened Armor,WEAK DEFENSE,Opp_PK_xGA60 >= 7.3,shattered_armor.svg,2026-09-24-frozen-v2,0.5,1.0,W,FINAL,OK
+2026-10-01,EDM@VAN,2026020015,Connor McDavid,8478402.0,EDM,Goal,Open Lanes,WEAK DEFENSE,Opp_SOG_Against_L50 >= 29.2,armor_shred.svg,2026-09-24-frozen-v2,0.5,1.0,W,FINAL,OK
+2026-10-01,EDM@VAN,2026020015,Connor McDavid,8478402.0,EDM,Goal,Fallen Guardian,WEAK DEFENSE,Opp_GAA >= 3.01,fenrir_claw.svg,2026-09-24-frozen-v2,0.5,1.0,W,FINAL,OK
+2026-10-01,EDM@VAN,2026020015,Connor McDavid,8478402.0,EDM,Goal,Open Lanes Assault,HEAVY ATTACK,Goal_mu >= 0.4048 + Opp_SOG_Against_L50 >= 29.2,fury.svg,2026-09-24-frozen-v2,0.5,1.0,W,FINAL,OK
+2026-10-01,EDM@VAN,2026020015,Connor McDavid,8478402.0,EDM,Goal,Armor Sunder,HEAVY ATTACK,Goal_mu >= 0.4048 + Opp_PK_xGA60 >= 7.3,smash.svg,2026-09-24-frozen-v2,0.5,1.0,W,FINAL,OK
+2026-10-01,EDM@VAN,2026020015,Connor McDavid,8478402.0,EDM,Goal,Bloodlust,HEAVY ATTACK,Opp_SOG_Against_L50 >= 29.2 + Opp_PK_xGA60 >= 7.3,armor_shred.svg,2026-09-24-frozen-v2,0.5,1.0,W,FINAL,OK
+2026-10-01,EDM@VAN,2026020015,Connor McDavid,8478402.0,EDM,Goal,Berserker Aggression,HEAVY ATTACK,Goal_mu >= 0.4048 + Opp_GAA >= 3.01,fury.svg,2026-09-24-frozen-v2,0.5,1.0,W,FINAL,OK
+2026-10-01,EDM@VAN,2026020015,Connor McDavid,8478402.0,EDM,Goal,Finisher Strike,HEAVY ATTACK,Opp_SOG_Against_L50 >= 29.2 + iXG% >= 93.2,fenrir_claw.svg,2026-09-24-frozen-v2,0.5,1.0,W,FINAL,OK
+2026-10-01,EDM@VAN,2026020015,Connor McDavid,8478402.0,EDM,Goal,Enraged Finisher,HEAVY ATTACK,Opp_SOG_Against_L50 >= 29.2 + iXG% >= 96.2,fenrir_claw.svg,2026-09-24-frozen-v2,0.5,1.0,W,FINAL,OK
+2026-10-01,EDM@VAN,2026020015,Connor McDavid,8478402.0,EDM,Goal,Tyr’s Wrath Unleashed,SPECIAL ATTACK,Opp_SOG_Against_L50 >= 29.2 + Opp_PK_xGA60 >= 7.3 + iXG% >= 95,fury.svg,2026-09-24-frozen-v2,0.5,1.0,W,FINAL,OK
+2026-10-01,EDM@VAN,2026020015,Connor McDavid,8478402.0,EDM,Goal,Armor Annihilation,SPECIAL ATTACK,Opp_SOG_Against_L50 >= 29.2 + Opp_PK_xGA60 >= 7.3 + opp_5v5_HDCA60 >= 2.5,stack_armor_annihilation.svg,2026-09-24-frozen-v2,0.5,1.0,W,FINAL,OK
+2026-10-01,EDM@VAN,2026020015,Connor McDavid,8478402.0,EDM,Goal,Warlord Smash Attack,SPECIAL ATTACK,Opp_SOG_Against_L50 >= 29.2 + Goal_mu >= 0.4048 + Opp_PK_xGA60 >= 7.3,smash.svg,2026-09-24-frozen-v2,0.5,1.0,W,FINAL,OK
+2026-10-01,EDM@VAN,2026020015,Connor McDavid,8478402.0,EDM,Goal,Warlord Smash Attack (Crit),SPECIAL ATTACK,Opp_SOG_Against_L50 >= 29.2 + Goal_mu >= 0.4048 + Opp_PK_xGA60 >= 7.5,smash.svg,2026-09-24-frozen-v2,0.5,1.0,W,FINAL,OK
+2026-10-01,EDM@VAN,2026020015,Connor McDavid,8478402.0,EDM,Goal,Press the Attack,SPECIAL ATTACK,Goal_mu >= 0.4048 + Opp_PK_xGA60 >= 7.3 + Opp_GAA >= 2.85,smash.svg,2026-09-24-frozen-v2,0.5,1.0,W,FINAL,OK
+2026-10-01,EDM@VAN,2026020015,Connor McDavid,8478402.0,EDM,Goal,Press the Attack (Crit),SPECIAL ATTACK,Goal_mu >= 0.4048 + Opp_PK_xGA60 >= 7.3 + Opp_GAA >= 3.01,smash.svg,2026-09-24-frozen-v2,0.5,1.0,W,FINAL,OK
+2026-10-01,EDM@VAN,2026020015,Evan Bouchard,8480803.0,EDM,Points,DPS Tank stance,STANCE,Conf_Points >= 75,PTS15_TWO_HANDED_HAMMER.svg,2026-09-24-frozen-v2,1.5,3.0,W,FINAL,OK
+2026-10-01,EDM@VAN,2026020015,Evan Bouchard,8480803.0,EDM,Assists,Staff (Green Stance),STANCE,Green + Assists 0.5,staff.svg,2026-09-24-frozen-v2,0.5,2.0,W,FINAL,OK
+2026-10-01,EDM@VAN,2026020015,Evan Bouchard,8480803.0,EDM,Assists,Staff Awakened,STANCE,Green + Assists 0.5 + Conf_Assists ≥ 83,staff.svg,2026-09-24-frozen-v2,0.5,2.0,W,FINAL,OK
+2026-10-01,EDM@VAN,2026020015,Evan Bouchard,8480803.0,EDM,Assists,Runic Infusion,VOLUME,Green + Assists 0.5 + Conf_Assists ≥ 83 + PP_iXA60 ≥ 4.4,runic_infusion.svg,2026-09-24-frozen-v2,0.5,2.0,W,FINAL,OK
+2026-10-01,EDM@VAN,2026020015,Evan Bouchard,8480803.0,EDM,Assists,Assist Dagger,VOLUME,Green + Assists 0.5 + Conf_Assists ≥ 83 + Assist_Dagger ≥ 86,magic-dagger.svg,2026-09-24-frozen-v2,0.5,2.0,W,FINAL,OK
+2026-10-01,EDM@VAN,2026020015,Leon Draisaitl,8477934.0,EDM,Points,DPS Tank stance,STANCE,Conf_Points >= 75,PTS15_TWO_HANDED_HAMMER.svg,2026-09-24-frozen-v2,1.5,3.0,W,FINAL,OK
+2026-10-01,EDM@VAN,2026020015,Leon Draisaitl,8477934.0,EDM,Points,Blade Impale,SPECIAL,Conf_Points >= 83 + Goal_ProofCount >= 3,PTS15_BLADE_IMPALE.svg,2026-09-24-frozen-v2,1.5,3.0,W,FINAL,OK
+2026-10-01,EDM@VAN,2026020015,Leon Draisaitl,8477934.0,EDM,Assists,Staff (Green Stance),STANCE,Green + Assists 0.5,staff.svg,2026-09-24-frozen-v2,0.5,1.0,W,FINAL,OK
+2026-10-01,EDM@VAN,2026020015,Leon Draisaitl,8477934.0,EDM,Assists,Staff Awakened,STANCE,Green + Assists 0.5 + Conf_Assists ≥ 83,staff.svg,2026-09-24-frozen-v2,0.5,1.0,W,FINAL,OK
+2026-10-01,EDM@VAN,2026020015,Leon Draisaitl,8477934.0,EDM,Assists,Arcane Channel I,VOLUME,Green + Assists 0.5 + Conf_Assists ≥ 83 + PP_Points60 ≥ 5.3,arcane_channel_i.svg,2026-09-24-frozen-v2,0.5,1.0,W,FINAL,OK
+2026-10-01,EDM@VAN,2026020015,Leon Draisaitl,8477934.0,EDM,Assists,Runic Infusion,VOLUME,Green + Assists 0.5 + Conf_Assists ≥ 83 + PP_iXA60 ≥ 4.4,runic_infusion.svg,2026-09-24-frozen-v2,0.5,1.0,W,FINAL,OK
+2026-10-01,EDM@VAN,2026020015,Leon Draisaitl,8477934.0,EDM,Assists,Assist Dagger,VOLUME,Green + Assists 0.5 + Conf_Assists ≥ 83 + Assist_Dagger ≥ 86,magic-dagger.svg,2026-09-24-frozen-v2,0.5,1.0,W,FINAL,OK
+2026-10-01,EDM@VAN,2026020015,Leon Draisaitl,8477934.0,EDM,Assists,Rune Orchestration,HEAVY,Green + Assists 0.5 + Conf_Assists ≥ 83 + PP_Points60 ≥ 5.3 + Assists_mu ≥ 1.4,runic_infusion.svg,2026-09-24-frozen-v2,0.5,1.0,W,FINAL,OK
+2026-10-01,EDM@VAN,2026020015,Leon Draisaitl,8477934.0,EDM,SOG,Jungle Stance,STANCE,Green + SOG 2.5 + Conf_SOG >= 75,sog_basic_swipe.svg,2026-09-24-frozen-v2,2.5,5.0,W,FINAL,OK
+2026-10-01,EDM@VAN,2026020015,Leon Draisaitl,8477934.0,EDM,SOG,Paralysis,ENV,Goalie_Weak >= 62.5,sog_env_paralysis.svg,2026-09-24-frozen-v2,2.5,5.0,W,FINAL,OK
+2026-10-01,EDM@VAN,2026020015,Leon Draisaitl,8477934.0,EDM,Goal,Weakened Armor,WEAK DEFENSE,Opp_PK_xGA60 >= 7.3,shattered_armor.svg,2026-09-24-frozen-v2,0.5,2.0,W,FINAL,OK
+2026-10-01,EDM@VAN,2026020015,Leon Draisaitl,8477934.0,EDM,Goal,Open Lanes,WEAK DEFENSE,Opp_SOG_Against_L50 >= 29.2,armor_shred.svg,2026-09-24-frozen-v2,0.5,2.0,W,FINAL,OK
+2026-10-01,EDM@VAN,2026020015,Leon Draisaitl,8477934.0,EDM,Goal,Fallen Guardian,WEAK DEFENSE,Opp_GAA >= 3.01,fenrir_claw.svg,2026-09-24-frozen-v2,0.5,2.0,W,FINAL,OK
+2026-10-01,EDM@VAN,2026020015,Leon Draisaitl,8477934.0,EDM,Goal,Bloodlust,HEAVY ATTACK,Opp_SOG_Against_L50 >= 29.2 + Opp_PK_xGA60 >= 7.3,armor_shred.svg,2026-09-24-frozen-v2,0.5,2.0,W,FINAL,OK
+2026-10-01,EDM@VAN,2026020015,Leon Draisaitl,8477934.0,EDM,Goal,Armor Annihilation,SPECIAL ATTACK,Opp_SOG_Against_L50 >= 29.2 + Opp_PK_xGA60 >= 7.3 + opp_5v5_HDCA60 >= 2.5,stack_armor_annihilation.svg,2026-09-24-frozen-v2,0.5,2.0,W,FINAL,OK
+2026-10-01,FLA@SJS,2026020016,Brady Tkachuk,8480801.0,FLA,Points,Hammer Fists,FLOOR,Conf_Points >= 80,PTS05_HAMMER_FISTS.svg,2026-09-24-frozen-v2,0.5,0.0,L,FINAL,OK
+2026-10-01,FLA@SJS,2026020016,Brady Tkachuk,8480801.0,FLA,Points,Gaia’s Blessing,TIER,Conf_Points >= 80 + Assists_mu >= 0.746,PTS05_GAIAS_BLESSING.svg,2026-09-24-frozen-v2,0.5,0.0,L,FINAL,OK
+2026-10-01,FLA@SJS,2026020016,Brady Tkachuk,8480801.0,FLA,Points,Gaia’s Blessing+ (Press),HEAVY,Conf_Points >= 81 + Assists_mu >= 0.746,PTS05_GAIAS_BLESSING.svg,2026-09-24-frozen-v2,0.5,0.0,L,FINAL,OK
+2026-10-01,FLA@SJS,2026020016,Brady Tkachuk,8480801.0,FLA,Points,Gaia’s Blessing++ (Smash),HEAVY,Conf_Points >= 83 + Assists_mu >= 0.746,PTS05_GAIAS_BLESSING.svg,2026-09-24-frozen-v2,0.5,0.0,L,FINAL,OK
+2026-10-01,FLA@SJS,2026020016,Brady Tkachuk,8480801.0,FLA,Assists,Staff (Green Stance),STANCE,Green + Assists 0.5,staff.svg,2026-09-24-frozen-v2,0.5,0.0,L,FINAL,OK
+2026-10-01,FLA@SJS,2026020016,Brady Tkachuk,8480801.0,FLA,Assists,Staff Awakened,STANCE,Green + Assists 0.5 + Conf_Assists ≥ 83,staff.svg,2026-09-24-frozen-v2,0.5,0.0,L,FINAL,OK
+2026-10-01,FLA@SJS,2026020016,Brady Tkachuk,8480801.0,FLA,Assists,Arcane Channel I,VOLUME,Green + Assists 0.5 + Conf_Assists ≥ 83 + PP_Points60 ≥ 5.3,arcane_channel_i.svg,2026-09-24-frozen-v2,0.5,0.0,L,FINAL,OK
+2026-10-01,FLA@SJS,2026020016,Brady Tkachuk,8480801.0,FLA,Assists,Runic Infusion,VOLUME,Green + Assists 0.5 + Conf_Assists ≥ 83 + PP_iXA60 ≥ 4.4,runic_infusion.svg,2026-09-24-frozen-v2,0.5,0.0,L,FINAL,OK
+2026-10-01,FLA@SJS,2026020016,Brady Tkachuk,8480801.0,FLA,Assists,Assist Dagger,VOLUME,Green + Assists 0.5 + Conf_Assists ≥ 83 + Assist_Dagger ≥ 86,magic-dagger.svg,2026-09-24-frozen-v2,0.5,0.0,L,FINAL,OK
+2026-10-01,FLA@SJS,2026020016,Brady Tkachuk,8480801.0,FLA,Goal,Weakened Armor,WEAK DEFENSE,Opp_PK_xGA60 >= 7.3,shattered_armor.svg,2026-09-24-frozen-v2,0.5,0.0,L,FINAL,OK
+2026-10-01,FLA@SJS,2026020016,Brady Tkachuk,8480801.0,FLA,Goal,Fallen Guardian,WEAK DEFENSE,Opp_GAA >= 3.01,fenrir_claw.svg,2026-09-24-frozen-v2,0.5,0.0,L,FINAL,OK
+2026-10-01,FLA@SJS,2026020016,Sam Bennett,8477935.0,FLA,Goal,Weakened Armor,WEAK DEFENSE,Opp_PK_xGA60 >= 7.3,shattered_armor.svg,2026-09-24-frozen-v2,0.5,0.0,L,FINAL,OK
+2026-10-01,FLA@SJS,2026020016,Sam Bennett,8477935.0,FLA,Goal,Fallen Guardian,WEAK DEFENSE,Opp_GAA >= 3.01,fenrir_claw.svg,2026-09-24-frozen-v2,0.5,0.0,L,FINAL,OK
+2026-10-01,FLA@SJS,2026020016,Sam Reinhart,8477933.0,FLA,Goal,Weakened Armor,WEAK DEFENSE,Opp_PK_xGA60 >= 7.3,shattered_armor.svg,2026-09-24-frozen-v2,0.5,0.0,L,FINAL,OK
+2026-10-01,FLA@SJS,2026020016,Sam Reinhart,8477933.0,FLA,Goal,Fallen Guardian,WEAK DEFENSE,Opp_GAA >= 3.01,fenrir_claw.svg,2026-09-24-frozen-v2,0.5,0.0,L,FINAL,OK
+2026-10-01,FLA@SJS,2026020016,Macklin Celebrini,8484801.0,SJS,Points,DPS Tank stance,STANCE,Conf_Points >= 75,PTS15_TWO_HANDED_HAMMER.svg,2026-09-24-frozen-v2,1.5,3.0,W,FINAL,OK
+2026-10-01,FLA@SJS,2026020016,Macklin Celebrini,8484801.0,SJS,Points,Backbone,FLOOR,Conf_Points >= 75 + Conf_Goal <= 88 + Conf_SOG >= 80,PTS15_TWO_HANDED_HAMMER.svg,2026-09-24-frozen-v2,1.5,3.0,W,FINAL,OK
+2026-10-01,FLA@SJS,2026020016,Macklin Celebrini,8484801.0,SJS,Points,Blade Impale (Power Tier),HEAVY,Backbone + Assists_mu <= 1.55,PTS15_BLADE_IMPALE.svg,2026-09-24-frozen-v2,1.5,3.0,W,FINAL,OK
+2026-10-01,FLA@SJS,2026020016,Macklin Celebrini,8484801.0,SJS,Assists,Staff (Green Stance),STANCE,Green + Assists 0.5,staff.svg,2026-09-24-frozen-v2,0.5,3.0,W,FINAL,OK
+2026-10-01,FLA@SJS,2026020016,Macklin Celebrini,8484801.0,SJS,Assists,Staff Awakened,STANCE,Green + Assists 0.5 + Conf_Assists ≥ 83,staff.svg,2026-09-24-frozen-v2,0.5,3.0,W,FINAL,OK
+2026-10-01,FLA@SJS,2026020016,Macklin Celebrini,8484801.0,SJS,SOG,Sniper Stance,STANCE,Green + SOG 3.5 + Conf_SOG >= 75,sog_class_shooter.svg,2026-09-24-frozen-v2,3.5,7.0,W,FINAL,OK
+2026-10-01,FLA@SJS,2026020016,Macklin Celebrini,8484801.0,SJS,SOG,Strong,FLOOR,PPP10_total >= 3 + opp_5v5_HDCA60 >= 2.36,sog_berserkers_rage.svg,2026-09-24-frozen-v2,3.5,7.0,W,FINAL,OK
+2026-10-01,FLA@SJS,2026020016,Macklin Celebrini,8484801.0,SJS,SOG,Permission Special,SUPPORT,Best_Conf >= 89 + opp_5v5_HDCA60 >= 2.36,sog_env_paralysis.svg,2026-09-24-frozen-v2,3.5,7.0,W,FINAL,OK
+2026-10-01,FLA@SJS,2026020016,Macklin Celebrini,8484801.0,SJS,SOG,Enhanced Enraged,SPECIAL,Strong + Assists_Model% >= 56.3,sog_enhanced_enraged_1.svg,2026-09-24-frozen-v2,3.5,7.0,W,FINAL,OK
+2026-10-01,MIN@NSH,2026020012,Joel Eriksson Ek,8478493.0,MIN,SOG,Jungle Stance,STANCE,Green + SOG 2.5 + Conf_SOG >= 75,sog_basic_swipe.svg,2026-09-24-frozen-v2,2.5,3.0,W,FINAL,OK
+2026-10-01,MIN@NSH,2026020012,Joel Eriksson Ek,8478493.0,MIN,SOG,Berserker Swipe,FLOOR,iXG% >= 93.2,sog_basic_swipe.svg,2026-09-24-frozen-v2,2.5,3.0,W,FINAL,OK
+2026-10-01,MIN@NSH,2026020012,Joel Eriksson Ek,8478493.0,MIN,SOG,Paralysis,ENV,Goalie_Weak >= 62.5,sog_env_paralysis.svg,2026-09-24-frozen-v2,2.5,3.0,W,FINAL,OK
+2026-10-01,MIN@NSH,2026020012,Joel Eriksson Ek,8478493.0,MIN,SOG,Bloodthirst,HEAVY,PP_TOI_Pct >= 15.9 + iXG% >= 93.2,sog_bloodthirst.svg,2026-09-24-frozen-v2,2.5,3.0,W,FINAL,OK
+2026-10-01,MIN@NSH,2026020012,Joel Eriksson Ek,8478493.0,MIN,Goal,Fallen Guardian,WEAK DEFENSE,Opp_GAA >= 3.01,fenrir_claw.svg,2026-09-24-frozen-v2,0.5,0.0,L,FINAL,OK
+2026-10-01,MIN@NSH,2026020012,Kirill Kaprizov,8478864.0,MIN,Assists,Staff (Green Stance),STANCE,Green + Assists 0.5,staff.svg,2026-09-24-frozen-v2,0.5,0.0,L,FINAL,OK
+2026-10-01,MIN@NSH,2026020012,Kirill Kaprizov,8478864.0,MIN,Assists,Staff Awakened,STANCE,Green + Assists 0.5 + Conf_Assists ≥ 83,staff.svg,2026-09-24-frozen-v2,0.5,0.0,L,FINAL,OK
+2026-10-01,MIN@NSH,2026020012,Kirill Kaprizov,8478864.0,MIN,SOG,Sniper Stance,STANCE,Green + SOG 3.5 + Conf_SOG >= 75,sog_class_shooter.svg,2026-09-24-frozen-v2,3.5,3.0,L,FINAL,OK
+2026-10-01,MIN@NSH,2026020012,Kirill Kaprizov,8478864.0,MIN,SOG,Strong,FLOOR,PPP10_total >= 3 + opp_5v5_HDCA60 >= 2.36,sog_berserkers_rage.svg,2026-09-24-frozen-v2,3.5,3.0,L,FINAL,OK
+2026-10-01,MIN@NSH,2026020012,Kirill Kaprizov,8478864.0,MIN,SOG,Permission Special,SUPPORT,Best_Conf >= 89 + opp_5v5_HDCA60 >= 2.36,sog_env_paralysis.svg,2026-09-24-frozen-v2,3.5,3.0,L,FINAL,OK
+2026-10-01,MIN@NSH,2026020012,Matt Boldy,8481557.0,MIN,Points,Hammer Fists,FLOOR,Conf_Points >= 80,PTS05_HAMMER_FISTS.svg,2026-09-24-frozen-v2,0.5,0.0,L,FINAL,OK
+2026-10-01,MIN@NSH,2026020012,Matt Boldy,8481557.0,MIN,Points,Echo Stomp I,TIER,Conf_Points >= 80 + L10_S >= 17,PTS05_HAMMER_STOMP.svg,2026-09-24-frozen-v2,0.5,0.0,L,FINAL,OK
+2026-10-01,MIN@NSH,2026020012,Matt Boldy,8481557.0,MIN,Points,Echo Stomp II,TIER,Conf_Points >= 80 + TOI_per_game >= 19.18,PTS05_HAMMER_STOMP.svg,2026-09-24-frozen-v2,0.5,0.0,L,FINAL,OK
+2026-10-01,MIN@NSH,2026020012,Matt Boldy,8481557.0,MIN,Points,Gaia’s Blessing,TIER,Conf_Points >= 80 + Assists_mu >= 0.746,PTS05_GAIAS_BLESSING.svg,2026-09-24-frozen-v2,0.5,0.0,L,FINAL,OK
+2026-10-01,MIN@NSH,2026020012,Matt Boldy,8481557.0,MIN,Points,Gaia’s Blessing+ (Press),HEAVY,Conf_Points >= 81 + Assists_mu >= 0.746,PTS05_GAIAS_BLESSING.svg,2026-09-24-frozen-v2,0.5,0.0,L,FINAL,OK
+2026-10-01,MIN@NSH,2026020012,Matt Boldy,8481557.0,MIN,Points,Hammer Fists II,HEAVY,Conf_Points >= 80 + TOI_per_game >= 19.18 + L10_S >= 17,PTS05_HAMMER_FISTS.svg,2026-09-24-frozen-v2,0.5,0.0,L,FINAL,OK
+2026-10-01,MIN@NSH,2026020012,Matt Boldy,8481557.0,MIN,Assists,Staff (Green Stance),STANCE,Green + Assists 0.5,staff.svg,2026-09-24-frozen-v2,0.5,0.0,L,FINAL,OK
+2026-10-01,MIN@NSH,2026020012,Matt Boldy,8481557.0,MIN,Assists,Staff Awakened,STANCE,Green + Assists 0.5 + Conf_Assists ≥ 83,staff.svg,2026-09-24-frozen-v2,0.5,0.0,L,FINAL,OK
+2026-10-01,MIN@NSH,2026020012,Matt Boldy,8481557.0,MIN,SOG,Sniper Stance,STANCE,Green + SOG 3.5 + Conf_SOG >= 75,sog_class_shooter.svg,2026-09-24-frozen-v2,3.5,5.0,W,FINAL,OK
+2026-10-01,MIN@NSH,2026020012,Matt Boldy,8481557.0,MIN,SOG,Permission Special,SUPPORT,Best_Conf >= 89 + opp_5v5_HDCA60 >= 2.36,sog_env_paralysis.svg,2026-09-24-frozen-v2,3.5,5.0,W,FINAL,OK
+2026-10-01,MIN@NSH,2026020012,Quinn Hughes,8480800.0,MIN,Assists,Staff (Green Stance),STANCE,Green + Assists 0.5,staff.svg,2026-09-24-frozen-v2,0.5,1.0,W,FINAL,OK
+2026-10-01,MIN@NSH,2026020012,Quinn Hughes,8480800.0,MIN,Assists,Staff Awakened,STANCE,Green + Assists 0.5 + Conf_Assists ≥ 83,staff.svg,2026-09-24-frozen-v2,0.5,1.0,W,FINAL,OK
+2026-10-01,MIN@NSH,2026020012,Quinn Hughes,8480800.0,MIN,Assists,Runic Infusion,VOLUME,Green + Assists 0.5 + Conf_Assists ≥ 83 + PP_iXA60 ≥ 4.4,runic_infusion.svg,2026-09-24-frozen-v2,0.5,1.0,W,FINAL,OK
+2026-10-01,MIN@NSH,2026020012,Ryan O'Reilly,8475158.0,NSH,Assists,Staff (Green Stance),STANCE,Green + Assists 0.5,staff.svg,2026-09-24-frozen-v2,0.5,0.0,L,FINAL,OK
+2026-10-01,PHI@NJD,2026020009,Jack Hughes,8481559.0,NJD,Assists,Staff (Green Stance),STANCE,Green + Assists 0.5,staff.svg,2026-09-24-frozen-v2,0.5,0.0,L,FINAL,OK
+2026-10-01,PHI@NJD,2026020009,Jack Hughes,8481559.0,NJD,Assists,Staff Awakened,STANCE,Green + Assists 0.5 + Conf_Assists ≥ 83,staff.svg,2026-09-24-frozen-v2,0.5,0.0,L,FINAL,OK
+2026-10-01,PHI@NJD,2026020009,Jack Hughes,8481559.0,NJD,Assists,Odin's Arcane Orb,VOLUME,Green + Assists 0.5 + Conf_Assists ≥ 83 + L40_A ≥ 32,odins_arcane_orb.svg,2026-09-24-frozen-v2,0.5,0.0,L,FINAL,OK
+2026-10-01,PHI@NJD,2026020009,Jack Hughes,8481559.0,NJD,Assists,Arcane Channel I,VOLUME,Green + Assists 0.5 + Conf_Assists ≥ 83 + PP_Points60 ≥ 5.3,arcane_channel_i.svg,2026-09-24-frozen-v2,0.5,0.0,L,FINAL,OK
+2026-10-01,PHI@NJD,2026020009,Jack Hughes,8481559.0,NJD,Assists,Runic Infusion,VOLUME,Green + Assists 0.5 + Conf_Assists ≥ 83 + PP_iXA60 ≥ 4.4,runic_infusion.svg,2026-09-24-frozen-v2,0.5,0.0,L,FINAL,OK
+2026-10-01,PHI@NJD,2026020009,Jack Hughes,8481559.0,NJD,Assists,Arcane Channel II,HEAVY,Green + Assists 0.5 + Conf_Assists ≥ 83 + PP_Points60 ≥ 5.3 + L40_A ≥ 32,arcane_channel_ii.svg,2026-09-24-frozen-v2,0.5,0.0,L,FINAL,OK
+2026-10-01,PHI@NJD,2026020009,Jack Hughes,8481559.0,NJD,Assists,Stars Aligned,HEAVY,Green + Assists 0.5 + Conf_Assists ≥ 83 + PP_Points60 ≥ 5.3 + L40_A ≥ 32 + StarScore ≤ 96.2,stars.svg,2026-09-24-frozen-v2,0.5,0.0,L,FINAL,OK
+2026-10-01,PHI@NJD,2026020009,Jack Hughes,8481559.0,NJD,Assists,Arcane Alignment,SPECIAL,Green + Assists 0.5 + Conf_Assists ≥ 83 + PP_Points60 ≥ 5.3 + L40_A ≥ 32 + Exp_P_10 ≤ 22,odins_arcane_orb.svg,2026-09-24-frozen-v2,0.5,0.0,L,FINAL,OK
+2026-10-01,PHI@NJD,2026020009,Jack Hughes,8481559.0,NJD,Assists,Odin's Blessing,SPECIAL,Green + Assists 0.5 + Conf_Assists ≥ 83 + PP_Points60 ≥ 5.3 + L40_A ≥ 32 + Team_GF_L5 ≤ 18 + Opp_PK_xGA60 ≥ 6.8,odins-eye.svg,2026-09-24-frozen-v2,0.5,0.0,L,FINAL,OK
+2026-10-01,PHI@NJD,2026020009,Jack Hughes,8481559.0,NJD,Assists,Arcane Transcendence,LAB CRIT,Green + Assists 0.5 + Conf_Assists ≥ 83 + PP_Points60 ≥ 5.3 + L40_A ≥ 32 + Team_GF_L5 ≤ 18 + Opp_PK_xGA60 ≥ 6.8 + Goal_Model% ≤ 37,magic_mans_transcendence.svg,2026-09-24-frozen-v2,0.5,0.0,L,FINAL,OK
+2026-10-01,PHI@NJD,2026020009,Jack Hughes,8481559.0,NJD,SOG,Sniper Stance,STANCE,Green + SOG 3.5 + Conf_SOG >= 75,sog_class_shooter.svg,2026-09-24-frozen-v2,3.5,5.0,W,FINAL,OK
+2026-10-01,PHI@NJD,2026020009,Travis Konecny,8478439.0,PHI,Points,Hammer Fists,FLOOR,Conf_Points >= 80,PTS05_HAMMER_FISTS.svg,2026-09-24-frozen-v2,0.5,1.0,W,FINAL,OK
+2026-10-01,PHI@NJD,2026020009,Travis Konecny,8478439.0,PHI,Assists,Staff (Green Stance),STANCE,Green + Assists 0.5,staff.svg,2026-09-24-frozen-v2,0.5,1.0,W,FINAL,OK
+2026-10-01,PHI@NJD,2026020009,Trevor Zegras,8481533.0,PHI,Points,Hammer Fists,FLOOR,Conf_Points >= 80,PTS05_HAMMER_FISTS.svg,2026-09-24-frozen-v2,0.5,0.0,L,FINAL,OK
+2026-10-01,PHI@NJD,2026020009,Trevor Zegras,8481533.0,PHI,Assists,Staff (Green Stance),STANCE,Green + Assists 0.5,staff.svg,2026-09-24-frozen-v2,0.5,0.0,L,FINAL,OK
+2026-10-01,TBL@NYR,2026020010,J.T. Miller,8476468.0,NYR,Assists,Staff (Green Stance),STANCE,Green + Assists 0.5,staff.svg,2026-09-24-frozen-v2,0.5,0.0,L,FINAL,OK
+2026-10-01,TBL@NYR,2026020010,Mika Zibanejad,8476459.0,NYR,Assists,Staff (Green Stance),STANCE,Green + Assists 0.5,staff.svg,2026-09-24-frozen-v2,0.5,1.0,W,FINAL,OK
+2026-10-01,TBL@NYR,2026020010,Brandon Hagel,8479542.0,TBL,Points,Hammer Fists,FLOOR,Conf_Points >= 80,PTS05_HAMMER_FISTS.svg,2026-09-24-frozen-v2,0.5,0.0,L,FINAL,OK
+2026-10-01,TBL@NYR,2026020010,Brandon Hagel,8479542.0,TBL,Points,Echo Stomp I,TIER,Conf_Points >= 80 + L10_S >= 17,PTS05_HAMMER_STOMP.svg,2026-09-24-frozen-v2,0.5,0.0,L,FINAL,OK
+2026-10-01,TBL@NYR,2026020010,Brandon Hagel,8479542.0,TBL,Points,Echo Stomp II,TIER,Conf_Points >= 80 + TOI_per_game >= 19.18,PTS05_HAMMER_STOMP.svg,2026-09-24-frozen-v2,0.5,0.0,L,FINAL,OK
+2026-10-01,TBL@NYR,2026020010,Brandon Hagel,8479542.0,TBL,Points,Hammer Fists II,HEAVY,Conf_Points >= 80 + TOI_per_game >= 19.18 + L10_S >= 17,PTS05_HAMMER_FISTS.svg,2026-09-24-frozen-v2,0.5,0.0,L,FINAL,OK
+2026-10-01,TBL@NYR,2026020010,Brandon Hagel,8479542.0,TBL,Assists,Staff (Green Stance),STANCE,Green + Assists 0.5,staff.svg,2026-09-24-frozen-v2,0.5,0.0,L,FINAL,OK
+2026-10-01,TBL@NYR,2026020010,Jake Guentzel,8477404.0,TBL,Points,Hammer Fists,FLOOR,Conf_Points >= 80,PTS05_HAMMER_FISTS.svg,2026-09-24-frozen-v2,0.5,0.0,L,FINAL,OK
+2026-10-01,TBL@NYR,2026020010,Jake Guentzel,8477404.0,TBL,Points,Echo Stomp I,TIER,Conf_Points >= 80 + L10_S >= 17,PTS05_HAMMER_STOMP.svg,2026-09-24-frozen-v2,0.5,0.0,L,FINAL,OK
+2026-10-01,TBL@NYR,2026020010,Jake Guentzel,8477404.0,TBL,Points,Echo Stomp II,TIER,Conf_Points >= 80 + TOI_per_game >= 19.18,PTS05_HAMMER_STOMP.svg,2026-09-24-frozen-v2,0.5,0.0,L,FINAL,OK
+2026-10-01,TBL@NYR,2026020010,Jake Guentzel,8477404.0,TBL,Points,Gaia’s Blessing,TIER,Conf_Points >= 80 + Assists_mu >= 0.746,PTS05_GAIAS_BLESSING.svg,2026-09-24-frozen-v2,0.5,0.0,L,FINAL,OK
+2026-10-01,TBL@NYR,2026020010,Jake Guentzel,8477404.0,TBL,Points,Gaia’s Blessing+ (Press),HEAVY,Conf_Points >= 81 + Assists_mu >= 0.746,PTS05_GAIAS_BLESSING.svg,2026-09-24-frozen-v2,0.5,0.0,L,FINAL,OK
+2026-10-01,TBL@NYR,2026020010,Jake Guentzel,8477404.0,TBL,Points,Gaia’s Blessing++ (Smash),HEAVY,Conf_Points >= 83 + Assists_mu >= 0.746,PTS05_GAIAS_BLESSING.svg,2026-09-24-frozen-v2,0.5,0.0,L,FINAL,OK
+2026-10-01,TBL@NYR,2026020010,Jake Guentzel,8477404.0,TBL,Points,Hammer Fists II,HEAVY,Conf_Points >= 80 + TOI_per_game >= 19.18 + L10_S >= 17,PTS05_HAMMER_FISTS.svg,2026-09-24-frozen-v2,0.5,0.0,L,FINAL,OK
+2026-10-01,TBL@NYR,2026020010,Jake Guentzel,8477404.0,TBL,Points,Enraged Engine,CRIT,Conf_Points >= 83 + L10_P >= 8 + L10_S >= 17,PTS05_ENRAGED_FURY.svg,2026-09-24-frozen-v2,0.5,0.0,L,FINAL,OK
+2026-10-01,TBL@NYR,2026020010,Jake Guentzel,8477404.0,TBL,Assists,Staff (Green Stance),STANCE,Green + Assists 0.5,staff.svg,2026-09-24-frozen-v2,0.5,0.0,L,FINAL,OK
+2026-10-01,TBL@NYR,2026020010,Jake Guentzel,8477404.0,TBL,SOG,Jungle Stance,STANCE,Green + SOG 2.5 + Conf_SOG >= 75,sog_basic_swipe.svg,2026-09-24-frozen-v2,2.5,4.0,W,FINAL,OK
+2026-10-01,TBL@NYR,2026020010,Jake Guentzel,8477404.0,TBL,SOG,Berserker Swipe,FLOOR,iXG% >= 93.2,sog_basic_swipe.svg,2026-09-24-frozen-v2,2.5,4.0,W,FINAL,OK
+2026-10-01,TBL@NYR,2026020010,Jake Guentzel,8477404.0,TBL,SOG,Bloodthirst,HEAVY,PP_TOI_Pct >= 15.9 + iXG% >= 93.2,sog_bloodthirst.svg,2026-09-24-frozen-v2,2.5,4.0,W,FINAL,OK
+2026-10-01,TBL@NYR,2026020010,Jake Guentzel,8477404.0,TBL,Goal,Base Attack,BASE ATTACK,Goal_mu >= 0.4048,base.svg,2026-09-24-frozen-v2,0.5,0.0,L,FINAL,OK
+2026-10-01,TBL@NYR,2026020010,Jake Guentzel,8477404.0,TBL,Goal,Weakened Armor,WEAK DEFENSE,Opp_PK_xGA60 >= 7.3,shattered_armor.svg,2026-09-24-frozen-v2,0.5,0.0,L,FINAL,OK
+2026-10-01,TBL@NYR,2026020010,Jake Guentzel,8477404.0,TBL,Goal,Armor Sunder,HEAVY ATTACK,Goal_mu >= 0.4048 + Opp_PK_xGA60 >= 7.3,smash.svg,2026-09-24-frozen-v2,0.5,0.0,L,FINAL,OK
+2026-10-01,TBL@NYR,2026020010,John Carlson,8474590.0,TBL,Points,Hammer Fists,FLOOR,Conf_Points >= 80,PTS05_HAMMER_FISTS.svg,2026-09-24-frozen-v2,0.5,0.0,L,FINAL,OK
+2026-10-01,TBL@NYR,2026020010,John Carlson,8474590.0,TBL,Points,Echo Stomp I,TIER,Conf_Points >= 80 + L10_S >= 17,PTS05_HAMMER_STOMP.svg,2026-09-24-frozen-v2,0.5,0.0,L,FINAL,OK
+2026-10-01,TBL@NYR,2026020010,John Carlson,8474590.0,TBL,Points,Echo Stomp II,TIER,Conf_Points >= 80 + TOI_per_game >= 19.18,PTS05_HAMMER_STOMP.svg,2026-09-24-frozen-v2,0.5,0.0,L,FINAL,OK
+2026-10-01,TBL@NYR,2026020010,John Carlson,8474590.0,TBL,Points,Gaia’s Blessing,TIER,Conf_Points >= 80 + Assists_mu >= 0.746,PTS05_GAIAS_BLESSING.svg,2026-09-24-frozen-v2,0.5,0.0,L,FINAL,OK
+2026-10-01,TBL@NYR,2026020010,John Carlson,8474590.0,TBL,Points,Gaia’s Blessing+ (Press),HEAVY,Conf_Points >= 81 + Assists_mu >= 0.746,PTS05_GAIAS_BLESSING.svg,2026-09-24-frozen-v2,0.5,0.0,L,FINAL,OK
+2026-10-01,TBL@NYR,2026020010,John Carlson,8474590.0,TBL,Points,Gaia’s Blessing++ (Smash),HEAVY,Conf_Points >= 83 + Assists_mu >= 0.746,PTS05_GAIAS_BLESSING.svg,2026-09-24-frozen-v2,0.5,0.0,L,FINAL,OK
+2026-10-01,TBL@NYR,2026020010,John Carlson,8474590.0,TBL,Points,Hammer Fists II,HEAVY,Conf_Points >= 80 + TOI_per_game >= 19.18 + L10_S >= 17,PTS05_HAMMER_FISTS.svg,2026-09-24-frozen-v2,0.5,0.0,L,FINAL,OK
+2026-10-01,TBL@NYR,2026020010,John Carlson,8474590.0,TBL,Assists,Staff (Green Stance),STANCE,Green + Assists 0.5,staff.svg,2026-09-24-frozen-v2,0.5,0.0,L,FINAL,OK
+2026-10-01,TBL@NYR,2026020010,Nikita Kucherov,8476453.0,TBL,Points,DPS Tank stance,STANCE,Conf_Points >= 75,PTS15_TWO_HANDED_HAMMER.svg,2026-09-24-frozen-v2,1.5,1.0,L,FINAL,OK
+2026-10-01,TBL@NYR,2026020010,Nikita Kucherov,8476453.0,TBL,Points,Blade Impale,SPECIAL,Conf_Points >= 83 + Goal_ProofCount >= 3,PTS15_BLADE_IMPALE.svg,2026-09-24-frozen-v2,1.5,1.0,L,FINAL,OK
+2026-10-01,TBL@NYR,2026020010,Nikita Kucherov,8476453.0,TBL,Points,Blade Slash,SPECIAL,Conf_Points >= 75 + Goal_Model% >= 33.4 + Opp_PK_xGA60 >= 7.38249,PTS15_BLADE_SLASH.svg,2026-09-24-frozen-v2,1.5,1.0,L,FINAL,OK
+2026-10-01,TBL@NYR,2026020010,Nikita Kucherov,8476453.0,TBL,Points,Ragnarok,ULTIMATE,Blade Impale + Blade Slash,PTS15_POLARIZING_SMASH.svg,2026-09-24-frozen-v2,1.5,1.0,L,FINAL,OK
+2026-10-01,TBL@NYR,2026020010,Nikita Kucherov,8476453.0,TBL,Assists,Staff (Green Stance),STANCE,Green + Assists 0.5,staff.svg,2026-09-24-frozen-v2,0.5,0.0,L,FINAL,OK
+2026-10-01,TBL@NYR,2026020010,Nikita Kucherov,8476453.0,TBL,Assists,Staff Awakened,STANCE,Green + Assists 0.5 + Conf_Assists ≥ 83,staff.svg,2026-09-24-frozen-v2,0.5,0.0,L,FINAL,OK
+2026-10-01,TBL@NYR,2026020010,Nikita Kucherov,8476453.0,TBL,Assists,Arcane Channel I,VOLUME,Green + Assists 0.5 + Conf_Assists ≥ 83 + PP_Points60 ≥ 5.3,arcane_channel_i.svg,2026-09-24-frozen-v2,0.5,0.0,L,FINAL,OK
+2026-10-01,TBL@NYR,2026020010,Nikita Kucherov,8476453.0,TBL,Assists,Runic Infusion,VOLUME,Green + Assists 0.5 + Conf_Assists ≥ 83 + PP_iXA60 ≥ 4.4,runic_infusion.svg,2026-09-24-frozen-v2,0.5,0.0,L,FINAL,OK
+2026-10-01,TBL@NYR,2026020010,Nikita Kucherov,8476453.0,TBL,Assists,Assist Dagger,VOLUME,Green + Assists 0.5 + Conf_Assists ≥ 83 + Assist_Dagger ≥ 86,magic-dagger.svg,2026-09-24-frozen-v2,0.5,0.0,L,FINAL,OK
+2026-10-01,TBL@NYR,2026020010,Nikita Kucherov,8476453.0,TBL,Assists,Rune Orchestration,HEAVY,Green + Assists 0.5 + Conf_Assists ≥ 83 + PP_Points60 ≥ 5.3 + Assists_mu ≥ 1.4,runic_infusion.svg,2026-09-24-frozen-v2,0.5,0.0,L,FINAL,OK
+2026-10-01,TBL@NYR,2026020010,Nikita Kucherov,8476453.0,TBL,SOG,Sniper Stance,STANCE,Green + SOG 3.5 + Conf_SOG >= 75,sog_class_shooter.svg,2026-09-24-frozen-v2,3.5,1.0,L,FINAL,OK
+2026-10-01,TBL@NYR,2026020010,Nikita Kucherov,8476453.0,TBL,Goal,Base Attack,BASE ATTACK,Goal_mu >= 0.4048,base.svg,2026-09-24-frozen-v2,0.5,1.0,W,FINAL,OK
+2026-10-01,TBL@NYR,2026020010,Nikita Kucherov,8476453.0,TBL,Goal,Weakened Armor,WEAK DEFENSE,Opp_PK_xGA60 >= 7.3,shattered_armor.svg,2026-09-24-frozen-v2,0.5,1.0,W,FINAL,OK
+2026-10-01,TBL@NYR,2026020010,Nikita Kucherov,8476453.0,TBL,Goal,Armor Sunder,HEAVY ATTACK,Goal_mu >= 0.4048 + Opp_PK_xGA60 >= 7.3,smash.svg,2026-09-24-frozen-v2,0.5,1.0,W,FINAL,OK
