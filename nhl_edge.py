@@ -5102,6 +5102,9 @@ def build_tracker(today_local: date, debug: bool = False, api_key: str | None = 
         if resolved_odds_key:
             from odds_api_nhl import merge_odds_api_props
             tracker = merge_odds_api_props(tracker, today_local, resolved_odds_key, debug=bool(debug))
+        # Persist when the odds feeds were actually checked. A copied tracker
+        # gets a new filesystem mtime, which is not the quote collection time.
+        tracker["Odds_Checked_UTC"] = datetime.now(timezone.utc).isoformat()
         tracker = add_bdl_ev_all(tracker)
         # -------------------------------
         # L10 Support Tiers (presentation helper columns)

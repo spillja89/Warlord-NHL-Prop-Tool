@@ -5,6 +5,9 @@ from __future__ import annotations
 import os
 import re
 import tempfile
+import csv
+import io
+from datetime import datetime, timezone
 from hashlib import sha1
 from pathlib import Path
 from urllib.parse import quote
@@ -29,6 +32,25 @@ def fetch_tracker(*, session=requests) -> bytes:
     if "Player" not in header or "Date" not in header:
         raise ValueError("Published tracker has an unexpected header")
     return content
+
+
+def tracker_snapshot_time(content: bytes) -> datetime | None:
+    """Time the source tracker was built, independent of local download time."""
+    try:
+        row = next(csv.DictReader(io.StringIO(content.decode("utf-8-sig"))))
+    except (UnicodeError, ValueError, StopIteration, csv.Error):
+        return None
+    for field in ("Odds_Checked_UTC", "Roster_Check_UTC", "Injury_Check_UTC"):
+        raw = str(row.get(field) or "").strip()
+        if not raw:
+            continue
+        try:
+            stamp = datetime.fromisoformat(raw.replace("Z", "+00:00"))
+            if stamp.tzinfo is not None:
+                return stamp.astimezone(timezone.utc)
+        except ValueError:
+            continue
+    return None
 
 
 def list_grade_files(*, session=requests) -> list[tuple[str, str]]:

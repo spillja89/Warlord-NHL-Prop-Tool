@@ -14,7 +14,7 @@ import numpy as np
 import pandas as pd
 import streamlit as st
 
-from published_output import fetch_grade_file, fetch_tracker, list_grade_files, local_matches_sha, save_if_changed
+from published_output import fetch_grade_file, fetch_tracker, list_grade_files, local_matches_sha, save_if_changed, tracker_snapshot_time
 from warlord_moves_2026 import VERSION as MOVE_KIT_VERSION
 from warlord_moves_2026 import best_move, points_moves, sog_moves, goals_moves as _goals_carry_moves, assists_moves as _assists_mapped_moves
 from warlords_night_board import CLASSES, baseline_audit, rank_warlords, rank_priced_slate, featured_warlords, render_warlords, _character_uri
@@ -3877,11 +3877,15 @@ def _published_grade_bytes(name: str, sha: str) -> bytes | None:
         return None
 
 
-if uploaded is None and not st.session_state.get("latest_path_override"):
+if uploaded is None:
     published_tracker = _published_tracker_bytes()
     if published_tracker:
         try:
-            save_if_changed(Path(OUTPUT_DIR) / "tracker_latest.csv", published_tracker)
+            stable_path = Path(OUTPUT_DIR) / "tracker_latest.csv"
+            local_time = tracker_snapshot_time(stable_path.read_bytes()) if stable_path.is_file() else None
+            remote_time = tracker_snapshot_time(published_tracker)
+            if not (local_time and remote_time and local_time > remote_time):
+                save_if_changed(stable_path, published_tracker)
         except OSError:
             pass  # The app can still use its local tracker if this instance is read-only.
 
@@ -3892,7 +3896,15 @@ latest_path = latest_stable if os.path.exists(latest_stable) else find_latest_tr
 if "latest_path_override" in st.session_state:
     _p = st.session_state.get("latest_path_override")
     if _p and os.path.exists(str(_p)):
-        latest_path = str(_p)
+        try:
+            override_time = tracker_snapshot_time(Path(_p).read_bytes())
+            stable_time = tracker_snapshot_time(Path(latest_stable).read_bytes()) if os.path.exists(latest_stable) else None
+            if not (stable_time and override_time and stable_time > override_time):
+                latest_path = str(_p)
+            else:
+                st.session_state.pop("latest_path_override", None)
+        except OSError:
+            latest_path = str(_p)
 
 
 # Quick-run inside Streamlit (works on Streamlit Cloud)
@@ -4475,6 +4487,18 @@ with right:
         st.caption(f"Date: **{df['Date'].iloc[0]}**")
     st.caption(f"Rows: **{len(df)}**")
 
+if source == "latest":
+    checked_raw = df.iloc[0].get("Odds_Checked_UTC") if not df.empty else None
+    checked = pd.to_datetime(checked_raw, utc=True, errors="coerce")
+    if pd.notna(checked):
+        checked_ct = checked.tz_convert("America/Chicago")
+        age_minutes = (datetime.now(timezone.utc) - checked.to_pydatetime()).total_seconds() / 60
+        st.caption(f"Odds checked: **{checked_ct:%b %d, %I:%M %p} CT** · saved snapshot")
+        if age_minutes >= 30:
+            st.warning("These odds were checked over 30 minutes ago. Run / Refresh slate for a new feed check, then confirm the price at the book.")
+    else:
+        st.caption("Odds check time was not recorded in this tracker. Refresh the slate for a timestamped quote snapshot.")
+
 if source == "latest" and "Injury_Reports_Count" in df.columns and not df.empty:
     reported = pd.to_numeric(df["Injury_Reports_Count"], errors="coerce").iloc[0]
     excluded_count = pd.to_numeric(df.get("Injury_Excluded_Count", pd.Series(0, index=df.index)), errors="coerce").iloc[0]
@@ -4589,10 +4613,6 @@ if page == "⚔️ Warlords of the Night":
             with pool_tab:
                 st.dataframe(_priced_pool_table(priced_boards[role]), hide_index=True,
                              use_container_width=True)
-
-    if source != "upload" and latest_path and os.path.isfile(latest_path):
-        last_run = datetime.fromtimestamp(os.path.getmtime(latest_path), ZoneInfo("America/Chicago"))
-        st.caption(f"Tracker last refreshed {last_run:%b %d, %Y at %I:%M %p} CT. Odds are the saved snapshot from that run; owner refresh checks currently posted books again.")
 
     if {"Opp", "Opp_Goalie_Status"}.issubset(night_df.columns):
         goalie_teams = night_df[["Opp", "Opp_Goalie_Status"]].drop_duplicates("Opp")

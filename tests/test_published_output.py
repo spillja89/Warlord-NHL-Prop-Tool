@@ -9,6 +9,7 @@ from published_output import (
     list_grade_files,
     local_matches_sha,
     save_if_changed,
+    tracker_snapshot_time,
 )
 
 
@@ -37,6 +38,12 @@ class Session:
 
 
 class PublishedOutputTests(TestCase):
+    def test_snapshot_time_comes_from_tracker_not_download(self):
+        fresh = b"Date,Player,Odds_Checked_UTC\n2026-10-02,Wyatt Johnston,2026-10-02T18:16:44Z\n"
+        older = b"Date,Player,Roster_Check_UTC\n2026-10-02,Wyatt Johnston,2026-10-02T16:40:41+00:00\n"
+        self.assertGreater(tracker_snapshot_time(fresh), tracker_snapshot_time(older))
+        self.assertIsNone(tracker_snapshot_time(b"Date,Player\n2026-10-02,Wyatt Johnston\n"))
+
     def test_published_tracker_can_replace_old_snapshot(self):
         with TemporaryDirectory() as directory:
             path = Path(directory) / "output" / "tracker_latest.csv"
