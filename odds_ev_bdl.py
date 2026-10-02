@@ -33,7 +33,8 @@ import os
 import math
 import unicodedata
 import re
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
+from zoneinfo import ZoneInfo
 from typing import Dict, Optional, Tuple, List, Any
 
 import requests
@@ -355,6 +356,17 @@ def fetch_bdl_games_for_date(game_date: str, api_key: str | None = None, per_pag
     return list(j.get("data") or [])
 
 
+def _game_on_slate_date(game: dict, slate_date: date) -> bool:
+    """Keep only games starting on the requested Central-time slate date."""
+    try:
+        start = datetime.fromisoformat(str(game["start_time_utc"]).replace("Z", "+00:00"))
+        if start.tzinfo is None:
+            return False
+        return start.astimezone(ZoneInfo("America/Chicago")).date() == slate_date
+    except (KeyError, TypeError, ValueError):
+        return False
+
+
 
 def fetch_bdl_props_for_game(
     game_id: int,
@@ -586,10 +598,13 @@ def merge_bdl_props_altlines(
         return (datetime.strptime(d, "%Y-%m-%d") + timedelta(days=1)).strftime("%Y-%m-%d")
 
     try:
-        # BDL buckets games by UTC date; late local games often land on game_date+1 in UTC.
+        # Fetch both API date buckets for late games, then discard games outside
+        # the requested Central-time slate. Otherwise tomorrow's better price
+        # can be attached to today's card for the same player and market.
         games_1 = fetch_bdl_games_for_date(game_date, api_key=api_key) or []
         games_2 = fetch_bdl_games_for_date(_next_day(game_date), api_key=api_key) or []
-        games = games_1 + games_2
+        slate_date = date.fromisoformat(game_date)
+        games = [g for g in games_1 + games_2 if _game_on_slate_date(g, slate_date)]
     except Exception as e:
         if isinstance(e, requests.HTTPError) and getattr(e.response, "status_code", None) in (401, 403):
             raise RuntimeError(f"BallDontLie NHL odds access denied (HTTP {e.response.status_code}); check the API key and NHL access.") from e
@@ -597,7 +612,7 @@ def merge_bdl_props_altlines(
             print(f"[odds/ev] BDL games fetch failed: {e}")
         return df
 
-    game_ids = [g.get("id") for g in games if g.get("id") is not None]
+    game_ids = list(dict.fromkeys(g.get("id") for g in games if g.get("id") is not None))
     if not game_ids:
         return df
 
