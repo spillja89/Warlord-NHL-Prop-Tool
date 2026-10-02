@@ -140,7 +140,30 @@ def merge_odds_api_props(
             f"events/{event['id']}/odds", api_key, regions="us,us2",
             markets=",".join(MARKETS), oddsFormat="american",
         )
-        for book in payload.get("bookmakers", []):
+        books = list(payload.get("bookmakers", []))
+        # A regional multi-market response can omit a bookmaker's less common
+        # market even when that book lists it. Check BetMGM PPP directly so a
+        # better 0.5-point quote is not silently lost. This is one extra call
+        # only for games where the regional response has no BetMGM PPP market.
+        betmgm_ppp = any(
+            str(book.get("key") or "").casefold() == "betmgm"
+            and any(str(market.get("key") or "") in {"player_power_play_points", "player_power_play_points_alternate"}
+                    for market in book.get("markets", []))
+            for book in books
+        )
+        if not betmgm_ppp:
+            try:
+                targeted = _get(
+                    f"events/{event['id']}/odds", api_key, bookmakers="betmgm",
+                    markets="player_power_play_points,player_power_play_points_alternate",
+                    oddsFormat="american",
+                )
+                books.extend(book for book in targeted.get("bookmakers", [])
+                             if str(book.get("key") or "").casefold() == "betmgm")
+            except RuntimeError:
+                if debug:
+                    print("[odds-api] BetMGM PPP check unavailable; using regional quotes")
+        for book in books:
             book_name = str(book.get("title") or book.get("key") or "").strip()
             if not book_name:
                 continue

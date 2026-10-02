@@ -5496,7 +5496,16 @@ elif page == "Power Play":
     if source == "latest" and latest_path and os.path.isfile(latest_path):
         pp_checked = datetime.fromtimestamp(os.path.getmtime(latest_path), ZoneInfo("America/Chicago"))
         st.caption(f"Odds snapshot checked {pp_checked:%b %d, %Y at %I:%M %p} CT. "
-                   "The best observed Over 0.5 price is shown for each player; refresh the slate for new quotes.")
+                   "The best feed-returned Over 0.5 price is shown for each player; refresh the slate for new quotes.")
+    if "PPP_Available_Books" in df_f.columns:
+        returned_books = set()
+        for raw_books in df_f["PPP_Available_Books"].dropna():
+            try:
+                returned_books.update(str(book) for book in json.loads(raw_books))
+            except (TypeError, ValueError):
+                continue
+        if returned_books and "BetMGM" not in returned_books:
+            st.warning("BetMGM power-play quotes were not returned for this slate. A better price in the BetMGM app will not appear in the feed's best price.")
     if ppp_quotes.empty:
         st.info("No over 0.5 power play point prices are in this tracker yet. Refresh after books post them.")
     else:
@@ -5525,14 +5534,14 @@ elif page == "Power Play":
         ppp_quotes["_matchup"] = pd.to_numeric(ppp_quotes["PP matchup /100"], errors="coerce").fillna(-1)
         ppp_quotes = ppp_quotes.sort_values(["_pp1", "_complete", "_matchup", "PP TOI/game"],
                                             ascending=[False, False, False, False], kind="stable")
-        ppp_quotes["Best price"] = ppp_quotes.apply(
+        ppp_quotes["Best feed price"] = ppp_quotes.apply(
             lambda row: f'{int(row["Over odds"]):+d} · {row["Book"]}', axis=1)
         stats_seasons = sorted({str(value) for value in ppp_quotes["Stats season"]
                                 if str(value).strip() and str(value).casefold() not in {"nan", "unavailable"}})
         if stats_seasons:
             st.caption(f'Usage and matchup stats source: {", ".join(stats_seasons)}. Prices are from the current saved odds snapshot.')
         st.caption("Scouting order: historical PP1 usage, available matchup evidence, then the PP context score. This order is not a predicted hit rate. Blank context means the tracker lacks that stat; it is not a poor matchup.")
-        display_quotes = ppp_quotes[["Player", "Game", "Best price", "Book break-even %",
+        display_quotes = ppp_quotes[["Player", "Game", "Best feed price", "Book break-even %",
                                  "PP unit", "PP TOI/game", "Opp PK xGA/60",
                                  "PP matchup /100", "Assists cross-check", "Context"]].rename(columns={
                                      "PP unit": "PP unit in stats",

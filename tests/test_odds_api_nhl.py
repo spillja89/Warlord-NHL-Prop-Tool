@@ -36,6 +36,9 @@ class OddsAPINHLTests(unittest.TestCase):
                 {"title": "BetRivers", "markets": [
                     {"key": "player_goal_scorer_anytime", "outcomes": [{"name": "Leon Draisaitl", "price": 130}]},
                 ]},
+                {"key": "betmgm", "title": "BetMGM", "markets": [
+                    {"key": "player_power_play_points", "outcomes": []},
+                ]},
             ]},
         ]
         tracker = pd.DataFrame([
@@ -48,6 +51,29 @@ class OddsAPINHLTests(unittest.TestCase):
         self.assertEqual(out.loc[0, "BDL_Points_Line"], 1.5)
         self.assertEqual(out.loc[0, "BDL_Points_Book"], "Fanatics")
         self.assertTrue(pd.isna(out.loc[1, "BDL_Goal_Odds"]))
+
+    @patch("odds_api_nhl._get")
+    def test_checks_betmgm_power_play_when_regional_feed_omits_it(self, get):
+        get.side_effect = [
+            [{"id": "fla-sjs", "commence_time": "2026-10-02T02:00:00Z",
+              "home_team": "San Jose Sharks", "away_team": "Florida Panthers"}],
+            {"bookmakers": [{"key": "betrivers", "title": "BetRivers", "markets": [
+                {"key": "player_power_play_points", "outcomes": [
+                    {"name": "Over", "description": "Matthew Tkachuk", "point": 0.5, "price": 200},
+                ]},
+            ]}]},
+            {"bookmakers": [{"key": "betmgm", "title": "BetMGM", "markets": [
+                {"key": "player_power_play_points", "outcomes": [
+                    {"name": "Over", "description": "Matthew Tkachuk", "point": 0.5, "price": 280},
+                ]},
+            ]}]},
+        ]
+        tracker = pd.DataFrame([{"Player": "Matthew Tkachuk", "Team": "FLA", "Opp": "SJS"}])
+        out = merge_odds_api_props(tracker, date(2026, 10, 1), "test-key")
+        self.assertEqual(out.loc[0, "BDL_PPP_Odds"], 280)
+        self.assertEqual(out.loc[0, "BDL_PPP_Book"], "BetMGM")
+        self.assertIn("BetMGM", out.loc[0, "PPP_Available_Books"])
+        self.assertEqual(get.call_args_list[2].kwargs["bookmakers"], "betmgm")
 
 
 if __name__ == "__main__":
