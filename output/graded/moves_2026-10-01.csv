@@ -172,9 +172,9 @@ Date,Game,Game_ID,Player,Player_ID,Team,Market,Move,Kind,Rule,Icon,Kit_Version,L
 2026-10-01,TBL@NYR,2026020010,Jake Guentzel,8477404.0,TBL,Points,Hammer Fists II,HEAVY,Conf_Points >= 80 + TOI_per_game >= 19.18 + L10_S >= 17,PTS05_HAMMER_FISTS.svg,2026-09-24-frozen-v2,0.5,0.0,L,FINAL,OK
 2026-10-01,TBL@NYR,2026020010,Jake Guentzel,8477404.0,TBL,Points,Enraged Engine,CRIT,Conf_Points >= 83 + L10_P >= 8 + L10_S >= 17,PTS05_ENRAGED_FURY.svg,2026-09-24-frozen-v2,0.5,0.0,L,FINAL,OK
 2026-10-01,TBL@NYR,2026020010,Jake Guentzel,8477404.0,TBL,Assists,Staff (Green Stance),STANCE,Green + Assists 0.5,staff.svg,2026-09-24-frozen-v2,0.5,0.0,L,FINAL,OK
-2026-10-01,TBL@NYR,2026020010,Jake Guentzel,8477404.0,TBL,SOG,Jungle Stance,STANCE,Green + SOG 2.5 + Conf_SOG >= 75,sog_basic_swipe.svg,2026-09-24-frozen-v2,2.5,4.0,W,FINAL,OK
-2026-10-01,TBL@NYR,2026020010,Jake Guentzel,8477404.0,TBL,SOG,Berserker Swipe,FLOOR,iXG% >= 93.2,sog_basic_swipe.svg,2026-09-24-frozen-v2,2.5,4.0,W,FINAL,OK
-2026-10-01,TBL@NYR,2026020010,Jake Guentzel,8477404.0,TBL,SOG,Bloodthirst,HEAVY,PP_TOI_Pct >= 15.9 + iXG% >= 93.2,sog_bloodthirst.svg,2026-09-24-frozen-v2,2.5,4.0,W,FINAL,OK
+2026-10-01,TBL@NYR,2026020010,Jake Guentzel,8477404.0,TBL,SOG,Jungle Stance,STANCE,Green + SOG 2.5 + Conf_SOG >= 75,sog_basic_swipe.svg,2026-09-24-frozen-v2,2.5,3.0,W,FINAL,OK
+2026-10-01,TBL@NYR,2026020010,Jake Guentzel,8477404.0,TBL,SOG,Berserker Swipe,FLOOR,iXG% >= 93.2,sog_basic_swipe.svg,2026-09-24-frozen-v2,2.5,3.0,W,FINAL,OK
+2026-10-01,TBL@NYR,2026020010,Jake Guentzel,8477404.0,TBL,SOG,Bloodthirst,HEAVY,PP_TOI_Pct >= 15.9 + iXG% >= 93.2,sog_bloodthirst.svg,2026-09-24-frozen-v2,2.5,3.0,W,FINAL,OK
 2026-10-01,TBL@NYR,2026020010,Jake Guentzel,8477404.0,TBL,Goal,Base Attack,BASE ATTACK,Goal_mu >= 0.4048,base.svg,2026-09-24-frozen-v2,0.5,0.0,L,FINAL,OK
 2026-10-01,TBL@NYR,2026020010,Jake Guentzel,8477404.0,TBL,Goal,Weakened Armor,WEAK DEFENSE,Opp_PK_xGA60 >= 7.3,shattered_armor.svg,2026-09-24-frozen-v2,0.5,0.0,L,FINAL,OK
 2026-10-01,TBL@NYR,2026020010,Jake Guentzel,8477404.0,TBL,Goal,Armor Sunder,HEAVY ATTACK,Goal_mu >= 0.4048 + Opp_PK_xGA60 >= 7.3,smash.svg,2026-09-24-frozen-v2,0.5,0.0,L,FINAL,OK
