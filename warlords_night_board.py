@@ -371,9 +371,9 @@ def _form_html(card):
     if form["toi"] is not None:
         opportunity.append(f"ice time {form['toi']:.1f} min/game")
     strip = "".join(f'<span class="{"hit" if hit else "miss"}" title="{value} {card["market"]}">'
-                    f'{"✓" if hit else "×"} {value}</span>' for value, hit in form["recent"])
+                    f'{"✓" if hit else "×"} {value}</span>' for value, hit in reversed(form["recent"]))
     return (f'<details class="wn-form"><summary>Recent form · {_h(form["season"])} regular season</summary>'
-            f'<p>Against today\'s over {line:g} line · games shown newest first. '
+            f'<p>Against today\'s over {line:g} line · results read left to right, oldest to newest. '
             'Historical results are context, not the move record.</p>'
             f'<div class="wn-form-tiles">{tiles_html}</div>'
             f'<div class="wn-form-meta">{_h(splits)}</div>'
