@@ -77,7 +77,8 @@ def summarize_form(raw, market, line):
             splits[label] = (wins(subset), len(subset))
     return {
         "season": str(data.get("season") or "Unknown"),
-        "recent": [(value, value > line) for value, _ in recent],
+        "recent": [(value, value > line, str(game.get("d") or ""))
+                   for value, game in recent],
         "l10": (wins(recent), len(recent)), "l5": (wins(first_five), len(first_five)),
         "season_rate": (wins(values), len(values)),
         "average": mean(value for value, _ in recent),
