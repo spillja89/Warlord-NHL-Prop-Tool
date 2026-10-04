@@ -4578,6 +4578,20 @@ page = st.sidebar.radio(
 
 df_f = filter_common(df)
 
+# Saved odds are a pregame snapshot. Keep historical pages intact, but remove
+# games that have already started from today's betting boards.
+pregame_pages = {
+    "⚔️ Warlords of the Night", "Scout Board", "Points", "Assists", "SOG",
+    "GOALS (0.5)", "Power Play", "🧪 Dagger Lab", "🪜 Ladder Alerts",
+}
+if source == "latest" and page in pregame_pages and "StartTimeUTC" in df_f.columns:
+    starts = pd.to_datetime(df_f["StartTimeUTC"], utc=True, errors="coerce")
+    started = starts.notna() & starts.le(pd.Timestamp.now(tz="UTC"))
+    if started.any():
+        hidden_games = df_f.loc[started, "Game"].dropna().nunique() if "Game" in df_f.columns else 0
+        df_f = df_f.loc[~started].copy()
+        st.caption(f"{hidden_games} game(s) already started and hidden from current betting boards. Saved results remain available in Results, Ledger, and Raw CSV.")
+
 # Common search, team, and matchup controls apply to every page. Class move
 # thresholds never remove a player from the priced slate tables.
 if page != "⚔️ Warlords of the Night":
