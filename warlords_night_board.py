@@ -342,7 +342,7 @@ def _odds(value):
     return f"{value:+.0f}" if value > 0 else f"{value:.0f}"
 
 
-def _form_html(card):
+def _form_html(card, *, expanded=False):
     form = summarize_form(card.get("form_log"), card["market"], card["line"])
     if not form:
         season = _h(card.get("form_season") or "Current")
@@ -373,13 +373,36 @@ def _form_html(card):
     strip = "".join(f'<span class="{"hit" if hit else "miss"}" title="{_h(date)} · {value} {_h(card["market"])}">'
                     f'<b>{"✓" if hit else "×"} {value}</b><small>{_h(date[5:].replace("-", "/") if date else "—")}</small></span>'
                     for value, hit, date in reversed(form["recent"]))
-    return (f'<details class="wn-form"><summary>Recent form · {_h(form["season"])} regular season</summary>'
+    label = "Power-play points" if card["market"] == "PPP" else "Recent form"
+    return (f'<details class="wn-form"{" open" if expanded else ""}><summary>{label} · {_h(form["season"])} regular season</summary>'
             f'<p>Against today\'s over {line:g} line · results read left to right, oldest to newest. '
             'Historical results are context, not the move record.</p>'
             f'<div class="wn-form-tiles">{tiles_html}</div>'
             f'<div class="wn-form-meta">{_h(splits)}</div>'
             f'<div class="wn-form-meta">{_h(" · ".join(opportunity))}</div>'
             f'<div class="wn-form-strip">{strip}</div></details>')
+
+
+def render_power_play_form(card):
+    """Show the same dated player form card on the separate PPP scouting page."""
+    portrait = _character_uri("Support")
+    image = f'<img src="{portrait}" alt="" />' if portrait else "🪄"
+    price = _odds(card.get("odds"))
+    form = _form_html({**card, "market": "PPP", "line": 0.5}, expanded=True)
+    return f'''<style>
+      .ppp-card,.ppp-card *{{box-sizing:border-box}}
+      .ppp-card{{font-family:Inter,system-ui,sans-serif;color:#edf1f8;background:#1b2739;border:1px solid #4d416e;border-left:3px solid #b692ff;border-radius:10px;padding:14px;margin:12px 0}}
+      .ppp-head{{display:flex;align-items:center;gap:12px;margin-bottom:8px}}
+      .ppp-portrait{{width:50px;height:50px;flex:none;overflow:hidden;border-radius:9px;border:1px solid #8d72c4;background:#172039}}
+      .ppp-portrait img{{width:100%;height:100%;object-fit:cover;object-position:center top}}
+      .ppp-title{{min-width:0;flex:1}}.ppp-title strong{{display:block;font-size:17px;color:#fff}}.ppp-title span{{font-size:11px;color:#b9c9dc}}
+      .ppp-price{{text-align:right;white-space:nowrap;color:#e9d5ff;font-size:20px;font-weight:900}}.ppp-price small{{display:block;color:#aebbd0;font-size:10px;font-weight:600}}
+      .wn-form,.wn-form-empty{{color:#b9c9dc;border-top:1px solid #ffffff24;padding-top:8px;font-size:12px}}.wn-form summary{{cursor:pointer;color:#e4c892;font-weight:800}}.wn-form p{{margin:7px 0;color:#aebbd0}}
+      .wn-form-tiles{{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:5px;margin:8px 0}}.wn-form-tiles>div{{border:1px solid #ffffff1d;border-radius:5px;padding:7px;background:#0b1629a8}}.wn-form-tiles small{{display:block;color:#98adc6;font-size:9px}}.wn-form-tiles strong{{display:block;color:#fff;font-size:12px;margin-top:3px}}
+      .wn-form-meta{{margin:4px 0}}.wn-form-strip{{display:flex;flex-wrap:wrap;gap:5px;margin:8px 0}}.wn-form-strip span{{border-radius:4px;padding:5px 7px;text-align:center;min-width:42px}}.wn-form-strip span b,.wn-form-strip span small{{display:block}}.wn-form-strip span small{{font-size:9px;opacity:.85}}.wn-form-strip .hit{{background:#1d6145;color:#c4ffde}}.wn-form-strip .miss{{background:#603036;color:#ffd7d7}}
+    </style><section class="ppp-card"><div class="ppp-head"><div class="ppp-portrait">{image}</div>
+      <div class="ppp-title"><strong>{_h(card.get("player") or "Player")}</strong><span>{_h(card.get("game") or "")} · Over 0.5 power-play points · {_h(card.get("book") or "Book pending")}</span></div>
+      <div class="ppp-price">{_h(price)}<small>BEST FEED PRICE</small></div></div>{form}</section>'''
 
 
 @lru_cache(maxsize=4)

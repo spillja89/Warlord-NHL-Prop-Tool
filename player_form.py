@@ -22,7 +22,8 @@ def compact_regular_log(payload, before_date=None):
             goals = int(row["goals"])
             assists = int(row["assists"])
             shots = int(row["shots"])
-            pp_points = int(row.get("powerPlayPoints") or 0)
+            raw_pp_points = row.get("powerPlayPoints")
+            pp_points = int(raw_pp_points) if raw_pp_points not in (None, "") else None
         except (KeyError, ValueError, TypeError):
             continue
         date = str(row.get("gameDate") or "")[:10]
@@ -43,7 +44,8 @@ def summarize_form(raw, market, line):
         data = json.loads(raw) if isinstance(raw, str) else raw
         games = data["games"]
         line = float(line)
-        key = {"Goal": "g", "Assists": "a", "Points": "p", "SOG": "s"}[market]
+        key = {"Goal": "g", "Assists": "a", "Points": "p", "SOG": "s",
+               "PPP": "pp"}[market]
     except (TypeError, ValueError, KeyError):
         return None
     if not isinstance(games, list):
