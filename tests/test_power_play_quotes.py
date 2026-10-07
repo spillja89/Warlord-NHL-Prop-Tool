@@ -2,10 +2,20 @@ import unittest
 
 import pandas as pd
 
-from power_play_quotes import priced_ppp_quotes
+from power_play_quotes import priced_ppp_quotes, summarize_pp_usage
 
 
 class PowerPlayQuotesTests(unittest.TestCase):
+    def test_current_pp_usage_uses_only_games_before_the_slate(self):
+        rows = [
+            {"playerId": 8481617, "gameDate": "2026-09-29", "ppTimeOnIce": 290},
+            {"playerId": 8481617, "gameDate": "2026-10-01", "ppTimeOnIce": 242},
+            {"playerId": 8481617, "gameDate": "2026-10-03", "ppTimeOnIce": 256},
+            {"playerId": 8481617, "gameDate": "2026-10-07", "ppTimeOnIce": 600},
+        ]
+        self.assertEqual(summarize_pp_usage(rows, "2026-10-07")[8481617], (4.4, 3))
+        self.assertEqual(summarize_pp_usage(rows, "2026-10-01")[8481617], (4.8, 1))
+
     def test_main_and_alternate_lines_show_real_prices_once(self):
         tracker = pd.DataFrame([{
             "Game": "NYR@BOS", "Player": "PP Skater", "Team": "BOS", "Opp": "NYR",
