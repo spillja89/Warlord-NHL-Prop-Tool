@@ -20,8 +20,13 @@ from warlord_moves_2026 import best_move, points_moves, sog_moves, goals_moves a
 from warlords_night_board import CLASSES, baseline_audit, rank_warlords, rank_priced_slate, featured_warlords, render_warlords, render_power_play_form, _character_uri
 from player_form import summarize_form
 from ledger_store import append_bet as _append_cloud_bet, recent_bets as _recent_cloud_bets
-from power_play_quotes import priced_ppp_quotes
+from power_play_quotes import fetch_current_pp_usage, priced_ppp_quotes
 from player_availability import unavailable_mask
+
+
+@st.cache_data(ttl=600, show_spinner=False)
+def _cached_current_pp_usage(season_id: int, before_date: str):
+    return fetch_current_pp_usage(season_id, before_date)
 # -------------------------
 # Back-compat SVG helpers (used by player-card tags / older HUD snippets)
 # -------------------------
@@ -5565,6 +5570,39 @@ elif page == "Power Play":
             lambda row: _ppp_record(_ppp_form(row), "l5"), axis=1)
         ppp_quotes["Current PPP season"] = ppp_quotes.apply(
             lambda row: _ppp_record(_ppp_form(row), "season_rate"), axis=1)
+        tracker_dates = pd.to_datetime(df_f["Date"], errors="coerce").dropna()
+        current_usage = {}
+        if not tracker_dates.empty:
+            tracker_day = tracker_dates.max().date()
+            season_start = tracker_day.year if tracker_day.month >= 7 else tracker_day.year - 1
+            season_id = season_start * 10000 + season_start + 1
+            try:
+                current_usage = _cached_current_pp_usage(season_id, tracker_day.isoformat())
+            except Exception:
+                # A feed outage must not hide posted odds or the saved PPP game logs.
+                pass
+        player_ids = {}
+        for record in df_f.to_dict("records"):
+            try:
+                player_ids[(str(record.get("Team") or "").casefold(),
+                            str(record.get("Player") or "").casefold())] = int(record["Player_ID"])
+            except (KeyError, TypeError, ValueError):
+                continue
+
+        def _current_pp_time(row):
+            player_id = player_ids.get((str(row["Team"]).casefold(),
+                                        str(row["Player"]).casefold()))
+            return current_usage.get(player_id, (None, None))
+
+        usage_values = ppp_quotes.apply(_current_pp_time, axis=1)
+        ppp_quotes["Current PP min/game"] = usage_values.apply(lambda usage: usage[0])
+        ppp_quotes["Current PP games"] = usage_values.apply(lambda usage: usage[1])
+        ppp_quotes["PP usage trend"] = ppp_quotes.apply(
+            lambda row: "More PP time this season"
+            if pd.notna(row["Current PP games"]) and row["Current PP games"] >= 2
+            and pd.notna(row["Current PP min/game"]) and pd.notna(row["PP TOI/game"])
+            and row["Current PP min/game"] - row["PP TOI/game"] >= 2.0
+            else "", axis=1)
         assist_cards = {
             (card["team"].casefold(), card["player"].casefold()): card
             for card in rank_priced_slate(df_f).get("Support", [])
@@ -5588,29 +5626,34 @@ elif page == "Power Play":
         ppp_quotes["_pp1"] = ppp_quotes["PP unit"].eq("PP1 history").astype(int)
         ppp_quotes["_complete"] = ppp_quotes["Context"].eq("Usage + PK context").astype(int)
         ppp_quotes["_matchup"] = pd.to_numeric(ppp_quotes["PP matchup /100"], errors="coerce").fillna(-1)
-        ppp_quotes = ppp_quotes.sort_values(["_pp1", "_complete", "_matchup", "PP TOI/game"],
-                                            ascending=[False, False, False, False], kind="stable")
+        ppp_quotes["_current_usage"] = pd.to_numeric(
+            ppp_quotes["Current PP min/game"], errors="coerce").fillna(-1)
+        ppp_quotes = ppp_quotes.sort_values(
+            ["_current_usage", "_pp1", "_complete", "_matchup", "PP TOI/game"],
+            ascending=[False, False, False, False, False], kind="stable")
         ppp_quotes["Best feed price"] = ppp_quotes.apply(
             lambda row: f'{int(row["Over odds"]):+d} · {row["Book"]}', axis=1)
         stats_seasons = sorted({str(value) for value in ppp_quotes["Stats season"]
                                 if str(value).strip() and str(value).casefold() not in {"nan", "unavailable"}})
         if stats_seasons:
             st.caption(f'Usage and matchup stats source: {", ".join(stats_seasons)}. Prices are from the current saved odds snapshot.')
-        st.caption("Scouting order: historical PP1 usage, available matchup evidence, then the PP context score. Current PPP records come from this regular season's completed games. Neither the order nor the recent record is a predicted hit rate.")
+        st.caption("Scouting order: current-season PP minutes, then historical PP1 usage and matchup evidence. Current PP minutes and PPP records come from completed regular-season games before this slate. Neither is a predicted hit rate or confirmation of tonight's unit.")
         team_options = ["All teams"] + sorted(ppp_quotes["Team"].dropna().unique().tolist())
         selected_team = st.selectbox("Inspect power play team", team_options, key="pp_team")
         pp_view = (ppp_quotes if selected_team == "All teams" else
                    ppp_quotes.loc[ppp_quotes["Team"].eq(selected_team)]).copy()
         display_quotes = pp_view[["Player", "Game", "Best feed price", "Book break-even %",
                                  "Current PPP L5", "Current PPP season",
+                                 "Current PP min/game", "Current PP games", "PP usage trend",
                                  "PP unit", "PP TOI/game", "Opp PK xGA/60",
-                                 "PP matchup /100", "Assists cross-check", "Context"]].rename(columns={
-                                     "PP unit": "PP unit in stats",
-                                     "PP TOI/game": "PP min/game in stats",
-                                     "Opp PK xGA/60": "Opp PK xGA/60 in stats",
-                                     "PP matchup /100": "PP context /100",
+                                 "PP matchup /100", "Stats season", "Assists cross-check", "Context"]].rename(columns={
+                                     "PP unit": "Prior-season PP unit",
+                                     "PP TOI/game": "Prior-season PP min/game",
+                                     "Opp PK xGA/60": "Prior-season opp PK xGA/60",
+                                     "PP matchup /100": "Prior-season PP context /100",
                                  })
-        for column in ("PP min/game in stats", "Opp PK xGA/60 in stats", "PP context /100"):
+        for column in ("Current PP min/game", "Prior-season PP min/game",
+                       "Prior-season opp PK xGA/60", "Prior-season PP context /100"):
             display_quotes[column] = pd.to_numeric(display_quotes[column], errors="coerce").round(1)
         st.dataframe(display_quotes, hide_index=True, width="stretch")
         player_options = [f'{row.Player} · {row.Team} · {row.Game}'
@@ -5626,15 +5669,19 @@ elif page == "Power Play":
             "odds": selected["Over odds"], "book": selected["Book"],
             "form_log": form_log, "form_season": selected_form.get("season") if selected_form else None,
         }))
+        usage_note = (f'{selected["Current PP min/game"]:.1f} PP min/game this season '
+                      f'({int(selected["Current PP games"])} games)'
+                      if pd.notna(selected["Current PP min/game"]) else
+                      'Current-season PP minutes unavailable')
+        historical_note = (f'{selected["PP TOI/game"]:.1f} PP min/game in prior stats season'
+                           if pd.notna(selected["PP TOI/game"]) else
+                           'Prior-season PP minutes unavailable')
         st.caption(f'Book break-even {selected["Book break-even %"]:.1f}% · '
-                   f'historical PP unit: {selected["PP unit"]} · '
-                   f'historical PP time: {selected["PP TOI/game"]:.1f} min/game'
-                   if pd.notna(selected["PP TOI/game"]) else
-                   f'Book break-even {selected["Book break-even %"]:.1f}% · '
-                   f'historical PP unit: {selected["PP unit"]} · PP time unavailable')
+                   f'{usage_note} · {historical_note} · '
+                   f'prior-season unit: {selected["PP unit"]}')
         st.caption("The dated log shows this player's credited power-play points in current-season regular-season games. A team scoring streak can help you scout, but this card does not measure team power-play goals or prove a betting edge.")
         with st.expander("How to read these numbers"):
-            st.markdown("- **Book break-even %** is the hit rate required by that posted price. We cannot compare it to a PPP model rate yet.\n- **Current PPP L5 / season** are observed player results against over 0.5 from this regular season, not a forecast. Missing logs show —.\n- **PP unit and PP TOI/game** come from the stats season shown in the tracker; they do not confirm tonight's unit. A player on a new team needs a fresh unit check.\n- **Opp PK xGA/60** is expected goals allowed by the opponent's penalty kill per 60 minutes in the source stats. Higher gives a more favorable opponent context, not a guaranteed point. **PP matchup /100** blends team PP strength with opponent PK weakness; 50 can be a neutral fallback, so it is blank here when source inputs are missing.\n- **Assists cross-check** names a separately tested assist move when one fires. Its record is for assists over 0.5, not PPP over 0.5.\n- **Odds only** means the player has a price but lacks usable model history. Leave the matchup columns blank rather than assuming neutral is good.")
+            st.markdown("- **Book break-even %** is the hit rate required by that posted price. We cannot compare it to a PPP model rate yet.\n- **Current PPP L5 / season** are observed player results against over 0.5 from this regular season, not a forecast. Missing logs show —.\n- **Current PP min/game** is official NHL power-play ice time per completed regular-season game before the slate. It does not confirm tonight's unit.\n- **Prior-season PP unit and minutes** come from the model stats season shown above. A player can have a different role this year.\n- **Prior-season opp PK xGA/60** is expected goals allowed by the opponent's penalty kill per 60 minutes in the source stats. Higher gives a more favorable opponent context, not a guaranteed point. **PP context /100** blends team PP strength with opponent PK weakness; 50 can be a neutral fallback, so it is blank here when source inputs are missing.\n- **Assists cross-check** names a separately tested assist move when one fires. Its record is for assists over 0.5, not PPP over 0.5.\n- **Odds only** means the player has a price but lacks usable model history. Leave the matchup columns blank rather than assuming neutral is good.")
 
     with st.expander("Detailed PP stats and filters"):
         unit_sel = st.multiselect("Historical PP Unit", ["PP1", "PP2", "Unconfirmed"],

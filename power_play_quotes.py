@@ -5,12 +5,47 @@ from __future__ import annotations
 import math
 
 import pandas as pd
+import requests
 
 
 COLUMNS = ("Game", "Player", "Team", "Opponent", "PPP line", "Over odds",
            "Book", "Book break-even %", "PP unit", "PP TOI/game",
            "Opp PK xGA/60", "PP matchup /100", "PPP last 10",
            "Stats season", "Context")
+
+
+def summarize_pp_usage(rows: list[dict], before_date: str) -> dict[int, tuple[float, int]]:
+    """Average official PP minutes per completed regular-season game before a slate."""
+    totals: dict[int, list[float]] = {}
+    for row in rows:
+        game_date = str(row.get("gameDate") or "")[:10]
+        if not game_date or game_date >= before_date:
+            continue
+        try:
+            player_id = int(row["playerId"])
+            seconds = float(row["ppTimeOnIce"])
+        except (KeyError, TypeError, ValueError):
+            continue
+        if not math.isfinite(seconds) or seconds < 0:
+            continue
+        bucket = totals.setdefault(player_id, [0.0, 0.0])
+        bucket[0] += seconds
+        bucket[1] += 1
+    return {pid: (round(total / games / 60, 1), int(games))
+            for pid, (total, games) in totals.items()}
+
+
+def fetch_current_pp_usage(season_id: int, before_date: str) -> dict[int, tuple[float, int]]:
+    """Get current-season PP usage from official NHL game-level TOI records."""
+    response = requests.get(
+        "https://api.nhle.com/stats/rest/en/skater/timeonice",
+        params={"cayenneExp": f"seasonId={season_id} and gameTypeId=2",
+                "isAggregate": "false", "isGame": "true", "limit": "-1", "start": "0"},
+        timeout=12,
+    )
+    response.raise_for_status()
+    payload = response.json()
+    return summarize_pp_usage(payload.get("data", []), before_date)
 
 
 def _finite(value):
