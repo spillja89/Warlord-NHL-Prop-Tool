@@ -28,6 +28,22 @@ class PlayerFormTests(unittest.TestCase):
         self.assertEqual(summarize_form(compact, "Assists", 0.5)["l10"], (2, 2))
         self.assertEqual(summarize_form(compact, "SOG", 2.5)["l10"], (1, 2))
 
+    def test_power_play_form_uses_credited_points_and_skips_missing_fields(self):
+        regular = {"seasonId": 20262027, "gameTypeId": 2, "gameLog": [
+            {"gameId": 2026020001, "gameDate": "2026-10-02", "goals": 1,
+             "assists": 0, "shots": 3, "powerPlayPoints": 1},
+            {"gameId": 2026020002, "gameDate": "2026-10-04", "goals": 0,
+             "assists": 1, "shots": 2, "powerPlayPoints": 0},
+            {"gameId": 2026020003, "gameDate": "2026-10-05", "goals": 0,
+             "assists": 1, "shots": 4},
+        ]}
+        compact = compact_regular_log(regular, "2026-10-06")
+        form = summarize_form(compact, "PPP", 0.5)
+        self.assertEqual(form["l5"], (1, 2))
+        self.assertEqual(form["season_rate"], (1, 2))
+        self.assertEqual(form["recent"], [(0, False, "2026-10-04"),
+                                          (1, True, "2026-10-02")])
+
     def test_new_season_without_games(self):
         compact = compact_regular_log({"seasonId": 20262027, "gameTypeId": 2, "gameLog": []})
         self.assertEqual(summarize_form(compact, "Goal", 0.5),
