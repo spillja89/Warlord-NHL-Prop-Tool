@@ -660,6 +660,47 @@ def _class_slate_frame(frame: pd.DataFrame) -> tuple[pd.DataFrame, str]:
     return frame, "FILTERED VIEW"
 
 
+def _slate_start_times(frame: pd.DataFrame) -> dict[str, pd.Timestamp]:
+    """One UTC start per game; invalid or unknown starts sort last."""
+    if not {"Game", "StartTimeUTC"}.issubset(frame.columns):
+        return {}
+    starts = pd.to_datetime(frame["StartTimeUTC"], utc=True, errors="coerce")
+    return {str(game): start for game, start in zip(frame["Game"], starts)
+            if pd.notna(start) and str(game).strip()}
+
+
+def _sort_slate_rows(frame: pd.DataFrame, order: str,
+                     starts_by_game: dict[str, pd.Timestamp] | None = None) -> pd.DataFrame:
+    if order == "Top ranked" or frame.empty:
+        return frame
+    starts = (pd.to_datetime(frame["StartTimeUTC"], utc=True, errors="coerce")
+              if "StartTimeUTC" in frame.columns else
+              frame["Game"].astype(str).map(starts_by_game or {})
+              if "Game" in frame.columns else pd.Series(pd.NaT, index=frame.index))
+    return (frame.assign(_slate_start=starts)
+            .sort_values("_slate_start", ascending=order == "Earliest start",
+                         kind="stable", na_position="last")
+            .drop(columns="_slate_start"))
+
+
+def _sort_slate_cards(cards: list[dict], order: str,
+                      starts_by_game: dict[str, pd.Timestamp]) -> list[dict]:
+    if order == "Top ranked":
+        return cards
+    def key(card):
+        start = starts_by_game.get(str(card.get("game") or ""))
+        if start is None:
+            return (True, 0)
+        return (False, start.value if order == "Earliest start" else -start.value)
+    return sorted(cards, key=key)
+
+
+def _sort_slate_boards(boards: dict[str, list[dict]], order: str,
+                       starts_by_game: dict[str, pd.Timestamp]) -> dict[str, list[dict]]:
+    return {role: _sort_slate_cards(cards, order, starts_by_game)
+            for role, cards in boards.items()}
+
+
 def _render_class_header(mkt: str, frame: pd.DataFrame) -> None:
     """Prop-page hero with live slate counts from the actual fired move rules."""
     mk = mkt.upper()
@@ -668,6 +709,8 @@ def _render_class_header(mkt: str, frame: pd.DataFrame) -> None:
     slate_frame, slate_label = _class_slate_frame(frame)
     cards = rank_priced_slate(slate_frame)[role]
     moves = sum(card["move_count"] for card in cards)
+    order_label = ("Posted lines ranked by current model confidence" if slate_sort == "Top ranked"
+                   else f"Posted lines sorted by {slate_sort.lower()} · same-game ranks retained")
     portrait = _character_uri(role)
     art = f'<img src="{portrait}" alt="" aria-hidden="true" />' if portrait else ""
     st.html(f"""<style>
@@ -682,7 +725,7 @@ def _render_class_header(mkt: str, frame: pd.DataFrame) -> None:
       @media(max-width:650px){{.wl-prop-hero{{padding:19px 120px 18px 17px;min-height:145px}}
         .wl-prop-hero h2{{font-size:24px}}.wl-prop-hero img{{right:-55px;height:205px;opacity:.28}}}}
     </style><section class="wl-prop-hero">{art}<div class="wl-prop-kicker">WARLORD CLASS · {escape(mk)}</div>
-      <h2>{escape(role)} · {escape(mk)}</h2><p>Posted lines ranked by current model confidence · tested moves shown when fired</p>
+      <h2>{escape(role)} · {escape(mk)}</h2><p>{escape(order_label)} · tested moves shown when fired</p>
       <div class="wl-prop-meta">{escape(slate_label)} · {len(cards)} PRICED PLAYERS · {moves} ACTIVE MOVE TAGS</div></section>""")
 
 
@@ -696,6 +739,7 @@ def _priced_pool_table(cards: list[dict]) -> pd.DataFrame:
         featured = bool(card.get("baseline_rule") and qualified)
         rows.append({
             "Player": card["player"], "Team": card["team"], "Game": card["game"],
+            "Start (CT)": card.get("time") or "",
             "Line": card["line"], "Over odds": int(card["odds"]),
             "Book": card["book"] or "", "Model conf": card.get("confidence"),
             "Book break-even %": round(card["book_prob"] * 100, 1) if card.get("book_prob") is not None else None,
@@ -711,7 +755,7 @@ def _priced_pool_table(cards: list[dict]) -> pd.DataFrame:
                 "Below current baseline" if not card.get("baseline_rule") else
                 "No 50%+ tested move"),
         })
-    return pd.DataFrame(rows, columns=("Player", "Team", "Game", "Line", "Over odds",
+    return pd.DataFrame(rows, columns=("Player", "Team", "Game", "Start (CT)", "Line", "Over odds",
                                         "Book", "Book break-even %",
                                         "Model conf", "Matrix", "Featured",
                                         "Move ≥50%", "Move record", "Move %",
@@ -723,6 +767,9 @@ def _render_class_shortlist(frame: pd.DataFrame, role: str) -> None:
     slate_frame, _ = _class_slate_frame(frame)
     priced = rank_priced_slate(slate_frame)
     featured = featured_warlords(priced)
+    starts_by_game = _slate_start_times(slate_frame)
+    priced = _sort_slate_boards(priced, slate_sort, starts_by_game)
+    featured = _sort_slate_boards(featured, slate_sort, starts_by_game)
     total = len(priced[role])
     st.subheader(f"{role} · {len(featured[role])} featured of {total} priced players")
     if total == 0:
@@ -3759,6 +3806,8 @@ def show_table(df: pd.DataFrame, cols: list[str], title: str):
     df = df.copy().reset_index(drop=True)
     if df.columns.duplicated().any():
         df = df.loc[:, ~df.columns.duplicated()].copy()
+    df = _sort_slate_rows(df, globals().get("slate_sort", "Top ranked"),
+                          globals().get("slate_start_by_game", {}))
 
     # de-dupe requested cols while preserving order
     cols = list(dict.fromkeys(cols))
@@ -4582,6 +4631,15 @@ page = st.sidebar.radio(
     }.get(x, x)
 )
 
+slate_sort = "Top ranked"
+if page in {"⚔️ Warlords of the Night", "Scout Board", "Points", "Assists", "SOG",
+            "GOALS (0.5)", "Power Play"}:
+    slate_sort = st.sidebar.selectbox(
+        "Slate order", ("Top ranked", "Earliest start", "Latest start"),
+        help="Game times use the tracker's UTC start. Players in the same game keep their current rank order.",
+        key="slate_order",
+    )
+
 df_f = filter_common(df)
 
 # Saved odds are a pregame snapshot. Keep historical pages intact, but remove
@@ -4597,6 +4655,7 @@ if source == "latest" and page in pregame_pages and "StartTimeUTC" in df_f.colum
         hidden_games = df_f.loc[started, "Game"].dropna().nunique() if "Game" in df_f.columns else 0
         df_f = df_f.loc[~started].copy()
         st.caption(f"{hidden_games} game(s) more than 10 minutes past their listed start and hidden from current betting boards. Saved results remain available in Results, Ledger, and Raw CSV.")
+slate_start_by_game = _slate_start_times(df_f)
 
 # Common search, team, and matchup controls apply to every page. Class move
 # thresholds never remove a player from the priced slate tables.
@@ -4618,11 +4677,16 @@ if page == "⚔️ Warlords of the Night":
     night_df = df_f.loc[dates.eq(night)] if night is not None else df_f
     priced_boards = rank_priced_slate(night_df)
     featured_boards = featured_warlords(priced_boards)
+    starts_by_game = _slate_start_times(night_df)
+    priced_boards = _sort_slate_boards(priced_boards, slate_sort, starts_by_game)
+    featured_boards = _sort_slate_boards(featured_boards, slate_sort, starts_by_game)
     priced_total = sum(len(cards) for cards in priced_boards.values())
     featured_total = sum(len(cards) for cards in featured_boards.values())
     if featured_total:
         st.html(render_warlords(featured_boards, max(map(len, featured_boards.values())), _load_svg_icon))
-        st.caption(f"{featured_total} featured cards from {priced_total} priced prop entries. Cards require the current Green baseline and a fired move at 50%+ historically. Classes rank by the strongest qualifying move; model confidence is shown separately. Historical rates are not forecasts.")
+        order_note = ("Classes rank by the strongest qualifying move" if slate_sort == "Top ranked"
+                      else f"Cards are sorted by {slate_sort.lower()}; same-game move ranks stay intact")
+        st.caption(f"{featured_total} featured cards from {priced_total} priced prop entries. Cards require the current Green baseline and a fired move at 50%+ historically. {order_note}; model confidence is shown separately. Historical rates are not forecasts.")
     else:
         st.info(f"{priced_total} priced prop entries. No player currently clears both the baseline and a 50%+ historical move; see the complete slate below.")
 
@@ -4897,11 +4961,12 @@ elif page == "Scout Board":
         st.metric("Top Conf", f"{top_conf:.0f}" if pd.notna(top_conf) else "—")
 
 
-    # Model confidence ranks scout signals; tested move ranking lives on the raid board.
+    # Model confidence ranks scout signals by default; time order is optional.
     _rank = df_b_filt.copy()
     _rank["_conf"] = pd.to_numeric(_rank.get("Best_Conf", 0), errors="coerce").fillna(0.0)
     _rank["_odds"] = pd.to_numeric(_rank.get("Best_Odds", _rank.get("Odds", 0)), errors="coerce").fillna(0.0)
     _rank = _rank.sort_values(["_conf", "_odds"], ascending=[False, False])
+    _rank = _sort_slate_rows(_rank, slate_sort, slate_start_by_game)
 
     top_n = st.slider("Show top signals", 5, 30, 16, 1, key="board_topn")
     top = _rank.head(int(top_n)).copy()
@@ -5631,13 +5696,17 @@ elif page == "Power Play":
         ppp_quotes = ppp_quotes.sort_values(
             ["_current_usage", "_pp1", "_complete", "_matchup", "PP TOI/game"],
             ascending=[False, False, False, False, False], kind="stable")
+        ppp_quotes = _sort_slate_rows(ppp_quotes, slate_sort, slate_start_by_game)
         ppp_quotes["Best feed price"] = ppp_quotes.apply(
             lambda row: f'{int(row["Over odds"]):+d} · {row["Book"]}', axis=1)
         stats_seasons = sorted({str(value) for value in ppp_quotes["Stats season"]
                                 if str(value).strip() and str(value).casefold() not in {"nan", "unavailable"}})
         if stats_seasons:
             st.caption(f'Usage and matchup stats source: {", ".join(stats_seasons)}. Prices are from the current saved odds snapshot.')
-        st.caption("Scouting order: current-season PP minutes, then historical PP1 usage and matchup evidence. Current PP minutes and PPP records come from completed regular-season games before this slate. Neither is a predicted hit rate or confirmation of tonight's unit.")
+        pp_order_note = ("current-season PP minutes, then historical PP1 usage and matchup evidence"
+                         if slate_sort == "Top ranked" else
+                         f"{slate_sort.lower()}, with PP usage ranking retained within each game")
+        st.caption(f"Scouting order: {pp_order_note}. Current PP minutes and PPP records come from completed regular-season games before this slate. Neither is a predicted hit rate or confirmation of tonight's unit.")
         team_options = ["All teams"] + sorted(ppp_quotes["Team"].dropna().unique().tolist())
         selected_team = st.selectbox("Inspect power play team", team_options, key="pp_team")
         pp_view = (ppp_quotes if selected_team == "All teams" else

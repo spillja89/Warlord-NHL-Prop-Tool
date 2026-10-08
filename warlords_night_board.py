@@ -141,7 +141,7 @@ def rank_warlords(frame: pd.DataFrame) -> dict[str, list[dict]]:
                 "player": player, "team": team,
                 "opponent": str(_value(row, "Opp") or "").strip(),
                 "game": str(_value(row, "Game") or "").strip(),
-                "time": str(_value(row, "Time") or "").strip(),
+                "time": str(_value(row, "Time") or _value(row, "StartTimeLocal") or "").strip(),
                 "market": market, "line": line, "odds": odds, "book": book,
                 "form_log": _value(row, "Form_Log"),
                 "form_season": _value(row, "Form_Season"),
@@ -195,7 +195,7 @@ def rank_priced_slate(frame: pd.DataFrame) -> dict[str, list[dict]]:
                 "player": player, "team": team,
                 "opponent": str(_value(row, "Opp") or "").strip(),
                 "game": str(_value(row, "Game") or "").strip(),
-                "time": str(_value(row, "Time") or "").strip(),
+                "time": str(_value(row, "Time") or _value(row, "StartTimeLocal") or "").strip(),
                 "market": market, "line": line, "odds": odds, "book": book,
                 "form_log": _value(row, "Form_Log"),
                 "form_season": _value(row, "Form_Season"),
@@ -441,6 +441,8 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
             sample = " · SMALL SAMPLE" if 0 < picks < 30 else ""
             line = f"OVER {card['line']:g} {market.upper()}" if card["line"] is not None else market.upper()
             matchup = card["game"] or card["team"]
+            if card.get("time"):
+                matchup = f'{matchup} · {card["time"]} CT'
             portrait = (f'<img src="{character_uri}" alt="" />' if character_uri else symbol)
             name_backdrop = (f'<img class="wn-unit-ghost" src="{character_uri}" alt="" aria-hidden="true" />'
                              if character_uri else "")
