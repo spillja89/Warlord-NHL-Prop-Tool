@@ -5812,72 +5812,68 @@ elif page == "📈 This Season":
     st.subheader("📈 This Season · observed skater stats")
     st.caption("Current regular-season results and MoneyPuck metrics for the whole league. Research view only; the model and named moves keep their existing safety threshold.")
     slate_dates = pd.to_datetime(df_f.get("Date", pd.Series(dtype=str)), errors="coerce").dropna()
-    if slate_dates.empty:
-        st.info("This tracker has no slate date, so its current season cannot be verified.")
-    else:
-        slate_day = slate_dates.max().date().isoformat()
-        season = season_for_day(slate_day)
-        season_start = int(season[:4])
-        season_id = int(f"{season_start}{season_start + 1}")
-        today_ct = datetime.now(ZoneInfo("America/Chicago")).date().isoformat()
-        live_rows = []
-        if slate_day == today_ct:
+    slate_day = slate_dates.max().date().isoformat() if not slate_dates.empty else ""
+    today_ct = datetime.now(ZoneInfo("America/Chicago")).date().isoformat()
+    season = season_for_day(today_ct)
+    season_start = int(season[:4])
+    season_id = int(f"{season_start}{season_start + 1}")
+    live_rows = []
+    try:
+        nhl_rows, nhl_checked = _cached_league_skaters(season_id)
+        try:
+            mp_rows, mp_updated = _cached_moneypuck_skaters(season_start)
+        except Exception as exc:
+            mp_rows, mp_updated = None, "Unavailable"
+            st.warning(f"Current MoneyPuck feed unavailable ({type(exc).__name__}); NHL box-score totals are still shown.")
+        live_rows = league_season_rows(nhl_rows, mp_rows)
+    except Exception as exc:
+        st.warning(f"Live NHL season totals unavailable ({type(exc).__name__}); showing the saved tracker sample.")
+    if live_rows:
+        st.caption(f"{season} regular season · {len(live_rows)} league skaters · NHL totals checked {nhl_checked} UTC · MoneyPuck file updated {mp_updated}. Live sources are cached for 30 minutes.")
+        min_gp = st.selectbox("Minimum games played", (1, 2, 3, 5), index=0)
+        team_options = sorted({row["Team"] for row in live_rows if row["Team"]})
+        team_filter = st.selectbox("Team", ["All teams"] + team_options, key="season_team")
+        name_filter = st.text_input("Find player", key="season_player").strip().lower()
+        sort_choices = {
+            "Games played": "GP", "Points/game": "P/GP", "Total points": "P",
+            "Goals": "G", "Assists": "A", "Shots/game": "SOG/GP",
+            "Power-play points": "PPP", "MoneyPuck xG": "xG",
+            "MoneyPuck xG/60": "xG/60", "5v5 on-ice xG%": "5v5 xG%",
+            "PP ice time/game": "PP TOI/GP",
+        }
+        sort_label = st.selectbox("Sort season stats", tuple(sort_choices), index=0)
+        visible = [row for row in live_rows if row["GP"] >= min_gp
+                   and (team_filter == "All teams" or row["Team"] == team_filter)
+                   and (not name_filter or name_filter in row["Player"].lower())]
+        sort_field = sort_choices[sort_label]
+        visible.sort(key=lambda row: (row[sort_field] if row[sort_field] is not None else -1, row["GP"]), reverse=True)
+        st.caption(f"{len(visible)} skaters shown. xG, shot attempts and 5v5 xG% come from MoneyPuck; goals, assists, shots and PPP come from NHL. Goals − xG is descriptive, not a bounce-back forecast.")
+        if visible:
+            st.dataframe(pd.DataFrame(visible).drop(columns="_id"), width="stretch", hide_index=True)
+            by_id = {row["_id"]: row for row in visible}
+            selected_id = st.selectbox("Player game log", list(by_id),
+                                       format_func=lambda pid: f'{by_id[pid]["Player"]} · {by_id[pid]["Team"]}')
             try:
-                nhl_rows, nhl_checked = _cached_league_skaters(season_id)
-                try:
-                    mp_rows, mp_updated = _cached_moneypuck_skaters(season_start)
-                except Exception as exc:
-                    mp_rows, mp_updated = None, "Unavailable"
-                    st.warning(f"Current MoneyPuck feed unavailable ({type(exc).__name__}); NHL box-score totals are still shown.")
-                live_rows = league_season_rows(nhl_rows, mp_rows)
-            except Exception as exc:
-                st.warning(f"Live NHL season totals unavailable ({type(exc).__name__}); showing the saved tracker sample.")
-        if live_rows:
-            st.caption(f"{season} regular season · {len(live_rows)} league skaters · NHL totals checked {nhl_checked} UTC · MoneyPuck file updated {mp_updated}. Live sources are cached for 30 minutes.")
-            min_gp = st.selectbox("Minimum games played", (1, 2, 3, 5), index=0)
-            team_options = sorted({row["Team"] for row in live_rows if row["Team"]})
-            team_filter = st.selectbox("Team", ["All teams"] + team_options, key="season_team")
-            name_filter = st.text_input("Find player", key="season_player").strip().lower()
-            sort_choices = {
-                "Games played": "GP", "Points/game": "P/GP", "Total points": "P",
-                "Goals": "G", "Assists": "A", "Shots/game": "SOG/GP",
-                "Power-play points": "PPP", "MoneyPuck xG": "xG",
-                "MoneyPuck xG/60": "xG/60", "5v5 on-ice xG%": "5v5 xG%",
-                "PP ice time/game": "PP TOI/GP",
-            }
-            sort_label = st.selectbox("Sort season stats", tuple(sort_choices), index=0)
-            visible = [row for row in live_rows if row["GP"] >= min_gp
-                       and (team_filter == "All teams" or row["Team"] == team_filter)
-                       and (not name_filter or name_filter in row["Player"].lower())]
-            sort_field = sort_choices[sort_label]
-            visible.sort(key=lambda row: (row[sort_field] if row[sort_field] is not None else -1, row["GP"]), reverse=True)
-            st.caption(f"{len(visible)} skaters shown. xG, shot attempts and 5v5 xG% come from MoneyPuck; goals, assists, shots and PPP come from NHL. Goals − xG is descriptive, not a bounce-back forecast.")
-            if visible:
-                st.dataframe(pd.DataFrame(visible).drop(columns="_id"), width="stretch", hide_index=True)
-                by_id = {row["_id"]: row for row in visible}
-                selected_id = st.selectbox("Player game log", list(by_id),
-                                           format_func=lambda pid: f'{by_id[pid]["Player"]} · {by_id[pid]["Team"]}')
-                try:
-                    form = compact_regular_log(_cached_player_log(selected_id, season_id), today_ct)
-                    games = (form or {}).get("games") or []
-                    if games:
-                        dated = [{"Date": game["d"], "G": game["g"], "A": game["a"],
-                                  "P": game["g"] + game["a"], "SOG": game["s"],
-                                  "PPP": game["pp"], "TOI": game["toi"], "Home/Away": game["h"]}
-                                 for game in games]
-                        st.caption(f'{by_id[selected_id]["Player"]} · official {season} regular-season games · newest first')
-                        st.dataframe(pd.DataFrame(dated), width="stretch", hide_index=True)
-                except Exception:
-                    st.info("This player's game log is temporarily unavailable.")
-            else:
-                st.info("No skaters match these filters.")
+                form = compact_regular_log(_cached_player_log(selected_id, season_id), today_ct)
+                games = (form or {}).get("games") or []
+                if games:
+                    dated = [{"Date": game["d"], "G": game["g"], "A": game["a"],
+                              "P": game["g"] + game["a"], "SOG": game["s"],
+                              "PPP": game["pp"], "TOI": game["toi"], "Home/Away": game["h"]}
+                             for game in games]
+                    st.caption(f'{by_id[selected_id]["Player"]} · official {season} regular-season games · newest first')
+                    st.dataframe(pd.DataFrame(dated), width="stretch", hide_index=True)
+            except Exception:
+                st.info("This player's game log is temporarily unavailable.")
         else:
-            season_stats, season_logs = current_season_rows(df_f.to_dict("records"), season, slate_day)
-            st.caption(f"Saved tracker sample for {slate_day}; league-wide live totals are shown for today's slate only.")
-            if not season_stats:
-                st.info("No completed current-season games are in this tracker yet.")
-            else:
-                st.dataframe(pd.DataFrame(season_stats).drop(columns="_key"), width="stretch", hide_index=True)
+            st.info("No skaters match these filters.")
+    else:
+        season_stats, season_logs = current_season_rows(df_f.to_dict("records"), season, slate_day)
+        st.caption(f"Saved tracker sample for {slate_day}; league-wide live totals are shown for today's slate only.")
+        if not season_stats:
+            st.info("No completed current-season games are in this tracker yet.")
+        else:
+            st.dataframe(pd.DataFrame(season_stats).drop(columns="_key"), width="stretch", hide_index=True)
 
 
 elif page == "🧪 Dagger Lab":
