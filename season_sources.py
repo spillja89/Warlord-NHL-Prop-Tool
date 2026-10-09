@@ -80,18 +80,26 @@ def league_season_rows(nhl_rows, money_puck=None):
             "PPP": int(row.get("ppPoints") or 0),
             "P/GP": round((g + a) / gp, 2),
             "SOG/GP": round(sog / gp, 2),
-            "xG": None, "xG/60": None, "Goals − xG": None,
+            "MP GP": None, "xG": None, "xG/GP": None, "xG/60": None,
+            "Goals − xG": None, "Attempts": None, "Attempts/GP": None,
             "Attempts/60": None, "5v5 xG%": None, "PP TOI/GP": None,
             "_id": pid,
         }
         mp = metrics.get(pid, {})
         all_sits = mp.get("all")
         if all_sits is not None:
+            mp_gp = _number(all_sits.get("games_played"))
             xg = _number(all_sits.get("I_F_xGoals"))
+            mp_goals = _number(all_sits.get("I_F_goals"))
             seconds = _number(all_sits.get("icetime"))
             attempts = _number(all_sits.get("I_F_shotAttempts"))
+            record["MP GP"] = int(mp_gp) if mp_gp is not None else None
             record["xG"] = round(xg, 2) if xg is not None else None
-            record["Goals − xG"] = round(g - xg, 2) if xg is not None else None
+            record["Goals − xG"] = round(mp_goals - xg, 2) if mp_goals is not None and xg is not None else None
+            record["Attempts"] = int(attempts) if attempts is not None else None
+            if mp_gp and mp_gp > 0:
+                record["xG/GP"] = round(xg / mp_gp, 2) if xg is not None else None
+                record["Attempts/GP"] = round(attempts / mp_gp, 1) if attempts is not None else None
             if seconds and seconds > 0:
                 record["xG/60"] = round(xg * 3600 / seconds, 2) if xg is not None else None
                 record["Attempts/60"] = round(attempts * 3600 / seconds, 1) if attempts is not None else None
@@ -102,7 +110,8 @@ def league_season_rows(nhl_rows, money_puck=None):
         pp = mp.get("5on4")
         if pp is not None:
             pp_seconds = _number(pp.get("icetime"))
-            record["PP TOI/GP"] = round(pp_seconds / gp / 60, 1) if pp_seconds is not None else None
+            mp_gp = record["MP GP"]
+            record["PP TOI/GP"] = round(pp_seconds / mp_gp / 60, 1) if pp_seconds is not None and mp_gp else None
         output.append(record)
     return output
 

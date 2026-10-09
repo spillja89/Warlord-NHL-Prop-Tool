@@ -5829,7 +5829,7 @@ elif page == "📈 This Season":
     except Exception as exc:
         st.warning(f"Live NHL season totals unavailable ({type(exc).__name__}); showing the saved tracker sample.")
     if live_rows:
-        st.caption(f"{season} regular season · {len(live_rows)} league skaters · NHL totals checked {nhl_checked} UTC · MoneyPuck file updated {mp_updated}. Live sources are cached for 30 minutes.")
+        st.caption(f"{season} regular season · {len(live_rows)} league skaters · NHL totals checked {nhl_checked} UTC · [MoneyPuck.com](https://moneypuck.com/data.htm) file updated {mp_updated}. Live sources are cached for 30 minutes.")
         min_gp = st.selectbox("Minimum games played", (1, 2, 3, 5), index=0)
         team_options = sorted({row["Team"] for row in live_rows if row["Team"]})
         team_filter = st.selectbox("Team", ["All teams"] + team_options, key="season_team")
@@ -5837,7 +5837,8 @@ elif page == "📈 This Season":
         sort_choices = {
             "Games played": "GP", "Points/game": "P/GP", "Total points": "P",
             "Goals": "G", "Assists": "A", "Shots/game": "SOG/GP",
-            "Power-play points": "PPP", "MoneyPuck xG": "xG",
+            "Power-play points": "PPP", "MoneyPuck xG/game": "xG/GP",
+            "MoneyPuck attempts/game": "Attempts/GP",
             "MoneyPuck xG/60": "xG/60", "5v5 on-ice xG%": "5v5 xG%",
             "PP ice time/game": "PP TOI/GP",
         }
@@ -5847,12 +5848,24 @@ elif page == "📈 This Season":
                    and (not name_filter or name_filter in row["Player"].lower())]
         sort_field = sort_choices[sort_label]
         visible.sort(key=lambda row: (row[sort_field] if row[sort_field] is not None else -1, row["GP"]), reverse=True)
-        st.caption(f"{len(visible)} skaters shown. xG, shot attempts and 5v5 xG% come from MoneyPuck; goals, assists, shots and PPP come from NHL. Goals − xG is descriptive, not a bounce-back forecast.")
+        st.caption(f"{len(visible)} skaters shown. MoneyPuck GP may lag NHL GP while its nightly file updates. Goals − xG uses MoneyPuck's own goals and xG; it is descriptive, not a bounce-back forecast.")
         if visible:
             st.dataframe(pd.DataFrame(visible).drop(columns="_id"), width="stretch", hide_index=True)
             by_id = {row["_id"]: row for row in visible}
-            selected_id = st.selectbox("Player game log", list(by_id),
+            selected_id = st.selectbox("Player form", list(by_id),
                                        format_func=lambda pid: f'{by_id[pid]["Player"]} · {by_id[pid]["Team"]}')
+            selected = by_id[selected_id]
+            st.markdown(f'**{selected["Player"]} · MoneyPuck current-season form**')
+            if selected["MP GP"] is None:
+                st.info("No current-season MoneyPuck summary for this player yet.")
+            else:
+                st.caption(f'MoneyPuck has {selected["MP GP"]} games for this player; NHL has {selected["GP"]}. MoneyPuck updates nightly and can trail the official log.')
+                st.dataframe(pd.DataFrame([{
+                    "MP games": selected["MP GP"], "xG": selected["xG"],
+                    "xG/game": selected["xG/GP"], "Goals − xG": selected["Goals − xG"],
+                    "Shot attempts": selected["Attempts"], "Attempts/game": selected["Attempts/GP"],
+                    "5v5 on-ice xG%": selected["5v5 xG%"], "PP TOI/game": selected["PP TOI/GP"],
+                }]), width="stretch", hide_index=True)
             try:
                 form = compact_regular_log(_cached_player_log(selected_id, season_id), today_ct)
                 games = (form or {}).get("games") or []
@@ -5861,15 +5874,19 @@ elif page == "📈 This Season":
                               "P": game["g"] + game["a"], "SOG": game["s"],
                               "PPP": game["pp"], "TOI": game["toi"], "Home/Away": game["h"]}
                              for game in games]
-                    st.caption(f'{by_id[selected_id]["Player"]} · official {season} regular-season games · newest first')
+                    last_five = games[:5]
+                    st.caption(f'Official NHL recent form · last {len(last_five)}: '
+                               f'{sum(game["g"] + game["a"] for game in last_five)} points, '
+                               f'{sum(game["s"] for game in last_five)} shots · dated games newest first. '
+                               'Game-by-game xG is not supplied by this MoneyPuck season file.')
                     st.dataframe(pd.DataFrame(dated), width="stretch", hide_index=True)
             except Exception:
                 st.info("This player's game log is temporarily unavailable.")
         else:
             st.info("No skaters match these filters.")
     else:
-        season_stats, season_logs = current_season_rows(df_f.to_dict("records"), season, slate_day)
-        st.caption(f"Saved tracker sample for {slate_day}; league-wide live totals are shown for today's slate only.")
+        season_stats, _season_logs = current_season_rows(df_f.to_dict("records"), season, slate_day)
+        st.caption(f"Live sources are unavailable; showing the saved tracker sample for {slate_day}.")
         if not season_stats:
             st.info("No completed current-season games are in this tracker yet.")
         else:
