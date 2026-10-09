@@ -20,7 +20,9 @@ from warlord_moves_2026 import best_move, points_moves, sog_moves, goals_moves a
 from warlords_night_board import CLASSES, baseline_audit, rank_warlords, rank_priced_slate, featured_warlords, render_warlords, render_power_play_form, _character_uri
 from player_form import compact_regular_log, summarize_form
 from current_season_stats import current_season_rows, season_for_day
-from season_sources import fetch_moneypuck_skaters, fetch_nhl_player_log, fetch_nhl_skaters, league_season_rows
+from season_sources import (fetch_moneypuck_skaters, fetch_moneypuck_teams,
+                            fetch_nhl_player_log, fetch_nhl_skaters,
+                            league_season_rows, team_season_rows)
 from ledger_store import append_bet as _append_cloud_bet, recent_bets as _recent_cloud_bets
 from power_play_quotes import fetch_current_pp_usage, priced_ppp_quotes
 from player_availability import unavailable_mask
@@ -39,6 +41,11 @@ def _cached_league_skaters(season_id: int):
 @st.cache_data(ttl=1800, show_spinner=False)
 def _cached_moneypuck_skaters(start_year: int):
     return fetch_moneypuck_skaters(start_year)
+
+
+@st.cache_data(ttl=1800, show_spinner=False)
+def _cached_moneypuck_teams(start_year: int):
+    return fetch_moneypuck_teams(start_year)
 
 
 @st.cache_data(ttl=1800, show_spinner=False)
@@ -5809,14 +5816,35 @@ elif page == "Power Play":
 
 
 elif page == "📈 This Season":
-    st.subheader("📈 This Season · observed skater stats")
-    st.caption("Current regular-season results and MoneyPuck metrics for the whole league. Research view only; the model and named moves keep their existing safety threshold.")
+    st.subheader("📈 This Season · current form")
+    st.caption("Observed regular-season team and skater results. Research view only; the model and named moves keep their existing safety threshold.")
     slate_dates = pd.to_datetime(df_f.get("Date", pd.Series(dtype=str)), errors="coerce").dropna()
     slate_day = slate_dates.max().date().isoformat() if not slate_dates.empty else ""
     today_ct = datetime.now(ZoneInfo("America/Chicago")).date().isoformat()
     season = season_for_day(today_ct)
     season_start = int(season[:4])
     season_id = int(f"{season_start}{season_start + 1}")
+    st.markdown("### Team form and opponent defense")
+    try:
+        mp_teams, mp_teams_updated = _cached_moneypuck_teams(season_start)
+        team_rows = team_season_rows(mp_teams)
+        if team_rows:
+            st.caption(f"{season} regular season · {len(team_rows)} teams · [MoneyPuck.com](https://moneypuck.com/data.htm) updated {mp_teams_updated}. Cached 30 minutes. Small early-season samples can swing sharply.")
+            team_sort = st.selectbox("Rank teams by", (
+                "PK xGA/60", "PK GA/60", "GA/GP", "5v5 xGA/60", "SOG against/GP",
+                "PP xGF/60", "GF/GP", "5v5 xG%"), key="season_team_sort")
+            inspect_team = st.selectbox("Inspect team or opponent", ["All teams"] +
+                                        [row["Team"] for row in team_rows], key="season_inspect_team")
+            shown_teams = [row for row in team_rows if inspect_team == "All teams" or row["Team"] == inspect_team]
+            shown_teams.sort(key=lambda row: row[team_sort] if row[team_sort] is not None else -1,
+                             reverse=True)
+            st.dataframe(pd.DataFrame(shown_teams), width="stretch", hide_index=True)
+            st.caption("GA/GP is opponent goals allowed per game. PK xGA/60 is expected goals allowed per 60 minutes while shorthanded; PK GA/60 is actual goals allowed on the kill. PP xGF/60 measures expected goals generated on the power play. These are current MoneyPuck observations, not tested move percentages.")
+        else:
+            st.info("No current-season team games are available yet.")
+    except Exception as exc:
+        st.warning(f"Current team form is temporarily unavailable ({type(exc).__name__}).")
+    st.markdown("### Skater form")
     live_rows = []
     try:
         nhl_rows, nhl_checked = _cached_league_skaters(season_id)

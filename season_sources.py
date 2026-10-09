@@ -38,6 +38,64 @@ def fetch_moneypuck_skaters(start_year, session=None):
     return pd.read_csv(BytesIO(response.content)), response.headers.get("Last-Modified", "Unknown")
 
 
+def fetch_moneypuck_teams(start_year, session=None):
+    """Fetch the current regular-season team file used for observed matchup form."""
+    http = session or requests.Session()
+    url = f"https://moneypuck.com/moneypuck/playerData/seasonSummary/{int(start_year)}/regular/teams.csv"
+    response = http.get(url, timeout=35)
+    response.raise_for_status()
+    return pd.read_csv(BytesIO(response.content)), response.headers.get("Last-Modified", "Unknown")
+
+
+def team_season_rows(money_puck):
+    """Team scoring/defense rates by situation; iceTime is seconds."""
+    needed = {"team", "situation", "games_played", "iceTime", "goalsFor",
+              "goalsAgainst", "xGoalsFor", "xGoalsAgainst", "shotsOnGoalAgainst"}
+    if not needed.issubset(money_puck.columns):
+        raise ValueError(f"MoneyPuck team file missing {sorted(needed - set(money_puck.columns))}")
+    by_team = {}
+    for _, item in money_puck.iterrows():
+        team, situation = str(item["team"]), str(item["situation"])
+        if situation in ("all", "5on5", "5on4", "4on5"):
+            by_team.setdefault(team, {})[situation] = item
+
+    def per_game(item, field, games):
+        value = _number(item.get(field)) if item is not None else None
+        return round(value / games, 2) if value is not None and games else None
+
+    def per_60(item, field):
+        if item is None:
+            return None
+        value, seconds = _number(item.get(field)), _number(item.get("iceTime"))
+        return round(value * 3600 / seconds, 2) if value is not None and seconds and seconds > 0 else None
+
+    output = []
+    for team, situations in by_team.items():
+        all_sits = situations.get("all")
+        if all_sits is None:
+            continue
+        games = _number(all_sits.get("games_played"))
+        if not games or games < 1:
+            continue
+        five, pp, pk = (situations.get(key) for key in ("5on5", "5on4", "4on5"))
+        output.append({
+            "Team": team, "GP": int(games),
+            "GF/GP": per_game(all_sits, "goalsFor", games),
+            "GA/GP": per_game(all_sits, "goalsAgainst", games),
+            "SOG against/GP": per_game(all_sits, "shotsOnGoalAgainst", games),
+            "5v5 xG%": round(_number(five.get("xGoalsPercentage")) * 100, 1)
+            if five is not None and _number(five.get("xGoalsPercentage")) is not None else None,
+            "5v5 xGA/60": per_60(five, "xGoalsAgainst"),
+            "PP xGF/60": per_60(pp, "xGoalsFor"),
+            "PP GF/60": per_60(pp, "goalsFor"),
+            "PK xGA/60": per_60(pk, "xGoalsAgainst"),
+            "PK GA/60": per_60(pk, "goalsAgainst"),
+            "PK min": round(_number(pk.get("iceTime")) / 60, 1)
+            if pk is not None and _number(pk.get("iceTime")) is not None else None,
+        })
+    return sorted(output, key=lambda row: row["Team"])
+
+
 def fetch_nhl_player_log(player_id, season_id, session=None):
     http = session or requests.Session()
     url = f"https://api-web.nhle.com/v1/player/{int(player_id)}/game-log/{int(season_id)}/2"
