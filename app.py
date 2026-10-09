@@ -19,6 +19,7 @@ from warlord_moves_2026 import VERSION as MOVE_KIT_VERSION
 from warlord_moves_2026 import best_move, points_moves, sog_moves, goals_moves as _goals_carry_moves, assists_moves as _assists_mapped_moves
 from warlords_night_board import CLASSES, baseline_audit, rank_warlords, rank_priced_slate, featured_warlords, render_warlords, render_power_play_form, _character_uri
 from player_form import summarize_form
+from current_season_stats import current_season_rows, season_for_day
 from ledger_store import append_bet as _append_cloud_bet, recent_bets as _recent_cloud_bets
 from power_play_quotes import fetch_current_pp_usage, priced_ppp_quotes
 from player_availability import unavailable_mask
@@ -4621,7 +4622,7 @@ if owner_access:
 # Navigation
 page = st.sidebar.radio(
     "Page",
-    ["⚔️ Warlords of the Night", "Scout Board", "Points", "Assists", "SOG", "GOALS (0.5)", "Power Play", "📊 Results", "🧪 Dagger Lab", "🪜 Ladder Alerts", "Guide", "Ledger", "Raw CSV", "📟 Calculator", "🧾 Log Bet"],
+    ["⚔️ Warlords of the Night", "Scout Board", "Points", "Assists", "SOG", "GOALS (0.5)", "Power Play", "📈 This Season", "📊 Results", "🧪 Dagger Lab", "🪜 Ladder Alerts", "Guide", "Ledger", "Raw CSV", "📟 Calculator", "🧾 Log Bet"],
     index=0,
     format_func=lambda x: {
         "Points": "Points (🛡️ Tank)",
@@ -4659,7 +4660,7 @@ slate_start_by_game = _slate_start_times(df_f)
 
 # Common search, team, and matchup controls apply to every page. Class move
 # thresholds never remove a player from the priced slate tables.
-if page != "⚔️ Warlords of the Night":
+if page not in {"⚔️ Warlords of the Night", "📈 This Season"}:
     show_games_times(df_f)
 
 
@@ -5789,6 +5790,44 @@ elif page == "Power Play":
             "Team_PP_xGF60", "Opp_PK_xGA60", "PP_Matchup", "PPP10_total", "Drought_PPP",
         ]
         show_table(df_pp, pp_cols, "Power Play (5v4) — Usage, creation, matchup, PPP drought")
+
+
+elif page == "📈 This Season":
+    st.subheader("📈 This Season · observed skater stats")
+    st.caption("Official NHL regular-season game logs stored in the loaded tracker. This is early-season form, not a model prediction or a change to the tested moves.")
+    slate_dates = pd.to_datetime(df_f.get("Date", pd.Series(dtype=str)), errors="coerce").dropna()
+    if slate_dates.empty:
+        st.info("This tracker has no slate date, so its current season cannot be verified.")
+    else:
+        slate_day = slate_dates.max().date().isoformat()
+        season = season_for_day(slate_day)
+        season_stats, season_logs = current_season_rows(df_f.to_dict("records"), season, slate_day)
+        if not season_stats:
+            st.info(f"No completed {season} regular-season games are in this tracker yet. Run / Refresh slate after games finish to update this view.")
+        else:
+            latest_game = max(row["Last game"] for row in season_stats)
+            st.caption(f"{season} regular season · {len(season_stats)} tracker players with recorded games · latest included game {latest_game} · tracker slate {slate_day}. A new slate run updates these stats.")
+            min_gp = st.selectbox("Minimum games played", (1, 2, 3, 5), index=0)
+            sort_choices = {
+                "Games played": "GP", "Points/game": "P/GP", "Total points": "P",
+                "Goals": "G", "Assists": "A", "Shots/game": "SOG/GP",
+                "Power-play points": "PPP",
+            }
+            sort_label = st.selectbox("Sort season stats", tuple(sort_choices), index=0)
+            visible = [row for row in season_stats if row["GP"] >= min_gp]
+            visible.sort(key=lambda row: (row[sort_choices[sort_label]] if row[sort_choices[sort_label]] is not None else -1,
+                                          row["GP"]), reverse=True)
+            st.caption(f"{len(visible)} players shown. PPP is blank unless every game has a credited power-play-point entry; PP logs shows coverage.")
+            if visible:
+                st.dataframe(pd.DataFrame(visible).drop(columns="_key"), width="stretch", hide_index=True)
+                by_key = {row["_key"]: row for row in visible}
+                selected_key = st.selectbox("Player game log", list(by_key),
+                                            format_func=lambda key: f'{by_key[key]["Player"]} · {by_key[key]["Team"]}')
+                selected = by_key[selected_key]
+                st.caption(f'{selected["Player"]} · {season} regular season · newest game first · pre-slate results only')
+                st.dataframe(pd.DataFrame(season_logs[selected_key]), width="stretch", hide_index=True)
+            else:
+                st.info(f"No tracker players have {min_gp} recorded games yet. Lower the minimum to see the early sample.")
 
 
 elif page == "🧪 Dagger Lab":
