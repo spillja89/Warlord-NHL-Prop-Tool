@@ -1,0 +1,112 @@
+Date,Game,Game_ID,Player,Player_ID,Team,Market,Move,Kind,Rule,Icon,Kit_Version,Line,Actual,Outcome,Grade_Status,Match_Status
+2026-10-09,ANA@WPG,2026020069,Beckett Sennecke,8484762.0,ANA,Points,Hammer Fists,FLOOR,Conf_Points >= 80,PTS05_HAMMER_FISTS.svg,2026-09-24-frozen-v2,0.5,2.0,W,FINAL,OK
+2026-10-09,ANA@WPG,2026020069,Beckett Sennecke,8484762.0,ANA,Assists,Staff (Green Stance),STANCE,Green + Assists 0.5,staff.svg,2026-09-24-frozen-v2,0.5,2.0,W,FINAL,OK
+2026-10-09,ANA@WPG,2026020069,Cutter Gauthier,8483445.0,ANA,SOG,Sniper Stance,STANCE,Green + SOG 3.5 + Conf_SOG >= 75,sog_class_shooter.svg,2026-09-24-frozen-v2,3.5,1.0,L,FINAL,OK
+2026-10-09,ANA@WPG,2026020069,Cutter Gauthier,8483445.0,ANA,SOG,Strong,FLOOR,PPP10_total >= 3 + opp_5v5_HDCA60 >= 2.36,sog_berserkers_rage.svg,2026-09-24-frozen-v2,3.5,1.0,L,FINAL,OK
+2026-10-09,ANA@WPG,2026020069,Jackson LaCombe,8481605.0,ANA,Points,Hammer Fists,FLOOR,Conf_Points >= 80,PTS05_HAMMER_FISTS.svg,2026-09-24-frozen-v2,0.5,1.0,W,FINAL,OK
+2026-10-09,ANA@WPG,2026020069,Jackson LaCombe,8481605.0,ANA,Points,Echo Stomp II,TIER,Conf_Points >= 80 + TOI_per_game >= 19.18,PTS05_HAMMER_STOMP.svg,2026-09-24-frozen-v2,0.5,1.0,W,FINAL,OK
+2026-10-09,ANA@WPG,2026020069,Jackson LaCombe,8481605.0,ANA,Points,Blood Stomp,CRIT,Conf_Points >= 83 + TOI_per_game >= 19.18 + Opp_PK_xGA60 >= 7.784,PTS05_BLEED_ENV.svg,2026-09-24-frozen-v2,0.5,1.0,W,FINAL,OK
+2026-10-09,ANA@WPG,2026020069,Leo Carlsson,8484153.0,ANA,Points,Hammer Fists,FLOOR,Conf_Points >= 80,PTS05_HAMMER_FISTS.svg,2026-09-24-frozen-v2,0.5,0.0,L,FINAL,OK
+2026-10-09,ANA@WPG,2026020069,Leo Carlsson,8484153.0,ANA,Assists,Staff (Green Stance),STANCE,Green + Assists 0.5,staff.svg,2026-09-24-frozen-v2,0.5,0.0,L,FINAL,OK
+2026-10-09,ANA@WPG,2026020069,Gabriel Vilardi,8480014.0,WPG,Points,Hammer Fists,FLOOR,Conf_Points >= 80,PTS05_HAMMER_FISTS.svg,2026-09-24-frozen-v2,0.5,0.0,L,FINAL,OK
+2026-10-09,ANA@WPG,2026020069,Gabriel Vilardi,8480014.0,WPG,Assists,Staff (Green Stance),STANCE,Green + Assists 0.5,staff.svg,2026-09-24-frozen-v2,0.5,0.0,L,FINAL,OK
+2026-10-09,ANA@WPG,2026020069,Gabriel Vilardi,8480014.0,WPG,Assists,Staff Awakened,STANCE,Green + Assists 0.5 + Conf_Assists ≥ 83,staff.svg,2026-09-24-frozen-v2,0.5,0.0,L,FINAL,OK
+2026-10-09,ANA@WPG,2026020069,Gabriel Vilardi,8480014.0,WPG,Goal,Weakened Armor,WEAK DEFENSE,Opp_PK_xGA60 >= 7.3,shattered_armor.svg,2026-09-24-frozen-v2,0.5,0.0,L,FINAL,OK
+2026-10-09,ANA@WPG,2026020069,Gabriel Vilardi,8480014.0,WPG,Goal,Fallen Guardian,WEAK DEFENSE,Opp_GAA >= 3.01,fenrir_claw.svg,2026-09-24-frozen-v2,0.5,0.0,L,FINAL,OK
+2026-10-09,ANA@WPG,2026020069,Kyle Connor,8478398.0,WPG,Points,DPS Tank stance,STANCE,Conf_Points >= 75,PTS15_TWO_HANDED_HAMMER.svg,2026-09-24-frozen-v2,1.5,1.0,L,FINAL,OK
+2026-10-09,ANA@WPG,2026020069,Kyle Connor,8478398.0,WPG,Points,Blade Impale,SPECIAL,Conf_Points >= 83 + Goal_ProofCount >= 3,PTS15_BLADE_IMPALE.svg,2026-09-24-frozen-v2,1.5,1.0,L,FINAL,OK
+2026-10-09,ANA@WPG,2026020069,Kyle Connor,8478398.0,WPG,Points,Blade Slash,SPECIAL,Conf_Points >= 75 + Goal_Model% >= 33.4 + Opp_PK_xGA60 >= 7.38249,PTS15_BLADE_SLASH.svg,2026-09-24-frozen-v2,1.5,1.0,L,FINAL,OK
+2026-10-09,ANA@WPG,2026020069,Kyle Connor,8478398.0,WPG,Points,Ragnarok,ULTIMATE,Blade Impale + Blade Slash,PTS15_POLARIZING_SMASH.svg,2026-09-24-frozen-v2,1.5,1.0,L,FINAL,OK
+2026-10-09,ANA@WPG,2026020069,Kyle Connor,8478398.0,WPG,Assists,Staff (Green Stance),STANCE,Green + Assists 0.5,staff.svg,2026-09-24-frozen-v2,0.5,0.0,L,FINAL,OK
+2026-10-09,ANA@WPG,2026020069,Kyle Connor,8478398.0,WPG,Assists,Staff Awakened,STANCE,Green + Assists 0.5 + Conf_Assists ≥ 83,staff.svg,2026-09-24-frozen-v2,0.5,0.0,L,FINAL,OK
+2026-10-09,ANA@WPG,2026020069,Kyle Connor,8478398.0,WPG,SOG,Sniper Stance,STANCE,Green + SOG 3.5 + Conf_SOG >= 75,sog_class_shooter.svg,2026-09-24-frozen-v2,3.5,3.0,L,FINAL,OK
+2026-10-09,ANA@WPG,2026020069,Kyle Connor,8478398.0,WPG,Goal,Base Attack,BASE ATTACK,Goal_mu >= 0.4048,base.svg,2026-09-24-frozen-v2,0.5,1.0,W,FINAL,OK
+2026-10-09,ANA@WPG,2026020069,Kyle Connor,8478398.0,WPG,Goal,Weakened Armor,WEAK DEFENSE,Opp_PK_xGA60 >= 7.3,shattered_armor.svg,2026-09-24-frozen-v2,0.5,1.0,W,FINAL,OK
+2026-10-09,ANA@WPG,2026020069,Kyle Connor,8478398.0,WPG,Goal,Fallen Guardian,WEAK DEFENSE,Opp_GAA >= 3.01,fenrir_claw.svg,2026-09-24-frozen-v2,0.5,1.0,W,FINAL,OK
+2026-10-09,ANA@WPG,2026020069,Kyle Connor,8478398.0,WPG,Goal,Armor Sunder,HEAVY ATTACK,Goal_mu >= 0.4048 + Opp_PK_xGA60 >= 7.3,smash.svg,2026-09-24-frozen-v2,0.5,1.0,W,FINAL,OK
+2026-10-09,ANA@WPG,2026020069,Kyle Connor,8478398.0,WPG,Goal,Berserker Aggression,HEAVY ATTACK,Goal_mu >= 0.4048 + Opp_GAA >= 3.01,fury.svg,2026-09-24-frozen-v2,0.5,1.0,W,FINAL,OK
+2026-10-09,ANA@WPG,2026020069,Kyle Connor,8478398.0,WPG,Goal,Press the Attack,SPECIAL ATTACK,Goal_mu >= 0.4048 + Opp_PK_xGA60 >= 7.3 + Opp_GAA >= 2.85,smash.svg,2026-09-24-frozen-v2,0.5,1.0,W,FINAL,OK
+2026-10-09,ANA@WPG,2026020069,Kyle Connor,8478398.0,WPG,Goal,Press the Attack (Crit),SPECIAL ATTACK,Goal_mu >= 0.4048 + Opp_PK_xGA60 >= 7.3 + Opp_GAA >= 3.01,smash.svg,2026-09-24-frozen-v2,0.5,1.0,W,FINAL,OK
+2026-10-09,ANA@WPG,2026020069,Kyle Connor,8478398.0,WPG,Goal,FOR VALHALLA!,ULTIMATE ATTACK,Goal_mu >= 0.4048 + Opp_GAA >= 3.01 + StarScore <= 96.9,valhalla.svg,2026-09-24-frozen-v2,0.5,1.0,W,FINAL,OK
+2026-10-09,ANA@WPG,2026020069,Mark Scheifele,8476460.0,WPG,Points,DPS Tank stance,STANCE,Conf_Points >= 75,PTS15_TWO_HANDED_HAMMER.svg,2026-09-24-frozen-v2,1.5,1.0,L,FINAL,OK
+2026-10-09,ANA@WPG,2026020069,Mark Scheifele,8476460.0,WPG,Points,Blade Impale,SPECIAL,Conf_Points >= 83 + Goal_ProofCount >= 3,PTS15_BLADE_IMPALE.svg,2026-09-24-frozen-v2,1.5,1.0,L,FINAL,OK
+2026-10-09,ANA@WPG,2026020069,Mark Scheifele,8476460.0,WPG,Assists,Staff (Green Stance),STANCE,Green + Assists 0.5,staff.svg,2026-09-24-frozen-v2,0.5,1.0,W,FINAL,OK
+2026-10-09,ANA@WPG,2026020069,Mark Scheifele,8476460.0,WPG,Assists,Staff Awakened,STANCE,Green + Assists 0.5 + Conf_Assists ≥ 83,staff.svg,2026-09-24-frozen-v2,0.5,1.0,W,FINAL,OK
+2026-10-09,ANA@WPG,2026020069,Mark Scheifele,8476460.0,WPG,SOG,Jungle Stance,STANCE,Green + SOG 2.5 + Conf_SOG >= 75,sog_basic_swipe.svg,2026-09-24-frozen-v2,2.5,1.0,L,FINAL,OK
+2026-10-09,ANA@WPG,2026020069,Mark Scheifele,8476460.0,WPG,SOG,Berserker Swipe,FLOOR,iXG% >= 93.2,sog_basic_swipe.svg,2026-09-24-frozen-v2,2.5,1.0,L,FINAL,OK
+2026-10-09,ANA@WPG,2026020069,Mark Scheifele,8476460.0,WPG,SOG,Paralysis,ENV,Goalie_Weak >= 62.5,sog_env_paralysis.svg,2026-09-24-frozen-v2,2.5,1.0,L,FINAL,OK
+2026-10-09,ANA@WPG,2026020069,Mark Scheifele,8476460.0,WPG,Goal,Weakened Armor,WEAK DEFENSE,Opp_PK_xGA60 >= 7.3,shattered_armor.svg,2026-09-24-frozen-v2,0.5,0.0,L,FINAL,OK
+2026-10-09,ANA@WPG,2026020069,Mark Scheifele,8476460.0,WPG,Goal,Fallen Guardian,WEAK DEFENSE,Opp_GAA >= 3.01,fenrir_claw.svg,2026-09-24-frozen-v2,0.5,0.0,L,FINAL,OK
+2026-10-09,NYR@WSH,2026020067,Adam Fox,8479323.0,NYR,Points,Hammer Fists,FLOOR,Conf_Points >= 80,PTS05_HAMMER_FISTS.svg,2026-09-24-frozen-v2,0.5,0.0,L,FINAL,OK
+2026-10-09,NYR@WSH,2026020067,Adam Fox,8479323.0,NYR,Points,Echo Stomp II,TIER,Conf_Points >= 80 + TOI_per_game >= 19.18,PTS05_HAMMER_STOMP.svg,2026-09-24-frozen-v2,0.5,0.0,L,FINAL,OK
+2026-10-09,NYR@WSH,2026020067,Adam Fox,8479323.0,NYR,Points,Gaia’s Blessing,TIER,Conf_Points >= 80 + Assists_mu >= 0.746,PTS05_GAIAS_BLESSING.svg,2026-09-24-frozen-v2,0.5,0.0,L,FINAL,OK
+2026-10-09,NYR@WSH,2026020067,Adam Fox,8479323.0,NYR,Points,Gaia’s Blessing+ (Press),HEAVY,Conf_Points >= 81 + Assists_mu >= 0.746,PTS05_GAIAS_BLESSING.svg,2026-09-24-frozen-v2,0.5,0.0,L,FINAL,OK
+2026-10-09,NYR@WSH,2026020067,Adam Fox,8479323.0,NYR,Points,Gaia’s Blessing++ (Smash),HEAVY,Conf_Points >= 83 + Assists_mu >= 0.746,PTS05_GAIAS_BLESSING.svg,2026-09-24-frozen-v2,0.5,0.0,L,FINAL,OK
+2026-10-09,NYR@WSH,2026020067,J.T. Miller,8476468.0,NYR,Points,Hammer Fists,FLOOR,Conf_Points >= 80,PTS05_HAMMER_FISTS.svg,2026-09-24-frozen-v2,0.5,1.0,W,FINAL,OK
+2026-10-09,NYR@WSH,2026020067,J.T. Miller,8476468.0,NYR,Points,Echo Stomp II,TIER,Conf_Points >= 80 + TOI_per_game >= 19.18,PTS05_HAMMER_STOMP.svg,2026-09-24-frozen-v2,0.5,1.0,W,FINAL,OK
+2026-10-09,NYR@WSH,2026020067,J.T. Miller,8476468.0,NYR,Assists,Staff (Green Stance),STANCE,Green + Assists 0.5,staff.svg,2026-09-24-frozen-v2,0.5,1.0,W,FINAL,OK
+2026-10-09,NYR@WSH,2026020067,Mika Zibanejad,8476459.0,NYR,Points,Hammer Fists,FLOOR,Conf_Points >= 80,PTS05_HAMMER_FISTS.svg,2026-09-24-frozen-v2,0.5,0.0,L,FINAL,OK
+2026-10-09,NYR@WSH,2026020067,Mika Zibanejad,8476459.0,NYR,Points,Echo Stomp II,TIER,Conf_Points >= 80 + TOI_per_game >= 19.18,PTS05_HAMMER_STOMP.svg,2026-09-24-frozen-v2,0.5,0.0,L,FINAL,OK
+2026-10-09,NYR@WSH,2026020067,Mika Zibanejad,8476459.0,NYR,Points,Gaia’s Blessing,TIER,Conf_Points >= 80 + Assists_mu >= 0.746,PTS05_GAIAS_BLESSING.svg,2026-09-24-frozen-v2,0.5,0.0,L,FINAL,OK
+2026-10-09,NYR@WSH,2026020067,Mika Zibanejad,8476459.0,NYR,Points,Gaia’s Blessing+ (Press),HEAVY,Conf_Points >= 81 + Assists_mu >= 0.746,PTS05_GAIAS_BLESSING.svg,2026-09-24-frozen-v2,0.5,0.0,L,FINAL,OK
+2026-10-09,NYR@WSH,2026020067,Mika Zibanejad,8476459.0,NYR,Points,Gaia’s Blessing++ (Smash),HEAVY,Conf_Points >= 83 + Assists_mu >= 0.746,PTS05_GAIAS_BLESSING.svg,2026-09-24-frozen-v2,0.5,0.0,L,FINAL,OK
+2026-10-09,NYR@WSH,2026020067,Mika Zibanejad,8476459.0,NYR,Assists,Staff (Green Stance),STANCE,Green + Assists 0.5,staff.svg,2026-09-24-frozen-v2,0.5,0.0,L,FINAL,OK
+2026-10-09,NYR@WSH,2026020067,Mika Zibanejad,8476459.0,NYR,Assists,Staff Awakened,STANCE,Green + Assists 0.5 + Conf_Assists ≥ 83,staff.svg,2026-09-24-frozen-v2,0.5,0.0,L,FINAL,OK
+2026-10-09,NYR@WSH,2026020067,Mika Zibanejad,8476459.0,NYR,Assists,Arcane Channel I,VOLUME,Green + Assists 0.5 + Conf_Assists ≥ 83 + PP_Points60 ≥ 5.3,arcane_channel_i.svg,2026-09-24-frozen-v2,0.5,0.0,L,FINAL,OK
+2026-10-09,NYR@WSH,2026020067,Mika Zibanejad,8476459.0,NYR,Goal,Weakened Armor,WEAK DEFENSE,Opp_PK_xGA60 >= 7.3,shattered_armor.svg,2026-09-24-frozen-v2,0.5,0.0,L,FINAL,OK
+2026-10-09,NYR@WSH,2026020067,Dylan Strome,8478440.0,WSH,Assists,Staff (Green Stance),STANCE,Green + Assists 0.5,staff.svg,2026-09-24-frozen-v2,0.5,1.0,W,FINAL,OK
+2026-10-09,PIT@CBJ,2026020068,Charlie Coyle,8475745.0,CBJ,Points,Hammer Fists,FLOOR,Conf_Points >= 80,PTS05_HAMMER_FISTS.svg,2026-09-24-frozen-v2,0.5,0.0,L,FINAL,OK
+2026-10-09,PIT@CBJ,2026020068,Charlie Coyle,8475745.0,CBJ,Assists,Staff (Green Stance),STANCE,Green + Assists 0.5,staff.svg,2026-09-24-frozen-v2,0.5,0.0,L,FINAL,OK
+2026-10-09,PIT@CBJ,2026020068,Matthew Knies,8482720.0,CBJ,Points,Hammer Fists,FLOOR,Conf_Points >= 80,PTS05_HAMMER_FISTS.svg,2026-09-24-frozen-v2,0.5,0.0,L,FINAL,OK
+2026-10-09,PIT@CBJ,2026020068,Matthew Knies,8482720.0,CBJ,Assists,Staff (Green Stance),STANCE,Green + Assists 0.5,staff.svg,2026-09-24-frozen-v2,0.5,0.0,L,FINAL,OK
+2026-10-09,PIT@CBJ,2026020068,Matthew Knies,8482720.0,CBJ,Assists,Staff Awakened,STANCE,Green + Assists 0.5 + Conf_Assists ≥ 83,staff.svg,2026-09-24-frozen-v2,0.5,0.0,L,FINAL,OK
+2026-10-09,PIT@CBJ,2026020068,Zach Werenski,8478460.0,CBJ,Points,Hammer Fists,FLOOR,Conf_Points >= 80,PTS05_HAMMER_FISTS.svg,2026-09-24-frozen-v2,0.5,1.0,W,FINAL,OK
+2026-10-09,PIT@CBJ,2026020068,Zach Werenski,8478460.0,CBJ,Points,Echo Stomp II,TIER,Conf_Points >= 80 + TOI_per_game >= 19.18,PTS05_HAMMER_STOMP.svg,2026-09-24-frozen-v2,0.5,1.0,W,FINAL,OK
+2026-10-09,PIT@CBJ,2026020068,Zach Werenski,8478460.0,CBJ,Points,Gaia’s Blessing,TIER,Conf_Points >= 80 + Assists_mu >= 0.746,PTS05_GAIAS_BLESSING.svg,2026-09-24-frozen-v2,0.5,1.0,W,FINAL,OK
+2026-10-09,PIT@CBJ,2026020068,Zach Werenski,8478460.0,CBJ,Points,Gaia’s Blessing+ (Press),HEAVY,Conf_Points >= 81 + Assists_mu >= 0.746,PTS05_GAIAS_BLESSING.svg,2026-09-24-frozen-v2,0.5,1.0,W,FINAL,OK
+2026-10-09,PIT@CBJ,2026020068,Zach Werenski,8478460.0,CBJ,Points,Gaia’s Blessing++ (Smash),HEAVY,Conf_Points >= 83 + Assists_mu >= 0.746,PTS05_GAIAS_BLESSING.svg,2026-09-24-frozen-v2,0.5,1.0,W,FINAL,OK
+2026-10-09,PIT@CBJ,2026020068,Zach Werenski,8478460.0,CBJ,Assists,Staff (Green Stance),STANCE,Green + Assists 0.5,staff.svg,2026-09-24-frozen-v2,0.5,1.0,W,FINAL,OK
+2026-10-09,PIT@CBJ,2026020068,Zach Werenski,8478460.0,CBJ,Assists,Staff Awakened,STANCE,Green + Assists 0.5 + Conf_Assists ≥ 83,staff.svg,2026-09-24-frozen-v2,0.5,1.0,W,FINAL,OK
+2026-10-09,PIT@CBJ,2026020068,Bryan Rust,8475810.0,PIT,Assists,Staff (Green Stance),STANCE,Green + Assists 0.5,staff.svg,2026-09-24-frozen-v2,0.5,0.0,L,FINAL,OK
+2026-10-09,PIT@CBJ,2026020068,Erik Karlsson,8474578.0,PIT,Points,Hammer Fists,FLOOR,Conf_Points >= 80,PTS05_HAMMER_FISTS.svg,2026-09-24-frozen-v2,0.5,1.0,W,FINAL,OK
+2026-10-09,PIT@CBJ,2026020068,Erik Karlsson,8474578.0,PIT,Points,Echo Stomp II,TIER,Conf_Points >= 80 + TOI_per_game >= 19.18,PTS05_HAMMER_STOMP.svg,2026-09-24-frozen-v2,0.5,1.0,W,FINAL,OK
+2026-10-09,PIT@CBJ,2026020068,Erik Karlsson,8474578.0,PIT,Points,Gaia’s Blessing,TIER,Conf_Points >= 80 + Assists_mu >= 0.746,PTS05_GAIAS_BLESSING.svg,2026-09-24-frozen-v2,0.5,1.0,W,FINAL,OK
+2026-10-09,PIT@CBJ,2026020068,Erik Karlsson,8474578.0,PIT,Points,Gaia’s Blessing+ (Press),HEAVY,Conf_Points >= 81 + Assists_mu >= 0.746,PTS05_GAIAS_BLESSING.svg,2026-09-24-frozen-v2,0.5,1.0,W,FINAL,OK
+2026-10-09,PIT@CBJ,2026020068,Erik Karlsson,8474578.0,PIT,Assists,Staff (Green Stance),STANCE,Green + Assists 0.5,staff.svg,2026-09-24-frozen-v2,0.5,1.0,W,FINAL,OK
+2026-10-09,PIT@CBJ,2026020068,Evgeni Malkin,8471215.0,PIT,Points,Hammer Fists,FLOOR,Conf_Points >= 80,PTS05_HAMMER_FISTS.svg,2026-09-24-frozen-v2,0.5,1.0,W,FINAL,OK
+2026-10-09,PIT@CBJ,2026020068,Evgeni Malkin,8471215.0,PIT,Points,Gaia’s Blessing,TIER,Conf_Points >= 80 + Assists_mu >= 0.746,PTS05_GAIAS_BLESSING.svg,2026-09-24-frozen-v2,0.5,1.0,W,FINAL,OK
+2026-10-09,PIT@CBJ,2026020068,Evgeni Malkin,8471215.0,PIT,Assists,Staff (Green Stance),STANCE,Green + Assists 0.5,staff.svg,2026-09-24-frozen-v2,0.5,0.0,L,FINAL,OK
+2026-10-09,PIT@CBJ,2026020068,Sidney Crosby,8471675.0,PIT,Points,Hammer Fists,FLOOR,Conf_Points >= 80,PTS05_HAMMER_FISTS.svg,2026-09-24-frozen-v2,0.5,0.0,L,FINAL,OK
+2026-10-09,PIT@CBJ,2026020068,Sidney Crosby,8471675.0,PIT,Points,Echo Stomp II,TIER,Conf_Points >= 80 + TOI_per_game >= 19.18,PTS05_HAMMER_STOMP.svg,2026-09-24-frozen-v2,0.5,0.0,L,FINAL,OK
+2026-10-09,PIT@CBJ,2026020068,Sidney Crosby,8471675.0,PIT,Points,Gaia’s Blessing,TIER,Conf_Points >= 80 + Assists_mu >= 0.746,PTS05_GAIAS_BLESSING.svg,2026-09-24-frozen-v2,0.5,0.0,L,FINAL,OK
+2026-10-09,PIT@CBJ,2026020068,Sidney Crosby,8471675.0,PIT,Points,Gaia’s Blessing+ (Press),HEAVY,Conf_Points >= 81 + Assists_mu >= 0.746,PTS05_GAIAS_BLESSING.svg,2026-09-24-frozen-v2,0.5,0.0,L,FINAL,OK
+2026-10-09,PIT@CBJ,2026020068,Sidney Crosby,8471675.0,PIT,Points,Gaia’s Blessing++ (Smash),HEAVY,Conf_Points >= 83 + Assists_mu >= 0.746,PTS05_GAIAS_BLESSING.svg,2026-09-24-frozen-v2,0.5,0.0,L,FINAL,OK
+2026-10-09,PIT@CBJ,2026020068,Sidney Crosby,8471675.0,PIT,Points,Blood Stomp,CRIT,Conf_Points >= 83 + TOI_per_game >= 19.18 + Opp_PK_xGA60 >= 7.784,PTS05_BLEED_ENV.svg,2026-09-24-frozen-v2,0.5,0.0,L,FINAL,OK
+2026-10-09,PIT@CBJ,2026020068,Sidney Crosby,8471675.0,PIT,Assists,Staff (Green Stance),STANCE,Green + Assists 0.5,staff.svg,2026-09-24-frozen-v2,0.5,0.0,L,FINAL,OK
+2026-10-09,SEA@DET,2026020066,Alex DeBrincat,8479337.0,DET,Points,Hammer Fists,FLOOR,Conf_Points >= 80,PTS05_HAMMER_FISTS.svg,2026-09-24-frozen-v2,0.5,1.0,W,FINAL,OK
+2026-10-09,SEA@DET,2026020066,Alex DeBrincat,8479337.0,DET,Points,Gaia’s Blessing,TIER,Conf_Points >= 80 + Assists_mu >= 0.746,PTS05_GAIAS_BLESSING.svg,2026-09-24-frozen-v2,0.5,1.0,W,FINAL,OK
+2026-10-09,SEA@DET,2026020066,Alex DeBrincat,8479337.0,DET,Points,Gaia’s Blessing+ (Press),HEAVY,Conf_Points >= 81 + Assists_mu >= 0.746,PTS05_GAIAS_BLESSING.svg,2026-09-24-frozen-v2,0.5,1.0,W,FINAL,OK
+2026-10-09,SEA@DET,2026020066,Alex DeBrincat,8479337.0,DET,Points,Gaia’s Blessing++ (Smash),HEAVY,Conf_Points >= 83 + Assists_mu >= 0.746,PTS05_GAIAS_BLESSING.svg,2026-09-24-frozen-v2,0.5,1.0,W,FINAL,OK
+2026-10-09,SEA@DET,2026020066,Alex DeBrincat,8479337.0,DET,Assists,Staff (Green Stance),STANCE,Green + Assists 0.5,staff.svg,2026-09-24-frozen-v2,0.5,1.0,W,FINAL,OK
+2026-10-09,SEA@DET,2026020066,Alex DeBrincat,8479337.0,DET,Assists,Staff Awakened,STANCE,Green + Assists 0.5 + Conf_Assists ≥ 83,staff.svg,2026-09-24-frozen-v2,0.5,1.0,W,FINAL,OK
+2026-10-09,SEA@DET,2026020066,Alex DeBrincat,8479337.0,DET,Goal,Base Attack,BASE ATTACK,Goal_mu >= 0.4048,base.svg,2026-09-24-frozen-v2,0.5,0.0,L,FINAL,OK
+2026-10-09,SEA@DET,2026020066,Alex DeBrincat,8479337.0,DET,Goal,Weakened Armor,WEAK DEFENSE,Opp_PK_xGA60 >= 7.3,shattered_armor.svg,2026-09-24-frozen-v2,0.5,0.0,L,FINAL,OK
+2026-10-09,SEA@DET,2026020066,Alex DeBrincat,8479337.0,DET,Goal,Fallen Guardian,WEAK DEFENSE,Opp_GAA >= 3.01,fenrir_claw.svg,2026-09-24-frozen-v2,0.5,0.0,L,FINAL,OK
+2026-10-09,SEA@DET,2026020066,Alex DeBrincat,8479337.0,DET,Goal,Armor Sunder,HEAVY ATTACK,Goal_mu >= 0.4048 + Opp_PK_xGA60 >= 7.3,smash.svg,2026-09-24-frozen-v2,0.5,0.0,L,FINAL,OK
+2026-10-09,SEA@DET,2026020066,Alex DeBrincat,8479337.0,DET,Goal,Berserker Aggression,HEAVY ATTACK,Goal_mu >= 0.4048 + Opp_GAA >= 3.01,fury.svg,2026-09-24-frozen-v2,0.5,0.0,L,FINAL,OK
+2026-10-09,SEA@DET,2026020066,Alex DeBrincat,8479337.0,DET,Goal,Press the Attack,SPECIAL ATTACK,Goal_mu >= 0.4048 + Opp_PK_xGA60 >= 7.3 + Opp_GAA >= 2.85,smash.svg,2026-09-24-frozen-v2,0.5,0.0,L,FINAL,OK
+2026-10-09,SEA@DET,2026020066,Alex DeBrincat,8479337.0,DET,Goal,Press the Attack (Crit),SPECIAL ATTACK,Goal_mu >= 0.4048 + Opp_PK_xGA60 >= 7.3 + Opp_GAA >= 3.01,smash.svg,2026-09-24-frozen-v2,0.5,0.0,L,FINAL,OK
+2026-10-09,SEA@DET,2026020066,Alex DeBrincat,8479337.0,DET,Goal,FOR VALHALLA!,ULTIMATE ATTACK,Goal_mu >= 0.4048 + Opp_GAA >= 3.01 + StarScore <= 96.9,valhalla.svg,2026-09-24-frozen-v2,0.5,0.0,L,FINAL,OK
+2026-10-09,SEA@DET,2026020066,Lucas Raymond,8482078.0,DET,Points,Hammer Fists,FLOOR,Conf_Points >= 80,PTS05_HAMMER_FISTS.svg,2026-09-24-frozen-v2,0.5,1.0,W,FINAL,OK
+2026-10-09,SEA@DET,2026020066,Lucas Raymond,8482078.0,DET,Points,Gaia’s Blessing,TIER,Conf_Points >= 80 + Assists_mu >= 0.746,PTS05_GAIAS_BLESSING.svg,2026-09-24-frozen-v2,0.5,1.0,W,FINAL,OK
+2026-10-09,SEA@DET,2026020066,Lucas Raymond,8482078.0,DET,Points,Gaia’s Blessing+ (Press),HEAVY,Conf_Points >= 81 + Assists_mu >= 0.746,PTS05_GAIAS_BLESSING.svg,2026-09-24-frozen-v2,0.5,1.0,W,FINAL,OK
+2026-10-09,SEA@DET,2026020066,Lucas Raymond,8482078.0,DET,Points,Gaia’s Blessing++ (Smash),HEAVY,Conf_Points >= 83 + Assists_mu >= 0.746,PTS05_GAIAS_BLESSING.svg,2026-09-24-frozen-v2,0.5,1.0,W,FINAL,OK
+2026-10-09,SEA@DET,2026020066,Lucas Raymond,8482078.0,DET,Assists,Staff (Green Stance),STANCE,Green + Assists 0.5,staff.svg,2026-09-24-frozen-v2,0.5,1.0,W,FINAL,OK
+2026-10-09,SEA@DET,2026020066,Lucas Raymond,8482078.0,DET,Assists,Staff Awakened,STANCE,Green + Assists 0.5 + Conf_Assists ≥ 83,staff.svg,2026-09-24-frozen-v2,0.5,1.0,W,FINAL,OK
+2026-10-09,SEA@DET,2026020066,Lucas Raymond,8482078.0,DET,Assists,Assist Dagger,VOLUME,Green + Assists 0.5 + Conf_Assists ≥ 83 + Assist_Dagger ≥ 86,magic-dagger.svg,2026-09-24-frozen-v2,0.5,1.0,W,FINAL,OK
+2026-10-09,SEA@DET,2026020066,Moritz Seider,8481542.0,DET,Points,Hammer Fists,FLOOR,Conf_Points >= 80,PTS05_HAMMER_FISTS.svg,2026-09-24-frozen-v2,0.5,1.0,W,FINAL,OK
+2026-10-09,SEA@DET,2026020066,Moritz Seider,8481542.0,DET,Points,Echo Stomp II,TIER,Conf_Points >= 80 + TOI_per_game >= 19.18,PTS05_HAMMER_STOMP.svg,2026-09-24-frozen-v2,0.5,1.0,W,FINAL,OK
+2026-10-09,SEA@DET,2026020066,Moritz Seider,8481542.0,DET,Points,Gaia’s Blessing,TIER,Conf_Points >= 80 + Assists_mu >= 0.746,PTS05_GAIAS_BLESSING.svg,2026-09-24-frozen-v2,0.5,1.0,W,FINAL,OK
+2026-10-09,SEA@DET,2026020066,Moritz Seider,8481542.0,DET,Points,Gaia’s Blessing+ (Press),HEAVY,Conf_Points >= 81 + Assists_mu >= 0.746,PTS05_GAIAS_BLESSING.svg,2026-09-24-frozen-v2,0.5,1.0,W,FINAL,OK
+2026-10-09,SEA@DET,2026020066,Moritz Seider,8481542.0,DET,Points,Gaia’s Blessing++ (Smash),HEAVY,Conf_Points >= 83 + Assists_mu >= 0.746,PTS05_GAIAS_BLESSING.svg,2026-09-24-frozen-v2,0.5,1.0,W,FINAL,OK
+2026-10-09,SEA@DET,2026020066,Moritz Seider,8481542.0,DET,Points,Blood Stomp,CRIT,Conf_Points >= 83 + TOI_per_game >= 19.18 + Opp_PK_xGA60 >= 7.784,PTS05_BLEED_ENV.svg,2026-09-24-frozen-v2,0.5,1.0,W,FINAL,OK
