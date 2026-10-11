@@ -772,7 +772,7 @@ def load_moneypuck_csv(sess: requests.Session, url: str) -> pd.DataFrame:
 
 def load_moneypuck_best_effort(sess: requests.Session, kind: str, required_teams: set[str] | None = None) -> pd.DataFrame:
     start = current_season_start_year(date.today())
-    min_current_games = 10  # Recent-form inputs need a meaningful current-season window.
+    min_current_games = 7  # Use current-season context once each slate team has seven games.
     last_err = None
     for y in (start, start - 1):
         url = moneypuck_url(kind, y)
@@ -792,11 +792,18 @@ def load_moneypuck_best_effort(sess: requests.Session, kind: str, required_teams
                     print(f"[MoneyPuck] {kind}: {y} file is incomplete for this slate; trying prior season")
                     continue
                 if y == start:
-                    if "games_played" not in data.columns:
-                        last_err = f"{url} -> no games_played column"
+                    # Skater and goalie rows count individual appearances, which can
+                    # lag a team's GP. Use the team summary for every source kind.
+                    team_data = data if kind == "teams" else load_moneypuck_csv(
+                        sess, moneypuck_url("teams", start)
+                    )
+                    if "team" not in team_data.columns or "games_played" not in team_data.columns:
+                        last_err = f"{moneypuck_url('teams', start)} -> no team games_played"
                         continue
-                    games = pd.to_numeric(data["games_played"], errors="coerce")
-                    played = data.assign(_games=games, _team=data["team"].map(norm_team)).groupby("_team")["_games"].max()
+                    games = pd.to_numeric(team_data["games_played"], errors="coerce")
+                    played = team_data.assign(
+                        _games=games, _team=team_data["team"].map(norm_team)
+                    ).groupby("_team")["_games"].max().fillna(0)
                     thin = sorted(team for team in required_teams if played.get(team, 0) < min_current_games)
                     if thin:
                         last_err = f"{url} -> fewer than {min_current_games} games for {thin}"
