@@ -770,11 +770,18 @@ def load_moneypuck_csv(sess: requests.Session, url: str) -> pd.DataFrame:
     df.columns = df.columns.str.strip()
     return df
 
-def load_moneypuck_best_effort(sess: requests.Session, kind: str, required_teams: set[str] | None = None) -> pd.DataFrame:
-    start = current_season_start_year(date.today())
-    min_current_games = 7  # Use current-season context once each slate team has seven games.
+CURRENT_SEASON_CUTOVER = date(2026, 10, 13)
+
+
+def load_moneypuck_best_effort(sess: requests.Session, kind: str,
+                               required_teams: set[str] | None = None,
+                               as_of: date | None = None) -> pd.DataFrame:
+    slate_day = as_of or date.today()
+    start = current_season_start_year(slate_day)
+    current_only = slate_day >= CURRENT_SEASON_CUTOVER and start == 2026
+    min_current_games = 1 if current_only else 7
     last_err = None
-    for y in (start, start - 1):
+    for y in ((start,) if current_only else (start, start - 1)):
         url = moneypuck_url(kind, y)
         try:
             data = load_moneypuck_csv(sess, url)
@@ -789,7 +796,7 @@ def load_moneypuck_best_effort(sess: requests.Session, kind: str, required_teams
                 missing = required_teams - covered
                 if missing:
                     last_err = f"{url} -> missing slate teams {sorted(missing)}"
-                    print(f"[MoneyPuck] {kind}: {y} file is incomplete for this slate; trying prior season")
+                    print(f"[MoneyPuck] {kind}: {last_err}")
                     continue
                 if y == start:
                     # Skater and goalie rows count individual appearances, which can
@@ -807,7 +814,7 @@ def load_moneypuck_best_effort(sess: requests.Session, kind: str, required_teams
                     thin = sorted(team for team in required_teams if played.get(team, 0) < min_current_games)
                     if thin:
                         last_err = f"{url} -> fewer than {min_current_games} games for {thin}"
-                        print(f"[MoneyPuck] {kind}: {y} slate teams have fewer than {min_current_games} games; trying prior season")
+                        print(f"[MoneyPuck] {kind}: {last_err}")
                         continue
             if y != start:
                 print(f"[MoneyPuck] {kind}: using {y} season data for this slate")
@@ -815,7 +822,8 @@ def load_moneypuck_best_effort(sess: requests.Session, kind: str, required_teams
             return data
         except Exception as e:
             last_err = f"{url} -> {type(e).__name__}: {e}"
-    raise RuntimeError(f"Could not download MoneyPuck {kind}.csv. Last error: {last_err}")
+    source = "current-season" if current_only else "MoneyPuck"
+    raise RuntimeError(f"Could not load {source} {kind}.csv for {slate_day}. Last error: {last_err}")
 
 
 def align_skater_stats_team(frame: pd.DataFrame, current_team_by_id: dict[int, str],
@@ -3406,7 +3414,7 @@ def build_tracker(today_local: date, debug: bool = False, api_key: str | None = 
     current_team_by_id = current_roster_teams_by_id(active_rosters)
 
     # MoneyPuck skaters
-    sk_raw = load_moneypuck_best_effort(sess, "skaters", teams_playing)
+    sk_raw = load_moneypuck_best_effort(sess, "skaters", teams_playing, today_local)
     sk_stats_year = int(sk_raw.attrs.get("moneypuck_start_year", current_season_start_year(today_local)))
     sk = normalize_skaters_all(sk_raw, debug=debug)
     sk = align_skater_stats_team(sk, current_team_by_id, keep_source=True,
@@ -3422,7 +3430,7 @@ def build_tracker(today_local: date, debug: bool = False, api_key: str | None = 
         raise RuntimeError("No skaters matched today's teams. Team abbrev mismatch.")
 
     # Goalies (MoneyPuck)
-    g_raw = load_moneypuck_best_effort(sess, "goalies", teams_playing)
+    g_raw = load_moneypuck_best_effort(sess, "goalies", teams_playing, today_local)
     gdf = normalize_goalies(g_raw)
     team_goalie = build_team_goalie_map(gdf)
 
@@ -3592,7 +3600,7 @@ def build_tracker(today_local: date, debug: bool = False, api_key: str | None = 
 
     # 5v5 teams
     try:
-        teams_raw = load_moneypuck_best_effort(sess, "teams", teams_playing)
+        teams_raw = load_moneypuck_best_effort(sess, "teams", teams_playing, today_local)
         t5 = normalize_teams_5v5(teams_raw, debug=debug)
 
 
