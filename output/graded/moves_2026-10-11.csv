@@ -1,0 +1,82 @@
+Date,Game,Game_ID,Player,Player_ID,Team,Market,Move,Kind,Rule,Icon,Kit_Version,Line,Actual,Outcome,Grade_Status,Match_Status
+2026-10-11,CAR@PHI,2026020086,Andrei Svechnikov,8480830.0,CAR,Points,Hammer Fists,FLOOR,Conf_Points >= 80,PTS05_HAMMER_FISTS.svg,2026-09-24-frozen-v2,0.5,2.0,W,FINAL,OK
+2026-10-11,CAR@PHI,2026020086,Andrei Svechnikov,8480830.0,CAR,Points,Echo Stomp I,TIER,Conf_Points >= 80 + L10_S >= 17,PTS05_HAMMER_STOMP.svg,2026-09-24-frozen-v2,0.5,2.0,W,FINAL,OK
+2026-10-11,CAR@PHI,2026020086,Andrei Svechnikov,8480830.0,CAR,Assists,Staff (Green Stance),STANCE,Green + Assists 0.5,staff.svg,2026-09-24-frozen-v2,0.5,1.0,W,FINAL,OK
+2026-10-11,CAR@PHI,2026020086,Andrei Svechnikov,8480830.0,CAR,SOG,Jungle Stance,STANCE,Green + SOG 2.5 + Conf_SOG >= 75,sog_basic_swipe.svg,2026-09-24-frozen-v2,2.5,1.0,L,FINAL,OK
+2026-10-11,CAR@PHI,2026020086,Andrei Svechnikov,8480830.0,CAR,SOG,Berserker Swipe,FLOOR,iXG% >= 93.2,sog_basic_swipe.svg,2026-09-24-frozen-v2,2.5,1.0,L,FINAL,OK
+2026-10-11,CAR@PHI,2026020086,Andrei Svechnikov,8480830.0,CAR,SOG,Bloodthirst,HEAVY,PP_TOI_Pct >= 15.9 + iXG% >= 93.2,sog_bloodthirst.svg,2026-09-24-frozen-v2,2.5,1.0,L,FINAL,OK
+2026-10-11,CAR@PHI,2026020086,Nikolaj Ehlers,8477940.0,CAR,Points,Hammer Fists,FLOOR,Conf_Points >= 80,PTS05_HAMMER_FISTS.svg,2026-09-24-frozen-v2,0.5,0.0,L,FINAL,OK
+2026-10-11,CAR@PHI,2026020086,Nikolaj Ehlers,8477940.0,CAR,Assists,Staff (Green Stance),STANCE,Green + Assists 0.5,staff.svg,2026-09-24-frozen-v2,0.5,0.0,L,FINAL,OK
+2026-10-11,CAR@PHI,2026020086,Sebastian Aho,8478427.0,CAR,Points,Hammer Fists,FLOOR,Conf_Points >= 80,PTS05_HAMMER_FISTS.svg,2026-09-24-frozen-v2,0.5,2.0,W,FINAL,OK
+2026-10-11,CAR@PHI,2026020086,Sebastian Aho,8478427.0,CAR,Points,Echo Stomp I,TIER,Conf_Points >= 80 + L10_S >= 17,PTS05_HAMMER_STOMP.svg,2026-09-24-frozen-v2,0.5,2.0,W,FINAL,OK
+2026-10-11,CAR@PHI,2026020086,Sebastian Aho,8478427.0,CAR,Points,Echo Stomp II,TIER,Conf_Points >= 80 + TOI_per_game >= 19.18,PTS05_HAMMER_STOMP.svg,2026-09-24-frozen-v2,0.5,2.0,W,FINAL,OK
+2026-10-11,CAR@PHI,2026020086,Sebastian Aho,8478427.0,CAR,Points,Gaia’s Blessing,TIER,Conf_Points >= 80 + Assists_mu >= 0.746,PTS05_GAIAS_BLESSING.svg,2026-09-24-frozen-v2,0.5,2.0,W,FINAL,OK
+2026-10-11,CAR@PHI,2026020086,Sebastian Aho,8478427.0,CAR,Points,Gaia’s Blessing+ (Press),HEAVY,Conf_Points >= 81 + Assists_mu >= 0.746,PTS05_GAIAS_BLESSING.svg,2026-09-24-frozen-v2,0.5,2.0,W,FINAL,OK
+2026-10-11,CAR@PHI,2026020086,Sebastian Aho,8478427.0,CAR,Points,Gaia’s Blessing++ (Smash),HEAVY,Conf_Points >= 83 + Assists_mu >= 0.746,PTS05_GAIAS_BLESSING.svg,2026-09-24-frozen-v2,0.5,2.0,W,FINAL,OK
+2026-10-11,CAR@PHI,2026020086,Sebastian Aho,8478427.0,CAR,Points,Hammer Fists II,HEAVY,Conf_Points >= 80 + TOI_per_game >= 19.18 + L10_S >= 17,PTS05_HAMMER_FISTS.svg,2026-09-24-frozen-v2,0.5,2.0,W,FINAL,OK
+2026-10-11,CAR@PHI,2026020086,Sebastian Aho,8478427.0,CAR,Points,Enraged Engine,CRIT,Conf_Points >= 83 + L10_P >= 8 + L10_S >= 17,PTS05_ENRAGED_FURY.svg,2026-09-24-frozen-v2,0.5,2.0,W,FINAL,OK
+2026-10-11,CAR@PHI,2026020086,Sebastian Aho,8478427.0,CAR,Assists,Staff (Green Stance),STANCE,Green + Assists 0.5,staff.svg,2026-09-24-frozen-v2,0.5,1.0,W,FINAL,OK
+2026-10-11,CAR@PHI,2026020086,Sebastian Aho,8478427.0,CAR,Assists,Staff Awakened,STANCE,Green + Assists 0.5 + Conf_Assists ≥ 83,staff.svg,2026-09-24-frozen-v2,0.5,1.0,W,FINAL,OK
+2026-10-11,CAR@PHI,2026020086,Sebastian Aho,8478427.0,CAR,SOG,Jungle Stance,STANCE,Green + SOG 2.5 + Conf_SOG >= 75,sog_basic_swipe.svg,2026-09-24-frozen-v2,2.5,2.0,L,FINAL,OK
+2026-10-11,CAR@PHI,2026020086,Sebastian Aho,8478427.0,CAR,SOG,Berserker Swipe,FLOOR,iXG% >= 93.2,sog_basic_swipe.svg,2026-09-24-frozen-v2,2.5,2.0,L,FINAL,OK
+2026-10-11,CAR@PHI,2026020086,Sebastian Aho,8478427.0,CAR,Goal,Open Lanes,WEAK DEFENSE,Opp_SOG_Against_L50 >= 29.2,armor_shred.svg,2026-09-24-frozen-v2,0.5,1.0,W,FINAL,OK
+2026-10-11,CAR@PHI,2026020086,Sebastian Aho,8478427.0,CAR,Goal,Finisher Strike,HEAVY ATTACK,Opp_SOG_Against_L50 >= 29.2 + iXG% >= 93.2,fenrir_claw.svg,2026-09-24-frozen-v2,0.5,1.0,W,FINAL,OK
+2026-10-11,CAR@PHI,2026020086,Sebastian Aho,8478427.0,CAR,Goal,Fury Shredder,SPECIAL ATTACK,Opp_SOG_Against_L50 >= 29.2 + ShotIntent >= 3.4,stack_fury_shredder.svg,2026-09-24-frozen-v2,0.5,1.0,W,FINAL,OK
+2026-10-11,CAR@PHI,2026020086,Sebastian Aho,8478427.0,CAR,Goal,Enraged Fury Shredder,LAB CRIT,Fury Shredder + opp_5v5_xGA60 <= 2.8,stack_fury_shredder.svg,2026-09-24-frozen-v2,0.5,1.0,W,FINAL,OK
+2026-10-11,CAR@PHI,2026020086,Shayne Gostisbehere,8476906.0,CAR,Points,Hammer Fists,FLOOR,Conf_Points >= 80,PTS05_HAMMER_FISTS.svg,2026-09-24-frozen-v2,0.5,1.0,W,FINAL,OK
+2026-10-11,CAR@PHI,2026020086,Shayne Gostisbehere,8476906.0,CAR,Points,Echo Stomp II,TIER,Conf_Points >= 80 + TOI_per_game >= 19.18,PTS05_HAMMER_STOMP.svg,2026-09-24-frozen-v2,0.5,1.0,W,FINAL,OK
+2026-10-11,CAR@PHI,2026020086,Shayne Gostisbehere,8476906.0,CAR,Points,Gaia’s Blessing,TIER,Conf_Points >= 80 + Assists_mu >= 0.746,PTS05_GAIAS_BLESSING.svg,2026-09-24-frozen-v2,0.5,1.0,W,FINAL,OK
+2026-10-11,CAR@PHI,2026020086,Shayne Gostisbehere,8476906.0,CAR,Points,Gaia’s Blessing+ (Press),HEAVY,Conf_Points >= 81 + Assists_mu >= 0.746,PTS05_GAIAS_BLESSING.svg,2026-09-24-frozen-v2,0.5,1.0,W,FINAL,OK
+2026-10-11,CAR@PHI,2026020086,Shayne Gostisbehere,8476906.0,CAR,Assists,Staff (Green Stance),STANCE,Green + Assists 0.5,staff.svg,2026-09-24-frozen-v2,0.5,0.0,L,FINAL,OK
+2026-10-11,CAR@PHI,2026020086,Trevor Zegras,8481533.0,PHI,Points,Hammer Fists,FLOOR,Conf_Points >= 80,PTS05_HAMMER_FISTS.svg,2026-09-24-frozen-v2,0.5,0.0,L,FINAL,OK
+2026-10-11,CAR@PHI,2026020086,Trevor Zegras,8481533.0,PHI,Assists,Staff (Green Stance),STANCE,Green + Assists 0.5,staff.svg,2026-09-24-frozen-v2,0.5,0.0,L,FINAL,OK
+2026-10-11,SEA@WSH,2026020084,Dylan Strome,8478440.0,WSH,Assists,Staff (Green Stance),STANCE,Green + Assists 0.5,staff.svg,2026-09-24-frozen-v2,0.5,0.0,L,FINAL,OK
+2026-10-11,SEA@WSH,2026020084,Jakob Chychrun,8479345.0,WSH,SOG,Jungle Stance,STANCE,Green + SOG 2.5 + Conf_SOG >= 75,sog_basic_swipe.svg,2026-09-24-frozen-v2,2.5,8.0,W,FINAL,OK
+2026-10-11,VAN@NYR,2026020085,Adam Fox,8479323.0,NYR,Points,Hammer Fists,FLOOR,Conf_Points >= 80,PTS05_HAMMER_FISTS.svg,2026-09-24-frozen-v2,0.5,1.0,W,FINAL,OK
+2026-10-11,VAN@NYR,2026020085,Adam Fox,8479323.0,NYR,Points,Echo Stomp II,TIER,Conf_Points >= 80 + TOI_per_game >= 19.18,PTS05_HAMMER_STOMP.svg,2026-09-24-frozen-v2,0.5,1.0,W,FINAL,OK
+2026-10-11,VAN@NYR,2026020085,Adam Fox,8479323.0,NYR,Points,Gaia’s Blessing,TIER,Conf_Points >= 80 + Assists_mu >= 0.746,PTS05_GAIAS_BLESSING.svg,2026-09-24-frozen-v2,0.5,1.0,W,FINAL,OK
+2026-10-11,VAN@NYR,2026020085,Adam Fox,8479323.0,NYR,Points,Gaia’s Blessing+ (Press),HEAVY,Conf_Points >= 81 + Assists_mu >= 0.746,PTS05_GAIAS_BLESSING.svg,2026-09-24-frozen-v2,0.5,1.0,W,FINAL,OK
+2026-10-11,VAN@NYR,2026020085,Adam Fox,8479323.0,NYR,Points,Gaia’s Blessing++ (Smash),HEAVY,Conf_Points >= 83 + Assists_mu >= 0.746,PTS05_GAIAS_BLESSING.svg,2026-09-24-frozen-v2,0.5,1.0,W,FINAL,OK
+2026-10-11,VAN@NYR,2026020085,Adam Fox,8479323.0,NYR,Points,Blood Stomp,CRIT,Conf_Points >= 83 + TOI_per_game >= 19.18 + Opp_PK_xGA60 >= 7.784,PTS05_BLEED_ENV.svg,2026-09-24-frozen-v2,0.5,1.0,W,FINAL,OK
+2026-10-11,VAN@NYR,2026020085,J.T. Miller,8476468.0,NYR,Points,Hammer Fists,FLOOR,Conf_Points >= 80,PTS05_HAMMER_FISTS.svg,2026-09-24-frozen-v2,0.5,2.0,W,FINAL,OK
+2026-10-11,VAN@NYR,2026020085,J.T. Miller,8476468.0,NYR,Points,Echo Stomp II,TIER,Conf_Points >= 80 + TOI_per_game >= 19.18,PTS05_HAMMER_STOMP.svg,2026-09-24-frozen-v2,0.5,2.0,W,FINAL,OK
+2026-10-11,VAN@NYR,2026020085,J.T. Miller,8476468.0,NYR,Points,Blood Stomp,CRIT,Conf_Points >= 83 + TOI_per_game >= 19.18 + Opp_PK_xGA60 >= 7.784,PTS05_BLEED_ENV.svg,2026-09-24-frozen-v2,0.5,2.0,W,FINAL,OK
+2026-10-11,VAN@NYR,2026020085,J.T. Miller,8476468.0,NYR,Assists,Staff (Green Stance),STANCE,Green + Assists 0.5,staff.svg,2026-09-24-frozen-v2,0.5,2.0,W,FINAL,OK
+2026-10-11,VAN@NYR,2026020085,J.T. Miller,8476468.0,NYR,Assists,Staff Awakened,STANCE,Green + Assists 0.5 + Conf_Assists ≥ 83,staff.svg,2026-09-24-frozen-v2,0.5,2.0,W,FINAL,OK
+2026-10-11,VAN@NYR,2026020085,J.T. Miller,8476468.0,NYR,Assists,Assist Dagger,VOLUME,Green + Assists 0.5 + Conf_Assists ≥ 83 + Assist_Dagger ≥ 86,magic-dagger.svg,2026-09-24-frozen-v2,0.5,2.0,W,FINAL,OK
+2026-10-11,VAN@NYR,2026020085,Mika Zibanejad,8476459.0,NYR,Points,Hammer Fists,FLOOR,Conf_Points >= 80,PTS05_HAMMER_FISTS.svg,2026-09-24-frozen-v2,0.5,2.0,W,FINAL,OK
+2026-10-11,VAN@NYR,2026020085,Mika Zibanejad,8476459.0,NYR,Points,Echo Stomp II,TIER,Conf_Points >= 80 + TOI_per_game >= 19.18,PTS05_HAMMER_STOMP.svg,2026-09-24-frozen-v2,0.5,2.0,W,FINAL,OK
+2026-10-11,VAN@NYR,2026020085,Mika Zibanejad,8476459.0,NYR,Points,Gaia’s Blessing,TIER,Conf_Points >= 80 + Assists_mu >= 0.746,PTS05_GAIAS_BLESSING.svg,2026-09-24-frozen-v2,0.5,2.0,W,FINAL,OK
+2026-10-11,VAN@NYR,2026020085,Mika Zibanejad,8476459.0,NYR,Points,Gaia’s Blessing+ (Press),HEAVY,Conf_Points >= 81 + Assists_mu >= 0.746,PTS05_GAIAS_BLESSING.svg,2026-09-24-frozen-v2,0.5,2.0,W,FINAL,OK
+2026-10-11,VAN@NYR,2026020085,Mika Zibanejad,8476459.0,NYR,Points,Gaia’s Blessing++ (Smash),HEAVY,Conf_Points >= 83 + Assists_mu >= 0.746,PTS05_GAIAS_BLESSING.svg,2026-09-24-frozen-v2,0.5,2.0,W,FINAL,OK
+2026-10-11,VAN@NYR,2026020085,Mika Zibanejad,8476459.0,NYR,Points,Blood Stomp,CRIT,Conf_Points >= 83 + TOI_per_game >= 19.18 + Opp_PK_xGA60 >= 7.784,PTS05_BLEED_ENV.svg,2026-09-24-frozen-v2,0.5,2.0,W,FINAL,OK
+2026-10-11,VAN@NYR,2026020085,Mika Zibanejad,8476459.0,NYR,Assists,Staff (Green Stance),STANCE,Green + Assists 0.5,staff.svg,2026-09-24-frozen-v2,0.5,2.0,W,FINAL,OK
+2026-10-11,VAN@NYR,2026020085,Mika Zibanejad,8476459.0,NYR,Assists,Staff Awakened,STANCE,Green + Assists 0.5 + Conf_Assists ≥ 83,staff.svg,2026-09-24-frozen-v2,0.5,2.0,W,FINAL,OK
+2026-10-11,VAN@NYR,2026020085,Mika Zibanejad,8476459.0,NYR,Assists,Arcane Channel I,VOLUME,Green + Assists 0.5 + Conf_Assists ≥ 83 + PP_Points60 ≥ 5.3,arcane_channel_i.svg,2026-09-24-frozen-v2,0.5,2.0,W,FINAL,OK
+2026-10-11,VAN@NYR,2026020085,Mika Zibanejad,8476459.0,NYR,Assists,Assist Dagger,VOLUME,Green + Assists 0.5 + Conf_Assists ≥ 83 + Assist_Dagger ≥ 86,magic-dagger.svg,2026-09-24-frozen-v2,0.5,2.0,W,FINAL,OK
+2026-10-11,VAN@NYR,2026020085,Mika Zibanejad,8476459.0,NYR,Goal,Weakened Armor,WEAK DEFENSE,Opp_PK_xGA60 >= 7.3,shattered_armor.svg,2026-09-24-frozen-v2,0.5,0.0,L,FINAL,OK
+2026-10-11,VAN@NYR,2026020085,Mika Zibanejad,8476459.0,NYR,Goal,Open Lanes,WEAK DEFENSE,Opp_SOG_Against_L50 >= 29.2,armor_shred.svg,2026-09-24-frozen-v2,0.5,0.0,L,FINAL,OK
+2026-10-11,VAN@NYR,2026020085,Mika Zibanejad,8476459.0,NYR,Goal,Fallen Guardian,WEAK DEFENSE,Opp_GAA >= 3.01,fenrir_claw.svg,2026-09-24-frozen-v2,0.5,0.0,L,FINAL,OK
+2026-10-11,VAN@NYR,2026020085,Mika Zibanejad,8476459.0,NYR,Goal,Bloodlust,HEAVY ATTACK,Opp_SOG_Against_L50 >= 29.2 + Opp_PK_xGA60 >= 7.3,armor_shred.svg,2026-09-24-frozen-v2,0.5,0.0,L,FINAL,OK
+2026-10-11,VAN@NYR,2026020085,Mika Zibanejad,8476459.0,NYR,Goal,Finisher Strike,HEAVY ATTACK,Opp_SOG_Against_L50 >= 29.2 + iXG% >= 93.2,fenrir_claw.svg,2026-09-24-frozen-v2,0.5,0.0,L,FINAL,OK
+2026-10-11,VAN@NYR,2026020085,Mika Zibanejad,8476459.0,NYR,Goal,Enraged Finisher,HEAVY ATTACK,Opp_SOG_Against_L50 >= 29.2 + iXG% >= 96.2,fenrir_claw.svg,2026-09-24-frozen-v2,0.5,0.0,L,FINAL,OK
+2026-10-11,VAN@NYR,2026020085,Mika Zibanejad,8476459.0,NYR,Goal,Tyr’s Wrath Unleashed,SPECIAL ATTACK,Opp_SOG_Against_L50 >= 29.2 + Opp_PK_xGA60 >= 7.3 + iXG% >= 95,fury.svg,2026-09-24-frozen-v2,0.5,0.0,L,FINAL,OK
+2026-10-11,VAN@NYR,2026020085,Mika Zibanejad,8476459.0,NYR,Goal,Armor Annihilation,SPECIAL ATTACK,Opp_SOG_Against_L50 >= 29.2 + Opp_PK_xGA60 >= 7.3 + opp_5v5_HDCA60 >= 2.5,stack_armor_annihilation.svg,2026-09-24-frozen-v2,0.5,0.0,L,FINAL,OK
+2026-10-11,VAN@NYR,2026020085,Mika Zibanejad,8476459.0,NYR,Goal,Bloodlusted,LAB CRIT,Bloodlust + TOI_per_game <= 21.2,armor_shred.svg,2026-09-24-frozen-v2,0.5,0.0,L,FINAL,OK
+2026-10-11,VAN@NYR,2026020085,Pavel Dorofeyev,8481604.0,NYR,SOG,Jungle Stance,STANCE,Green + SOG 2.5 + Conf_SOG >= 75,sog_basic_swipe.svg,2026-09-24-frozen-v2,2.5,2.0,L,FINAL,OK
+2026-10-11,VAN@NYR,2026020085,Pavel Dorofeyev,8481604.0,NYR,SOG,Berserker Swipe,FLOOR,iXG% >= 93.2,sog_basic_swipe.svg,2026-09-24-frozen-v2,2.5,2.0,L,FINAL,OK
+2026-10-11,VAN@NYR,2026020085,Pavel Dorofeyev,8481604.0,NYR,SOG,Paralysis,ENV,Goalie_Weak >= 62.5,sog_env_paralysis.svg,2026-09-24-frozen-v2,2.5,2.0,L,FINAL,OK
+2026-10-11,VAN@NYR,2026020085,Pavel Dorofeyev,8481604.0,NYR,SOG,Bloodthirst,HEAVY,PP_TOI_Pct >= 15.9 + iXG% >= 93.2,sog_bloodthirst.svg,2026-09-24-frozen-v2,2.5,2.0,L,FINAL,OK
+2026-10-11,VAN@NYR,2026020085,Pavel Dorofeyev,8481604.0,NYR,Goal,Weakened Armor,WEAK DEFENSE,Opp_PK_xGA60 >= 7.3,shattered_armor.svg,2026-09-24-frozen-v2,0.5,0.0,L,FINAL,OK
+2026-10-11,VAN@NYR,2026020085,Pavel Dorofeyev,8481604.0,NYR,Goal,Open Lanes,WEAK DEFENSE,Opp_SOG_Against_L50 >= 29.2,armor_shred.svg,2026-09-24-frozen-v2,0.5,0.0,L,FINAL,OK
+2026-10-11,VAN@NYR,2026020085,Pavel Dorofeyev,8481604.0,NYR,Goal,Fallen Guardian,WEAK DEFENSE,Opp_GAA >= 3.01,fenrir_claw.svg,2026-09-24-frozen-v2,0.5,0.0,L,FINAL,OK
+2026-10-11,VAN@NYR,2026020085,Pavel Dorofeyev,8481604.0,NYR,Goal,Bloodlust,HEAVY ATTACK,Opp_SOG_Against_L50 >= 29.2 + Opp_PK_xGA60 >= 7.3,armor_shred.svg,2026-09-24-frozen-v2,0.5,0.0,L,FINAL,OK
+2026-10-11,VAN@NYR,2026020085,Pavel Dorofeyev,8481604.0,NYR,Goal,Finisher Strike,HEAVY ATTACK,Opp_SOG_Against_L50 >= 29.2 + iXG% >= 93.2,fenrir_claw.svg,2026-09-24-frozen-v2,0.5,0.0,L,FINAL,OK
+2026-10-11,VAN@NYR,2026020085,Pavel Dorofeyev,8481604.0,NYR,Goal,Enraged Finisher,HEAVY ATTACK,Opp_SOG_Against_L50 >= 29.2 + iXG% >= 96.2,fenrir_claw.svg,2026-09-24-frozen-v2,0.5,0.0,L,FINAL,OK
+2026-10-11,VAN@NYR,2026020085,Pavel Dorofeyev,8481604.0,NYR,Goal,Tyr’s Wrath Unleashed,SPECIAL ATTACK,Opp_SOG_Against_L50 >= 29.2 + Opp_PK_xGA60 >= 7.3 + iXG% >= 95,fury.svg,2026-09-24-frozen-v2,0.5,0.0,L,FINAL,OK
+2026-10-11,VAN@NYR,2026020085,Pavel Dorofeyev,8481604.0,NYR,Goal,Armor Annihilation,SPECIAL ATTACK,Opp_SOG_Against_L50 >= 29.2 + Opp_PK_xGA60 >= 7.3 + opp_5v5_HDCA60 >= 2.5,stack_armor_annihilation.svg,2026-09-24-frozen-v2,0.5,0.0,L,FINAL,OK
+2026-10-11,VAN@NYR,2026020085,Pavel Dorofeyev,8481604.0,NYR,Goal,Bloodlusted,LAB CRIT,Bloodlust + TOI_per_game <= 21.2,armor_shred.svg,2026-09-24-frozen-v2,0.5,0.0,L,FINAL,OK
+2026-10-11,VAN@NYR,2026020085,Pavel Dorofeyev,8481604.0,NYR,Goal,Bloodlusted Surge,LAB CRIT,Bloodlust + PP_TOI_Pct >= 17.2,armor_shred.svg,2026-09-24-frozen-v2,0.5,0.0,L,FINAL,OK
+2026-10-11,VAN@NYR,2026020085,Jake DeBrusk,8478498.0,VAN,SOG,Jungle Stance,STANCE,Green + SOG 2.5 + Conf_SOG >= 75,sog_basic_swipe.svg,2026-09-24-frozen-v2,2.5,1.0,L,FINAL,OK
+2026-10-11,VAN@NYR,2026020085,Jake DeBrusk,8478498.0,VAN,SOG,Berserker Swipe,FLOOR,iXG% >= 93.2,sog_basic_swipe.svg,2026-09-24-frozen-v2,2.5,1.0,L,FINAL,OK
+2026-10-11,VAN@NYR,2026020085,Jake DeBrusk,8478498.0,VAN,SOG,Bloodthirst,HEAVY,PP_TOI_Pct >= 15.9 + iXG% >= 93.2,sog_bloodthirst.svg,2026-09-24-frozen-v2,2.5,1.0,L,FINAL,OK
