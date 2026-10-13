@@ -1,4 +1,5 @@
 import unittest
+from datetime import date
 from unittest.mock import patch
 
 import pandas as pd
@@ -32,7 +33,7 @@ class MoneyPuckSeasonGateTests(unittest.TestCase):
             return pd.DataFrame({"team": ["CAR", "FLA"], "games_played": [5, 4]})
 
         load_csv.side_effect = feed
-        result = load_moneypuck_best_effort(object(), "skaters", {"CAR", "FLA"})
+        result = load_moneypuck_best_effort(object(), "skaters", {"CAR", "FLA"}, date(2026, 10, 12))
         self.assertEqual(result.attrs["moneypuck_start_year"], 2025)
 
 

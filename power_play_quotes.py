@@ -70,7 +70,7 @@ def _unit_label(row: dict) -> str:
     role = _finite(row.get("PP_Role"))
     if role is None:
         return "Unit unknown"
-    return "PP1 history" if role >= 2 else ("PP2 history" if role >= 1 else "No PP unit in history")
+    return "PP1" if role >= 2 else ("PP2" if role >= 1 else "No PP unit recorded")
 
 
 def _context_label(row: dict) -> str:

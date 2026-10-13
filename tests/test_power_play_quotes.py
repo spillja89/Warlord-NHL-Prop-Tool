@@ -60,6 +60,16 @@ class PowerPlayQuotesTests(unittest.TestCase):
         self.assertEqual(quotes.loc["Odds Only", "Context"], "Odds only · history missing")
         self.assertTrue(pd.isna(quotes.loc["Odds Only", "PP matchup /100"]))
 
+    def test_current_stats_pp_unit_is_not_called_prior_season(self):
+        tracker = pd.DataFrame([{
+            "Date": "2026-10-13", "Player": "Current Skater", "Team": "BOS",
+            "BDL_PPP_Line": 0.5, "BDL_PPP_Odds": 150,
+            "PP_Role": 2, "Model_Stats_Season": "2026-2027",
+        }])
+        quote = priced_ppp_quotes(tracker, line_filter=0.5).iloc[0]
+        self.assertEqual(quote["PP unit"], "PP1")
+        self.assertEqual(quote["Stats season"], "2026-2027")
+
     def test_empty_tracker_has_no_fabricated_quotes(self):
         self.assertTrue(priced_ppp_quotes(pd.DataFrame()).empty)
 
