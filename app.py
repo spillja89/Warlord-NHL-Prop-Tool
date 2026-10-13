@@ -4788,6 +4788,11 @@ if page == "⚔️ Warlords of the Night":
     featured_boards = _sort_slate_boards(featured_boards, slate_sort, starts_by_game)
     priced_total = sum(len(cards) for cards in priced_boards.values())
     featured_total = sum(len(cards) for cards in featured_boards.values())
+    st.caption(f"Current view: {night_df['Game'].nunique() if 'Game' in night_df else 0} games · "
+               f"{night_df['Team'].nunique() if 'Team' in night_df else 0} teams · "
+               f"{len(night_df)} roster skaters · {priced_total} priced prop entries · "
+               f"{featured_total} meet both the Green baseline and a 50%+ historical move. "
+               "Every priced entry is in the complete slate below.")
     if featured_total:
         st.html(render_warlords(featured_boards, max(map(len, featured_boards.values())), _load_svg_icon))
         order_note = ("Classes rank by the strongest qualifying move" if slate_sort == "Top ranked"
@@ -4805,7 +4810,8 @@ if page == "⚔️ Warlords of the Night":
                              use_container_width=True)
 
     if {"Opp", "Opp_Goalie_Status"}.issubset(night_df.columns):
-        goalie_teams = night_df[["Opp", "Opp_Goalie_Status"]].drop_duplicates("Opp")
+        goalie_teams = night_df.loc[night_df["Opp"].fillna("").astype(str).str.strip().ne(""),
+                                    ["Opp", "Opp_Goalie_Status"]].drop_duplicates("Opp")
         confirmed = goalie_teams["Opp_Goalie_Status"].astype(str).str.casefold().eq("confirmed").sum()
         st.caption(f"Goalie snapshot: {confirmed}/{len(goalie_teams)} opposing teams confirmed. "
                    "Likely, unconfirmed, and unknown starters are provisional; rerun the slate to refresh them.")

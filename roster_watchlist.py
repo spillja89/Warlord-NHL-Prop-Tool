@@ -206,9 +206,12 @@ def add_roster_watchlist(tracker: pd.DataFrame, session, teams: set[str],
                     continue
                 if (team, key) in existing:
                     continue
-                row = {"Date": today.isoformat(), "Game": game_map.get(team, ""),
+                matchup = game_map.get(team, "")
+                opponents = [club for club in matchup.split("@") if club and club != team]
+                row = {"Date": today.isoformat(), "Game": matchup,
                        "Player": official["name"], "Player_ID": official["id"],
-                       "Team": team, "Pos": official["position"],
+                       "Team": team, "Opp": opponents[0] if len(opponents) == 1 else "",
+                       "Pos": official["position"],
                        "Roster_Status": "Active roster", "Roster_Watch": True,
                        "Roster_Check_UTC": tracker["Roster_Check_UTC"].iloc[0] if len(tracker) else "",
                        "Fired_Moves": "[]", "Model_Stats_Season": "Unavailable",

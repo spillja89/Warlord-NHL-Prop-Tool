@@ -82,6 +82,7 @@ class RosterWatchlistTests(unittest.TestCase):
         row = result.iloc[0]
         self.assertEqual(row["Roster_Status"], "Active roster")
         self.assertTrue(row["Roster_Watch"])
+        self.assertEqual(row["Opp"], "CAR")
         self.assertEqual(row["Assists_Odds_Over"], 105)
         self.assertEqual(row["Points_Odds_Over"], -160)
         self.assertEqual(row["BDL_PPP_Odds"], 250)
