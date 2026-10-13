@@ -41,5 +41,11 @@ def withhold_ambiguous_player_odds(frame: pd.DataFrame) -> pd.DataFrame:
                 column.startswith(f"{market}_EV")):
                 price_columns.append(column)
                 break
-    result.loc[ambiguous, price_columns] = pd.NA
+    for column in price_columns:
+        if column.startswith("Plays_EV_"):
+            result.loc[ambiguous, column] = False
+        elif column.endswith(("_Book", "_Odds_Source", "_Available_Books")) or column == "Book":
+            result.loc[ambiguous, column] = ""
+        else:
+            result.loc[ambiguous, column] = float("nan")
     return result
