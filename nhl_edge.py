@@ -450,16 +450,13 @@ def debug_find_like(df: pd.DataFrame, needle: str) -> List[str]:
 
 def per60(stat: Any, toi: Any) -> pd.Series:
     """
-    Compute per-60 from stat and icetime (MoneyPuck can be minutes or seconds).
+    Compute per-60 from MoneyPuck season icetime, which is always seconds.
     """
     s = pd.to_numeric(stat, errors="coerce")
     t = pd.to_numeric(toi, errors="coerce")
     out = pd.Series(np.nan, index=t.index, dtype="float64")
-    m = t > 0
-    sec = m & (t > 10000)
-    mins = m & ~sec
-    out.loc[sec] = s.loc[sec] * 3600.0 / t.loc[sec]
-    out.loc[mins] = s.loc[mins] * 60.0 / t.loc[mins]
+    valid_time = t > 0
+    out.loc[valid_time] = s.loc[valid_time] * 3600.0 / t.loc[valid_time]
     return out
 
 # ----------------------------
@@ -1876,11 +1873,11 @@ def normalize_goalies(df: pd.DataFrame) -> pd.DataFrame:
     out["SV"] = (out["SOG_Against"] - out["GA"]) / out["SOG_Against"]
     out.loc[out["SOG_Against"] <= 0, "SV"] = np.nan
 
-    sec_mask = out["icetime"] > 10000
-    min_mask = ~sec_mask
+    # MoneyPuck goalie icetime is seconds, even before a goalie reaches
+    # 10,000 seconds in the new season.
+    valid_time = out["icetime"] > 0
     out["GAA"] = np.nan
-    out.loc[min_mask & (out["icetime"] > 0), "GAA"] = out.loc[min_mask, "GA"] * 60.0 / out.loc[min_mask, "icetime"]
-    out.loc[sec_mask & (out["icetime"] > 0), "GAA"] = out.loc[sec_mask, "GA"] * 3600.0 / out.loc[sec_mask, "icetime"]
+    out.loc[valid_time, "GAA"] = out.loc[valid_time, "GA"] * 3600.0 / out.loc[valid_time, "icetime"]
 
     return out
 
