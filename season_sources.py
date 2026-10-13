@@ -96,6 +96,31 @@ def team_season_rows(money_puck):
     return sorted(output, key=lambda row: row["Team"])
 
 
+def slate_team_matchup_rows(team_rows, games):
+    """Pair each slate team's current PP metrics with its opponent's defense."""
+    by_team = {str(row["Team"]).upper(): row for row in team_rows}
+    output = []
+    for game in dict.fromkeys(str(game).strip().upper() for game in games):
+        if game.count("@") != 1:
+            continue
+        away, home = game.split("@")
+        for team, opponent in ((away, home), (home, away)):
+            attack = by_team.get(team, {})
+            defense = by_team.get(opponent, {})
+            output.append({
+                "Game": game, "Team": team, "Opponent": opponent,
+                "Team GP": attack.get("GP"), "Opp GP": defense.get("GP"),
+                "Team PP xGF/60": attack.get("PP xGF/60"),
+                "Team PP GF/60": attack.get("PP GF/60"),
+                "Opp PK xGA/60": defense.get("PK xGA/60"),
+                "Opp PK GA/60": defense.get("PK GA/60"),
+                "Opp GA/GP": defense.get("GA/GP"),
+                "Opp 5v5 xGA/60": defense.get("5v5 xGA/60"),
+                "Opp SOG against/GP": defense.get("SOG against/GP"),
+            })
+    return output
+
+
 def fetch_nhl_player_log(player_id, season_id, session=None):
     http = session or requests.Session()
     url = f"https://api-web.nhle.com/v1/player/{int(player_id)}/game-log/{int(season_id)}/2"
