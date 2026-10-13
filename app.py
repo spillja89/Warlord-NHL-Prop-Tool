@@ -4729,7 +4729,7 @@ if page == "⚔️ Warlords of the Night":
 
     summary, by_team, baseline_roster = baseline_audit(night_df)
     with st.expander("Baseline and historical move audit", expanded=False):
-        st.caption("These older tested thresholds explain the featured tier; they do not remove players from the complete priced slate above.")
+        st.caption("These tested thresholds explain the featured tier; they do not remove players from the complete priced slate above.")
         st.dataframe(summary, hide_index=True, use_container_width=True)
         tabs = st.tabs(["Goals", "Assists", "Points", "Shots"])
         for tab, prop in zip(tabs, ("Goals", "Assists", "Points", "Shots")):
