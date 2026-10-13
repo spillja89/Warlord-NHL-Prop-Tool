@@ -4061,6 +4061,11 @@ if df.columns.duplicated().any():
     st.warning(f"Duplicate columns detected and removed: {dupes}")
     df = df.loc[:, ~df.columns.duplicated()].copy()
 
+# Older saved trackers may contain name-only quotes assigned to two different
+# teammates with the same name. Keep those quotes off both player cards.
+from odds_identity import withhold_ambiguous_player_odds
+df = withhold_ambiguous_player_odds(df)
+
 # Apply availability to every page, including uploaded and older tracker files.
 # The engine also removes confirmed out players when creating a fresh tracker.
 has_availability = "Injury_Status" in df.columns or "Available" in df.columns
@@ -4594,6 +4599,10 @@ if source == "latest" and "Roster_Status" in df.columns and not df.empty:
     st.caption(f"Official NHL roster check: {verified} active skaters verified · {watch} odds-only returners/newcomers.")
     if unverified:
         st.warning(f"{unverified} skaters could not be roster verified. Check tonight's lineup before using their cards.")
+
+ambiguous_names = int(df.get("Odds_Name_Ambiguous", pd.Series(False, index=df.index)).fillna(False).sum())
+if ambiguous_names:
+    st.warning(f"{ambiguous_names} skaters share a name with a teammate. Their name-only book quotes are withheld until the feed identifies the correct player.")
 
 if source == "demo":
     st.warning(
