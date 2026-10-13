@@ -22,7 +22,8 @@ from player_form import compact_regular_log, summarize_form
 from current_season_stats import current_season_rows, season_for_day
 from season_sources import (fetch_moneypuck_skaters, fetch_moneypuck_teams,
                             fetch_nhl_player_log, fetch_nhl_skaters,
-                            league_season_rows, slate_team_matchup_rows, team_season_rows)
+                            league_season_rows, power_play_team_ranks,
+                            slate_team_matchup_rows, team_season_rows)
 from ledger_store import append_bet as _append_cloud_bet, recent_bets as _recent_cloud_bets
 from power_play_quotes import fetch_current_pp_usage, priced_ppp_quotes
 from player_availability import unavailable_mask
@@ -4780,31 +4781,6 @@ if page == "⚔️ Warlords of the Night":
         night = st.selectbox("Slate night", nights, index=0, key="warlords_night_date")
     night_df = df_f.loc[dates.eq(night)] if night is not None else df_f
     slate_day = night.isoformat() if night is not None else datetime.now(ZoneInfo("America/Chicago")).date().isoformat()
-    season = season_for_day(slate_day)
-    st.subheader("Tonight's team PP and PK matchups")
-    try:
-        team_stats, team_updated = _cached_moneypuck_teams(int(season[:4]))
-        current_teams = team_season_rows(team_stats)
-        matchups = slate_team_matchup_rows(current_teams, night_df.get("Game", pd.Series(dtype=str)).dropna())
-        if matchups:
-            matchup_frame = pd.DataFrame(matchups)
-            rank_by = st.selectbox("Rank team matchups by", (
-                "Opp PK xGA/60", "Opp PK GA/60", "Opp GA/GP", "Team PP xGF/60",
-                "Team PP GF/60", "Opp 5v5 xGA/60", "Opp SOG against/GP"),
-                key="warlords_team_matchup_sort")
-            matchup_frame = matchup_frame.sort_values(rank_by, ascending=False, na_position="last", kind="stable")
-            st.caption(f"{season} regular season · MoneyPuck updated {team_updated} · team and opponent GP shown. "
-                       "PK xGA/60 is expected goals allowed while shorthanded; PK GA/60 is actual goals allowed. "
-                       "These are observed rates from a small early-season sample, not tested move percentages.")
-            st.dataframe(matchup_frame, hide_index=True, width="stretch", height=320)
-            with st.expander("All teams · current-season PP and defense stats"):
-                st.dataframe(pd.DataFrame(current_teams), hide_index=True, width="stretch", height=360)
-        else:
-            st.info("No team matchup stats are available for this slate yet.")
-    except Exception as exc:
-        st.warning(f"Current-season team stats are temporarily unavailable ({type(exc).__name__}).")
-    if st.checkbox("Show current-season skater form and game logs", key="warlords_show_skater_form"):
-        _render_season_skater_form(df_f, slate_day)
     priced_boards = rank_priced_slate(night_df)
     featured_boards = featured_warlords(priced_boards)
     starts_by_game = _slate_start_times(night_df)
@@ -5691,6 +5667,42 @@ elif page == "Power Play":
     st.subheader("⚡ Power Play · over 0.5 point")
     st.info("This page is for **finding a power-play setup**, not a graded PPP pick. We have sportsbook prices and PP context, but no tested PPP move or calibrated PPP hit probability. There is no honest model-versus-book edge number for this market yet.")
     st.markdown("**Read it in this order:** PP opportunity (unit and minutes) → opponent penalty kill → best posted price. An Assist move can support the player's overall creation profile, but its hit rate is for assists, not power-play points.")
+    pp_dates = pd.to_datetime(df_f.get("Date", pd.Series(dtype=str)), errors="coerce").dropna()
+    pp_slate_day = (pp_dates.max().date().isoformat() if not pp_dates.empty else
+                    datetime.now(ZoneInfo("America/Chicago")).date().isoformat())
+    season = season_for_day(pp_slate_day)
+    team_matchup_by_team = {}
+    st.subheader("Tonight's team PP and PK matchups")
+    try:
+        team_stats, team_updated = _cached_moneypuck_teams(int(season[:4]))
+        current_teams = team_season_rows(team_stats)
+        matchups = slate_team_matchup_rows(current_teams, df_f.get("Game", pd.Series(dtype=str)).dropna())
+        if matchups:
+            ranks = power_play_team_ranks(current_teams)
+            for matchup in matchups:
+                attack_rank = ranks.get(matchup["Team"], {}).get("PP attack rank")
+                pk_rank = ranks.get(matchup["Opponent"], {}).get("PK matchup rank")
+                matchup["Team PP xGF rank"] = attack_rank
+                matchup["Opp PK xGA rank"] = pk_rank
+                team_matchup_by_team[matchup["Team"]] = matchup
+            matchup_frame = pd.DataFrame(matchups)
+            rank_by = st.selectbox("Rank team matchups by", (
+                "Opp PK xGA/60", "Opp PK GA/60", "Opp GA/GP", "Team PP xGF/60",
+                "Team PP GF/60", "Opp 5v5 xGA/60", "Opp SOG against/GP"),
+                key="pp_team_matchup_sort")
+            matchup_frame = matchup_frame.sort_values(rank_by, ascending=False, na_position="last", kind="stable")
+            st.caption(f"{season} regular season · MoneyPuck updated {team_updated} · team and opponent GP shown. "
+                       "PK xGA/60 is expected goals allowed while shorthanded; PK GA/60 is actual goals allowed. "
+                       "These are observed rates from a small early-season sample, not tested move percentages.")
+            st.dataframe(matchup_frame, hide_index=True, width="stretch", height=320)
+            with st.expander("All teams · current-season PP and defense stats"):
+                st.dataframe(pd.DataFrame(current_teams), hide_index=True, width="stretch", height=360)
+        else:
+            st.info("No team matchup stats are available for this slate yet.")
+    except Exception as exc:
+        st.warning(f"Current-season team stats are temporarily unavailable ({type(exc).__name__}).")
+    if st.checkbox("Show current-season skater form and game logs", key="pp_show_skater_form"):
+        _render_season_skater_form(df_f, pp_slate_day)
     pp_health = []
     for label, column in (("Player PP time/game", "PP_TOI_per_game"),
                           ("Player PP creation", "PP_iXA60"),
@@ -5759,12 +5771,21 @@ elif page == "Power Play":
             if not form or form.get("empty"):
                 return "—"
             wins, games = form[period]
-            return f"{wins}/{games}" if games else "—"
+            return f"{wins}/{games} · {100 * wins / games:.0f}%" if games else "—"
 
+        ppp_quotes["Current PPP L10"] = ppp_quotes.apply(
+            lambda row: _ppp_record(_ppp_form(row), "l10"), axis=1)
         ppp_quotes["Current PPP L5"] = ppp_quotes.apply(
             lambda row: _ppp_record(_ppp_form(row), "l5"), axis=1)
         ppp_quotes["Current PPP season"] = ppp_quotes.apply(
             lambda row: _ppp_record(_ppp_form(row), "season_rate"), axis=1)
+        for column, key in (("Team PP xGF/60 now", "Team PP xGF/60"),
+                            ("Team PP rank", "Team PP xGF rank"),
+                            ("Opp PK xGA/60 now", "Opp PK xGA/60"),
+                            ("Opp PK rank", "Opp PK xGA rank"),
+                            ("Opp PK GA/60 now", "Opp PK GA/60")):
+            ppp_quotes[column] = ppp_quotes["Team"].map(
+                lambda team: team_matchup_by_team.get(str(team).upper(), {}).get(key))
         tracker_dates = pd.to_datetime(df_f["Date"], errors="coerce").dropna()
         current_usage = {}
         if not tracker_dates.empty:
@@ -5836,8 +5857,10 @@ elif page == "Power Play":
         pp_view = (ppp_quotes if selected_team == "All teams" else
                    ppp_quotes.loc[ppp_quotes["Team"].eq(selected_team)]).copy()
         display_quotes = pp_view[["Player", "Game", "Best feed price", "Book break-even %",
-                                 "Current PPP L5", "Current PPP season",
+                                 "Current PPP L10", "Current PPP L5", "Current PPP season",
                                  "Current PP min/game", "Current PP games",
+                                 "Team PP rank", "Team PP xGF/60 now",
+                                 "Opp PK rank", "Opp PK xGA/60 now", "Opp PK GA/60 now",
                                  "PP unit", "PP TOI/game", "Opp PK xGA/60",
                                  "PP matchup /100", "Stats season", "Assists cross-check", "Context"]].rename(columns={
                                      "PP unit": "PP unit (stats season)",
@@ -5846,6 +5869,7 @@ elif page == "Power Play":
                                      "PP matchup /100": "PP context /100 (stats season)",
                                  })
         for column in ("Current PP min/game", "PP min/game (MoneyPuck)",
+                       "Team PP xGF/60 now", "Opp PK xGA/60 now", "Opp PK GA/60 now",
                        "Opp PK xGA/60 (stats season)", "PP context /100 (stats season)"):
             display_quotes[column] = pd.to_numeric(display_quotes[column], errors="coerce").round(1)
         st.dataframe(display_quotes, hide_index=True, width="stretch")
@@ -5861,6 +5885,12 @@ elif page == "Power Play":
             "player": selected["Player"], "game": selected["Game"],
             "odds": selected["Over odds"], "book": selected["Book"],
             "form_log": form_log, "form_season": selected_form.get("season") if selected_form else None,
+            "team_pp_rank": selected["Team PP rank"],
+            "team_pp_xgf60": selected["Team PP xGF/60 now"],
+            "opp_pk_rank": selected["Opp PK rank"],
+            "opp_pk_xga60": selected["Opp PK xGA/60 now"],
+            "opp_pk_ga60": selected["Opp PK GA/60 now"],
+            "ppp_l10": selected["Current PPP L10"],
         }))
         usage_note = (f'{selected["Current PP min/game"]:.1f} PP min/game this season '
                       f'({int(selected["Current PP games"])} games)'
@@ -5871,7 +5901,7 @@ elif page == "Power Play":
                    f'PP unit: {selected["PP unit"]}')
         st.caption("The dated log shows this player's credited power-play points in current-season regular-season games. A team scoring streak can help you scout, but this card does not measure team power-play goals or prove a betting edge.")
         with st.expander("How to read these numbers"):
-            st.markdown("- **Book break-even %** is the hit rate required by that posted price. We cannot compare it to a PPP model rate yet.\n- **Current PPP L5 / season** are observed player results against over 0.5 from this regular season, not a forecast. Missing logs show —.\n- **Current PP min/game** is official NHL power-play ice time per completed regular-season game before the slate. It does not confirm tonight's unit.\n- **PP unit and MoneyPuck PP minutes** use the model stats season shown in the table. PP unit is inferred from recorded ice time, not tonight's confirmed lineup.\n- **Opponent PK xGA/60** is expected goals allowed by the opponent's penalty kill per 60 minutes in the listed stats season. Higher gives a more favorable opponent context, not a guaranteed point. **PP context /100** blends team PP strength with opponent PK weakness; 50 can be a neutral fallback, so it is blank here when source inputs are missing.\n- **Assists cross-check** names a separately tested assist move when one fires. Its record is for assists over 0.5, not PPP over 0.5.\n- **Odds only** means the player has a price but lacks usable model history. Leave the matchup columns blank rather than assuming neutral is good.")
+            st.markdown("- **Book break-even %** is the hit rate required by that posted price. We cannot compare it to a PPP model rate yet.\n- **Current PPP L10 / L5 / season** are observed player results against over 0.5 from this regular season, not a forecast. Early in the season, L10 uses however many completed games exist. Missing logs show —.\n- **Team PP rank** ranks current-season team PP xGF/60 across available NHL teams, strongest first. **Opp PK rank** ranks current-season PK xGA/60 allowed, most permissive first. Both use observed MoneyPuck rates and can be noisy early.\n- **Current PP min/game** is official NHL power-play ice time per completed regular-season game before the slate. It does not confirm tonight's unit.\n- **PP unit and MoneyPuck PP minutes** use the model stats season shown in the table. PP unit is inferred from recorded ice time, not tonight's confirmed lineup.\n- **Opponent PK xGA/60** is expected goals allowed by the opponent's penalty kill per 60 minutes in the listed stats season. Higher gives a more favorable opponent context, not a guaranteed point. **PP context /100** blends team PP strength with opponent PK weakness; 50 can be a neutral fallback, so it is blank here when source inputs are missing.\n- **Assists cross-check** names a separately tested assist move when one fires. Its record is for assists over 0.5, not PPP over 0.5.\n- **Odds only** means the player has a price but lacks usable model history. Leave the matchup columns blank rather than assuming neutral is good.")
 
     with st.expander("Detailed PP stats and filters"):
         unit_sel = st.multiselect("PP unit", ["PP1", "PP2", "Unconfirmed"],

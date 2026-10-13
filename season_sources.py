@@ -121,6 +121,25 @@ def slate_team_matchup_rows(team_rows, games):
     return output
 
 
+def power_play_team_ranks(team_rows):
+    """League ranks for observed PP attack and PK chances allowed (high first)."""
+    fields = (("PP xGF/60", "PP attack rank"),
+              ("PK xGA/60", "PK matchup rank"))
+    ranks = {str(row["Team"]).upper(): {} for row in team_rows}
+    for field, label in fields:
+        available = sorted(((str(row["Team"]).upper(), float(row[field]))
+                            for row in team_rows if _number(row.get(field)) is not None),
+                           key=lambda item: -item[1])
+        previous = None
+        current_rank = None
+        for position, (team, value) in enumerate(available, 1):
+            if value != previous:
+                current_rank = position
+                previous = value
+            ranks[team][label] = current_rank
+    return ranks
+
+
 def fetch_nhl_player_log(player_id, season_id, session=None):
     http = session or requests.Session()
     url = f"https://api-web.nhle.com/v1/player/{int(player_id)}/game-log/{int(season_id)}/2"
