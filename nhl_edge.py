@@ -1310,7 +1310,7 @@ def merge_bdl_mainlines(df: pd.DataFrame, path: str = "data/cache/bdl_mainlines_
 
             return ""
 
-        s0 = str(x).strip()
+        s0 = str(x).strip().replace("\ufffd", "")
 
         # Fix common mojibake: 'StÃ¼tzle' -> 'Stützle'
 

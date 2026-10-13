@@ -11,7 +11,8 @@ import pandas as pd
 
 def _name_key(value: str) -> str:
     plain = unicodedata.normalize("NFKD", str(value or ""))
-    return "".join(ch for ch in plain.casefold() if ch.isalnum() and not unicodedata.combining(ch))
+    key = "".join(ch for ch in plain.casefold() if ch.isalnum() and not unicodedata.combining(ch))
+    return key.replace("sttzle", "stutzle")
 
 
 def _roster_players(session, team: str) -> dict[str, dict]:
@@ -129,6 +130,11 @@ def add_roster_watchlist(tracker: pd.DataFrame, session, teams: set[str],
     from odds_ev_bdl import fetch_bdl_games_for_date, fetch_bdl_props_for_game, fetch_bdl_players_map
 
     existing = {(str(row.Team), _name_key(row.Player)) for row in tracker[["Team", "Player"]].itertuples(index=False)}
+    existing_ids = {}
+    for index, row in tracker.iterrows():
+        player_id = pd.to_numeric(row.get("Player_ID"), errors="coerce")
+        if pd.notna(player_id):
+            existing_ids[(str(row.get("Team")), int(player_id))] = index
     rows = []
     try:
         games = fetch_bdl_games_for_date(today.isoformat(), api_key=api_key)
@@ -162,7 +168,7 @@ def add_roster_watchlist(tracker: pd.DataFrame, session, teams: set[str],
             key = _name_key(name)
             for team in game_teams.intersection(rosters):
                 official = rosters[team].get(key)
-                if not official or (team, key) in existing:
+                if not official:
                     continue
                 injury_status = injury_statuses.get((team, key), "")
                 if any(token in injury_status for token in ("out", "scratch", "injured reserve", "ltir", " ir")) or injury_status == "ir":
@@ -175,6 +181,19 @@ def add_roster_watchlist(tracker: pd.DataFrame, session, teams: set[str],
                     "PPP": _best_price(player_props, "power_play_points", (0.5, 1.5)),
                 }
                 if not any(prices.values()):
+                    continue
+                existing_index = existing_ids.get((team, int(official["id"])))
+                if existing_index is not None:
+                    for market, price in prices.items():
+                        if not price:
+                            continue
+                        prefix = "BDL_PPP" if market == "PPP" else market
+                        columns = (f"{prefix}_Line", f"{prefix}_Odds" if market == "PPP" else f"{prefix}_Odds_Over", f"{prefix}_Book")
+                        for column, value in zip(columns, price):
+                            if column not in tracker.columns or pd.isna(tracker.at[existing_index, column]):
+                                tracker.at[existing_index, column] = value
+                    continue
+                if (team, key) in existing:
                     continue
                 row = {"Date": today.isoformat(), "Game": game_map.get(team, ""),
                        "Player": official["name"], "Player_ID": official["id"],

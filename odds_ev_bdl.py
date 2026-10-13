@@ -95,7 +95,7 @@ def _norm_name(x) -> str:
     """
     if x is None:
         return ""
-    s0 = str(x).strip()
+    s0 = str(x).strip().replace("\ufffd", "")
 
     # Fix common mojibake: interpret the *text* as latin-1 bytes then decode as utf-8
     try:
