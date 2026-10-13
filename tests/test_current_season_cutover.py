@@ -8,13 +8,17 @@ from nhl_edge import load_moneypuck_best_effort
 
 
 class CurrentSeasonCutoverTests(unittest.TestCase):
-    def test_october_12_keeps_existing_ten_game_gate(self):
+    def test_october_12_keeps_existing_seven_game_gate(self):
         current = pd.DataFrame([{"team": "OTT", "games_played": 6}])
         prior = pd.DataFrame([{"team": "OTT", "games_played": 82}])
-        with patch("nhl_edge.load_moneypuck_csv", side_effect=[current, prior]) as fetch:
+
+        def feed(_session, url):
+            return current if "/2026/regular/" in url else prior
+
+        with patch("nhl_edge.load_moneypuck_csv", side_effect=feed) as fetch:
             result = load_moneypuck_best_effort(None, "skaters", {"OTT"}, date(2026, 10, 12))
         self.assertEqual(result.attrs["moneypuck_start_year"], 2025)
-        self.assertEqual(fetch.call_count, 2)
+        self.assertEqual(fetch.call_count, 3)
 
     def test_october_13_uses_current_season_even_below_ten_games(self):
         current = pd.DataFrame([{"team": "OTT", "games_played": 6}])
