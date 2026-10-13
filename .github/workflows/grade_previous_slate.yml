@@ -41,6 +41,9 @@ jobs:
             python grade_daily_tracker.py --date "$slate_date" --skip-missing
           done
 
+      - name: Track power play matchup weights
+        run: python audit_pp_weights.py
+
       - name: Save graded results
         shell: bash
         run: |
@@ -53,6 +56,7 @@ jobs:
           if compgen -G 'output/graded/moves_*.csv' > /dev/null; then
             git add -f output/graded/moves_*.csv
           fi
+          git add -f output/graded/pp_weight_audit.json
           if git diff --cached --quiet; then
             echo "No grading changes"
             exit 0
