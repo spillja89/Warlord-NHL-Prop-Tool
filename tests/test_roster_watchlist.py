@@ -3,8 +3,9 @@ import unittest
 from unittest.mock import patch
 
 import pandas as pd
+import requests
 
-from roster_watchlist import add_roster_watchlist
+from roster_watchlist import add_roster_watchlist, load_active_rosters
 from odds_ev_bdl import _norm_name, add_bdl_ev_all
 from warlords_night_board import featured_warlords, rank_priced_slate
 
@@ -27,6 +28,16 @@ class _Session:
 
 
 class RosterWatchlistTests(unittest.TestCase):
+    def test_roster_rate_limit_is_retried(self):
+        response = requests.Response()
+        response.status_code = 429
+        retry = requests.HTTPError("too many requests", response=response)
+        with patch("roster_watchlist._roster_players", side_effect=[retry, {"skater": {"id": 1}}]) as fetch, \
+             patch("roster_watchlist.time.sleep"):
+            rosters = load_active_rosters(None, {"CHI"})
+        self.assertEqual(fetch.call_count, 2)
+        self.assertIn("CHI", rosters)
+
     def test_corrupt_umlaut_matches_moneypuck_spelling(self):
         self.assertEqual(_norm_name("Tim St\ufffdtzle"), _norm_name("Tim Sttzle"))
 

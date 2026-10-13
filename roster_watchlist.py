@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from datetime import datetime, timedelta, timezone
 import math
+import time
 import unicodedata
 
 import pandas as pd
@@ -37,11 +38,19 @@ def load_active_rosters(session, teams: set[str], *, debug: bool = False) -> dic
     """Fetch today's official skater rosters once for modeling and verification."""
     rosters = {}
     for team in sorted(teams):
-        try:
-            rosters[team] = _roster_players(session, team)
-        except Exception as exc:
-            if debug:
-                print(f"[roster] {team}: {exc}")
+        for attempt in range(4):
+            try:
+                rosters[team] = _roster_players(session, team)
+                break
+            except Exception as exc:
+                status = getattr(getattr(exc, "response", None), "status_code", None)
+                if status in {429, 503} and attempt < 3:
+                    time.sleep(2 ** attempt)
+                    continue
+                if debug:
+                    print(f"[roster] {team}: {exc}")
+                break
+        time.sleep(0.3)
     return rosters
 
 
