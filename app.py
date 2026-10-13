@@ -4624,15 +4624,15 @@ if source == "latest" and "Date" in df.columns:
 
 odds_columns = [col for col in ("Points_Odds_Over", "Assists_Odds_Over", "SOG_Odds_Over", "Goal_Odds_Over", "ATG_Odds_Over", "BDL_PPP_Odds") if col in df.columns]
 if source == "latest":
+    priced_counts = rank_priced_slate(df)
     market_counts = {
-        label: int(pd.to_numeric(df.get(column, pd.Series(dtype=float)), errors="coerce").notna().sum())
-        for label, column in (
-            ("Goals", "Goal_Odds_Over"), ("Assists", "Assists_Odds_Over"),
-            ("Points", "Points_Odds_Over"), ("Shots", "SOG_Odds_Over"),
-            ("Power play", "BDL_PPP_Odds"),
-        )
+        "Goals": len(priced_counts["Carry"]),
+        "Assists": len(priced_counts["Support"]),
+        "Points": len(priced_counts["Tank"]),
+        "Shots": len(priced_counts["Jungle"]),
+        "Power play": len(priced_ppp_quotes(df, line_filter=0.5)),
     }
-    st.caption("Priced players · " + " · ".join(f"{name}: {count}" for name, count in market_counts.items()))
+    st.caption("Priced player props · " + " · ".join(f"{name}: {count}" for name, count in market_counts.items()))
     if any(count == 0 for count in market_counts.values()) and any(market_counts.values()):
         st.info("This is a partial odds slate. Check back as sportsbooks post the remaining player markets.")
 if not odds_columns or not any(pd.to_numeric(df[col], errors="coerce").notna().any() for col in odds_columns):
@@ -5746,10 +5746,14 @@ elif page == "Power Play":
 
     ppp_quotes = priced_ppp_quotes(df_f, line_filter=0.5)
     st.subheader(f"Power play scouting board · {len(ppp_quotes)} posted players")
-    if source == "latest" and latest_path and os.path.isfile(latest_path):
-        pp_checked = datetime.fromtimestamp(os.path.getmtime(latest_path), ZoneInfo("America/Chicago"))
-        st.caption(f"Odds snapshot checked {pp_checked:%b %d, %Y at %I:%M %p} CT. "
-                   "The best feed-returned Over 0.5 price is shown for each player; refresh the slate for new quotes.")
+    if source == "latest":
+        checked_raw = df_f.iloc[0].get("Odds_Checked_UTC") if not df_f.empty else None
+        pp_checked = pd.to_datetime(checked_raw, utc=True, errors="coerce")
+        if pd.notna(pp_checked):
+            st.caption(f"Odds snapshot checked {pp_checked.tz_convert('America/Chicago'):%b %d, %Y at %I:%M %p} CT. "
+                       "The best feed-returned Over 0.5 price is shown for each player; refresh the slate for new quotes.")
+        else:
+            st.caption("Odds check time was not recorded in this tracker. Confirm the price at the book.")
     if "PPP_Available_Books" in df_f.columns:
         returned_books = set()
         for raw_books in df_f["PPP_Available_Books"].dropna():
