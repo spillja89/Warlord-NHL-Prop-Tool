@@ -88,6 +88,8 @@ def team_season_rows(money_puck):
             "5v5 xGA/60": per_60(five, "xGoalsAgainst"),
             "PP xGF/60": per_60(pp, "xGoalsFor"),
             "PP GF/60": per_60(pp, "goalsFor"),
+            "PP min": round(_number(pp.get("iceTime")) / 60, 1)
+            if pp is not None and _number(pp.get("iceTime")) is not None else None,
             "PK xGA/60": per_60(pk, "xGoalsAgainst"),
             "PK GA/60": per_60(pk, "goalsAgainst"),
             "PK min": round(_number(pk.get("iceTime")) / 60, 1)
@@ -98,6 +100,10 @@ def team_season_rows(money_puck):
 
 def slate_team_matchup_rows(team_rows, games):
     """Pair each slate team's current PP metrics with its opponent's defense."""
+    def gap(expected, actual):
+        expected, actual = _number(expected), _number(actual)
+        return round(expected - actual, 2) if expected is not None and actual is not None else None
+
     by_team = {str(row["Team"]).upper(): row for row in team_rows}
     output = []
     for game in dict.fromkeys(str(game).strip().upper() for game in games):
@@ -112,8 +118,12 @@ def slate_team_matchup_rows(team_rows, games):
                 "Team GP": attack.get("GP"), "Opp GP": defense.get("GP"),
                 "Team PP xGF/60": attack.get("PP xGF/60"),
                 "Team PP GF/60": attack.get("PP GF/60"),
+                "Team PP xG-G/60": gap(attack.get("PP xGF/60"), attack.get("PP GF/60")),
+                "Team PP min": attack.get("PP min"),
                 "Opp PK xGA/60": defense.get("PK xGA/60"),
                 "Opp PK GA/60": defense.get("PK GA/60"),
+                "Opp PK xGA-GA/60": gap(defense.get("PK xGA/60"), defense.get("PK GA/60")),
+                "Opp PK min": defense.get("PK min"),
                 "Opp GA/GP": defense.get("GA/GP"),
                 "Opp 5v5 xGA/60": defense.get("5v5 xGA/60"),
                 "Opp SOG against/GP": defense.get("SOG against/GP"),

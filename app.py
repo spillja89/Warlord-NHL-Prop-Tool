@@ -5702,13 +5702,18 @@ elif page == "Power Play":
                 team_matchup_by_team[matchup["Team"]] = matchup
             matchup_frame = pd.DataFrame(matchups)
             rank_by = st.selectbox("Rank team matchups by", (
-                "Opp PK xGA/60", "Opp PK GA/60", "Opp GA/GP", "Team PP xGF/60",
-                "Team PP GF/60", "Opp 5v5 xGA/60", "Opp SOG against/GP"),
+                "Opp PK xGA/60", "Team PP xG-G/60", "Opp PK xGA-GA/60",
+                "Team PP xGF/60", "Team PP GF/60", "Opp PK GA/60",
+                "Opp GA/GP", "Opp 5v5 xGA/60", "Opp SOG against/GP"),
                 key="pp_team_matchup_sort")
             matchup_frame = matchup_frame.sort_values(rank_by, ascending=False, na_position="last", kind="stable")
             st.caption(f"{season} regular season · MoneyPuck updated {team_updated} · team and opponent GP shown. "
                        "PK xGA/60 is expected goals allowed while shorthanded; PK GA/60 is actual goals allowed. "
                        "These are observed rates from a small early-season sample, not tested move percentages.")
+            st.caption("**PP process gaps:** Team PP xG−G/60 = expected minus actual goals scored; "
+                       "Opp PK xGA−GA/60 = expected minus actual goals allowed. Positive values mean chances "
+                       "have outpaced goals so far. Check PP/PK minutes and player PP1 usage before reading "
+                       "a gap as a matchup signal; a gap alone does not predict a goal next game.")
             st.dataframe(matchup_frame, hide_index=True, width="stretch", height=320)
             with st.expander("All teams · current-season PP and defense stats"):
                 st.dataframe(pd.DataFrame(current_teams), hide_index=True, width="stretch", height=360)
