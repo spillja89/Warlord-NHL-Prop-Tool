@@ -182,16 +182,27 @@ def add_roster_watchlist(tracker: pd.DataFrame, session, teams: set[str],
                 }
                 if not any(prices.values()):
                     continue
-                existing_index = existing_ids.get((team, int(official["id"])))
+                official_id = pd.to_numeric(official.get("id"), errors="coerce")
+                existing_index = existing_ids.get((team, int(official_id))) if pd.notna(official_id) else None
                 if existing_index is not None:
                     for market, price in prices.items():
                         if not price:
                             continue
                         prefix = "BDL_PPP" if market == "PPP" else market
-                        columns = (f"{prefix}_Line", f"{prefix}_Odds" if market == "PPP" else f"{prefix}_Odds_Over", f"{prefix}_Book")
-                        for column, value in zip(columns, price):
-                            if column not in tracker.columns or pd.isna(tracker.at[existing_index, column]):
-                                tracker.at[existing_index, column] = value
+                        line_col = f"{prefix}_Line"
+                        odds_col = f"{prefix}_Odds" if market == "PPP" else f"{prefix}_Odds_Over"
+                        book_col = f"{prefix}_Book"
+                        line_now = pd.to_numeric(tracker.at[existing_index, line_col], errors="coerce") if line_col in tracker else float("nan")
+                        odds_now = pd.to_numeric(tracker.at[existing_index, odds_col], errors="coerce") if odds_col in tracker else float("nan")
+                        if pd.isna(line_now) or pd.isna(odds_now):
+                            tracker.at[existing_index, line_col] = price[0]
+                            tracker.at[existing_index, odds_col] = price[1]
+                            tracker.at[existing_index, book_col] = price[2]
+                        elif (math.isclose(float(line_now), float(price[0]))
+                              and math.isclose(float(odds_now), float(price[1]))
+                              and (book_col not in tracker or pd.isna(tracker.at[existing_index, book_col])
+                                   or not str(tracker.at[existing_index, book_col]).strip())):
+                            tracker.at[existing_index, book_col] = price[2]
                     continue
                 if (team, key) in existing:
                     continue

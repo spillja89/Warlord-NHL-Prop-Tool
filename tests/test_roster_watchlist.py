@@ -5,7 +5,7 @@ from unittest.mock import patch
 import pandas as pd
 
 from roster_watchlist import add_roster_watchlist
-from odds_ev_bdl import _norm_name
+from odds_ev_bdl import _norm_name, add_bdl_ev_all
 from warlords_night_board import featured_warlords, rank_priced_slate
 
 
@@ -29,6 +29,17 @@ class _Session:
 class RosterWatchlistTests(unittest.TestCase):
     def test_corrupt_umlaut_matches_moneypuck_spelling(self):
         self.assertEqual(_norm_name("Tim St\ufffdtzle"), _norm_name("Tim Sttzle"))
+
+    def test_missing_bdl_book_does_not_erase_existing_source(self):
+        quotes = pd.DataFrame([{"Goal_Line": 0.5, "Goal_Odds_Over": 190,
+                                "Goal_Book": None, "BDL_Goal_Book": None,
+                                "ATG_Line": 0.5, "ATG_Odds_Over": 190,
+                                "ATG_Book": "fanduel", "SOG_Line": 2.5,
+                                "SOG_Odds_Over": 104, "SOG_Book": "fanatics",
+                                "BDL_SOG_Book": None}])
+        result = add_bdl_ev_all(quotes)
+        self.assertEqual(result.iloc[0]["Goal_Book"], "fanduel")
+        self.assertEqual(result.iloc[0]["SOG_Book"], "fanatics")
 
     def test_existing_current_season_player_keeps_model_row_when_name_is_corrupt(self):
         modeled = pd.DataFrame([{"Date": "2026-10-13", "Team": "OTT", "Player": "Tim Sttzle",

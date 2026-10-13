@@ -957,7 +957,7 @@ def add_bdl_ev_all(tracker: pd.DataFrame, top_k: int = 4) -> pd.DataFrame:
             df[f"{market}_Book"] = df.get(book_in, "")
         else:
             if bdl_book in df.columns:
-                m = df[bdl_book].astype(str).str.strip().ne("")
+                m = df[bdl_book].fillna("").astype(str).str.strip().ne("")
                 df.loc[m, f"{market}_Book"] = df.loc[m, bdl_book]
 
         # Compute mu per row
@@ -1041,4 +1041,13 @@ def add_bdl_ev_all(tracker: pd.DataFrame, top_k: int = 4) -> pd.DataFrame:
             df[f"{market}_EVpct_over_{i}"] = pd.to_numeric(pd.Series(ev_alt, index=df.index), errors="coerce")
             df[f"{market}_EV%_{i}"] = df[f"{market}_EVpct_over_{i}"].round(1)
 
+    if {"Goal_Book", "ATG_Book", "Goal_Odds_Over", "ATG_Odds_Over"}.issubset(df.columns):
+        same_quote = pd.to_numeric(df["Goal_Odds_Over"], errors="coerce").eq(
+            pd.to_numeric(df["ATG_Odds_Over"], errors="coerce")
+        )
+        missing_book = df["Goal_Book"].fillna("").astype(str).str.strip().eq("")
+        has_atg_book = df["ATG_Book"].fillna("").astype(str).str.strip().ne("")
+        df.loc[same_quote & missing_book & has_atg_book, "Goal_Book"] = df.loc[
+            same_quote & missing_book & has_atg_book, "ATG_Book"
+        ]
     return df
