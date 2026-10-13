@@ -6,6 +6,7 @@ from unittest import TestCase
 from published_output import (
     fetch_grade_file,
     fetch_tracker,
+    is_newer_tracker,
     list_grade_files,
     local_matches_sha,
     save_if_changed,
@@ -55,6 +56,19 @@ class PublishedOutputTests(TestCase):
             self.assertTrue(save_if_changed(path, content))
             self.assertIn(b"New Player", path.read_bytes())
             self.assertFalse(save_if_changed(path, content))
+
+    def test_current_model_season_beats_later_old_model_run(self):
+        current = b"Date,Player,Model_Stats_Season,Odds_Checked_UTC\n2026-10-13,A,2026-2027,2026-10-13T02:27:06Z\n"
+        old_model = b"Date,Player,Model_Stats_Season,Odds_Checked_UTC\n2026-10-13,A,2025-2026,2026-10-13T03:10:00Z\n"
+        self.assertTrue(is_newer_tracker(current, old_model))
+        self.assertFalse(is_newer_tracker(old_model, current))
+
+    def test_newer_slate_and_then_newer_quotes_win(self):
+        yesterday = b"Date,Player,Model_Stats_Season,Odds_Checked_UTC\n2026-10-12,A,2026-2027,2026-10-13T03:10:00Z\n"
+        today = b"Date,Player,Model_Stats_Season,Odds_Checked_UTC\n2026-10-13,A,2026-2027,2026-10-13T02:27:06Z\n"
+        later_today = b"Date,Player,Model_Stats_Season,Odds_Checked_UTC\n2026-10-13,A,2026-2027,2026-10-13T03:10:00Z\n"
+        self.assertTrue(is_newer_tracker(today, yesterday))
+        self.assertTrue(is_newer_tracker(later_today, today))
 
     def test_only_expected_graded_files_are_accepted(self):
         with TemporaryDirectory() as directory:

@@ -7,7 +7,7 @@ import re
 import tempfile
 import csv
 import io
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 from hashlib import sha1
 from pathlib import Path
 from urllib.parse import quote
@@ -51,6 +51,27 @@ def tracker_snapshot_time(content: bytes) -> datetime | None:
         except ValueError:
             continue
     return None
+
+
+def tracker_snapshot_rank(content: bytes) -> tuple[date, int, datetime]:
+    """Rank saved slates by game day, model season, then quote capture time."""
+    try:
+        row = next(csv.DictReader(io.StringIO(content.decode("utf-8-sig"))))
+    except (UnicodeError, ValueError, StopIteration, csv.Error):
+        row = {}
+    try:
+        slate_day = date.fromisoformat(str(row.get("Date") or "").strip()[:10])
+    except ValueError:
+        slate_day = date.min
+    season = str(row.get("Model_Stats_Season") or "").strip()
+    season_start = int(season[:4]) if season[:4].isdigit() else 0
+    captured = tracker_snapshot_time(content) or datetime.min.replace(tzinfo=timezone.utc)
+    return slate_day, season_start, captured
+
+
+def is_newer_tracker(candidate: bytes, incumbent: bytes) -> bool:
+    """Prefer current-season data even if an old-model run has newer odds."""
+    return tracker_snapshot_rank(candidate) > tracker_snapshot_rank(incumbent)
 
 
 def list_grade_files(*, session=requests) -> list[tuple[str, str]]:

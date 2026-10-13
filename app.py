@@ -14,7 +14,7 @@ import numpy as np
 import pandas as pd
 import streamlit as st
 
-from published_output import fetch_grade_file, fetch_tracker, list_grade_files, local_matches_sha, save_if_changed, tracker_snapshot_time
+from published_output import fetch_grade_file, fetch_tracker, is_newer_tracker, list_grade_files, local_matches_sha, save_if_changed
 from warlord_moves_2026 import VERSION as MOVE_KIT_VERSION
 from warlord_moves_2026 import best_move, points_moves, sog_moves, goals_moves as _goals_carry_moves, assists_moves as _assists_mapped_moves
 from warlords_night_board import CLASSES, baseline_audit, rank_warlords, rank_priced_slate, featured_warlords, render_warlords, render_power_play_form, _character_uri
@@ -3961,9 +3961,8 @@ if uploaded is None:
     if published_tracker:
         try:
             stable_path = Path(OUTPUT_DIR) / "tracker_latest.csv"
-            local_time = tracker_snapshot_time(stable_path.read_bytes()) if stable_path.is_file() else None
-            remote_time = tracker_snapshot_time(published_tracker)
-            if not (local_time and remote_time and local_time > remote_time):
+            local_tracker = stable_path.read_bytes() if stable_path.is_file() else None
+            if local_tracker is None or is_newer_tracker(published_tracker, local_tracker):
                 save_if_changed(stable_path, published_tracker)
         except OSError:
             pass  # The app can still use its local tracker if this instance is read-only.
@@ -3976,9 +3975,9 @@ if "latest_path_override" in st.session_state:
     _p = st.session_state.get("latest_path_override")
     if _p and os.path.exists(str(_p)):
         try:
-            override_time = tracker_snapshot_time(Path(_p).read_bytes())
-            stable_time = tracker_snapshot_time(Path(latest_stable).read_bytes()) if os.path.exists(latest_stable) else None
-            if not (stable_time and override_time and stable_time > override_time):
+            override_tracker = Path(_p).read_bytes()
+            stable_tracker = Path(latest_stable).read_bytes() if os.path.exists(latest_stable) else None
+            if stable_tracker is None or not is_newer_tracker(stable_tracker, override_tracker):
                 latest_path = str(_p)
             else:
                 st.session_state.pop("latest_path_override", None)
