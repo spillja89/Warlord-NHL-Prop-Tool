@@ -114,10 +114,11 @@ jobs:
             slate_date="$(date -d "$days_ago days ago" +%F)"
             python grade_daily_tracker.py --date "$slate_date" --skip-missing
           done
+          python audit_pp_weights.py
           git config user.name 'github-actions[bot]'
           git config user.email 'github-actions[bot]@users.noreply.github.com'
           shopt -s nullglob
-          results=(output/graded/tracker_*_GRADED.csv output/graded/tracker_*_summary.json output/graded/moves_*.csv)
+          results=(output/graded/tracker_*_GRADED.csv output/graded/tracker_*_summary.json output/graded/moves_*.csv output/graded/pp_weight_audit.json)
           if (( ${#results[@]} )); then
             git add -f "${results[@]}"
           fi
