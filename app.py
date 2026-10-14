@@ -787,7 +787,8 @@ def _priced_pool_table(cards: list[dict]) -> pd.DataFrame:
                                         "Later record", "Later %", "Reason"))
 
 
-def _render_class_shortlist(frame: pd.DataFrame, role: str) -> None:
+def _render_class_shortlist(frame: pd.DataFrame, role: str,
+                            expand_priced: bool = True) -> None:
     """Show every priced player, with move tags as context."""
     slate_frame, _ = _class_slate_frame(frame)
     priced = rank_priced_slate(slate_frame)
@@ -805,7 +806,7 @@ def _render_class_shortlist(frame: pd.DataFrame, role: str) -> None:
     else:
         st.caption("No player clears both the current baseline and a tested move at 50%+ on this slate.")
     st.caption("Character cards require the current Green baseline and a historical move at 50%+. Book break-even % comes from the posted odds; move percentages describe past results for that rule, not a forecast. Model confidence is a separate ranking score.")
-    with st.expander(f"Every priced {role} player ({total})", expanded=True):
+    with st.expander(f"Every priced {role} player ({total})", expanded=expand_priced):
         st.dataframe(_priced_pool_table(priced[role]), hide_index=True, use_container_width=True)
 
 def _role_for_market(mkt: str) -> dict:
@@ -5580,6 +5581,8 @@ elif page == "GOALS (0.5)":
 
     df_g["_cp"] = safe_num(df_g, "Conf_Points", 0)
     df_g = df_g.sort_values(["_cp"], ascending=[False]).drop(columns=["_cp"], errors="ignore")
+    df_g["Green"] = to_bool_series(column_or(df_g, "Green_Goal", False)).map(lambda x: "🟢" if x else "")
+    goal_tracker = df_g.copy()
 
     st.sidebar.subheader("Goal Filters")
     show_all = st.sidebar.checkbox("Show all players (ignore optional filters)", value=True)
@@ -5595,8 +5598,6 @@ elif page == "GOALS (0.5)":
         df_g = df_g[points_conf >= min_conf]
         if "Color_Goal" in df_g.columns and color_pick:
             df_g = df_g[df_g["Color_Goal"].isin(color_pick)]
-
-    df_g["Green"] = to_bool_series(column_or(df_g, "Green_Goal", False)).map(lambda x: "🟢" if x else "")
 
     goal_cols = [
         "Game",
@@ -5626,9 +5627,6 @@ elif page == "GOALS (0.5)":
         "ShotIntent",
         "ShotIntent_Pct",
         "Drought_G", "Best_Drought",
-
-        # --- WHY IT FIRES (label) ---
-        "ATG_Call",
 
         # --- GOALIE / CONTEXT ---
         "Opp_Goalie", "Opp_SV", "Opp_GAA", "Goalie_Weak",
@@ -5669,11 +5667,11 @@ elif page == "GOALS (0.5)":
 
 
 
-    _render_class_shortlist(df_f, "Carry")
+    _render_class_shortlist(df_f, "Carry", expand_priced=False)
 
     st.markdown("---")
 
-    show_table(df_g, goal_cols, "GOAL (1+) View")
+    show_table(goal_tracker, goal_cols, f"Goal tracker · {len(goal_tracker)} skaters")
 
 
 
