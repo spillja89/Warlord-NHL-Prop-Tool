@@ -5579,14 +5579,14 @@ elif page == "GOALS (0.5)":
         gb = gb.mask(gb.str.strip().eq(""), ab)
     df_g["Goal_Book"] = gb
 
-    df_g["_cp"] = safe_num(df_g, "Conf_Points", 0)
-    df_g = df_g.sort_values(["_cp"], ascending=[False]).drop(columns=["_cp"], errors="ignore")
+    df_g["_goal_conf"] = safe_num(df_g, "Conf_Goal", 0)
+    df_g = df_g.sort_values(["_goal_conf"], ascending=[False]).drop(columns=["_goal_conf"], errors="ignore")
     df_g["Green"] = to_bool_series(column_or(df_g, "Green_Goal", False)).map(lambda x: "🟢" if x else "")
     goal_tracker = df_g.copy()
 
     st.sidebar.subheader("Goal Filters")
     show_all = st.sidebar.checkbox("Show all players (ignore optional filters)", value=True)
-    min_conf = st.sidebar.slider("Min Points Conf (Goals)", 0, 100, 84, 1)
+    min_conf = st.sidebar.slider("Min Goal Conf", 0, 100, 84, 1)
     color_pick = st.sidebar.multiselect(
         "Colors (Goal)",
         ["green", "yellow", "blue", "red"],
@@ -5594,8 +5594,8 @@ elif page == "GOALS (0.5)":
     )
 
     if not show_all:
-        points_conf = pd.to_numeric(df_g.get("Conf_Points", pd.Series(np.nan, index=df_g.index)), errors="coerce").fillna(0)
-        df_g = df_g[points_conf >= min_conf]
+        goal_conf = pd.to_numeric(df_g.get("Conf_Goal", pd.Series(np.nan, index=df_g.index)), errors="coerce").fillna(0)
+        df_g = df_g[goal_conf >= min_conf]
         if "Color_Goal" in df_g.columns and color_pick:
             df_g = df_g[df_g["Color_Goal"].isin(color_pick)]
 
@@ -5612,7 +5612,7 @@ elif page == "GOALS (0.5)":
         # --- SIGNALS ---
         "Green",
         
-        "Conf_Points", "Conf_Goal", "Matrix_Goal",
+        "Conf_Goal", "Matrix_Goal",
 
         # --- GOALS CARRY MOVE INPUTS ---
         "Goal_mu", "Opp_PK_xGA60", "Opp_SOG_Against_L50", "opp_5v5_HDCA60",
@@ -5652,7 +5652,7 @@ elif page == "GOALS (0.5)":
             _f,
             green_col="Green_Goal",
             ev_icon_col="Plays_EV_ATG",
-            conf_col="Conf_Points",
+            conf_col="Conf_Goal",
             matrix_col="Matrix_Goal",
             lock_col="LOCK",
         )
