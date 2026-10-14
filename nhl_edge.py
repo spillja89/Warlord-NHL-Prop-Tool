@@ -3343,7 +3343,8 @@ def build_tracker(today_local: date, debug: bool = False, api_key: str | None = 
     ensure_dirs()
     sess = http_session()
 
-    # Daily cache (used for team recent SOG-against + player log caching)
+    # Retain completed-game boxscores for team SOG-against; player logs are
+    # fetched fresh on every run so recent results and model inputs agree.
     cache = load_cache(today_local)
 
     print(f"\nNHL EDGE TOOL — v7.2 — {today_local.isoformat()}\n")
@@ -3923,16 +3924,14 @@ def build_tracker(today_local: date, debug: bool = False, api_key: str | None = 
 
     print(f"Fetching NHL logs for {len(cand_ids)} players (cap={CAND_CAP}) ...\n")
 
-    # cache already loaded above
+    season_start = today_local.year if today_local.month >= 9 else today_local.year - 1
+    current_season = int(f"{season_start}{season_start + 1}")
 
     def fetch_one(pid: int) -> Tuple[int, Optional[Dict[str, Any]]]:
-        key = str(pid)
-        if key in cache:
-            return pid, cache[key]
-        data = nhle_player_gamelog_now(sess, pid)
+        # Use one fresh, explicit regular-season log for both model features
+        # and dated form. A same-day cache can predate the final stat update.
+        data = nhle_player_regular_log(sess, pid, current_season)
         time.sleep(HTTP_SLEEP_SEC)
-        if data is not None:
-            cache[key] = data
         return pid, data
 
     fetched: Dict[int, Optional[Dict[str, Any]]] = {}
@@ -3946,31 +3945,10 @@ def build_tracker(today_local: date, debug: bool = False, api_key: str | None = 
             except Exception:
                 fetched[pid] = None
 
-    # The /now endpoint can return playoff or prior-season games. Form cards
-    # use only this season's regular-season games and never fill with last year.
-    season_start = today_local.year if today_local.month >= 9 else today_local.year - 1
-    current_season = int(f"{season_start}{season_start + 1}")
-
-    def form_for(pid: int):
-        current = compact_regular_log(fetched.get(pid), today_local.isoformat())
-        if current and current["season"] == f"{season_start}-{str(season_start + 1)[-2:]}":
-            return pid, current
-        key = f"regular_form:{pid}:{current_season}:{today_local.isoformat()}"
-        if key not in cache:
-            payload = nhle_player_regular_log(sess, pid, current_season)
-            cache[key] = compact_regular_log(payload, today_local.isoformat())
-            time.sleep(HTTP_SLEEP_SEC)
-        return pid, cache[key]
-
-    form_logs = {}
-    with ThreadPoolExecutor(max_workers=MAX_WORKERS) as ex:
-        futures = {ex.submit(form_for, pid): pid for pid in cand_ids}
-        for fut in as_completed(futures):
-            try:
-                pid, form = fut.result()
-                form_logs[pid] = form
-            except Exception:
-                form_logs[futures[fut]] = None
+    form_logs = {
+        pid: compact_regular_log(fetched.get(pid), today_local.isoformat())
+        for pid in cand_ids
+    }
 
     save_cache(today_local, cache)
 

@@ -4030,6 +4030,9 @@ else:
                     code_stamp = 0.0
                 latest_path = _run_model_cached(slate_date, code_stamp)
                 st.session_state["latest_path_override"] = str(latest_path)
+                # A manual slate refresh must also recheck the live season
+                # views and PP usage, whose display caches otherwise last 10-30m.
+                st.cache_data.clear()
             except Exception as e:
                 st.error(f"Model run failed: {e}")
                 st.stop()
