@@ -23,7 +23,14 @@ GRADE_NAME = re.compile(r"(?:tracker_\d{4}-\d{2}-\d{2}_(?:summary\.json|GRADED\.
 
 
 def fetch_tracker(*, session=requests) -> bytes:
-    response = session.get(f"{RAW_BASE}/tracker_latest.csv", timeout=12)
+    # The raw GitHub URL can be served from an older CDN copy after Actions
+    # publishes a corrected same-day tracker. Streamlit already caches this
+    # fetch briefly, so use a unique URL for each actual network check.
+    response = session.get(
+        f"{RAW_BASE}/tracker_latest.csv",
+        params={"checked_at": int(datetime.now(timezone.utc).timestamp())},
+        timeout=12,
+    )
     response.raise_for_status()
     content = response.content
     if not content or len(content) > 25 * 1024 * 1024:
