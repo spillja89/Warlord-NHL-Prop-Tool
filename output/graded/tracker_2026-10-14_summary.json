@@ -1,0 +1,197 @@
+{
+  "frozen_moves_available": true,
+  "games_found": 2,
+  "grade_status": {
+    "FINAL": 70,
+    "NO_PLAYER": 10
+  },
+  "grader_version": "2026-10-01-v2",
+  "markets": {
+    "ATG": {
+      "L": 57,
+      "UNSET": 14,
+      "W": 9
+    },
+    "Assists": {
+      "L": 37,
+      "UNSET": 30,
+      "W": 13
+    },
+    "Goal": {
+      "L": 60,
+      "UNSET": 10,
+      "W": 10
+    },
+    "PPP": {
+      "L": 23,
+      "UNSET": 54,
+      "W": 3
+    },
+    "Points": {
+      "L": 32,
+      "UNSET": 30,
+      "W": 18
+    },
+    "SOG": {
+      "L": 18,
+      "UNSET": 44,
+      "W": 18
+    }
+  },
+  "moves": [
+    {
+      "Games": 2,
+      "Hit_Pct": 0.0,
+      "Kind": "STANCE",
+      "Kit_Version": "2026-09-24-frozen-v2",
+      "Losses": 3,
+      "Market": "Assists",
+      "Move": "Staff (Green Stance)",
+      "Picks": 3,
+      "Players": 3,
+      "Pushes": 0,
+      "Rule": "Green + Assists 0.5",
+      "Unresolved": 0,
+      "Wins": 0
+    },
+    {
+      "Games": 2,
+      "Hit_Pct": 0.0,
+      "Kind": "STANCE",
+      "Kit_Version": "2026-09-24-frozen-v2",
+      "Losses": 2,
+      "Market": "Points",
+      "Move": "DPS Tank stance",
+      "Picks": 2,
+      "Players": 2,
+      "Pushes": 0,
+      "Rule": "Conf_Points >= 75",
+      "Unresolved": 0,
+      "Wins": 0
+    },
+    {
+      "Games": 2,
+      "Hit_Pct": 50.0,
+      "Kind": "STANCE",
+      "Kit_Version": "2026-09-24-frozen-v2",
+      "Losses": 1,
+      "Market": "SOG",
+      "Move": "Sniper Stance",
+      "Picks": 2,
+      "Players": 2,
+      "Pushes": 0,
+      "Rule": "Green + SOG 3.5 + Conf_SOG >= 75",
+      "Unresolved": 0,
+      "Wins": 1
+    },
+    {
+      "Games": 1,
+      "Hit_Pct": 0.0,
+      "Kind": "STANCE",
+      "Kit_Version": "2026-09-24-frozen-v2",
+      "Losses": 1,
+      "Market": "Assists",
+      "Move": "Staff Awakened",
+      "Picks": 1,
+      "Players": 1,
+      "Pushes": 0,
+      "Rule": "Green + Assists 0.5 + Conf_Assists \u2265 83",
+      "Unresolved": 0,
+      "Wins": 0
+    },
+    {
+      "Games": 1,
+      "Hit_Pct": 0.0,
+      "Kind": "FLOOR",
+      "Kit_Version": "2026-09-24-frozen-v2",
+      "Losses": 1,
+      "Market": "Points",
+      "Move": "Backbone",
+      "Picks": 1,
+      "Players": 1,
+      "Pushes": 0,
+      "Rule": "Conf_Points >= 75 + Conf_Goal <= 88 + Conf_SOG >= 80",
+      "Unresolved": 0,
+      "Wins": 0
+    },
+    {
+      "Games": 1,
+      "Hit_Pct": 0.0,
+      "Kind": "TIER",
+      "Kit_Version": "2026-09-24-frozen-v2",
+      "Losses": 1,
+      "Market": "Points",
+      "Move": "Gaia\u2019s Blessing",
+      "Picks": 1,
+      "Players": 1,
+      "Pushes": 0,
+      "Rule": "Conf_Points >= 80 + Assists_mu >= 0.746",
+      "Unresolved": 0,
+      "Wins": 0
+    },
+    {
+      "Games": 1,
+      "Hit_Pct": 0.0,
+      "Kind": "HEAVY",
+      "Kit_Version": "2026-09-24-frozen-v2",
+      "Losses": 1,
+      "Market": "Points",
+      "Move": "Gaia\u2019s Blessing+ (Press)",
+      "Picks": 1,
+      "Players": 1,
+      "Pushes": 0,
+      "Rule": "Conf_Points >= 81 + Assists_mu >= 0.746",
+      "Unresolved": 0,
+      "Wins": 0
+    },
+    {
+      "Games": 1,
+      "Hit_Pct": 0.0,
+      "Kind": "HEAVY",
+      "Kit_Version": "2026-09-24-frozen-v2",
+      "Losses": 1,
+      "Market": "Points",
+      "Move": "Gaia\u2019s Blessing++ (Smash)",
+      "Picks": 1,
+      "Players": 1,
+      "Pushes": 0,
+      "Rule": "Conf_Points >= 83 + Assists_mu >= 0.746",
+      "Unresolved": 0,
+      "Wins": 0
+    },
+    {
+      "Games": 1,
+      "Hit_Pct": 0.0,
+      "Kind": "FLOOR",
+      "Kit_Version": "2026-09-24-frozen-v2",
+      "Losses": 1,
+      "Market": "Points",
+      "Move": "Hammer Fists",
+      "Picks": 1,
+      "Players": 1,
+      "Pushes": 0,
+      "Rule": "Conf_Points >= 80",
+      "Unresolved": 0,
+      "Wins": 0
+    },
+    {
+      "Games": 1,
+      "Hit_Pct": 100.0,
+      "Kind": "STANCE",
+      "Kit_Version": "2026-09-24-frozen-v2",
+      "Losses": 0,
+      "Market": "SOG",
+      "Move": "Jungle Stance",
+      "Picks": 1,
+      "Players": 1,
+      "Pushes": 0,
+      "Rule": "Green + SOG 2.5 + Conf_SOG >= 75",
+      "Unresolved": 0,
+      "Wins": 1
+    }
+  ],
+  "slate_date": "2026-10-14",
+  "source_file": "tracker_2026-10-14.csv",
+  "source_sha256": "f95aadaf6e674bb4aaad6fb7dbdc738d4f4387c2aa6432c1c0cd88b4caf7287a",
+  "tracker_rows": 80
+}

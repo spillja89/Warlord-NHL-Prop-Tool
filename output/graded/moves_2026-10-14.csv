@@ -1,0 +1,15 @@
+Date,Game,Game_ID,Player,Player_ID,Team,Market,Move,Kind,Rule,Icon,Kit_Version,Line,Actual,Outcome,Grade_Status,Match_Status
+2026-10-14,DAL@COL,2026020107,Nathan MacKinnon,8477492.0,COL,Points,DPS Tank stance,STANCE,Conf_Points >= 75,PTS15_TWO_HANDED_HAMMER.svg,2026-09-24-frozen-v2,1.5,0.0,L,FINAL,OK
+2026-10-14,DAL@COL,2026020107,Nathan MacKinnon,8477492.0,COL,Points,Backbone,FLOOR,Conf_Points >= 75 + Conf_Goal <= 88 + Conf_SOG >= 80,PTS15_TWO_HANDED_HAMMER.svg,2026-09-24-frozen-v2,1.5,0.0,L,FINAL,OK
+2026-10-14,DAL@COL,2026020107,Nathan MacKinnon,8477492.0,COL,Assists,Staff (Green Stance),STANCE,Green + Assists 0.5,staff.svg,2026-09-24-frozen-v2,0.5,0.0,L,FINAL,OK
+2026-10-14,DAL@COL,2026020107,Nathan MacKinnon,8477492.0,COL,Assists,Staff Awakened,STANCE,Green + Assists 0.5 + Conf_Assists ≥ 83,staff.svg,2026-09-24-frozen-v2,0.5,0.0,L,FINAL,OK
+2026-10-14,DAL@COL,2026020107,Nathan MacKinnon,8477492.0,COL,SOG,Sniper Stance,STANCE,Green + SOG 3.5 + Conf_SOG >= 75,sog_class_shooter.svg,2026-09-24-frozen-v2,3.5,4.0,W,FINAL,OK
+2026-10-14,MTL@WSH,2026020106,Cole Caufield,8481540.0,MTL,SOG,Sniper Stance,STANCE,Green + SOG 3.5 + Conf_SOG >= 75,sog_class_shooter.svg,2026-09-24-frozen-v2,3.5,0.0,L,FINAL,OK
+2026-10-14,MTL@WSH,2026020106,Nick Suzuki,8480018.0,MTL,Points,DPS Tank stance,STANCE,Conf_Points >= 75,PTS15_TWO_HANDED_HAMMER.svg,2026-09-24-frozen-v2,1.5,1.0,L,FINAL,OK
+2026-10-14,MTL@WSH,2026020106,Nick Suzuki,8480018.0,MTL,Assists,Staff (Green Stance),STANCE,Green + Assists 0.5,staff.svg,2026-09-24-frozen-v2,0.5,0.0,L,FINAL,OK
+2026-10-14,MTL@WSH,2026020106,Nick Suzuki,8480018.0,MTL,SOG,Jungle Stance,STANCE,Green + SOG 2.5 + Conf_SOG >= 75,sog_basic_swipe.svg,2026-09-24-frozen-v2,2.5,3.0,W,FINAL,OK
+2026-10-14,MTL@WSH,2026020106,Dylan Strome,8478440.0,WSH,Points,Hammer Fists,FLOOR,Conf_Points >= 80,PTS05_HAMMER_FISTS.svg,2026-09-24-frozen-v2,0.5,0.0,L,FINAL,OK
+2026-10-14,MTL@WSH,2026020106,Dylan Strome,8478440.0,WSH,Points,Gaia’s Blessing,TIER,Conf_Points >= 80 + Assists_mu >= 0.746,PTS05_GAIAS_BLESSING.svg,2026-09-24-frozen-v2,0.5,0.0,L,FINAL,OK
+2026-10-14,MTL@WSH,2026020106,Dylan Strome,8478440.0,WSH,Points,Gaia’s Blessing+ (Press),HEAVY,Conf_Points >= 81 + Assists_mu >= 0.746,PTS05_GAIAS_BLESSING.svg,2026-09-24-frozen-v2,0.5,0.0,L,FINAL,OK
+2026-10-14,MTL@WSH,2026020106,Dylan Strome,8478440.0,WSH,Points,Gaia’s Blessing++ (Smash),HEAVY,Conf_Points >= 83 + Assists_mu >= 0.746,PTS05_GAIAS_BLESSING.svg,2026-09-24-frozen-v2,0.5,0.0,L,FINAL,OK
+2026-10-14,MTL@WSH,2026020106,Dylan Strome,8478440.0,WSH,Assists,Staff (Green Stance),STANCE,Green + Assists 0.5,staff.svg,2026-09-24-frozen-v2,0.5,0.0,L,FINAL,OK
