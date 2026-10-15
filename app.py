@@ -5853,32 +5853,44 @@ elif page == "Power Play":
             return f'{move["name"]} · {move["wins"]}/{move["picks"]} assists'
 
         ppp_quotes["Assists cross-check"] = ppp_quotes.apply(_assist_crosscheck, axis=1)
+        pp_boost_by_player = {
+            (str(record.get("Team") or "").casefold(),
+             str(record.get("Player") or "").casefold()):
+            str(record.get("PP_BOOST") or "").strip().upper()
+            for record in df_f.to_dict("records")
+        }
+        ppp_quotes["PP boost"] = ppp_quotes.apply(
+            lambda row: pp_boost_by_player.get(
+                (str(row["Team"]).casefold(), str(row["Player"]).casefold())) == "ON",
+            axis=1)
         ppp_quotes["_pp1"] = ppp_quotes["PP unit"].eq("PP1").astype(int)
-        ppp_quotes["_complete"] = ppp_quotes["Context"].eq("Usage + PK context").astype(int)
         ppp_quotes["_matchup"] = pd.to_numeric(ppp_quotes["PP matchup /100"], errors="coerce").fillna(-1)
         ppp_quotes["_current_usage"] = pd.to_numeric(
             ppp_quotes["Current PP min/game"], errors="coerce").fillna(-1)
         ppp_quotes = ppp_quotes.sort_values(
-            ["_current_usage", "_pp1", "_complete", "_matchup", "PP TOI/game"],
+            ["_matchup", "PP boost", "_pp1", "_current_usage", "PP TOI/game"],
             ascending=[False, False, False, False, False], kind="stable")
+        ppp_quotes["PP rank"] = range(1, len(ppp_quotes) + 1)
         ppp_quotes = _sort_slate_rows(ppp_quotes, slate_sort, slate_start_by_game)
         ppp_quotes["Best feed price"] = ppp_quotes.apply(
             lambda row: f'{int(row["Over odds"]):+d} · {row["Book"]}', axis=1)
-        pp_sort_label = ("Sorted by PP minutes" if slate_sort == "Top ranked"
+        pp_sort_label = ("Ranked by PP context, with boost, PP1, and PP minutes breaking ties" if slate_sort == "Top ranked"
                          else f"Sorted by {slate_sort.lower()}")
-        st.caption(f"{pp_sort_label}. Rank 1 = strongest team PP or weakest opponent PK. Early-season samples are small.")
+        st.caption(f"{pp_sort_label}. PP context is our team PP and opponent PK matchup score, not a hit probability. Early-season samples are small.")
         team_options = ["All teams"] + sorted(ppp_quotes["Team"].dropna().unique().tolist())
         selected_team = st.selectbox("Team", team_options, key="pp_team")
         pp_view = (ppp_quotes if selected_team == "All teams" else
                    ppp_quotes.loc[ppp_quotes["Team"].eq(selected_team)]).copy()
-        display_quotes = pp_view[["Player", "Game", "Best feed price", "Current PPP L5",
-                                  "Current PP min/game", "PP unit", "PP matchup /100",
-                                  "Team PP rank", "Opp PK rank"]].rename(columns={
+        display_quotes = pp_view[["PP rank", "Player", "Game", "Best feed price",
+                                  "PP matchup /100", "PP boost", "Current PPP L5",
+                                  "Current PP min/game", "PP unit"]].rename(columns={
                                       "Best feed price": "Best price",
                                       "Current PPP L5": "PPP L5",
                                       "Current PP min/game": "PP min/game",
                                       "PP matchup /100": "PP context /100",
+                                      "PP boost": "Boost",
                                   })
+        display_quotes["Boost"] = display_quotes["Boost"].map({True: "ON", False: "—"})
         display_quotes["PP min/game"] = pd.to_numeric(
             display_quotes["PP min/game"], errors="coerce").round(1)
         st.dataframe(display_quotes, hide_index=True, width="stretch")
@@ -5895,6 +5907,8 @@ elif page == "Power Play":
             "odds": selected["Over odds"], "book": selected["Book"],
             "form_log": form_log, "form_season": selected_form.get("season") if selected_form else None,
             "team_pp_rank": selected["Team PP rank"],
+            "pp_context": selected["PP matchup /100"],
+            "pp_rank": selected["PP rank"],
             "team_pp_xgf60": selected["Team PP xGF/60 now"],
             "opp_pk_rank": selected["Opp PK rank"],
             "opp_pk_xga60": selected["Opp PK xGA/60 now"],
@@ -5908,7 +5922,7 @@ elif page == "Power Play":
         st.caption(f'Book break-even {selected["Book break-even %"]:.1f}% · '
                    f'{usage_note} · {selected["PP unit"]}')
         with st.expander("How to read these numbers"):
-            st.markdown("- **PPP L5** is the player's credited power-play points in completed regular-season games against over 0.5. It is a record, not a forecast.\n- **Book break-even %** is the hit rate required by the posted price; there is no tested PPP model rate to compare it with yet.\n- **PP min/game** is official power-play ice time per completed game. **PP unit** is inferred from recorded ice time, not tonight's confirmed lineup.\n- **PP context /100** blends team PP strength with opponent PK weakness. It is a matchup rating, not a predicted hit rate.\n- **Team PP rank** ranks current-season team PP xGF/60, strongest first. **Opp PK rank** ranks PK xGA/60 allowed, most permissive first. Both can swing early in the season.\n- Open a player log or the detailed stats below for L10, season record, expected goals rates, and the assist cross-check.")
+            st.markdown("- **PP rank** orders priced players by PP context, with boost, PP1, and PP minutes breaking ties.\n- **PP context /100** blends team PP strength with opponent PK weakness. It is a matchup rating, not a predicted hit rate. **Boost** marks the existing PP usage and matchup threshold.\n- **PPP L5** is the player's credited power-play points in completed regular-season games against over 0.5. It is a record, not a forecast.\n- **Book break-even %** is the hit rate required by the posted price; there is no tested PPP model rate to compare it with yet.\n- **PP min/game** is official power-play ice time per completed game. **PP unit** is inferred from recorded ice time, not tonight's confirmed lineup.\n- The player card shows current-season team PP and opponent PK ranks. Both can swing early in the season; detailed stats and the assist cross-check are below.")
 
     with st.expander("Detailed PP stats and filters"):
         unit_sel = st.multiselect("PP unit", ["PP1", "PP2", "Unconfirmed"],
