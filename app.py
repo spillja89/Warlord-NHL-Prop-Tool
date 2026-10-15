@@ -5872,11 +5872,12 @@ elif page == "Power Play":
         pp_view = (ppp_quotes if selected_team == "All teams" else
                    ppp_quotes.loc[ppp_quotes["Team"].eq(selected_team)]).copy()
         display_quotes = pp_view[["Player", "Game", "Best feed price", "Current PPP L5",
-                                  "Current PP min/game", "PP unit", "Team PP rank",
-                                  "Opp PK rank"]].rename(columns={
+                                  "Current PP min/game", "PP unit", "PP matchup /100",
+                                  "Team PP rank", "Opp PK rank"]].rename(columns={
                                       "Best feed price": "Best price",
                                       "Current PPP L5": "PPP L5",
                                       "Current PP min/game": "PP min/game",
+                                      "PP matchup /100": "PP context /100",
                                   })
         display_quotes["PP min/game"] = pd.to_numeric(
             display_quotes["PP min/game"], errors="coerce").round(1)
@@ -5907,7 +5908,7 @@ elif page == "Power Play":
         st.caption(f'Book break-even {selected["Book break-even %"]:.1f}% · '
                    f'{usage_note} · {selected["PP unit"]}')
         with st.expander("How to read these numbers"):
-            st.markdown("- **PPP L5** is the player's credited power-play points in completed regular-season games against over 0.5. It is a record, not a forecast.\n- **Book break-even %** is the hit rate required by the posted price; there is no tested PPP model rate to compare it with yet.\n- **PP min/game** is official power-play ice time per completed game. **PP unit** is inferred from recorded ice time, not tonight's confirmed lineup.\n- **Team PP rank** ranks current-season team PP xGF/60, strongest first. **Opp PK rank** ranks PK xGA/60 allowed, most permissive first. Both can swing early in the season.\n- Open a player log or the detailed stats below for L10, season record, expected goals rates, and the assist cross-check.")
+            st.markdown("- **PPP L5** is the player's credited power-play points in completed regular-season games against over 0.5. It is a record, not a forecast.\n- **Book break-even %** is the hit rate required by the posted price; there is no tested PPP model rate to compare it with yet.\n- **PP min/game** is official power-play ice time per completed game. **PP unit** is inferred from recorded ice time, not tonight's confirmed lineup.\n- **PP context /100** blends team PP strength with opponent PK weakness. It is a matchup rating, not a predicted hit rate.\n- **Team PP rank** ranks current-season team PP xGF/60, strongest first. **Opp PK rank** ranks PK xGA/60 allowed, most permissive first. Both can swing early in the season.\n- Open a player log or the detailed stats below for L10, season record, expected goals rates, and the assist cross-check.")
 
     with st.expander("Detailed PP stats and filters"):
         unit_sel = st.multiselect("PP unit", ["PP1", "PP2", "Unconfirmed"],
