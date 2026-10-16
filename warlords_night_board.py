@@ -147,6 +147,7 @@ def rank_warlords(frame: pd.DataFrame) -> dict[str, list[dict]]:
                 "form_season": _value(row, "Form_Season"),
                 "model_prob": model_prob, "book_prob": book_prob, "price_gap": price_gap,
                 "goalie": str(_value(row, "Opp_Goalie") or ""),
+                "goalie_gp": _number(_value(row, "Opp_GP")),
                 "goalie_status": str(_value(row, "Opp_Goalie_Status") or "Unknown"),
                 "baseline_only": baseline_only,
                 "move": move, "moves": sorted(moves, key=lambda item: (
@@ -495,7 +496,11 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
                               if book_prob is not None else "")
             goalie_name = str(card.get("goalie") or "").strip()
             goalie_status = str(card.get("goalie_status") or "Unknown").strip()
-            goalie_note = (f'<div class="wn-goalie">Opp goalie: {_h(goalie_name)} · {_h(goalie_status)}</div>'
+            goalie_gp = _number(card.get("goalie_gp"))
+            sample_note = (f' · {int(goalie_gp)} GP, goalie matchup neutral'
+                           if goalie_gp is not None and goalie_gp < 3 else
+                           f' · {int(goalie_gp)} GP' if goalie_gp is not None else '')
+            goalie_note = (f'<div class="wn-goalie">Opp goalie: {_h(goalie_name)} · {_h(goalie_status)}{sample_note}</div>'
                            if goalie_name else '<div class="wn-goalie">Opp goalie: unknown</div>')
             fired = card.get("moves") or ([] if not move or baseline_only else [move])
             move_rows = []

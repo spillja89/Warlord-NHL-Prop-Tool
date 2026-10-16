@@ -188,6 +188,30 @@ def merge_odds_api_props(
         if not player or not team or not opp:
             continue
         for market in {"Points", "Assists", "SOG", "Goal", "ATG", "PPP"}:
+            if market == "PPP":
+                # Keep same-line quotes, not just the winning book. This lets
+                # the PP card show the actual spread across returned books.
+                by_book: dict[str, tuple[float, str]] = {}
+                for price, book, teams in quotes.get((player, "PPP", 0.5), []):
+                    if {team, opp} != teams:
+                        continue
+                    key = book.casefold()
+                    if key not in by_book or price > by_book[key][0]:
+                        by_book[key] = (price, book)
+                for suffix in ("", "_1", "_2", "_3", "_4"):
+                    if _safe_float(row.get(f"BDL_PPP_Line{suffix}")) != 0.5:
+                        continue
+                    price = _safe_float(row.get(f"BDL_PPP_Odds{suffix}"))
+                    book = str(row.get(f"BDL_PPP_Book{suffix}") or "").strip()
+                    if price is None or not book:
+                        continue
+                    key = book.casefold()
+                    if key not in by_book or price > by_book[key][0]:
+                        by_book[key] = (price, book)
+                df.at[idx, "PPP_Book_Prices_05"] = json.dumps([
+                    {"book": book, "odds": int(price)}
+                    for price, book in sorted(by_book.values(), reverse=True)
+                ])
             by_line: dict[float, tuple[float, str]] = {}
             source_by_line: dict[float, str] = {}
             for (p, m, line), available in quotes.items():

@@ -74,7 +74,7 @@ TEAM_GF_MIN_AVG = 1.0   # HARD FAIL threshold
 
 
 # Goalie weakness thresholds
-MIN_GOALIE_GP = 1
+MIN_GOALIE_GP = 3  # One or two appearances are too noisy for matchup scoring.
 
 # Star prior strength (small nudge)
 TALENT_MULT_MAX = 1.35
@@ -4592,6 +4592,7 @@ def build_tracker(today_local: date, debug: bool = False, api_key: str | None = 
 
         "Opp": sk["Opp"].fillna(""),
         "Opp_Goalie": sk["Opp_Goalie"].fillna(""),
+        "Opp_GP": sk["Opp_GP"],
         "Opp_SV": sk["Opp_SV"],
         "Opp_GAA": sk["Opp_GAA"],
         "Goalie_Weak": sk["Goalie_Weak"],

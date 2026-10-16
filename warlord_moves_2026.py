@@ -226,6 +226,12 @@ def _goals_carry_moves(r) -> list[dict]:
     opp_pk = _safe_float(r.get("Opp_PK_xGA60"), None)
     opp_sog = _safe_float(r.get("Opp_SOG_Against_L50"), None)
     opp_gaa = _safe_float(r.get("Opp_GAA"), None)
+    opp_gp = _safe_float(r.get("Opp_GP"), None)
+    # Current-season tracker rows carry GP. Do not let a one- or two-game
+    # goalie line activate a historical GAA-based move. Older frozen rows
+    # without GP retain their recorded rule for replay.
+    if opp_gp is not None and opp_gp < 3:
+        opp_gaa = None
     ixg = _safe_float(r.get("iXG%"), None)
     opp_hdca = _safe_float(r.get("opp_5v5_HDCA60"), None)
     shot_intent = _safe_float(r.get("ShotIntent"), None)

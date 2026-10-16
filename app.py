@@ -25,7 +25,7 @@ from season_sources import (fetch_moneypuck_skaters, fetch_moneypuck_teams,
                             league_season_rows, power_play_team_ranks,
                             slate_team_matchup_rows, team_season_rows)
 from ledger_store import append_bet as _append_cloud_bet, recent_bets as _recent_cloud_bets
-from power_play_quotes import fetch_current_pp_usage, priced_ppp_quotes
+from power_play_quotes import fetch_current_pp_usage, format_ppp_book_prices, priced_ppp_quotes
 from player_availability import unavailable_mask
 
 
@@ -2433,6 +2433,7 @@ COLUMN_WIDTHS = {
 
     # goalie / defense
     "Opp_Goalie": "medium",
+    "Opp_GP": "small",
     "Opp_SV": "small",
     "Opp_GAA": "small",
     "Goalie_Weak": "small",
@@ -5025,7 +5026,7 @@ elif page == "Scout Board":
         "🔥",
         "iXG%", "iXA%",
         "Goalie_Weak", "Opp_DefWeak",
-        "Opp_Goalie", "Opp_SV", "Opp_GAA",
+        "Opp_Goalie", "Opp_GP", "Opp_SV", "Opp_GAA",
         "Matrix_Points", "Conf_Points", "Reg_Heat_P", "Reg_Gap_P10",
         "Matrix_SOG", "Conf_SOG", "Reg_Heat_S", "Reg_Gap_S10",
         "Matrix_Goal", "Conf_Goal", "Reg_Heat_G", "Reg_Gap_G10",
@@ -5241,7 +5242,7 @@ elif page == "Points":
 
         # --- ENV (context / loss-avoidance) ---
         "opp_5v5_HDCA60",
-        "Opp_Goalie","Opp_SV","Opp_GAA","Goalie_Weak","Opp_DefWeak",
+        "Opp_Goalie","Opp_GP","Opp_SV","Opp_GAA","Goalie_Weak","Opp_DefWeak",
     ]
 
     # Signals-first extras
@@ -5400,11 +5401,12 @@ elif page == "Assists":
 
     # ENV warnings (display only)
     _opp_sv = safe_num(df_a, "Opp_SV", 0)
+    _goalie_sample_ok = safe_num(df_a, "Opp_GP", 0) >= 3
     _xga = safe_num(df_a, "opp_5v5_xGA60", 0)
     _gweak = safe_num(df_a, "Goalie_Weak", 0)
 
-    df_a["ENV_BAD_OppSV"] = (_opp_sv >= 0.905).map(lambda x: "⚠️" if bool(x) else "")
-    df_a["ENV_GOOD_OppSV"] = ((_opp_sv > 0) & (_opp_sv < 0.885)).map(lambda x: "✅" if bool(x) else "")  # SV% < 88.5% = weak goalie (good for assists)
+    df_a["ENV_BAD_OppSV"] = (_goalie_sample_ok & (_opp_sv >= 0.905)).map(lambda x: "⚠️" if bool(x) else "")
+    df_a["ENV_GOOD_OppSV"] = (_goalie_sample_ok & (_opp_sv > 0) & (_opp_sv < 0.885)).map(lambda x: "✅" if bool(x) else "")  # SV% < 88.5% = weak goalie (good for assists)
     df_a["ENV_BAD_xGA"] = ((_xga > 0) & (_xga <= 2.40)).map(lambda x: "⚠️" if bool(x) else "")
     df_a["ENV_BAD_GWeak"] = ((_gweak > 0) & (_gweak <= 35)).map(lambda x: "⚠️" if bool(x) else "")
     df_a["ENV_GOOD_GWeak"] = (_gweak >= 82).map(lambda x: "✅" if bool(x) else "")
@@ -5440,7 +5442,7 @@ elif page == "Assists":
 
         
         "iXG%", "v2_player_stability",
-        "Opp_Goalie", "Opp_SV",
+        "Opp_Goalie", "Opp_GP", "Opp_SV",
         "Goalie_Weak", "Opp_DefWeak",
 
     ]
@@ -5504,7 +5506,7 @@ elif page == "SOG":
         "Drought_SOG", "Best_Drought",
         "Med10_SOG", "Avg5_SOG", "ShotIntent", "ShotIntent_Pct",
         "Reg_Heat_S", "Reg_Gap_S10", "Exp_S_10", "L10_S",
-        "Opp_Goalie", "Opp_SV",
+        "Opp_Goalie", "Opp_GP", "Opp_SV",
         "Goalie_Weak", "Opp_DefWeak",
     ]
 
@@ -5564,6 +5566,7 @@ elif page == "SOG":
 elif page == "GOALS (0.5)":
 
     _render_class_header("GOALS", df_f)
+    st.caption("Opponent goalie GP is shown beside raw SV% and GAA. With fewer than 3 games, goalie form is neutral in matchup scores and cannot fire a GAA-based move.")
 
     df_g = df_f.copy()
 
@@ -5640,7 +5643,7 @@ elif page == "GOALS (0.5)":
         "Drought_G", "Best_Drought",
 
         # --- GOALIE / CONTEXT ---
-        "Opp_Goalie", "Opp_SV", "Opp_GAA", "Goalie_Weak",
+        "Opp_Goalie", "Opp_GP", "Opp_SV", "Opp_GAA", "Goalie_Weak",
     ]
 # Signals-first extras
 
@@ -5932,6 +5935,9 @@ elif page == "Power Play":
                       'Current-season PP minutes unavailable')
         st.caption(f'Book break-even {selected["Book break-even %"]:.1f}% · '
                    f'{usage_note} · {selected["PP unit"]}')
+        observed_prices = format_ppp_book_prices(selected.get("Book prices"))
+        if observed_prices:
+            st.caption(f'Captured over 0.5 book prices: {observed_prices}')
         with st.expander("How to read these numbers"):
             st.markdown("- **PP rank** orders priced players by PP context, with boost, PP1, and PP minutes breaking ties.\n- **PP context /100** blends team PP strength with opponent PK weakness. It is a matchup rating, not a predicted hit rate. **Boost** is an unvalidated usage and matchup tag.\n- **PPP L5** is the player's credited power-play points in completed regular-season games against over 0.5. It is a record, not a forecast.\n- **Book break-even %** is the hit rate required by the posted price; there is no tested PPP model rate to compare it with yet.\n- **PP min/game** is official power-play ice time per completed game. **PP unit** is inferred from recorded ice time, not tonight's confirmed lineup.\n- The player card shows current-season team PP and opponent PK ranks. Both can swing early in the season; detailed stats and the assist cross-check are below.")
 

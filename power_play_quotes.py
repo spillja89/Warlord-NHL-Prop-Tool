@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import math
 
 import pandas as pd
@@ -11,7 +12,7 @@ import requests
 COLUMNS = ("Game", "Player", "Team", "Opponent", "PPP line", "Over odds",
            "Book", "Book break-even %", "PP unit", "PP TOI/game",
            "Opp PK xGA/60", "PP matchup /100", "PPP last 10",
-           "Stats season", "Context")
+           "Stats season", "Context", "Book prices")
 
 
 def summarize_pp_usage(rows: list[dict], before_date: str) -> dict[int, tuple[float, int]]:
@@ -73,6 +74,25 @@ def _unit_label(row: dict) -> str:
     return "PP1" if role >= 2 else ("PP2" if role >= 1 else "No PP unit recorded")
 
 
+def format_ppp_book_prices(raw: str) -> str:
+    """Show only captured prices for the same over 0.5 PPP line."""
+    try:
+        quotes = json.loads(raw)
+    except (TypeError, ValueError):
+        return ""
+    if not isinstance(quotes, list):
+        return ""
+    parts = []
+    for quote in quotes:
+        if not isinstance(quote, dict):
+            continue
+        book = str(quote.get("book") or "").strip()
+        odds = _finite(quote.get("odds"))
+        if book and odds is not None:
+            parts.append(f"{book} {int(odds):+d}")
+    return " · ".join(parts)
+
+
 def _context_label(row: dict) -> str:
     if _is_true(row.get("Roster_Watch")) or str(row.get("Model_Stats_Season") or "").casefold() == "unavailable":
         return "Odds only · history missing"
@@ -120,6 +140,7 @@ def priced_ppp_quotes(frame: pd.DataFrame, *, line_filter: float | None = None) 
                 and _finite(row.get("Team_PP_xGF60")) is not None else None,
                 "Stats season": str(row.get("Model_Stats_Season") or ""),
                 "Context": _context_label(row),
+                "Book prices": str(row.get("PPP_Book_Prices_05") or "") if line == 0.5 else "",
             }
             if key not in quotes or odds > quotes[key]["Over odds"]:
                 quotes[key] = candidate

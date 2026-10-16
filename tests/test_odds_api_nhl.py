@@ -1,10 +1,12 @@
 import unittest
+import json
 from datetime import date
 from unittest.mock import patch
 
 import pandas as pd
 
 from odds_api_nhl import _market_quote, merge_odds_api_props
+from power_play_quotes import format_ppp_book_prices
 
 
 class OddsAPINHLTests(unittest.TestCase):
@@ -73,6 +75,11 @@ class OddsAPINHLTests(unittest.TestCase):
         self.assertEqual(out.loc[0, "BDL_PPP_Odds"], 280)
         self.assertEqual(out.loc[0, "BDL_PPP_Book"], "BetMGM")
         self.assertIn("BetMGM", out.loc[0, "PPP_Available_Books"])
+        prices = json.loads(out.loc[0, "PPP_Book_Prices_05"])
+        self.assertEqual(prices, [{"book": "BetMGM", "odds": 280},
+                                  {"book": "BetRivers", "odds": 200}])
+        self.assertEqual(format_ppp_book_prices(out.loc[0, "PPP_Book_Prices_05"]),
+                         "BetMGM +280 · BetRivers +200")
         self.assertEqual(get.call_args_list[2].kwargs["bookmakers"], "betmgm")
 
 
