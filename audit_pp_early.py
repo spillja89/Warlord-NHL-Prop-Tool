@@ -46,7 +46,7 @@ def build_report(paths: list[Path]) -> dict:
     frames = []
     for path in paths:
         frame = pd.read_csv(path, low_memory=False)
-        required = {"Date", "Game", "Team", "Player_ID", "Grade_Status",
+        required = {"Date", "Game", "Team", "Opp", "Player_ID", "Grade_Status",
                     "Match_Status_PPP", "BDL_PPP_Line", "BDL_PPP_Odds",
                     "Outcome_PPP", "Odds_Checked_UTC", "StartTimeUTC"}
         if required.issubset(frame.columns):
@@ -86,10 +86,12 @@ def build_report(paths: list[Path]) -> dict:
     rows["recent_2ppp"] = rows["PPP10_total"].ge(2)
     rows["boost"] = rows.get("PP_BOOST", pd.Series(index=rows.index, dtype=object)).eq("ON")
     rows["context_60"] = rows["PP_Matchup"].ge(60)
-    for column, signal in (("Team_PP_xGF60", "strong_pp"),
-                           ("Opp_PK_xGA60", "weak_pk")):
-        percentile = rows.groupby("Date")[column].rank(pct=True)
-        rows[signal] = percentile.ge(0.75) & rows[column].notna()
+    for column, team_column, signal in (("Team_PP_xGF60", "Team", "strong_pp"),
+                                        ("Opp_PK_xGA60", "Opp", "weak_pk")):
+        team_rates = rows.groupby(["Date", team_column])[column].median()
+        team_percentile = team_rates.groupby(level=0).rank(pct=True)
+        keys = pd.MultiIndex.from_frame(rows[["Date", team_column]])
+        rows[signal] = team_percentile.reindex(keys).to_numpy() >= 0.75
 
     dates = sorted(rows["Date"].unique().tolist())
     split = len(dates) // 2
