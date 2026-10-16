@@ -5412,18 +5412,6 @@ elif page == "Assists":
         default=""
     )
 
-    # ENV warnings (display only)
-    _opp_sv = safe_num(df_a, "Opp_SV", 0)
-    _goalie_sample_ok = safe_num(df_a, "Opp_GP", 0) >= 3
-    _xga = safe_num(df_a, "opp_5v5_xGA60", 0)
-    _gweak = safe_num(df_a, "Goalie_Weak", 0)
-
-    df_a["ENV_BAD_OppSV"] = (_goalie_sample_ok & (_opp_sv >= 0.905)).map(lambda x: "⚠️" if bool(x) else "")
-    df_a["ENV_GOOD_OppSV"] = (_goalie_sample_ok & (_opp_sv > 0) & (_opp_sv < 0.885)).map(lambda x: "✅" if bool(x) else "")  # SV% < 88.5% = weak goalie (good for assists)
-    df_a["ENV_BAD_xGA"] = ((_xga > 0) & (_xga <= 2.40)).map(lambda x: "⚠️" if bool(x) else "")
-    df_a["ENV_BAD_GWeak"] = ((_gweak > 0) & (_gweak <= 35)).map(lambda x: "⚠️" if bool(x) else "")
-    df_a["ENV_GOOD_GWeak"] = (_gweak >= 82).map(lambda x: "✅" if bool(x) else "")
-
     # 🗡️ Dagger indicator (PP assist edge) — HARD GATE (recomputed every time)
     # Goal: daggers are rare and meaningful (PP1/proof-level assist edges only).
     df_a["🗡️"] = ""
@@ -5440,6 +5428,7 @@ elif page == "Assists":
                  "Assists_Odds_Over",
         "Assists_Book",
         "Conf_Assists", "Matrix_Assists", "Assists_Line","iXA%",  "PP_iXA60","PPP10_total",
+        "Assist_5v5_Setups_per_game", "PP_Observed_Assists_per_game",
         "Drought_PPP",
 "PP_Matchup", "PP_TOI_Pct_Game", 
         "opp_5v5_xGA60",   
@@ -5473,6 +5462,7 @@ elif page == "Assists":
 
     # Full table (Assists)
     show_table(df_a, assists_cols, "Assists View")
+    st.caption("5v5 setups/game are recorded shot assists at the player's current ice-time rate. PP observed assists/game are actual production; neither is an expected-assists model or a predicted assist probability.")
 
 # =========================
 # SOG
@@ -5514,6 +5504,7 @@ elif page == "SOG":
         "SOG_Line",
         "SOG_Odds_Over",
         "SOG_Book",
+        "SOG_Opportunity_Matchup", "SOG_Opportunity_Coverage",
         "L20_Rate_SOG", "L40_Rate_SOG",
         "Opp_SOG_Against_L50", "opp_5v5_xGA60", "Player_5v5_SOG_Share",
         "Drought_SOG", "Best_Drought",
@@ -5571,6 +5562,7 @@ elif page == "SOG":
     st.markdown("---")
 
     show_table(df_s, sog_cols, "SOG View")
+    st.caption("Opportunity SOG/game combines recorded 5v5 and PP shot rates with minutes and a modest opponent shot-volume adjustment. It is an experimental volume view, not a tested hit probability; unavailable inputs stay visible in Coverage.")
 
 
 # =========================
@@ -5579,7 +5571,7 @@ elif page == "SOG":
 elif page == "GOALS (0.5)":
 
     _render_class_header("GOALS", df_f)
-    st.caption("Opponent goalie GP is shown beside raw SV% and GAA. With fewer than 3 games, goalie form is neutral in matchup scores and cannot fire a GAA-based move.")
+    st.caption("Goalie context is neutral until the starter is confirmed, then shrunk toward the current league rate by shots faced. GAA-based moves also require at least 150 shots faced. Raw SV% and GAA remain visible for context.")
 
     df_g = df_f.copy()
 
@@ -5642,7 +5634,7 @@ elif page == "GOALS (0.5)":
         "Conf_Goal", "Matrix_Goal",
 
         # --- GOALS CARRY MOVE INPUTS ---
-        "Goal_mu", "Opp_PK_xGA60", "Opp_SOG_Against_L50", "opp_5v5_HDCA60",
+        "Goal_mu", "Goal_Opportunity_xG", "Opp_PK_xGA60", "Opp_SOG_Against_L50", "opp_5v5_HDCA60",
         "TOI_per_game", "PP_TOI_Pct", "StarScore",
         "Opp_SOG_Against_L10",
         "iXG%",
@@ -5656,7 +5648,7 @@ elif page == "GOALS (0.5)":
         "Drought_G", "Best_Drought",
 
         # --- GOALIE / CONTEXT ---
-        "Opp_Goalie", "Opp_GP", "Opp_SV", "Opp_GAA", "Goalie_Weak",
+        "Opp_Goalie", "Opp_Goalie_Status", "Opp_GP", "Opp_Goalie_Shots_Faced", "Opp_SV", "Opp_GAA", "Goalie_Weak",
     ]
 # Signals-first extras
 
@@ -5903,14 +5895,14 @@ elif page == "Power Play":
             lambda row: f'{int(row["Over odds"]):+d} · {row["Book"]}', axis=1)
         pp_sort_label = ("Ranked by PP context, with boost, PP1, and PP minutes breaking ties" if slate_sort == "Top ranked"
                          else f"Sorted by {slate_sort.lower()}")
-        st.caption(f"{pp_sort_label}. PP context is a matchup score, not a hit probability or a tested betting edge. Check PP1 usage, current PP minutes, recent PPP, opponent PK, and the posted price together.")
+        st.caption(f"{pp_sort_label}. PP context is a matchup score, not a hit probability or a tested betting edge. On-ice xG/game measures expected team goals while the player was on the power play; it is not a PPP probability. Check PP1 usage, current PP minutes, recent PPP, opponent PK, and the posted price together.")
         team_options = ["All teams"] + sorted(ppp_quotes["Team"].dropna().unique().tolist())
         selected_team = st.selectbox("Team", team_options, key="pp_team")
         pp_view = (ppp_quotes if selected_team == "All teams" else
                    ppp_quotes.loc[ppp_quotes["Team"].eq(selected_team)]).copy()
         display_quotes = pp_view[["PP rank", "Player", "Game", "Best feed price",
                                   "PP matchup /100", "PP boost", "Current PPP L5",
-                                  "Current PP min/game", "PP unit"]].rename(columns={
+                                  "Current PP min/game", "PP unit", "PP on-ice xG/game"]].rename(columns={
                                       "Best feed price": "Best price",
                                       "Current PPP L5": "PPP L5",
                                       "Current PP min/game": "PP min/game",
@@ -5948,6 +5940,11 @@ elif page == "Power Play":
                       'Current-season PP minutes unavailable')
         st.caption(f'Book break-even {selected["Book break-even %"]:.1f}% · '
                    f'{usage_note} · {selected["PP unit"]}')
+        if pd.notna(selected.get("PP on-ice xG/game")):
+            st.caption(f'Observed PP opportunity: {selected["PP on-ice xG/game"]:.2f} team xG/game while on ice · '
+                       f'{selected["PP shooter xG/game"]:.2f} individual xG/game'
+                       if pd.notna(selected.get("PP shooter xG/game")) else
+                       f'Observed PP opportunity: {selected["PP on-ice xG/game"]:.2f} team xG/game while on ice')
         observed_prices = format_ppp_book_prices(selected.get("Book prices"))
         if observed_prices:
             st.caption(f'Captured over 0.5 book prices: {observed_prices}')
@@ -5988,7 +5985,8 @@ elif page == "Power Play":
             "Game", "Player", "Pos", "Team", "Opp", "Tier_Tag", "PP_Unit",
             "PP_TOI_PG", "PP_TeamShare_pct", "PP_Tier", "PP_Path", "PP_BOOST",
             "PP_TOI_Pct", "PP_TOI_min", "PP_Points60", "PP_ActualPoints60", "PP_iXG60", "PP_iXA60",
-            "Team_PP_xGF60", "Opp_PK_xGA60", "PP_Matchup", "PPP10_total", "Drought_PPP",
+            "Team_PP_xGF60", "Opp_PK_xGA60", "PP_Matchup", "PP_Matchup_Equal",
+            "PP_OnIce_xG_per_game", "PP_iXG_per_game", "PPP10_total", "Drought_PPP",
         ]
         show_table(df_pp, pp_cols, "Power Play (5v4) — Usage, production, matchup, PPP drought")
         st.caption("Weighted PP assists/60 is observed assist production, not expected assists. The involvement rate is a legacy proxy used by historical moves; check PP minutes before trusting an early-season rate.")
@@ -6842,6 +6840,28 @@ elif page == "📊 Results":
             except OSError:
                 pass
     move_files = sorted(graded_dir.glob("moves_*.csv"))
+    graded_files_for_prices = sorted(graded_dir.glob("tracker_*_GRADED.csv"))
+    if graded_files_for_prices:
+        from price_validation import price_records, summarize_prices
+        priced_frames = []
+        for price_file in graded_files_for_prices:
+            try:
+                priced_frames.append(price_records(pd.read_csv(price_file, low_memory=False)))
+            except (OSError, ValueError, pd.errors.ParserError) as error:
+                st.warning(f"Could not read {price_file.name} for the price audit: {error}")
+        if priced_frames:
+            priced = pd.concat(priced_frames, ignore_index=True)
+            with st.expander("Forward move results versus captured book prices", expanded=True):
+                st.caption("Each row is a frozen named move at the book price saved before its game. Profit assumes one unit on every settled pick. A move's old hit rate is separate from these new-season price results. Overlapping moves share outcomes; returns are not a combined betting portfolio. No confidence score is treated as a hit probability.")
+                price_summary = summarize_prices(priced)
+                if price_summary.empty:
+                    st.info("No named moves with settled captured prices yet. New graded slates will fill this table.")
+                else:
+                    st.dataframe(price_summary, width="stretch", hide_index=True)
+                    st.caption("Early samples and positive returns do not establish an edge. Compare the same move and price band across later dates before changing thresholds.")
+                    with st.expander("See every captured move and price"):
+                        st.dataframe(priced.sort_values(["Date", "Market", "Player"], ascending=[False, True, True]),
+                                     width="stretch", hide_index=True)
     if move_files:
         with st.expander("Forward results by named move", expanded=True):
             move_frames = []

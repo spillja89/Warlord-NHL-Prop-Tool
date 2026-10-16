@@ -11,7 +11,7 @@ import math
 from typing import Any, Mapping
 
 
-VERSION = "2026-10-16-current-season-audit-v3"
+VERSION = "2026-10-16-opportunity-v4"
 
 
 def _number(row: Mapping[str, Any], key: str) -> float | None:
@@ -229,6 +229,12 @@ def _goals_carry_moves(r) -> list[dict]:
     opp_sog = _safe_float(r.get("Opp_SOG_Against_L50"), None)
     opp_gaa = _safe_float(r.get("Opp_GAA"), None)
     opp_gp = _safe_float(r.get("Opp_GP"), None)
+    # Current slates must not call an unconfirmed or tiny-sample starter a
+    # weak goalie. Frozen old rows without this audit field keep old rules.
+    if "Goalie_Context_Status" in r:
+        shots_faced = _safe_float(r.get("Opp_Goalie_Shots_Faced"), None)
+        if str(r.get("Goalie_Context_Status")) != "confirmed_sample_shrunk" or shots_faced is None or shots_faced < 150:
+            opp_gaa = None
     # Current-season tracker rows carry GP. Do not let a one- or two-game
     # goalie line activate a historical GAA-based move. Older frozen rows
     # without GP retain their recorded rule for replay.

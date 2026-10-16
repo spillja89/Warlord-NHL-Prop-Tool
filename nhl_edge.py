@@ -74,7 +74,7 @@ TEAM_GF_MIN_AVG = 1.0   # HARD FAIL threshold
 
 
 # Goalie weakness thresholds
-MIN_GOALIE_GP = 3  # One or two appearances are too noisy for matchup scoring.
+GOALIE_SHOT_PRIOR = 300.0  # One early start must not dominate the matchup.
 
 # Star prior strength (small nudge)
 TALENT_MULT_MAX = 1.35
@@ -1637,6 +1637,7 @@ def normalize_skaters_5v5(df: pd.DataFrame, debug: bool = False) -> pd.DataFrame
     col_pos  = find_col(out, ["position", "pos", "positioncode", "positionCode"])
     col_sit  = find_col(out, ["situation"])
     col_it   = find_col(out, ["icetime", "timeonice", "toi", "timeOnIce"])
+    col_gp   = find_col(out, ["games_played", "gamesplayed", "gp"])
 
     if not (col_pid and col_team and col_sit and col_it):
         raise KeyError("Skaters CSV missing required columns for 5v5 (playerId/team/situation/icetime).")
@@ -1672,6 +1673,7 @@ def normalize_skaters_5v5(df: pd.DataFrame, debug: bool = False) -> pd.DataFrame
     col_sa  = find_col(out, ["I_F_shotAssists", "shotAssists", "shotassists"])
     col_icf = find_col(out, ["I_F_shotAttempts", "I_F_iCF", "icf", "iCF"])
     col_sog = find_col(out, ["I_F_shotsOnGoal"])
+    col_ixg = find_col(out, ["I_F_xGoals", "i_f_xgoals"])
 
     if debug and (col_sa is None or col_icf is None):
         print("\n[DEBUG] skaters.csv 5v5 missing columns:")
@@ -1686,6 +1688,10 @@ def normalize_skaters_5v5(df: pd.DataFrame, debug: bool = False) -> pd.DataFrame
     out["i5v5_primaryAssists60"] = per60(a1s, out["icetime"])
     out["i5v5_shotAssists60"] = per60(shot_assists, out["icetime"])
     out["i5v5_iCF60"] = per60(icf, out["icetime"])
+    out["EV5_TOI_per_game"] = (pd.to_numeric(out["icetime"], errors="coerce") / 60.0 /
+                                pd.to_numeric(out[col_gp], errors="coerce").replace(0, np.nan)) if col_gp else np.nan
+    out["i5v5_SOG60"] = per60(pd.to_numeric(out[col_sog], errors="coerce"), out["icetime"]) if col_sog else np.nan
+    out["i5v5_xG60"] = per60(pd.to_numeric(out[col_ixg], errors="coerce"), out["icetime"]) if col_ixg else np.nan
     if col_sog:
         sog = pd.to_numeric(out[col_sog], errors="coerce")
         team_sog = sog.groupby(out["Team"]).transform("sum").replace(0, np.nan)
@@ -1693,7 +1699,7 @@ def normalize_skaters_5v5(df: pd.DataFrame, debug: bool = False) -> pd.DataFrame
     else:
         out["Player_5v5_SOG_Share"] = np.nan
 
-    keep = ["playerId", "Team", "i5v5_points60", "i5v5_primaryAssists60", "i5v5_shotAssists60", "i5v5_iCF60", "Player_5v5_SOG_Share"]
+    keep = ["playerId", "Team", "i5v5_points60", "i5v5_primaryAssists60", "i5v5_shotAssists60", "i5v5_iCF60", "i5v5_SOG60", "i5v5_xG60", "EV5_TOI_per_game", "Player_5v5_SOG_Share"]
     return out[keep].copy()
 
 
@@ -1762,6 +1768,8 @@ def normalize_skaters_pp(df: pd.DataFrame, debug: bool = False) -> pd.DataFrame:
     # Per 60 using TOI minutes
     denom = (toi_min / 60.0).replace(0, np.nan)
     out["PP_iXG60"] = (ixg / denom).replace([np.inf, -np.inf], np.nan)
+    col_pp_sog = find_col(out, ["I_F_shotsOnGoal"])
+    out["PP_SOG60"] = (pd.to_numeric(out[col_pp_sog], errors="coerce") / denom).replace([np.inf, -np.inf], np.nan) if col_pp_sog else np.nan
     # Save unit chance creation for future graded audits. Existing moves do not use it.
     out["PP_OnIce_xGF60"] = (onice_xgf / denom).replace([np.inf, -np.inf], np.nan)
     # MoneyPuck does not provide individual xAssists here. Preserve the
@@ -1795,7 +1803,7 @@ def normalize_skaters_pp(df: pd.DataFrame, debug: bool = False) -> pd.DataFrame:
 
     out["PP_Role"] = role
 
-    keep = out[["playerId", "Team", "PP_TOI_min", "PP_TOI_per_game", "PP_iXG60", "PP_OnIce_xGF60",
+    keep = out[["playerId", "Team", "PP_TOI_min", "PP_TOI_per_game", "PP_iXG60", "PP_OnIce_xGF60", "PP_SOG60",
                 "PP_iXA60", "PP_WeightedAssists60", "PP_iXA60_Source", "PP_iP60", "PP_ActualPoints60", "PP_Role"]].copy()
 
     if debug:
@@ -2036,6 +2044,7 @@ def build_team_goalie_map(goalies_df: pd.DataFrame) -> Dict[str, Dict[str, Any]]
             "GP": safe_float(top["GP"]),
             "SV": safe_float(top["SV"]),
             "GAA": safe_float(top["GAA"]),
+            "SOG_Against": safe_float(top["SOG_Against"]),
         }
     return m
 
@@ -2053,7 +2062,8 @@ def resolve_goalie_for_team(
         # The team's most-used goalie is context, not a confirmed starter.
         fallback["Source"] = "moneypuck_team_proxy_unconfirmed"
     else:
-        fallback = {"Goalie": "", "GP": None, "SV": None, "GAA": None, "Source": "none"}
+        fallback = {"Goalie": "", "GP": None, "SV": None, "GAA": None,
+                    "SOG_Against": None, "Source": "none"}
 
     if not starter_name:
         return fallback
@@ -2061,7 +2071,7 @@ def resolve_goalie_for_team(
     sub = gdf[gdf["Team"] == team_abbr].copy()
     if sub.empty:
         return {"Goalie": starter_name, "GP": None, "SV": None,
-                "GAA": None, "Source": "dailyfaceoff_name_only"}
+                "GAA": None, "SOG_Against": None, "Source": "dailyfaceoff_name_only"}
 
     want = _norm_name(starter_name)
     sub["__n"] = sub["Goalie"].astype(str).map(_norm_name)
@@ -2071,7 +2081,7 @@ def resolve_goalie_for_team(
     if hit.empty:
         # Never attach a different goalie's save percentage/GAA to this name.
         return {"Goalie": starter_name, "GP": None, "SV": None,
-                "GAA": None, "Source": "dailyfaceoff_name_only"}
+                "GAA": None, "SOG_Against": None, "Source": "dailyfaceoff_name_only"}
 
     hit_row = hit.sort_values("GP", ascending=False).iloc[0]
     return {
@@ -2079,15 +2089,29 @@ def resolve_goalie_for_team(
         "GP": safe_float(hit_row.get("GP")),
         "SV": safe_float(hit_row.get("SV")),
         "GAA": safe_float(hit_row.get("GAA")),
+        "SOG_Against": safe_float(hit_row.get("SOG_Against")),
         "Source": "dailyfaceoff_name_and_stats",
     }
 
-def goalie_weak_score(gp: Optional[float], sv: Optional[float], gaa: Optional[float]) -> float:
-    if gp is None or gp < MIN_GOALIE_GP:
+def goalie_weak_score(
+    gp: Optional[float], sv: Optional[float], gaa: Optional[float],
+    shots_faced: Optional[float] = None, league_sv: float = 0.900,
+    league_gaa: float = 3.0, confirmed: bool = True,
+) -> float:
+    """League-relative goalie context, shrunk by shots faced; 50 means unknown.
+
+    GAA is team-dependent, so save percentage gets the larger share. This is
+    a descriptive context score, not a projected goal probability.
+    """
+    if not confirmed or gp is None or gp <= 0:
         return 50.0
-    sv_score = 50.0 if sv is None else clamp((0.920 - sv) / (0.920 - 0.880) * 100.0)
-    gaa_score = 50.0 if gaa is None else clamp((gaa - 2.20) / (3.80 - 2.20) * 100.0)
-    return round(0.55 * sv_score + 0.45 * gaa_score, 1)
+    sample = shots_faced if shots_faced is not None else gp * 30.0
+    if sample is None or sample <= 0 or (sv is None and gaa is None):
+        return 50.0
+    sv_score = 50.0 if sv is None else clamp(50.0 + (league_sv - sv) * 1250.0)
+    gaa_score = 50.0 if gaa is None else clamp(50.0 + (gaa - league_gaa) * 25.0)
+    reliability = sample / (sample + GOALIE_SHOT_PRIOR)
+    return round(50.0 + reliability * (0.75 * sv_score + 0.25 * gaa_score - 50.0), 1)
 
 
 # ============================
@@ -3456,6 +3480,11 @@ def build_tracker(today_local: date, debug: bool = False, api_key: str | None = 
     g_raw = load_moneypuck_best_effort(sess, "goalies", teams_playing, today_local)
     goalie_stats_year = int(g_raw.attrs.get("moneypuck_start_year", current_season_start_year(today_local)))
     gdf = normalize_goalies(g_raw)
+    league_shots = pd.to_numeric(gdf["SOG_Against"], errors="coerce").sum()
+    league_goals = pd.to_numeric(gdf["GA"], errors="coerce").sum()
+    league_seconds = pd.to_numeric(gdf["icetime"], errors="coerce").sum()
+    league_goalie_sv = (1.0 - league_goals / league_shots) if league_shots > 0 else 0.900
+    league_goalie_gaa = (league_goals * 3600.0 / league_seconds) if league_seconds > 0 else 3.0
     team_goalie = build_team_goalie_map(gdf)
 
     # DFO starter map
@@ -3483,6 +3512,7 @@ def build_tracker(today_local: date, debug: bool = False, api_key: str | None = 
             "Opp_GP": g.get("GP", None),
             "Opp_SV": g.get("SV", None),
             "Opp_GAA": g.get("GAA", None),
+            "Opp_Goalie_Shots_Faced": g.get("SOG_Against", None),
             "Opp_Goalie_Source": g.get("Source", ""),
             "Opp_Goalie_Status": dfo_map.get(opp_team, {}).get("status", ""),
         })
@@ -3495,13 +3525,21 @@ def build_tracker(today_local: date, debug: bool = False, api_key: str | None = 
 
     goalie_cols = sk.apply(_goalie_pack, axis=1)
     sk = pd.concat([sk, goalie_cols], axis=1)
-
- 
+    sk["Goalie_League_SV"] = round(league_goalie_sv, 4)
+    sk["Goalie_League_GAA"] = round(league_goalie_gaa, 3)
+    sk["Goalie_Context_Status"] = np.where(
+        sk["Opp_Goalie_Status"].astype(str).str.casefold().eq("confirmed"),
+        "confirmed_sample_shrunk", "unconfirmed_neutral",
+    )
     sk["Goalie_Weak"] = sk.apply(
         lambda r: goalie_weak_score(
             safe_float(r.get("Opp_GP")),
             safe_float(r.get("Opp_SV")),
             safe_float(r.get("Opp_GAA")),
+            shots_faced=safe_float(r.get("Opp_Goalie_Shots_Faced")),
+            league_sv=league_goalie_sv,
+            league_gaa=league_goalie_gaa,
+            confirmed=str(r.get("Opp_Goalie_Status", "")).casefold() == "confirmed",
         ),
         axis=1
     )
@@ -3517,7 +3555,7 @@ def build_tracker(today_local: date, debug: bool = False, api_key: str | None = 
         sk = sk.merge(sk5, on=["playerId", "Team"], how="left")
     except Exception as e:
         print(f"WARNING: Player 5v5 unavailable; continuing neutral. ({type(e).__name__}: {e})")
-        for c in ["i5v5_points60", "i5v5_primaryAssists60", "i5v5_shotAssists60", "i5v5_iCF60", "Player_5v5_SOG_Share"]:
+        for c in ["i5v5_points60", "i5v5_primaryAssists60", "i5v5_shotAssists60", "i5v5_iCF60", "i5v5_SOG60", "i5v5_xG60", "EV5_TOI_per_game", "Player_5v5_SOG_Share"]:
             sk[c] = np.nan
 
     # Assist volume proxy
@@ -3547,7 +3585,7 @@ def build_tracker(today_local: date, debug: bool = False, api_key: str | None = 
     except Exception as e:
         if debug:
             print(f"WARNING: PP skaters unavailable; continuing neutral. ({type(e).__name__}: {e})")
-        for c in ["PP_TOI_min", "PP_TOI_per_game", "PP_iXG60", "PP_OnIce_xGF60", "PP_iXA60",
+        for c in ["PP_TOI_min", "PP_TOI_per_game", "PP_iXG60", "PP_OnIce_xGF60", "PP_SOG60", "PP_iXA60",
                   "PP_WeightedAssists60", "PP_iXA60_Source", "PP_iP60", "PP_ActualPoints60", "PP_Role"]:
             sk[c] = np.nan
 
@@ -3917,6 +3955,8 @@ def build_tracker(today_local: date, debug: bool = False, api_key: str | None = 
 
     sk["Opp_SOG_Against_L10"] = sk["Opp"].astype(str).map(lambda x: soga10_map.get(norm_team(x), {}).get("soga_avg", float("nan")))
     sk["Opp_SOG_Used_L10"]    = sk["Opp"].astype(str).map(lambda x: soga10_map.get(norm_team(x), {}).get("n_used", 0))
+    from opportunity_views import add_opportunity_views
+    sk = add_opportunity_views(sk)
     sk["Opp_SOG_Against_L50"] = sk["Opp"].astype(str).map(lambda x: soga50_map.get(norm_team(x), {}).get("soga_avg", float("nan")))
     sk["Opp_SOG_Used_L50"]    = sk["Opp"].astype(str).map(lambda x: soga50_map.get(norm_team(x), {}).get("n_used", 0))
 
@@ -4643,6 +4683,10 @@ def build_tracker(today_local: date, debug: bool = False, api_key: str | None = 
         "Opp_GP": sk["Opp_GP"],
         "Opp_SV": sk["Opp_SV"],
         "Opp_GAA": sk["Opp_GAA"],
+        "Opp_Goalie_Shots_Faced": sk.get("Opp_Goalie_Shots_Faced"),
+        "Goalie_League_SV": sk.get("Goalie_League_SV"),
+        "Goalie_League_GAA": sk.get("Goalie_League_GAA"),
+        "Goalie_Context_Status": sk.get("Goalie_Context_Status"),
         "Goalie_Weak": sk["Goalie_Weak"],
         "Opp_Goalie_Status": sk.get("Opp_Goalie_Status", ""),
                 "Opp_Goalie_Source": sk.get("Opp_Goalie_Source", ""),
@@ -4682,6 +4726,19 @@ def build_tracker(today_local: date, debug: bool = False, api_key: str | None = 
         "Avg5_SOG": sk.get("Avg5_SOG"),
         "ShotIntent": sk.get("ShotIntent"),
         "ShotIntent_Pct": sk.get("ShotIntent_Pct"),
+        "EV5_TOI_per_game": sk.get("EV5_TOI_per_game"),
+        "i5v5_SOG60": sk.get("i5v5_SOG60"),
+        "i5v5_xG60": sk.get("i5v5_xG60"),
+        "Goal_Opportunity_xG": sk.get("Goal_Opportunity_xG"),
+        "Assist_5v5_Setups_per_game": sk.get("Assist_5v5_Setups_per_game"),
+        "PP_Observed_Assists_per_game": sk.get("PP_Observed_Assists_per_game"),
+        "PP_SOG60": sk.get("PP_SOG60"),
+        "SOG_Opportunity_EV5": sk.get("SOG_Opportunity_EV5"),
+        "SOG_Opportunity_PP": sk.get("SOG_Opportunity_PP"),
+        "SOG_Opportunity_Base": sk.get("SOG_Opportunity_Base"),
+        "SOG_Opportunity_Coverage": sk.get("SOG_Opportunity_Coverage"),
+        "SOG_Opp_Volume_Factor": sk.get("SOG_Opp_Volume_Factor"),
+        "SOG_Opportunity_Matchup": sk.get("SOG_Opportunity_Matchup"),
         "L10_P": sk.get("L10_P"),
         "L10_Games": sk.get("L10_Games"),
         "L20_Games": sk.get("L20_Games"),
@@ -4800,6 +4857,10 @@ def build_tracker(today_local: date, debug: bool = False, api_key: str | None = 
         "PP_ActualPoints60": sk.get("PP_ActualPoints60"),
         "PP_iXG60": sk.get("PP_iXG60"),
         "PP_OnIce_xGF60": sk.get("PP_OnIce_xGF60"),
+        "PP_OnIce_xG_per_game": sk.get("PP_OnIce_xG_per_game"),
+        "PP_iXG_per_game": sk.get("PP_iXG_per_game"),
+        "PP_Matchup_Equal": sk.get("PP_Matchup_Equal"),
+        "Opportunity_View_Version": sk.get("Opportunity_View_Version"),
         "PP_iXA60": sk.get("PP_iXA60"),
         "PP_WeightedAssists60": sk.get("PP_WeightedAssists60"),
         "PP_iXA60_Source": sk.get("PP_iXA60_Source"),

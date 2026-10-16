@@ -12,6 +12,7 @@ import requests
 COLUMNS = ("Game", "Player", "Team", "Opponent", "PPP line", "Over odds",
            "Book", "Book break-even %", "PP unit", "PP TOI/game",
            "Opp PK xGA/60", "PP matchup /100", "PPP last 10",
+           "PP on-ice xG/game", "PP shooter xG/game", "Equal-weight PP context",
            "Stats season", "Context", "Book prices")
 
 
@@ -138,6 +139,9 @@ def priced_ppp_quotes(frame: pd.DataFrame, *, line_filter: float | None = None) 
                 "PP matchup /100": _finite(row.get("PP_Matchup"))
                 if _finite(row.get("Opp_PK_xGA60")) is not None
                 and _finite(row.get("Team_PP_xGF60")) is not None else None,
+                "PP on-ice xG/game": _finite(row.get("PP_OnIce_xG_per_game")),
+                "PP shooter xG/game": _finite(row.get("PP_iXG_per_game")),
+                "Equal-weight PP context": _finite(row.get("PP_Matchup_Equal")),
                 "Stats season": str(row.get("Model_Stats_Season") or ""),
                 "Context": _context_label(row),
                 "Book prices": str(row.get("PPP_Book_Prices_05") or "") if line == 0.5 else "",
