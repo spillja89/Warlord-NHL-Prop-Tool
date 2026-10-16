@@ -4001,6 +4001,9 @@ def build_tracker(today_local: date, debug: bool = False, api_key: str | None = 
 
     feats_df = pd.DataFrame(feats_rows)
     sk = sk.merge(feats_df, on="playerId", how="left")
+    for window in (10, 20, 40):
+        if f"L{window}_Games" not in sk.columns:
+            sk[f"L{window}_Games"] = np.nan
 
     # ShotIntent proxy
     med10 = pd.to_numeric(sk.get("Median10_SOG", np.nan), errors="coerce")
