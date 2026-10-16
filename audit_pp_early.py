@@ -56,7 +56,8 @@ def build_report(paths: list[Path]) -> dict:
     rows = pd.concat(frames, ignore_index=True)
     for column in ("BDL_PPP_Line", "BDL_PPP_Odds", "PP_Role",
                    "PP_TOI_per_game", "PPP10_total", "PP_Matchup",
-                   "Team_PP_xGF60", "Opp_PK_xGA60", "PP_iXG60", "PP_iXA60"):
+                   "Team_PP_xGF60", "Opp_PK_xGA60", "PP_iXG60", "PP_iXA60",
+                   "Opp_GAA", "Opp_SV", "Goalie_Weak"):
         rows[column] = pd.to_numeric(rows.get(column), errors="coerce")
     rows = rows.loc[
         rows["Grade_Status"].eq("FINAL")
@@ -120,6 +121,15 @@ def build_report(paths: list[Path]) -> dict:
     seasons = rows.get("Model_Stats_Season", pd.Series(index=rows.index, dtype=object))
     latest_stats_season = max(seasons.dropna().astype(str), default=None)
     current = rows.loc[seasons.eq(latest_stats_season)].copy()
+    confirmed = rows.loc[rows.get("Opp_Goalie_Status", pd.Series(index=rows.index, dtype=object)).eq("Confirmed")]
+    goalie_check = {}
+    for column, direction in (("Opp_GAA", 1), ("Opp_SV", -1), ("Goalie_Weak", 1)):
+        goalie_check[column] = {
+            "coverage": int(rows[column].notna().sum()),
+            "all_auc": auc(rows["hit"], direction * rows[column]),
+            "confirmed_auc": auc(confirmed["hit"], direction * confirmed[column]),
+            "latest_stats_season_auc": auc(current["hit"], direction * current[column]),
+        }
     return {
         "status": "exploratory",
         "first_date": dates[0], "last_date": dates[-1],
@@ -128,6 +138,7 @@ def build_report(paths: list[Path]) -> dict:
         "signals": signals, "continuous": continuous,
         "model_stats_seasons": seasons.value_counts(dropna=False).to_dict(),
         "latest_stats_season": latest_stats_season,
+        "goalie_check": goalie_check,
         "current_season_source": {
             "all": summarize(current),
             "pp1": summarize(current.loc[current["pp1"]]),
@@ -137,7 +148,7 @@ def build_report(paths: list[Path]) -> dict:
             "continuous_auc": {column: auc(current["hit"], current[column])
                                for column in continuous},
         },
-        "method_note": "One record per priced player-game. Pregame saved tracker only; no postgame features. Rates are descriptive, heavily correlated within teams and dates, and not validated betting probabilities. The best captured book price may not have been available to every bettor. No live PP ranking or move threshold changes.",
+        "method_note": "One record per priced player-game. Pregame saved tracker only; no postgame features. Rates are descriptive, heavily correlated within teams and dates, and not validated betting probabilities. Older graded trackers lack opposing goalie games played, so tiny goalie samples cannot be screened. The best captured book price may not have been available to every bettor. No live PP ranking or move threshold changes.",
     }
 
 
