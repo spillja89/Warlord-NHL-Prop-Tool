@@ -42,6 +42,7 @@ class OddsAPINHLTests(unittest.TestCase):
                     {"key": "player_power_play_points", "outcomes": []},
                 ]},
             ]},
+            {"bookmakers": []},
         ]
         tracker = pd.DataFrame([
             {"Player": "Leon Draisaitl", "Team": "EDM", "Opp": "VAN", "BDL_Goal_Line_1": 0.5, "BDL_Goal_Odds_1": 120, "BDL_Goal_Book_1": "DraftKings", "BDL_Goal_Line": 0.5},
@@ -53,6 +54,7 @@ class OddsAPINHLTests(unittest.TestCase):
         self.assertEqual(out.loc[0, "BDL_Points_Line"], 1.5)
         self.assertEqual(out.loc[0, "BDL_Points_Book"], "Fanatics")
         self.assertTrue(pd.isna(out.loc[1, "BDL_Goal_Odds"]))
+        self.assertEqual(get.call_args_list[2].kwargs["bookmakers"], "betrivers")
 
     @patch("odds_api_nhl._get")
     def test_checks_betmgm_power_play_when_regional_feed_omits_it(self, get):

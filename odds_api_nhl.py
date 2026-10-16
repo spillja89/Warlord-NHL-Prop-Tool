@@ -141,28 +141,29 @@ def merge_odds_api_props(
             markets=",".join(MARKETS), oddsFormat="american",
         )
         books = list(payload.get("bookmakers", []))
-        # A regional multi-market response can omit a bookmaker's less common
-        # market even when that book lists it. Check BetMGM PPP directly so a
-        # better 0.5-point quote is not silently lost. This is one extra call
-        # only for games where the regional response has no BetMGM PPP market.
-        betmgm_ppp = any(
-            str(book.get("key") or "").casefold() == "betmgm"
-            and any(str(market.get("key") or "") in {"player_power_play_points", "player_power_play_points_alternate"}
-                    for market in book.get("markets", []))
+        # The regional multi-market response can omit a book's PPP market.
+        # Query the missing BetMGM/BetRivers markets together so comparison
+        # does not silently exclude either book's over 0.5 quote.
+        pp_market_keys = {"player_power_play_points", "player_power_play_points_alternate"}
+        pp_books_present = {
+            str(book.get("key") or "").casefold()
             for book in books
-        )
-        if not betmgm_ppp:
+            if any(str(market.get("key") or "") in pp_market_keys
+                   for market in book.get("markets", []))
+        }
+        missing_pp_books = [key for key in ("betmgm", "betrivers") if key not in pp_books_present]
+        if missing_pp_books:
             try:
                 targeted = _get(
-                    f"events/{event['id']}/odds", api_key, bookmakers="betmgm",
+                    f"events/{event['id']}/odds", api_key, bookmakers=",".join(missing_pp_books),
                     markets="player_power_play_points,player_power_play_points_alternate",
                     oddsFormat="american",
                 )
                 books.extend(book for book in targeted.get("bookmakers", [])
-                             if str(book.get("key") or "").casefold() == "betmgm")
+                             if str(book.get("key") or "").casefold() in missing_pp_books)
             except RuntimeError:
                 if debug:
-                    print("[odds-api] BetMGM PPP check unavailable; using regional quotes")
+                    print("[odds-api] targeted PPP check unavailable; using regional quotes")
         for book in books:
             book_name = str(book.get("title") or book.get("key") or "").strip()
             if not book_name:
