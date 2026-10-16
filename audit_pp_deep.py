@@ -1,7 +1,7 @@
 """Offline, price-aware audit of saved pregame NHL power-play point trackers.
 
-The report is exploratory. Candidate fields were specified from the tracker
-schema before reviewing the result table. Nothing here changes live rankings.
+The report is exploratory. It screens pregame tracker fields and a small set
+of follow-up combinations. Nothing here changes live rankings.
 """
 
 from __future__ import annotations
@@ -49,11 +49,13 @@ def _sigmoid(value: np.ndarray) -> np.ndarray:
 
 
 def _fit_offset(book: np.ndarray, y: np.ndarray, x: np.ndarray | None = None) -> np.ndarray:
-    """Fit a book-logit offset with an intercept and optional one-feature adjustment."""
+    """Fit a book-logit offset with an intercept and optional feature adjustments."""
     offset = np.log(book / (1 - book))
+    if x is not None:
+        x = np.asarray(x).reshape(len(y), -1)
     design = np.ones((len(y), 1)) if x is None else np.column_stack((np.ones(len(y)), x))
     coef = np.zeros(design.shape[1])
-    penalty = np.diag([0.0] + ([2.0] if x is not None else []))
+    penalty = np.diag([0.0] + ([2.0] * x.shape[1] if x is not None else []))
     for _ in range(40):
         probability = _sigmoid(offset + design @ coef)
         weight = np.maximum(probability * (1 - probability), 1e-6)
@@ -68,7 +70,9 @@ def _fit_offset(book: np.ndarray, y: np.ndarray, x: np.ndarray | None = None) ->
 
 def _predict(book: np.ndarray, coefficient: np.ndarray, x: np.ndarray | None = None) -> np.ndarray:
     offset = np.log(book / (1 - book))
-    return _sigmoid(offset + coefficient[0] + (coefficient[1] * x if x is not None else 0))
+    adjustment = (np.asarray(x).reshape(len(book), -1) @ coefficient[1:]
+                  if x is not None else 0)
+    return _sigmoid(offset + coefficient[0] + adjustment)
 
 
 def _summary(frame: pd.DataFrame) -> dict:
@@ -137,6 +141,8 @@ def _prepare(paths: list[Path]) -> tuple[pd.DataFrame, dict]:
     eligible["PPtime_x_pointsmove"] = eligible["PP_TOI_per_game"] * eligible["Named_Points_Move"]
     quality = {
         "files": len(paths), "skipped_files": skipped,
+        "graded_file_sha256": {path.name: hashlib.sha256(path.read_bytes()).hexdigest()
+                               for path in paths},
         "compatible_tracker_rows": int(len(all_rows)),
         "priced_over_0_5_rows": int(len(price_rows)),
         "priced_with_pregame_timestamp": int(len(pregame)),
@@ -210,6 +216,42 @@ def _scan_feature(frame: pd.DataFrame, name: str, early: set[str], late: set[str
     }
 
 
+def _scan_combo(frame: pd.DataFrame, names: tuple[str, ...], early: set[str], late: set[str]) -> dict | None:
+    pair = frame[["Date", "hit", "book", *names]].dropna().copy()
+    train = pair.loc[pair["Date"].isin(early)]
+    test = pair.loc[pair["Date"].isin(late)]
+    if (len(train) < 70 or len(test) < 70 or train["Date"].nunique() < 3
+            or test["Date"].nunique() < 3):
+        return None
+    centers = train[list(names)].mean()
+    scales = train[list(names)].std()
+    if scales.isna().any() or scales.le(1e-9).any():
+        return None
+    x_train = ((train[list(names)] - centers) / scales).to_numpy(dtype=float)
+    x_test = ((test[list(names)] - centers) / scales).to_numpy(dtype=float)
+    y_train, y_test = train["hit"].to_numpy(dtype=float), test["hit"].to_numpy(dtype=float)
+    b_train, b_test = train["book"].to_numpy(dtype=float), test["book"].to_numpy(dtype=float)
+    baseline = _fit_offset(b_train, y_train)
+    candidate = _fit_offset(b_train, y_train, x_train)
+    p_base = _predict(b_test, baseline)
+    p_candidate = _predict(b_test, candidate, x_test)
+    daily_gains = [
+        _log_loss(y_test[mask], p_base[mask]) - _log_loss(y_test[mask], p_candidate[mask])
+        for day in sorted(test["Date"].unique())
+        for mask in [test["Date"].eq(day).to_numpy()]
+    ]
+    return {
+        "fields": list(names), "n_train": len(train), "n_test": len(test),
+        "test_logloss_gain_vs_calibrated_book": round(
+            _log_loss(y_test, p_base) - _log_loss(y_test, p_candidate), 5),
+        "test_brier_gain_vs_calibrated_book": round(float(
+            np.mean((y_test - p_base) ** 2) - np.mean((y_test - p_candidate) ** 2)), 5),
+        "test_dates_helped": sum(gain > 0 for gain in daily_gains),
+        "train_coefficients": {name: round(float(value), 3)
+                               for name, value in zip(names, candidate[1:])},
+    }
+
+
 def build_report(paths: list[Path]) -> dict:
     frame, quality = _prepare(paths)
     if frame.empty:
@@ -226,6 +268,17 @@ def build_report(paths: list[Path]) -> dict:
     ]
     tested = [result for name in features if (result := _scan_feature(frame, name, early, late))]
     tested.sort(key=lambda result: result["test_logloss_gain_vs_calibrated_book"], reverse=True)
+    combos = (
+        ("PP_TOI_per_game", "Opp_PK_xGA60"),
+        ("PP_TOI_per_game", "Team_PP_xGF60"),
+        ("PP_TOI_per_game", "Goalie_Weak"),
+        ("PP_TOI_per_game", "PP_iXA60"),
+        ("PP_TOI_per_game", "Assist_Dagger"),
+        ("PP_TOI_min", "Conf_Points"),
+        ("PP_TOI_min", "Opp_PK_xGA60", "Goalie_Weak"),
+        ("PP_TOI_min", "Assist_Dagger", "Conf_Points"),
+    )
+    combo_results = [result for names in combos if (result := _scan_combo(frame, names, early, late))]
     season_labels = frame.get("Model_Stats_Season", pd.Series(index=frame.index, dtype=object))
     latest_stats_season = max((label for label in season_labels.dropna().astype(str).unique()
                                if label[:4].isdigit()), default=None)
@@ -241,7 +294,8 @@ def build_report(paths: list[Path]) -> dict:
             "summary": _summary(frame.loc[season_labels.eq(latest_stats_season)]),
         },
         "tested_fields": len(tested), "feature_scan": tested,
-        "method": "Each field is tested alone as an adjustment to book implied probability. Early dates fit an intercept and one regularized slope; later dates are held out. A positive test log-loss gain means it improved probability estimates beyond recalibrating the book alone. Fields are correlated and many were screened; top-ranked gains are exploratory, not validated betting edges. Player props on the same game/team are correlated. No live model changes.",
+        "combination_checks": combo_results,
+        "method": "Each field is tested alone as an adjustment to book implied probability; a few domain combinations are also inspected. Early dates fit an intercept and regularized slopes; later dates are held out. A positive test log-loss gain means it improved probability estimates beyond recalibrating the book alone. Fields are correlated and many were screened. The later dates were used to inspect and select ideas, so they are no longer a blind validation sample. Player props on the same game/team are correlated. No live model changes.",
     }
 
 

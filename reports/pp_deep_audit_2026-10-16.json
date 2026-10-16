@@ -1,0 +1,1238 @@
+{
+  "status": "exploratory_not_for_live_tuning",
+  "quality": {
+    "files": 15,
+    "skipped_files": [
+      {
+        "file": "tracker_2026-09-30_GRADED.csv",
+        "missing": [
+          "Odds_Checked_UTC"
+        ]
+      },
+      {
+        "file": "tracker_2026-10-01_GRADED.csv",
+        "missing": [
+          "Odds_Checked_UTC"
+        ]
+      }
+    ],
+    "graded_file_sha256": {
+      "tracker_2026-09-30_GRADED.csv": "6b113754bb9db662226d235847278d200975fc930212ba090a855949185c62c2",
+      "tracker_2026-10-01_GRADED.csv": "7d8a8e19d4153359be4be986327d3ccb6fdf8a2c684350f33a603495c9adeb3e",
+      "tracker_2026-10-02_GRADED.csv": "a4b6d781f7e04a4360087561e855329a13d00acb92e88ba523f30492599b47aa",
+      "tracker_2026-10-03_GRADED.csv": "ad3b906b99d9459458a677db16c6920d4a81cdab76bbdab3b778ed63b41acfa0",
+      "tracker_2026-10-04_GRADED.csv": "c37e92ea19f3b17aae5a6a87c914082ba8f217bdf9914135946ba5fa4a649932",
+      "tracker_2026-10-05_GRADED.csv": "1de1ec40960e2ca5bc0d592ec15d0133a6c2576ff2053556d26e1f266195d0d5",
+      "tracker_2026-10-06_GRADED.csv": "10d56d1445f57feb615670e13eef91ec227c7bf374838560e1472a518d8c1580",
+      "tracker_2026-10-07_GRADED.csv": "b4d21e968b44b5867ab9ef6a825ea7e4e4eb1e9a7ab566b43d6bb610e80390e2",
+      "tracker_2026-10-08_GRADED.csv": "1dac10c7bf006cd37602c2d2120be202f6e3b3828e5b4848b933f6d331d9ee60",
+      "tracker_2026-10-09_GRADED.csv": "ef307f1a4ec4087f3db850bad0f2d2e59f1e441b564fd257c228420f53e64272",
+      "tracker_2026-10-10_GRADED.csv": "fe23f375f1c6e6b14cd3641b9b72fbf9cccab403d74ae82508b30cf9258867fb",
+      "tracker_2026-10-11_GRADED.csv": "34aca784c2d2361afca0ea9ec59ed295316ee12978d3b4bf7c979f9e79028c0f",
+      "tracker_2026-10-12_GRADED.csv": "49f6117fe655cba4ab812ce5cbd6d2644cb19508641d112d5b4b8cfb8e09b570",
+      "tracker_2026-10-13_GRADED.csv": "41d32e985db373620cf05d25b97556fbe6ac2f921ea6d45b2ea5cd96f13949ab",
+      "tracker_2026-10-14_GRADED.csv": "3e7055b0fb3aa74d18dcc3620a79fa1c22ff69d89722c193fbd63c88ff471dcd"
+    },
+    "compatible_tracker_rows": 3662,
+    "priced_over_0_5_rows": 1377,
+    "priced_with_pregame_timestamp": 1325,
+    "pregame_final_graded_rows_before_dedupe": 1311,
+    "eligible_unique_props": 1311,
+    "pregame_ungraded_statuses": {
+      "NO_PLAYER": 14
+    },
+    "stats_source_counts": {
+      "2025-2026": 1010,
+      "2026-2027": 301
+    },
+    "quote_age_hours_median": 5.1,
+    "quotes_older_than_24h": 0,
+    "best_price_book_counts": {
+      "Hard Rock Bet": 603,
+      "BetRivers": 258,
+      "BetMGM": 204,
+      "Bovada": 203,
+      "betmgm": 21,
+      "theScore Bet": 10,
+      "Fliff": 9,
+      "Bally Bet": 3
+    },
+    "odds_source_counts": {
+      "The Odds API": 1290,
+      "NaN": 21
+    },
+    "form_log_coverage": 998
+  },
+  "early_dates": [
+    "2026-10-02",
+    "2026-10-03",
+    "2026-10-04",
+    "2026-10-05",
+    "2026-10-06",
+    "2026-10-07"
+  ],
+  "later_dates": [
+    "2026-10-08",
+    "2026-10-09",
+    "2026-10-10",
+    "2026-10-11",
+    "2026-10-12",
+    "2026-10-13",
+    "2026-10-14"
+  ],
+  "all": {
+    "n": 1311,
+    "dates": 13,
+    "hits": 233,
+    "hit_pct": 17.8,
+    "book_break_even_pct": 23.5,
+    "flat_roi_pct": -30.1
+  },
+  "early": {
+    "n": 507,
+    "dates": 6,
+    "hits": 105,
+    "hit_pct": 20.7,
+    "book_break_even_pct": 24.8,
+    "flat_roi_pct": -21.3
+  },
+  "later": {
+    "n": 804,
+    "dates": 7,
+    "hits": 128,
+    "hit_pct": 15.9,
+    "book_break_even_pct": 22.7,
+    "flat_roi_pct": -35.6
+  },
+  "latest_stats_source": {
+    "season": "2026-2027",
+    "summary": {
+      "n": 301,
+      "dates": 2,
+      "hits": 49,
+      "hit_pct": 16.3,
+      "book_break_even_pct": 22.9,
+      "flat_roi_pct": -34.9
+    }
+  },
+  "tested_fields": 55,
+  "feature_scan": [
+    {
+      "field": "PP_TOI_min",
+      "n_train": 507,
+      "n_test": 804,
+      "train_dates": 6,
+      "test_dates": 7,
+      "all_coverage_pct": 100.0,
+      "train_coefficient": 0.119,
+      "train_auc": 0.6391,
+      "test_auc": 0.5909,
+      "test_logloss_gain_vs_calibrated_book": 0.0032,
+      "test_brier_gain_vs_calibrated_book": 0.00061,
+      "test_dates_helped": 6,
+      "date_bootstrap_gain_95": [
+        0.00125,
+        0.00704
+      ]
+    },
+    {
+      "field": "Assist_Dagger",
+      "n_train": 507,
+      "n_test": 804,
+      "train_dates": 6,
+      "test_dates": 7,
+      "all_coverage_pct": 100.0,
+      "train_coefficient": 0.138,
+      "train_auc": 0.6179,
+      "test_auc": 0.6302,
+      "test_logloss_gain_vs_calibrated_book": 0.00285,
+      "test_brier_gain_vs_calibrated_book": 0.00039,
+      "test_dates_helped": 6,
+      "date_bootstrap_gain_95": [
+        0.00042,
+        0.00603
+      ]
+    },
+    {
+      "field": "Named_Points_Move",
+      "n_train": 507,
+      "n_test": 804,
+      "train_dates": 6,
+      "test_dates": 7,
+      "all_coverage_pct": 100.0,
+      "train_coefficient": 0.183,
+      "train_auc": 0.5995,
+      "test_auc": 0.5825,
+      "test_logloss_gain_vs_calibrated_book": 0.00271,
+      "test_brier_gain_vs_calibrated_book": 0.00041,
+      "test_dates_helped": 4,
+      "date_bootstrap_gain_95": [
+        -0.00094,
+        0.00619
+      ]
+    },
+    {
+      "field": "Conf_Points",
+      "n_train": 507,
+      "n_test": 804,
+      "train_dates": 6,
+      "test_dates": 7,
+      "all_coverage_pct": 100.0,
+      "train_coefficient": 0.119,
+      "train_auc": 0.6267,
+      "test_auc": 0.6313,
+      "test_logloss_gain_vs_calibrated_book": 0.00269,
+      "test_brier_gain_vs_calibrated_book": 0.00042,
+      "test_dates_helped": 6,
+      "date_bootstrap_gain_95": [
+        0.00063,
+        0.00606
+      ]
+    },
+    {
+      "field": "PPP10_total",
+      "n_train": 424,
+      "n_test": 574,
+      "train_dates": 6,
+      "test_dates": 7,
+      "all_coverage_pct": 76.1,
+      "train_coefficient": -0.133,
+      "train_auc": 0.5126,
+      "test_auc": 0.5223,
+      "test_logloss_gain_vs_calibrated_book": 0.0024,
+      "test_brier_gain_vs_calibrated_book": 0.00122,
+      "test_dates_helped": 5,
+      "date_bootstrap_gain_95": [
+        -0.00433,
+        0.01202
+      ]
+    },
+    {
+      "field": "StarScore",
+      "n_train": 507,
+      "n_test": 804,
+      "train_dates": 6,
+      "test_dates": 7,
+      "all_coverage_pct": 100.0,
+      "train_coefficient": 0.127,
+      "train_auc": 0.6336,
+      "test_auc": 0.6298,
+      "test_logloss_gain_vs_calibrated_book": 0.00237,
+      "test_brier_gain_vs_calibrated_book": 0.00028,
+      "test_dates_helped": 5,
+      "date_bootstrap_gain_95": [
+        -0.0001,
+        0.00396
+      ]
+    },
+    {
+      "field": "PPtime_x_pointsmove",
+      "n_train": 507,
+      "n_test": 804,
+      "train_dates": 6,
+      "test_dates": 7,
+      "all_coverage_pct": 100.0,
+      "train_coefficient": 0.15,
+      "train_auc": 0.5952,
+      "test_auc": 0.5851,
+      "test_logloss_gain_vs_calibrated_book": 0.00221,
+      "test_brier_gain_vs_calibrated_book": 0.00026,
+      "test_dates_helped": 4,
+      "date_bootstrap_gain_95": [
+        -0.00124,
+        0.00564
+      ]
+    },
+    {
+      "field": "Points_Green",
+      "n_train": 507,
+      "n_test": 804,
+      "train_dates": 6,
+      "test_dates": 7,
+      "all_coverage_pct": 100.0,
+      "train_coefficient": 0.142,
+      "train_auc": 0.6098,
+      "test_auc": 0.591,
+      "test_logloss_gain_vs_calibrated_book": 0.00218,
+      "test_brier_gain_vs_calibrated_book": 0.00027,
+      "test_dates_helped": 4,
+      "date_bootstrap_gain_95": [
+        -0.00067,
+        0.00543
+      ]
+    },
+    {
+      "field": "Conf_Assists",
+      "n_train": 507,
+      "n_test": 804,
+      "train_dates": 6,
+      "test_dates": 7,
+      "all_coverage_pct": 100.0,
+      "train_coefficient": 0.103,
+      "train_auc": 0.6297,
+      "test_auc": 0.6286,
+      "test_logloss_gain_vs_calibrated_book": 0.00208,
+      "test_brier_gain_vs_calibrated_book": 0.00028,
+      "test_dates_helped": 6,
+      "date_bootstrap_gain_95": [
+        0.00045,
+        0.00446
+      ]
+    },
+    {
+      "field": "PP_Points60",
+      "n_train": 507,
+      "n_test": 804,
+      "train_dates": 6,
+      "test_dates": 7,
+      "all_coverage_pct": 100.0,
+      "train_coefficient": 0.061,
+      "train_auc": 0.6098,
+      "test_auc": 0.6028,
+      "test_logloss_gain_vs_calibrated_book": 0.00185,
+      "test_brier_gain_vs_calibrated_book": 0.00051,
+      "test_dates_helped": 5,
+      "date_bootstrap_gain_95": [
+        0.00061,
+        0.00246
+      ]
+    },
+    {
+      "field": "PP_TOI_Share",
+      "n_train": 507,
+      "n_test": 804,
+      "train_dates": 6,
+      "test_dates": 7,
+      "all_coverage_pct": 100.0,
+      "train_coefficient": 0.12,
+      "train_auc": 0.6088,
+      "test_auc": 0.6325,
+      "test_logloss_gain_vs_calibrated_book": 0.00165,
+      "test_brier_gain_vs_calibrated_book": -0.00011,
+      "test_dates_helped": 6,
+      "date_bootstrap_gain_95": [
+        -0.00112,
+        0.00299
+      ]
+    },
+    {
+      "field": "PP_TOI_Pct_Game",
+      "n_train": 507,
+      "n_test": 804,
+      "train_dates": 6,
+      "test_dates": 7,
+      "all_coverage_pct": 100.0,
+      "train_coefficient": 0.119,
+      "train_auc": 0.6087,
+      "test_auc": 0.6325,
+      "test_logloss_gain_vs_calibrated_book": 0.00165,
+      "test_brier_gain_vs_calibrated_book": -0.0001,
+      "test_dates_helped": 6,
+      "date_bootstrap_gain_95": [
+        -0.00117,
+        0.003
+      ]
+    },
+    {
+      "field": "PP_TeamShare_pct",
+      "n_train": 507,
+      "n_test": 804,
+      "train_dates": 6,
+      "test_dates": 7,
+      "all_coverage_pct": 100.0,
+      "train_coefficient": 0.119,
+      "train_auc": 0.6087,
+      "test_auc": 0.6325,
+      "test_logloss_gain_vs_calibrated_book": 0.00165,
+      "test_brier_gain_vs_calibrated_book": -0.0001,
+      "test_dates_helped": 6,
+      "date_bootstrap_gain_95": [
+        -0.00126,
+        0.00301
+      ]
+    },
+    {
+      "field": "PP_iXA60",
+      "n_train": 504,
+      "n_test": 801,
+      "train_dates": 6,
+      "test_dates": 7,
+      "all_coverage_pct": 99.5,
+      "train_coefficient": 0.122,
+      "train_auc": 0.5992,
+      "test_auc": 0.5905,
+      "test_logloss_gain_vs_calibrated_book": 0.00164,
+      "test_brier_gain_vs_calibrated_book": 0.0003,
+      "test_dates_helped": 5,
+      "date_bootstrap_gain_95": [
+        7e-05,
+        0.00429
+      ]
+    },
+    {
+      "field": "iXA%",
+      "n_train": 507,
+      "n_test": 804,
+      "train_dates": 6,
+      "test_dates": 7,
+      "all_coverage_pct": 100.0,
+      "train_coefficient": 0.095,
+      "train_auc": 0.6271,
+      "test_auc": 0.6212,
+      "test_logloss_gain_vs_calibrated_book": 0.00151,
+      "test_brier_gain_vs_calibrated_book": 0.00013,
+      "test_dates_helped": 6,
+      "date_bootstrap_gain_95": [
+        9e-05,
+        0.00352
+      ]
+    },
+    {
+      "field": "PPtime_x_goalie",
+      "n_train": 507,
+      "n_test": 804,
+      "train_dates": 6,
+      "test_dates": 7,
+      "all_coverage_pct": 100.0,
+      "train_coefficient": 0.04,
+      "train_auc": 0.6211,
+      "test_auc": 0.6107,
+      "test_logloss_gain_vs_calibrated_book": 0.0013,
+      "test_brier_gain_vs_calibrated_book": 0.00038,
+      "test_dates_helped": 5,
+      "date_bootstrap_gain_95": [
+        0.00025,
+        0.00242
+      ]
+    },
+    {
+      "field": "Goalie_Weak",
+      "n_train": 507,
+      "n_test": 804,
+      "train_dates": 6,
+      "test_dates": 7,
+      "all_coverage_pct": 100.0,
+      "train_coefficient": 0.099,
+      "train_auc": 0.5643,
+      "test_auc": 0.5327,
+      "test_logloss_gain_vs_calibrated_book": 0.00126,
+      "test_brier_gain_vs_calibrated_book": 0.00048,
+      "test_dates_helped": 5,
+      "date_bootstrap_gain_95": [
+        -0.00266,
+        0.00811
+      ]
+    },
+    {
+      "field": "Assists_Green",
+      "n_train": 507,
+      "n_test": 804,
+      "train_dates": 6,
+      "test_dates": 7,
+      "all_coverage_pct": 100.0,
+      "train_coefficient": 0.061,
+      "train_auc": 0.5839,
+      "test_auc": 0.5804,
+      "test_logloss_gain_vs_calibrated_book": 0.001,
+      "test_brier_gain_vs_calibrated_book": 0.00016,
+      "test_dates_helped": 4,
+      "date_bootstrap_gain_95": [
+        -0.00026,
+        0.00247
+      ]
+    },
+    {
+      "field": "PP_TOI_per_game",
+      "n_train": 507,
+      "n_test": 804,
+      "train_dates": 6,
+      "test_dates": 7,
+      "all_coverage_pct": 100.0,
+      "train_coefficient": 0.028,
+      "train_auc": 0.6153,
+      "test_auc": 0.6698,
+      "test_logloss_gain_vs_calibrated_book": 0.00091,
+      "test_brier_gain_vs_calibrated_book": 0.00017,
+      "test_dates_helped": 6,
+      "date_bootstrap_gain_95": [
+        0.00025,
+        0.00114
+      ]
+    },
+    {
+      "field": "iXG%",
+      "n_train": 507,
+      "n_test": 804,
+      "train_dates": 6,
+      "test_dates": 7,
+      "all_coverage_pct": 100.0,
+      "train_coefficient": 0.232,
+      "train_auc": 0.6161,
+      "test_auc": 0.5964,
+      "test_logloss_gain_vs_calibrated_book": 0.00071,
+      "test_brier_gain_vs_calibrated_book": -0.00041,
+      "test_dates_helped": 4,
+      "date_bootstrap_gain_95": [
+        -0.00528,
+        0.0036
+      ]
+    },
+    {
+      "field": "PPtime_x_weakPK",
+      "n_train": 507,
+      "n_test": 804,
+      "train_dates": 6,
+      "test_dates": 7,
+      "all_coverage_pct": 100.0,
+      "train_coefficient": 0.078,
+      "train_auc": 0.6277,
+      "test_auc": 0.6004,
+      "test_logloss_gain_vs_calibrated_book": 0.00041,
+      "test_brier_gain_vs_calibrated_book": -0.00021,
+      "test_dates_helped": 6,
+      "date_bootstrap_gain_95": [
+        -0.00156,
+        0.00272
+      ]
+    },
+    {
+      "field": "PP1",
+      "n_train": 507,
+      "n_test": 804,
+      "train_dates": 6,
+      "test_dates": 7,
+      "all_coverage_pct": 100.0,
+      "train_coefficient": 0.161,
+      "train_auc": 0.6105,
+      "test_auc": 0.6027,
+      "test_logloss_gain_vs_calibrated_book": 0.00027,
+      "test_brier_gain_vs_calibrated_book": -0.00033,
+      "test_dates_helped": 3,
+      "date_bootstrap_gain_95": [
+        -0.00255,
+        0.00273
+      ]
+    },
+    {
+      "field": "opp_5v5_HDCA60",
+      "n_train": 507,
+      "n_test": 804,
+      "train_dates": 6,
+      "test_dates": 7,
+      "all_coverage_pct": 100.0,
+      "train_coefficient": 0.007,
+      "train_auc": 0.5228,
+      "test_auc": 0.4851,
+      "test_logloss_gain_vs_calibrated_book": 0.0001,
+      "test_brier_gain_vs_calibrated_book": 2e-05,
+      "test_dates_helped": 3,
+      "date_bootstrap_gain_95": [
+        -0.00014,
+        0.00072
+      ]
+    },
+    {
+      "field": "opp_5v5_xGA60",
+      "n_train": 507,
+      "n_test": 804,
+      "train_dates": 6,
+      "test_dates": 7,
+      "all_coverage_pct": 100.0,
+      "train_coefficient": 0.012,
+      "train_auc": 0.5103,
+      "test_auc": 0.4956,
+      "test_logloss_gain_vs_calibrated_book": 3e-05,
+      "test_brier_gain_vs_calibrated_book": 0.0,
+      "test_dates_helped": 4,
+      "date_bootstrap_gain_95": [
+        -0.00025,
+        0.00081
+      ]
+    },
+    {
+      "field": "Drought_P",
+      "n_train": 424,
+      "n_test": 574,
+      "train_dates": 6,
+      "test_dates": 7,
+      "all_coverage_pct": 76.1,
+      "train_coefficient": -0.001,
+      "train_auc": 0.4928,
+      "test_auc": 0.4773,
+      "test_logloss_gain_vs_calibrated_book": 1e-05,
+      "test_brier_gain_vs_calibrated_book": 0.0,
+      "test_dates_helped": 4,
+      "date_bootstrap_gain_95": [
+        -1e-05,
+        2e-05
+      ]
+    },
+    {
+      "field": "PP_Matchup",
+      "n_train": 507,
+      "n_test": 804,
+      "train_dates": 6,
+      "test_dates": 7,
+      "all_coverage_pct": 100.0,
+      "train_coefficient": 0.04,
+      "train_auc": 0.5482,
+      "test_auc": 0.5195,
+      "test_logloss_gain_vs_calibrated_book": -6e-05,
+      "test_brier_gain_vs_calibrated_book": -5e-05,
+      "test_dates_helped": 4,
+      "date_bootstrap_gain_95": [
+        -0.00144,
+        0.00189
+      ]
+    },
+    {
+      "field": "PP_Env_Score",
+      "n_train": 507,
+      "n_test": 804,
+      "train_dates": 6,
+      "test_dates": 7,
+      "all_coverage_pct": 100.0,
+      "train_coefficient": 0.04,
+      "train_auc": 0.5482,
+      "test_auc": 0.5195,
+      "test_logloss_gain_vs_calibrated_book": -6e-05,
+      "test_brier_gain_vs_calibrated_book": -5e-05,
+      "test_dates_helped": 4,
+      "date_bootstrap_gain_95": [
+        -0.00138,
+        0.00183
+      ]
+    },
+    {
+      "field": "ShotIntent",
+      "n_train": 112,
+      "n_test": 561,
+      "train_dates": 6,
+      "test_dates": 7,
+      "all_coverage_pct": 51.3,
+      "train_coefficient": 0.037,
+      "train_auc": 0.5922,
+      "test_auc": 0.5657,
+      "test_logloss_gain_vs_calibrated_book": -9e-05,
+      "test_brier_gain_vs_calibrated_book": -6e-05,
+      "test_dates_helped": 3,
+      "date_bootstrap_gain_95": [
+        -0.00091,
+        0.00098
+      ]
+    },
+    {
+      "field": "i5v5_primaryAssists60",
+      "n_train": 507,
+      "n_test": 804,
+      "train_dates": 6,
+      "test_dates": 7,
+      "all_coverage_pct": 100.0,
+      "train_coefficient": 0.021,
+      "train_auc": 0.5752,
+      "test_auc": 0.5129,
+      "test_logloss_gain_vs_calibrated_book": -0.00014,
+      "test_brier_gain_vs_calibrated_book": -9e-05,
+      "test_dates_helped": 3,
+      "date_bootstrap_gain_95": [
+        -0.00144,
+        0.00043
+      ]
+    },
+    {
+      "field": "PP1_x_weakPK",
+      "n_train": 507,
+      "n_test": 804,
+      "train_dates": 6,
+      "test_dates": 7,
+      "all_coverage_pct": 100.0,
+      "train_coefficient": 0.187,
+      "train_auc": 0.6362,
+      "test_auc": 0.6029,
+      "test_logloss_gain_vs_calibrated_book": -0.00036,
+      "test_brier_gain_vs_calibrated_book": -0.00067,
+      "test_dates_helped": 3,
+      "date_bootstrap_gain_95": [
+        -0.00327,
+        0.00249
+      ]
+    },
+    {
+      "field": "Goal_mu",
+      "n_train": 507,
+      "n_test": 804,
+      "train_dates": 6,
+      "test_dates": 7,
+      "all_coverage_pct": 100.0,
+      "train_coefficient": -0.06,
+      "train_auc": 0.5386,
+      "test_auc": 0.5918,
+      "test_logloss_gain_vs_calibrated_book": -0.00044,
+      "test_brier_gain_vs_calibrated_book": 1e-05,
+      "test_dates_helped": 3,
+      "date_bootstrap_gain_95": [
+        -0.00217,
+        0.00203
+      ]
+    },
+    {
+      "field": "Opp_DefWeak",
+      "n_train": 507,
+      "n_test": 804,
+      "train_dates": 6,
+      "test_dates": 7,
+      "all_coverage_pct": 100.0,
+      "train_coefficient": -0.05,
+      "train_auc": 0.5024,
+      "test_auc": 0.5093,
+      "test_logloss_gain_vs_calibrated_book": -0.00053,
+      "test_brier_gain_vs_calibrated_book": -0.00014,
+      "test_dates_helped": 1,
+      "date_bootstrap_gain_95": [
+        -0.00239,
+        0.00052
+      ]
+    },
+    {
+      "field": "i5v5_points60",
+      "n_train": 507,
+      "n_test": 804,
+      "train_dates": 6,
+      "test_dates": 7,
+      "all_coverage_pct": 100.0,
+      "train_coefficient": 0.058,
+      "train_auc": 0.5834,
+      "test_auc": 0.5233,
+      "test_logloss_gain_vs_calibrated_book": -0.00059,
+      "test_brier_gain_vs_calibrated_book": -0.00029,
+      "test_dates_helped": 4,
+      "date_bootstrap_gain_95": [
+        -0.00315,
+        0.00081
+      ]
+    },
+    {
+      "field": "Drought_A",
+      "n_train": 424,
+      "n_test": 574,
+      "train_dates": 6,
+      "test_dates": 7,
+      "all_coverage_pct": 76.1,
+      "train_coefficient": 0.024,
+      "train_auc": 0.4959,
+      "test_auc": 0.4515,
+      "test_logloss_gain_vs_calibrated_book": -0.00062,
+      "test_brier_gain_vs_calibrated_book": -0.00012,
+      "test_dates_helped": 2,
+      "date_bootstrap_gain_95": [
+        -0.00215,
+        0.00043
+      ]
+    },
+    {
+      "field": "PPtime_x_PPchance",
+      "n_train": 507,
+      "n_test": 804,
+      "train_dates": 6,
+      "test_dates": 7,
+      "all_coverage_pct": 100.0,
+      "train_coefficient": -0.031,
+      "train_auc": 0.6078,
+      "test_auc": 0.6001,
+      "test_logloss_gain_vs_calibrated_book": -0.00073,
+      "test_brier_gain_vs_calibrated_book": -0.0001,
+      "test_dates_helped": 2,
+      "date_bootstrap_gain_95": [
+        -0.00117,
+        0.00013
+      ]
+    },
+    {
+      "field": "L5_A",
+      "n_train": 424,
+      "n_test": 574,
+      "train_dates": 6,
+      "test_dates": 7,
+      "all_coverage_pct": 76.1,
+      "train_coefficient": -0.175,
+      "train_auc": 0.4518,
+      "test_auc": 0.5544,
+      "test_logloss_gain_vs_calibrated_book": -0.00089,
+      "test_brier_gain_vs_calibrated_book": -0.00013,
+      "test_dates_helped": 5,
+      "date_bootstrap_gain_95": [
+        -0.00783,
+        0.01048
+      ]
+    },
+    {
+      "field": "Points_mu",
+      "n_train": 507,
+      "n_test": 804,
+      "train_dates": 6,
+      "test_dates": 7,
+      "all_coverage_pct": 100.0,
+      "train_coefficient": -0.037,
+      "train_auc": 0.6276,
+      "test_auc": 0.6422,
+      "test_logloss_gain_vs_calibrated_book": -0.0011,
+      "test_brier_gain_vs_calibrated_book": -0.00024,
+      "test_dates_helped": 2,
+      "date_bootstrap_gain_95": [
+        -0.0016,
+        -0.00038
+      ]
+    },
+    {
+      "field": "L10_P",
+      "n_train": 424,
+      "n_test": 574,
+      "train_dates": 6,
+      "test_dates": 7,
+      "all_coverage_pct": 76.1,
+      "train_coefficient": -0.314,
+      "train_auc": 0.449,
+      "test_auc": 0.5324,
+      "test_logloss_gain_vs_calibrated_book": -0.00156,
+      "test_brier_gain_vs_calibrated_book": -0.00021,
+      "test_dates_helped": 5,
+      "date_bootstrap_gain_95": [
+        -0.01617,
+        0.02324
+      ]
+    },
+    {
+      "field": "PP_iXG60",
+      "n_train": 504,
+      "n_test": 801,
+      "train_dates": 6,
+      "test_dates": 7,
+      "all_coverage_pct": 99.5,
+      "train_coefficient": -0.084,
+      "train_auc": 0.5078,
+      "test_auc": 0.5336,
+      "test_logloss_gain_vs_calibrated_book": -0.00164,
+      "test_brier_gain_vs_calibrated_book": -0.00041,
+      "test_dates_helped": 3,
+      "date_bootstrap_gain_95": [
+        -0.00322,
+        0.00204
+      ]
+    },
+    {
+      "field": "Assists_mu",
+      "n_train": 507,
+      "n_test": 804,
+      "train_dates": 6,
+      "test_dates": 7,
+      "all_coverage_pct": 100.0,
+      "train_coefficient": -0.056,
+      "train_auc": 0.6123,
+      "test_auc": 0.6265,
+      "test_logloss_gain_vs_calibrated_book": -0.00173,
+      "test_brier_gain_vs_calibrated_book": -0.00043,
+      "test_dates_helped": 1,
+      "date_bootstrap_gain_95": [
+        -0.00229,
+        -0.00113
+      ]
+    },
+    {
+      "field": "Named_Assist_Move",
+      "n_train": 507,
+      "n_test": 804,
+      "train_dates": 6,
+      "test_dates": 7,
+      "all_coverage_pct": 100.0,
+      "train_coefficient": -0.083,
+      "train_auc": 0.5165,
+      "test_auc": 0.5347,
+      "test_logloss_gain_vs_calibrated_book": -0.00187,
+      "test_brier_gain_vs_calibrated_book": -0.00055,
+      "test_dates_helped": 0,
+      "date_bootstrap_gain_95": [
+        -0.00403,
+        -0.00087
+      ]
+    },
+    {
+      "field": "PPtime_x_assistmove",
+      "n_train": 507,
+      "n_test": 804,
+      "train_dates": 6,
+      "test_dates": 7,
+      "all_coverage_pct": 100.0,
+      "train_coefficient": -0.098,
+      "train_auc": 0.5158,
+      "test_auc": 0.5344,
+      "test_logloss_gain_vs_calibrated_book": -0.00208,
+      "test_brier_gain_vs_calibrated_book": -0.00061,
+      "test_dates_helped": 1,
+      "date_bootstrap_gain_95": [
+        -0.00471,
+        -0.00075
+      ]
+    },
+    {
+      "field": "L10_A",
+      "n_train": 424,
+      "n_test": 574,
+      "train_dates": 6,
+      "test_dates": 7,
+      "all_coverage_pct": 76.1,
+      "train_coefficient": -0.259,
+      "train_auc": 0.4454,
+      "test_auc": 0.5492,
+      "test_logloss_gain_vs_calibrated_book": -0.00264,
+      "test_brier_gain_vs_calibrated_book": -0.00053,
+      "test_dates_helped": 5,
+      "date_bootstrap_gain_95": [
+        -0.01115,
+        0.01328
+      ]
+    },
+    {
+      "field": "Assist_Volume",
+      "n_train": 507,
+      "n_test": 804,
+      "train_dates": 6,
+      "test_dates": 7,
+      "all_coverage_pct": 100.0,
+      "train_coefficient": -0.182,
+      "train_auc": 0.4878,
+      "test_auc": 0.5954,
+      "test_logloss_gain_vs_calibrated_book": -0.0032,
+      "test_brier_gain_vs_calibrated_book": -0.00078,
+      "test_dates_helped": 4,
+      "date_bootstrap_gain_95": [
+        -0.00753,
+        0.00814
+      ]
+    },
+    {
+      "field": "Opp_GAA",
+      "n_train": 424,
+      "n_test": 703,
+      "train_dates": 6,
+      "test_dates": 7,
+      "all_coverage_pct": 86.0,
+      "train_coefficient": -0.087,
+      "train_auc": 0.5736,
+      "test_auc": 0.5461,
+      "test_logloss_gain_vs_calibrated_book": -0.00425,
+      "test_brier_gain_vs_calibrated_book": -0.0014,
+      "test_dates_helped": 1,
+      "date_bootstrap_gain_95": [
+        -0.00772,
+        0.00035
+      ]
+    },
+    {
+      "field": "Team_GF_Avg_L5",
+      "n_train": 507,
+      "n_test": 804,
+      "train_dates": 6,
+      "test_dates": 7,
+      "all_coverage_pct": 100.0,
+      "train_coefficient": 0.113,
+      "train_auc": 0.539,
+      "test_auc": 0.4389,
+      "test_logloss_gain_vs_calibrated_book": -0.00475,
+      "test_brier_gain_vs_calibrated_book": -0.00182,
+      "test_dates_helped": 0,
+      "date_bootstrap_gain_95": [
+        -0.00865,
+        -0.00209
+      ]
+    },
+    {
+      "field": "Opp_SV",
+      "n_train": 424,
+      "n_test": 703,
+      "train_dates": 6,
+      "test_dates": 7,
+      "all_coverage_pct": 86.0,
+      "train_coefficient": 0.144,
+      "train_auc": 0.446,
+      "test_auc": 0.4791,
+      "test_logloss_gain_vs_calibrated_book": -0.00507,
+      "test_brier_gain_vs_calibrated_book": -0.00179,
+      "test_dates_helped": 3,
+      "date_bootstrap_gain_95": [
+        -0.01027,
+        0.00133
+      ]
+    },
+    {
+      "field": "Opp_SV_weak",
+      "n_train": 424,
+      "n_test": 703,
+      "train_dates": 6,
+      "test_dates": 7,
+      "all_coverage_pct": 86.0,
+      "train_coefficient": -0.144,
+      "train_auc": 0.554,
+      "test_auc": 0.5209,
+      "test_logloss_gain_vs_calibrated_book": -0.00507,
+      "test_brier_gain_vs_calibrated_book": -0.00179,
+      "test_dates_helped": 3,
+      "date_bootstrap_gain_95": [
+        -0.01021,
+        0.00083
+      ]
+    },
+    {
+      "field": "Team_GF_L5",
+      "n_train": 507,
+      "n_test": 804,
+      "train_dates": 6,
+      "test_dates": 7,
+      "all_coverage_pct": 100.0,
+      "train_coefficient": 0.13,
+      "train_auc": 0.5439,
+      "test_auc": 0.4389,
+      "test_logloss_gain_vs_calibrated_book": -0.00558,
+      "test_brier_gain_vs_calibrated_book": -0.00213,
+      "test_dates_helped": 0,
+      "date_bootstrap_gain_95": [
+        -0.01017,
+        -0.00267
+      ]
+    },
+    {
+      "field": "TOI_per_game",
+      "n_train": 507,
+      "n_test": 804,
+      "train_dates": 6,
+      "test_dates": 7,
+      "all_coverage_pct": 100.0,
+      "train_coefficient": -0.139,
+      "train_auc": 0.5318,
+      "test_auc": 0.6315,
+      "test_logloss_gain_vs_calibrated_book": -0.00589,
+      "test_brier_gain_vs_calibrated_book": -0.00171,
+      "test_dates_helped": 1,
+      "date_bootstrap_gain_95": [
+        -0.00682,
+        -0.0043
+      ]
+    },
+    {
+      "field": "TOI_Pct",
+      "n_train": 507,
+      "n_test": 804,
+      "train_dates": 6,
+      "test_dates": 7,
+      "all_coverage_pct": 100.0,
+      "train_coefficient": -0.146,
+      "train_auc": 0.5303,
+      "test_auc": 0.6263,
+      "test_logloss_gain_vs_calibrated_book": -0.00642,
+      "test_brier_gain_vs_calibrated_book": -0.0018,
+      "test_dates_helped": 1,
+      "date_bootstrap_gain_95": [
+        -0.00778,
+        -0.00284
+      ]
+    },
+    {
+      "field": "Drought_PPP",
+      "n_train": 424,
+      "n_test": 574,
+      "train_dates": 6,
+      "test_dates": 7,
+      "all_coverage_pct": 76.1,
+      "train_coefficient": -0.286,
+      "train_auc": 0.403,
+      "test_auc": 0.4871,
+      "test_logloss_gain_vs_calibrated_book": -0.01708,
+      "test_brier_gain_vs_calibrated_book": -0.00643,
+      "test_dates_helped": 4,
+      "date_bootstrap_gain_95": [
+        -0.03423,
+        0.00747
+      ]
+    },
+    {
+      "field": "PP_BOOST_ON",
+      "n_train": 507,
+      "n_test": 804,
+      "train_dates": 6,
+      "test_dates": 7,
+      "all_coverage_pct": 100.0,
+      "train_coefficient": -0.296,
+      "train_auc": 0.495,
+      "test_auc": 0.5111,
+      "test_logloss_gain_vs_calibrated_book": -0.01914,
+      "test_brier_gain_vs_calibrated_book": -0.00167,
+      "test_dates_helped": 1,
+      "date_bootstrap_gain_95": [
+        -0.04231,
+        0.00096
+      ]
+    },
+    {
+      "field": "Team_PP_xGF60",
+      "n_train": 507,
+      "n_test": 804,
+      "train_dates": 6,
+      "test_dates": 7,
+      "all_coverage_pct": 100.0,
+      "train_coefficient": -0.165,
+      "train_auc": 0.4992,
+      "test_auc": 0.512,
+      "test_logloss_gain_vs_calibrated_book": -0.0327,
+      "test_brier_gain_vs_calibrated_book": -0.01356,
+      "test_dates_helped": 3,
+      "date_bootstrap_gain_95": [
+        -0.07049,
+        0.00509
+      ]
+    },
+    {
+      "field": "Opp_PK_xGA60",
+      "n_train": 507,
+      "n_test": 804,
+      "train_dates": 6,
+      "test_dates": 7,
+      "all_coverage_pct": 100.0,
+      "train_coefficient": 0.213,
+      "train_auc": 0.579,
+      "test_auc": 0.4915,
+      "test_logloss_gain_vs_calibrated_book": -0.04638,
+      "test_brier_gain_vs_calibrated_book": -0.00801,
+      "test_dates_helped": 3,
+      "date_bootstrap_gain_95": [
+        -0.10196,
+        0.01465
+      ]
+    }
+  ],
+  "combination_checks": [
+    {
+      "fields": [
+        "PP_TOI_per_game",
+        "Opp_PK_xGA60"
+      ],
+      "n_train": 507,
+      "n_test": 804,
+      "test_logloss_gain_vs_calibrated_book": -0.04511,
+      "test_brier_gain_vs_calibrated_book": -0.00787,
+      "test_dates_helped": 3,
+      "train_coefficients": {
+        "PP_TOI_per_game": 0.025,
+        "Opp_PK_xGA60": 0.213
+      }
+    },
+    {
+      "fields": [
+        "PP_TOI_per_game",
+        "Team_PP_xGF60"
+      ],
+      "n_train": 507,
+      "n_test": 804,
+      "test_logloss_gain_vs_calibrated_book": -0.03652,
+      "test_brier_gain_vs_calibrated_book": -0.01573,
+      "test_dates_helped": 3,
+      "train_coefficients": {
+        "PP_TOI_per_game": 0.063,
+        "Team_PP_xGF60": -0.176
+      }
+    },
+    {
+      "fields": [
+        "PP_TOI_per_game",
+        "Goalie_Weak"
+      ],
+      "n_train": 507,
+      "n_test": 804,
+      "test_logloss_gain_vs_calibrated_book": 0.00206,
+      "test_brier_gain_vs_calibrated_book": 0.00063,
+      "test_dates_helped": 6,
+      "train_coefficients": {
+        "PP_TOI_per_game": 0.023,
+        "Goalie_Weak": 0.098
+      }
+    },
+    {
+      "fields": [
+        "PP_TOI_per_game",
+        "PP_iXA60"
+      ],
+      "n_train": 504,
+      "n_test": 801,
+      "test_logloss_gain_vs_calibrated_book": -0.00039,
+      "test_brier_gain_vs_calibrated_book": -0.00024,
+      "test_dates_helped": 3,
+      "train_coefficients": {
+        "PP_TOI_per_game": -0.046,
+        "PP_iXA60": 0.14
+      }
+    },
+    {
+      "fields": [
+        "PP_TOI_per_game",
+        "Assist_Dagger"
+      ],
+      "n_train": 507,
+      "n_test": 804,
+      "test_logloss_gain_vs_calibrated_book": 7e-05,
+      "test_brier_gain_vs_calibrated_book": -0.00025,
+      "test_dates_helped": 4,
+      "train_coefficients": {
+        "PP_TOI_per_game": -0.131,
+        "Assist_Dagger": 0.234
+      }
+    },
+    {
+      "fields": [
+        "PP_TOI_min",
+        "Conf_Points"
+      ],
+      "n_train": 507,
+      "n_test": 804,
+      "test_logloss_gain_vs_calibrated_book": 0.00355,
+      "test_brier_gain_vs_calibrated_book": 0.00068,
+      "test_dates_helped": 6,
+      "train_coefficients": {
+        "PP_TOI_min": 0.077,
+        "Conf_Points": 0.056
+      }
+    },
+    {
+      "fields": [
+        "PP_TOI_min",
+        "Opp_PK_xGA60",
+        "Goalie_Weak"
+      ],
+      "n_train": 507,
+      "n_test": 804,
+      "test_logloss_gain_vs_calibrated_book": -0.04649,
+      "test_brier_gain_vs_calibrated_book": -0.00688,
+      "test_dates_helped": 5,
+      "train_coefficients": {
+        "PP_TOI_min": 0.116,
+        "Opp_PK_xGA60": 0.204,
+        "Goalie_Weak": 0.065
+      }
+    },
+    {
+      "fields": [
+        "PP_TOI_min",
+        "Assist_Dagger",
+        "Conf_Points"
+      ],
+      "n_train": 507,
+      "n_test": 804,
+      "test_logloss_gain_vs_calibrated_book": 0.00394,
+      "test_brier_gain_vs_calibrated_book": 0.00066,
+      "test_dates_helped": 6,
+      "train_coefficients": {
+        "PP_TOI_min": 0.041,
+        "Assist_Dagger": 0.094,
+        "Conf_Points": 0.032
+      }
+    }
+  ],
+  "method": "Each field is tested alone as an adjustment to book implied probability; a few domain combinations are also inspected. Early dates fit an intercept and regularized slopes; later dates are held out. A positive test log-loss gain means it improved probability estimates beyond recalibrating the book alone. Fields are correlated and many were screened. The later dates were used to inspect and select ideas, so they are no longer a blind validation sample. Player props on the same game/team are correlated. No live model changes."
+}
