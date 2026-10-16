@@ -6,6 +6,13 @@ Columns inventoried: **427**. This is a saved-snapshot arithmetic and completene
 
 No tested cross-field invariant failed.
 
+## Coverage
+
+- 82 skater rows; 47 have a dated game log.
+- 67 fields are empty on this slate. These include unquoted alternate lines, unavailable feed stats, and grading placeholders; inspect their individual rows below.
+- A passed arithmetic check confirms internal consistency only. The audit cannot prove that a captured quote, injury report, or goalie status is still current.
+
+
 ## Code and label defects found during this audit
 
 - **Fixed for the next run:** 47 of 47 logged players had fewer than 10 completed games. The old L10/L20/L40 per-game rates divided by the window label instead of the observed number of games. The next tracker saves actual game counts.

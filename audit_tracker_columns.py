@@ -196,6 +196,11 @@ def main() -> None:
         lines.extend(f"- **{f['severity']}**: {f['check']} — {f['rows']} rows ({', '.join(f['fields'])})" for f in findings)
     else:
         lines.append("No tested cross-field invariant failed.")
+    empty_fields = inventory.loc[inventory.status.eq("empty"), "field"].tolist()
+    lines += ["", "## Coverage", "",
+              f"- {len(snapshot)} skater rows; {int(snapshot.Form_Log.notna().sum()) if 'Form_Log' in snapshot else 0} have a dated game log.",
+              f"- {len(empty_fields)} fields are empty on this slate. These include unquoted alternate lines, unavailable feed stats, and grading placeholders; inspect their individual rows below.",
+              "- A passed arithmetic check confirms internal consistency only. The audit cannot prove that a captured quote, injury report, or goalie status is still current.", ""]
     log_rows = snapshot[snapshot.Form_Log.notna()].copy() if "Form_Log" in snapshot else pd.DataFrame()
     partial = 0
     if not log_rows.empty:
