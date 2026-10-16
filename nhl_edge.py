@@ -1702,7 +1702,7 @@ def normalize_skaters_pp(df: pd.DataFrame, debug: bool = False) -> pd.DataFrame:
 
     Output columns (joined on playerId+Team):
       - PP_TOI_min, PP_TOI_per_game
-      - PP_iXG60, PP_iXA60, PP_iP60 (derived)
+      - PP_iXG60, PP_OnIce_xGF60, PP_iXA60, PP_iP60 (derived)
       - PP_Role (2=PP1, 1=PP2, 0=none) computed by team PP_TOI rank
     """
     out = df.copy()
@@ -1743,16 +1743,23 @@ def normalize_skaters_pp(df: pd.DataFrame, debug: bool = False) -> pd.DataFrame:
 
     # iXG / iXA on PP if available
     col_ixg  = find_col(out, ["I_F_xGoals", "i_f_xgoals", "ixGoals", "ixg", "xGoals"])
+    col_onice_xgf = find_col(out, ["OnIce_F_xGoals"])
     col_a1   = find_col(out, ["I_F_primaryAssists", "i_f_primaryassists", "primaryassists", "primaryAssists"])
     col_a2   = find_col(out, ["I_F_secondaryAssists", "i_f_secondaryassists", "secondaryassists", "secondaryAssists"])
 
     ixg = pd.to_numeric(out[col_ixg], errors="coerce") if col_ixg else pd.Series(np.nan, index=out.index)
+    onice_xgf = pd.to_numeric(out[col_onice_xgf], errors="coerce") if col_onice_xgf else pd.Series(np.nan, index=out.index)
     a1  = pd.to_numeric(out[col_a1], errors="coerce") if col_a1 else pd.Series(np.nan, index=out.index)
     a2  = pd.to_numeric(out[col_a2], errors="coerce") if col_a2 else pd.Series(np.nan, index=out.index)
 
     # Per 60 using TOI minutes
     denom = (toi_min / 60.0).replace(0, np.nan)
     out["PP_iXG60"] = (ixg / denom).replace([np.inf, -np.inf], np.nan)
+    # Expected goals created by the whole unit while this player is on ice.
+    # This is a chance-opportunity metric, not an individual expected assist.
+    out["PP_OnIce_xGF60"] = (onice_xgf / denom).replace([np.inf, -np.inf], np.nan)
+    # Historical PP_iXA60 is weighted *credited* assists, despite its name.
+    # Keep its calculation stable because frozen Assists moves use this field.
     out["PP_iXA60"] = (((a1.fillna(0) + 0.75*a2.fillna(0))) / denom).replace([np.inf, -np.inf], np.nan)
     out["PP_iP60"]  = (out["PP_iXG60"].fillna(0) + 0.85*out["PP_iXA60"].fillna(0)).replace([np.inf, -np.inf], np.nan)
 
@@ -1771,7 +1778,7 @@ def normalize_skaters_pp(df: pd.DataFrame, debug: bool = False) -> pd.DataFrame:
 
     out["PP_Role"] = role
 
-    keep = out[["playerId", "Team", "PP_TOI_min", "PP_TOI_per_game", "PP_iXG60", "PP_iXA60", "PP_iP60", "PP_Role"]].copy()
+    keep = out[["playerId", "Team", "PP_TOI_min", "PP_TOI_per_game", "PP_iXG60", "PP_OnIce_xGF60", "PP_iXA60", "PP_iP60", "PP_Role"]].copy()
 
     if debug:
         print("\n[DEBUG] normalize_skaters_pp: ok", keep.head(8).to_dict(orient="records"))
@@ -3518,7 +3525,7 @@ def build_tracker(today_local: date, debug: bool = False, api_key: str | None = 
     except Exception as e:
         if debug:
             print(f"WARNING: PP skaters unavailable; continuing neutral. ({type(e).__name__}: {e})")
-        for c in ["PP_TOI_min", "PP_TOI_per_game", "PP_iXG60", "PP_iXA60", "PP_iP60", "PP_Role"]:
+        for c in ["PP_TOI_min", "PP_TOI_per_game", "PP_iXG60", "PP_OnIce_xGF60", "PP_iXA60", "PP_iP60", "PP_Role"]:
             sk[c] = np.nan
 
     # --- Restore PP_Tier from PP_Role (legacy behavior) ---
@@ -4742,6 +4749,7 @@ def build_tracker(today_local: date, debug: bool = False, api_key: str | None = 
         "PP_TOI_Pct": sk.get("PP_TOI_Pct"),
         "PP_Points60": sk.get("PP_Points60"),
         "PP_iXG60": sk.get("PP_iXG60"),
+        "PP_OnIce_xGF60": sk.get("PP_OnIce_xGF60"),
         "PP_iXA60": sk.get("PP_iXA60"),
         "Team_PP_xGF60": sk.get("Team_PP_xGF60"),
         "Opp_PK_xGA60": sk.get("Opp_PK_xGA60"),
