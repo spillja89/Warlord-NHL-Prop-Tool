@@ -668,7 +668,7 @@ _ROLE_INFO = {
 # One description is reused by the prop headers, move gate, and Ledger.
 # Fired counts always come from warlord_moves_2026, never from this copy.
 _CLASS_RULES = {
-    "GOALS": {"role": "Carry", "market": "Goal", "entry": "Matrix_Goal Green · Goal 0.5 · Conf_Points ≥ 84", "note": "Goal_mu and opponent weaknesses unlock named attacks."},
+    "GOALS": {"role": "Carry", "market": "Goal", "entry": "Matrix_Goal Green · Goal 0.5 · Conf_Goal ≥ 84", "note": "The frozen prior-season move kit also requires Conf_Points ≥ 84 before Goal_mu and opponent weaknesses can unlock named attacks."},
     "ASSISTS": {"role": "Support", "market": "Assists", "entry": "Matrix_Assists Green · Assists 0.5 · Conf_Assists ≥ 83 for named attacks", "note": "Green 0.5 alone fires Staff stance; 83 unlocks named attacks."},
     "POINTS": {"role": "Tank", "market": "Points", "entry": "Matrix_Points Green · Points 0.5 with Conf_Points ≥ 80, or Points 1.5 with Conf_Points ≥ 75", "note": "The 0.5 and 1.5 lines have separate move trees."},
     "SOG": {"role": "Jungle", "market": "SOG", "entry": "Matrix_SOG Green · exact SOG 2.5 or 3.5 · Conf_SOG ≥ 75", "note": "The 2.5 and 3.5 lines have separate move trees."},
@@ -759,8 +759,9 @@ def _priced_pool_table(cards: list[dict]) -> pd.DataFrame:
     for card in cards:
         qualified = [move for move in card["moves"] if int(move["picks"]) > 0
                      and int(move["wins"]) / int(move["picks"]) >= 0.5]
-        move = max(qualified, key=lambda item: (int(item["wins"]) / int(item["picks"]),
-                                                 int(item["picks"]))) if qualified else None
+        move = max(qualified or card["moves"], key=lambda item: (
+            int(item["wins"]) / int(item["picks"]) if int(item["picks"]) else -1,
+            int(item["picks"]))) if card["moves"] else None
         featured = bool(card.get("baseline_rule") and qualified)
         rows.append({
             "Player": card["player"], "Team": card["team"], "Game": card["game"],
@@ -770,7 +771,7 @@ def _priced_pool_table(cards: list[dict]) -> pd.DataFrame:
             "Book break-even %": round(card["book_prob"] * 100, 1) if card.get("book_prob") is not None else None,
             "Matrix": card.get("matrix") or "Unknown",
             "Featured": "Yes" if featured else "",
-            "Move ≥50%": move["name"] if move else "",
+            "Fired move": move["name"] if move else "",
             "Move record": f'{move["wins"]}/{move["picks"]}' if move else "",
             "Move %": round(100 * int(move["wins"]) / int(move["picks"]), 1) if move else None,
             "Later record": f'{move["later_wins"]}/{move["later_picks"]}' if move and int(move["later_picks"]) else "",
@@ -778,12 +779,13 @@ def _priced_pool_table(cards: list[dict]) -> pd.DataFrame:
             if move and int(move["later_picks"]) else None,
             "Reason": "Active roster · odds only; model history missing" if card.get("roster_watch") else "Featured" if featured else (
                 "Below current baseline" if not card.get("baseline_rule") else
-                "No 50%+ tested move"),
+                (card.get("move_block_reason") or "No frozen move fired") if not card["moves"] else
+                "Fired move below 50%"),
         })
     return pd.DataFrame(rows, columns=("Player", "Team", "Game", "Start (CT)", "Line", "Over odds",
                                         "Book", "Book break-even %",
                                         "Model conf", "Matrix", "Featured",
-                                        "Move ≥50%", "Move record", "Move %",
+                                        "Fired move", "Move record", "Move %",
                                         "Later record", "Later %", "Reason"))
 
 
@@ -806,6 +808,15 @@ def _render_class_shortlist(frame: pd.DataFrame, role: str,
     else:
         st.caption("No player clears both the current baseline and a tested move at 50%+ on this slate.")
     st.caption("Character cards require the current Green baseline and a historical move at 50%+. Book break-even % comes from the posted odds; move percentages describe past results for that rule, not a forecast. Model confidence is a separate ranking score.")
+    watch = [card for card in priced[role] if card.get("baseline_rule") and not any(
+        int(move["picks"]) > 0 and int(move["wins"]) / int(move["picks"]) >= 0.5
+        for move in card["moves"])]
+    if watch:
+        with st.expander(f"Green baseline, no 50%+ move ({len(watch)})"):
+            watch_cols = ["Player", "Team", "Game", "Line", "Over odds", "Book",
+                          "Book break-even %", "Model conf", "Fired move", "Move %", "Reason"]
+            st.dataframe(_priced_pool_table(watch)[watch_cols], hide_index=True,
+                         use_container_width=True)
     with st.expander(f"Every priced {role} player ({total})", expanded=expand_priced):
         st.dataframe(_priced_pool_table(priced[role]), hide_index=True, use_container_width=True)
 
@@ -5876,7 +5887,7 @@ elif page == "Power Play":
             lambda row: f'{int(row["Over odds"]):+d} · {row["Book"]}', axis=1)
         pp_sort_label = ("Ranked by PP context, with boost, PP1, and PP minutes breaking ties" if slate_sort == "Top ranked"
                          else f"Sorted by {slate_sort.lower()}")
-        st.caption(f"{pp_sort_label}. PP context is our team PP and opponent PK matchup score, not a hit probability. Early-season samples are small.")
+        st.caption(f"{pp_sort_label}. PP context is a matchup score, not a hit probability or a tested betting edge. Check PP1 usage, current PP minutes, recent PPP, opponent PK, and the posted price together.")
         team_options = ["All teams"] + sorted(ppp_quotes["Team"].dropna().unique().tolist())
         selected_team = st.selectbox("Team", team_options, key="pp_team")
         pp_view = (ppp_quotes if selected_team == "All teams" else
@@ -5922,7 +5933,7 @@ elif page == "Power Play":
         st.caption(f'Book break-even {selected["Book break-even %"]:.1f}% · '
                    f'{usage_note} · {selected["PP unit"]}')
         with st.expander("How to read these numbers"):
-            st.markdown("- **PP rank** orders priced players by PP context, with boost, PP1, and PP minutes breaking ties.\n- **PP context /100** blends team PP strength with opponent PK weakness. It is a matchup rating, not a predicted hit rate. **Boost** marks the existing PP usage and matchup threshold.\n- **PPP L5** is the player's credited power-play points in completed regular-season games against over 0.5. It is a record, not a forecast.\n- **Book break-even %** is the hit rate required by the posted price; there is no tested PPP model rate to compare it with yet.\n- **PP min/game** is official power-play ice time per completed game. **PP unit** is inferred from recorded ice time, not tonight's confirmed lineup.\n- The player card shows current-season team PP and opponent PK ranks. Both can swing early in the season; detailed stats and the assist cross-check are below.")
+            st.markdown("- **PP rank** orders priced players by PP context, with boost, PP1, and PP minutes breaking ties.\n- **PP context /100** blends team PP strength with opponent PK weakness. It is a matchup rating, not a predicted hit rate. **Boost** is an unvalidated usage and matchup tag.\n- **PPP L5** is the player's credited power-play points in completed regular-season games against over 0.5. It is a record, not a forecast.\n- **Book break-even %** is the hit rate required by the posted price; there is no tested PPP model rate to compare it with yet.\n- **PP min/game** is official power-play ice time per completed game. **PP unit** is inferred from recorded ice time, not tonight's confirmed lineup.\n- The player card shows current-season team PP and opponent PK ranks. Both can swing early in the season; detailed stats and the assist cross-check are below.")
 
     with st.expander("Detailed PP stats and filters"):
         unit_sel = st.multiselect("PP unit", ["PP1", "PP2", "Unconfirmed"],

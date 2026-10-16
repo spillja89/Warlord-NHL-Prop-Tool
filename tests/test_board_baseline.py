@@ -129,10 +129,10 @@ class BoardBaselineTests(unittest.TestCase):
         rows = [
             {"Player": "Goal Scout", "Team": "BOS", "Game": "NYR@BOS",
              "Goal_Line": 0.5, "Goal_Odds_Over": 125, "Matrix_Goal": "Green",
-             "Conf_Points": 84},
+             "Conf_Goal": 84, "Conf_Points": 20},
             {"Player": "Yellow Goal", "Team": "BOS", "Game": "NYR@BOS",
              "Goal_Line": 0.5, "Goal_Odds_Over": 200, "Matrix_Goal": "Yellow",
-             "Conf_Points": 90},
+             "Conf_Goal": 90, "Conf_Points": 90},
             {"Player": "Point Tank", "Team": "CAR", "Game": "FLA@CAR",
              "Points_Line": 0.5, "Points_Odds_Over": -150,
              "Matrix_Points": "Green", "Conf_Points": 80},
@@ -159,6 +159,30 @@ class BoardBaselineTests(unittest.TestCase):
         self.assertEqual(summary.set_index("Prop").loc["Assists", "Baseline"], 1)
         self.assertEqual(summary.set_index("Prop").loc["Shots", "Baseline"], 1)
         self.assertEqual(by_team.set_index(["Prop", "Team"]).loc[("Goals", "BOS"), "Baseline"], 1)
+
+    def test_goal_baseline_uses_goal_confidence_not_points_confidence(self):
+        rows = pd.DataFrame([
+            {"Player": "Goal high", "Team": "WPG", "Goal_Line": 0.5,
+             "Goal_Odds_Over": 130, "Matrix_Goal": "Green",
+             "Conf_Goal": 100, "Conf_Points": 83},
+            {"Player": "Points high", "Team": "MIN", "Goal_Line": 0.5,
+             "Goal_Odds_Over": 130, "Matrix_Goal": "Green",
+             "Conf_Goal": 83, "Conf_Points": 100},
+        ])
+        with patch("warlords_night_board.fired_moves", return_value={
+            "Goal": [], "Assists": [], "Points": [], "SOG": []
+        }):
+            cards = {card["player"]: card for card in rank_priced_slate(rows)["Carry"]}
+            summary, _, audit = baseline_audit(rows)
+        self.assertEqual(cards["Goal high"]["baseline_rule"],
+                         "Green + Goal 0.5 + Conf_Goal ≥ 84")
+        self.assertEqual(cards["Goal high"]["move_block_reason"],
+                         "Frozen Goal move needs Points conf ≥ 84")
+        self.assertIsNone(cards["Points high"]["baseline_rule"])
+        statuses = audit.set_index("Player")["Status"]
+        self.assertEqual(statuses["Goal high"], "Baseline only")
+        self.assertNotIn("Points high", statuses.index)
+        self.assertEqual(summary.set_index("Prop").loc["Goals", "Baseline"], 1)
 
     def test_empty_slate_has_safe_audit(self):
         summary, by_team, roster = baseline_audit(pd.DataFrame())

@@ -90,8 +90,8 @@ def _baseline_rule(row, market, line):
     matrix = str(row.get(f"Matrix_{market}", "")).strip().casefold()
     if matrix not in {"green", "🟢"}:
         return None
-    if market == "Goal" and line == 0.5 and _number(row.get("Conf_Points")) is not None:
-        return "Green + Goal 0.5 + Conf_Points ≥ 84" if _number(row.get("Conf_Points")) >= 84 else None
+    if market == "Goal" and line == 0.5 and _number(row.get("Conf_Goal")) is not None:
+        return "Green + Goal 0.5 + Conf_Goal ≥ 84" if _number(row.get("Conf_Goal")) >= 84 else None
     if market == "Assists" and line == 0.5:
         return "Green + Assists 0.5"
     if market == "Points" and line in (0.5, 1.5):
@@ -191,6 +191,13 @@ def rank_priced_slate(frame: pd.DataFrame) -> dict[str, list[dict]]:
             baseline = None if watch else _baseline_rule(row, market, line)
             confidence = _number(row.get(f"Conf_{market}"))
             matrix = str(_value(row, f"Matrix_{market}") or "Unknown").strip()
+            points_confidence = _number(row.get("Conf_Points"))
+            move_block_reason = (
+                "Frozen Goal move needs Points conf ≥ 84"
+                if market == "Goal" and baseline and not moves
+                and (points_confidence is None or points_confidence < 84)
+                else None
+            )
             candidate = {
                 "player": player, "team": team,
                 "opponent": str(_value(row, "Opp") or "").strip(),
@@ -202,6 +209,7 @@ def rank_priced_slate(frame: pd.DataFrame) -> dict[str, list[dict]]:
                 "model_prob": model_prob, "book_prob": book_prob, "price_gap": price_gap,
                 "confidence": confidence, "matrix": matrix,
                 "baseline_rule": baseline, "baseline_only": bool(baseline and not best),
+                "move_block_reason": move_block_reason,
                 "goalie": str(_value(row, "Opp_Goalie") or ""),
                 "goalie_status": str(_value(row, "Opp_Goalie_Status") or "Unknown"),
                 "move": best,
@@ -254,11 +262,11 @@ def featured_warlords(boards: dict[str, list[dict]]) -> dict[str, list[dict]]:
 def baseline_audit(frame: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     """Show each priced baseline and where the other posted lines drop out.
 
-    These are the frozen class entry rules. A baseline can qualify without a
-    stronger named move, so this audit does not change the move kit or grading.
+    These are the current class entry rules. A baseline can qualify without a
+    stronger named move, so this audit does not change the frozen move kit or grading.
     """
     specs = (
-        ("Goals", "Goal", (0.5,), "Matrix_Goal", "Conf_Points"),
+        ("Goals", "Goal", (0.5,), "Matrix_Goal", "Conf_Goal"),
         ("Assists", "Assists", (0.5,), "Matrix_Assists", None),
         ("Points", "Points", (0.5, 1.5), "Matrix_Points", "Conf_Points"),
         ("Shots", "SOG", (2.5, 3.5), "Matrix_SOG", "Conf_SOG"),
