@@ -93,23 +93,6 @@ def format_ppp_book_prices(raw: str) -> str:
     return " · ".join(parts)
 
 
-def main_move_crosscheck(card: dict | None, market: str) -> tuple[bool, str]:
-    """Describe a priced main-board move without treating its past rate as PPP odds."""
-    if card is None:
-        return False, f"No priced {market.lower()} card"
-    if not card.get("baseline_rule"):
-        return False, f"{market} baseline not met"
-    qualified = []
-    for move in card.get("moves") or []:
-        wins, picks = _finite(move.get("wins")), _finite(move.get("picks"))
-        if picks and wins is not None and wins / picks >= 0.5:
-            qualified.append((wins / picks, picks, move))
-    if not qualified:
-        return False, f"{market} baseline only"
-    rate, picks, move = max(qualified, key=lambda value: (value[0], value[1]))
-    return True, f'{market}: {move["name"]} · {int(rate * 100)}% ({int(move["wins"])}/{int(picks)})'
-
-
 def _context_label(row: dict) -> str:
     if _is_true(row.get("Roster_Watch")) or str(row.get("Model_Stats_Season") or "").casefold() == "unavailable":
         return "Odds only · history missing"

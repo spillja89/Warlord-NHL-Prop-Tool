@@ -25,8 +25,7 @@ from season_sources import (fetch_moneypuck_skaters, fetch_moneypuck_teams,
                             league_season_rows, power_play_team_ranks,
                             slate_team_matchup_rows, team_season_rows)
 from ledger_store import append_bet as _append_cloud_bet, recent_bets as _recent_cloud_bets
-from power_play_quotes import (fetch_current_pp_usage, format_ppp_book_prices,
-                               main_move_crosscheck, priced_ppp_quotes)
+from power_play_quotes import fetch_current_pp_usage, format_ppp_book_prices, priced_ppp_quotes
 from player_availability import unavailable_mask
 
 
@@ -5736,8 +5735,7 @@ elif page == "Power Play":
             _render_season_skater_form(df_f, pp_slate_day)
     pp_health = []
     for label, column in (("Player PP time/game", "PP_TOI_per_game"),
-                          ("PP on-ice xGF/60", "PP_OnIce_xGF60"),
-                          ("Weighted credited PP assists/60", "PP_iXA60"),
+                          ("Player PP creation", "PP_iXA60"),
                           ("Team PP xGF/60", "Team_PP_xGF60"),
                           ("Opponent PK xGA/60", "Opp_PK_xGA60"),
                           ("PP drought", "Drought_PPP"),
@@ -5849,26 +5847,26 @@ elif page == "Power Play":
         usage_values = ppp_quotes.apply(_current_pp_time, axis=1)
         ppp_quotes["Current PP min/game"] = usage_values.apply(lambda usage: usage[0])
         ppp_quotes["Current PP games"] = usage_values.apply(lambda usage: usage[1])
-        main_cards = rank_priced_slate(df_f)
         assist_cards = {
             (card["team"].casefold(), card["player"].casefold()): card
-            for card in main_cards.get("Support", [])
-        }
-        points_cards = {
-            (card["team"].casefold(), card["player"].casefold()): card
-            for card in main_cards.get("Tank", [])
+            for card in rank_priced_slate(df_f).get("Support", [])
         }
 
-        def _main_crosscheck(row):
-            key = (str(row["Team"]).casefold(), str(row["Player"]).casefold())
-            assist_ok, assist_text = main_move_crosscheck(assist_cards.get(key), "Assists")
-            points_ok, points_text = main_move_crosscheck(points_cards.get(key), "Points")
-            marker = "A + P" if assist_ok and points_ok else "A" if assist_ok else "P" if points_ok else "—"
-            return pd.Series({"Main move overlap": marker,
-                              "Assist move detail": assist_text,
-                              "Points move detail": points_text})
+        def _assist_crosscheck(row):
+            card = assist_cards.get((str(row["Team"]).casefold(), str(row["Player"]).casefold()))
+            if card is None:
+                return "No priced assist card"
+            if not card.get("baseline_rule"):
+                return "No assist baseline"
+            moves = [move for move in card.get("moves", [])
+                     if int(move.get("picks", 0)) > 0
+                     and int(move.get("wins", 0)) / int(move["picks"]) >= 0.5]
+            if not moves:
+                return "Assist Green only"
+            move = max(moves, key=lambda item: (int(item["wins"]) / int(item["picks"]), int(item["picks"])))
+            return f'{move["name"]} · {move["wins"]}/{move["picks"]} assists'
 
-        ppp_quotes = pd.concat([ppp_quotes, ppp_quotes.apply(_main_crosscheck, axis=1)], axis=1)
+        ppp_quotes["Assists cross-check"] = ppp_quotes.apply(_assist_crosscheck, axis=1)
         pp_boost_by_player = {
             (str(record.get("Team") or "").casefold(),
              str(record.get("Player") or "").casefold()):
@@ -5899,13 +5897,12 @@ elif page == "Power Play":
                    ppp_quotes.loc[ppp_quotes["Team"].eq(selected_team)]).copy()
         display_quotes = pp_view[["PP rank", "Player", "Game", "Best feed price",
                                   "PP matchup /100", "PP boost", "Current PPP L5",
-                                  "Current PP min/game", "PP unit", "Main move overlap"]].rename(columns={
+                                  "Current PP min/game", "PP unit"]].rename(columns={
                                       "Best feed price": "Best price",
                                       "Current PPP L5": "PPP L5",
                                       "Current PP min/game": "PP min/game",
                                       "PP matchup /100": "PP context /100",
                                       "PP boost": "Boost",
-                                      "Main move overlap": "A/P moves",
                                   })
         display_quotes["Boost"] = display_quotes["Boost"].map({True: "ON", False: "—"})
         display_quotes["PP min/game"] = pd.to_numeric(
@@ -5915,24 +5912,10 @@ elif page == "Power Play":
                           for row in pp_view.itertuples(index=False)]
         selected_player = st.selectbox("Open player power play log", player_options,
                                        key=f"pp_player_log_{selected_team}")
-        selected = pp_view.iloc[player_options.index(selected_player)].copy()
+        selected = pp_view.iloc[player_options.index(selected_player)]
         form_log, selected_form = current_form.get(
             (str(selected["Team"]).casefold(), str(selected["Player"]).casefold()),
             (None, None))
-        if not selected_form or selected_form.get("empty"):
-            selected_id = player_ids.get((str(selected["Team"]).casefold(),
-                                          str(selected["Player"]).casefold()))
-            if selected_id is not None:
-                try:
-                    season_start = int(season[:4])
-                    official_log = _cached_player_log(
-                        selected_id, season_start * 10000 + season_start + 1)
-                    form_log = compact_regular_log(official_log, pp_slate_day)
-                    selected_form = summarize_form(form_log, "PPP", 0.5)
-                    selected["Current PPP L10"] = _ppp_record(selected_form, "l10")
-                    selected["Current PPP L5"] = _ppp_record(selected_form, "l5")
-                except Exception:
-                    st.caption("This player's official PP game log is temporarily unavailable.")
         st.html(render_power_play_form({
             "player": selected["Player"], "game": selected["Game"],
             "odds": selected["Over odds"], "book": selected["Book"],
@@ -5955,17 +5938,8 @@ elif page == "Power Play":
         observed_prices = format_ppp_book_prices(selected.get("Book prices"))
         if observed_prices:
             st.caption(f'Captured over 0.5 book prices: {observed_prices}')
-        st.caption(f'Main-board cross-check · {selected["Assist move detail"]} · {selected["Points move detail"]}. '
-                   'Those move records grade assists or points, not PPP.')
-        onice_pp_xgf = pd.to_numeric(
-            df_f.loc[(df_f["Team"].eq(selected["Team"])) &
-                     (df_f["Player"].eq(selected["Player"])), "PP_OnIce_xGF60"],
-            errors="coerce") if "PP_OnIce_xGF60" in df_f.columns else pd.Series(dtype=float)
-        if not onice_pp_xgf.dropna().empty:
-            st.caption(f'PP unit chances while on ice: {onice_pp_xgf.dropna().iloc[0]:.2f} xGF/60 '
-                       '(team chances during this player’s PP shifts, not individual expected assists).')
         with st.expander("How to read these numbers"):
-            st.markdown("- **PP rank** orders priced players by PP context, with boost, PP1, and PP minutes breaking ties.\n- **PP context /100** blends team PP strength with opponent PK weakness. It is a matchup rating, not a predicted hit rate. **Boost** is an unvalidated usage and matchup tag.\n- **PPP L5** counts games with a credited power-play point in the current regular season; it is a record, not a forecast.\n- **A/P moves** shows whether the player also meets a 50%+ historical assist or points move on today's priced line. Those moves were tested for assists or points, not PPP.\n- **PP on-ice xGF/60** measures unit chances during the player's PP shifts. **PP_iXA60** is weighted credited assists per 60, despite its old field name; it is not expected assists.\n- **Book break-even %** is the hit rate required by the posted price; there is no tested PPP model rate to compare it with yet.\n- **PP min/game** is official power-play ice time per completed game. **PP unit** is inferred from recorded ice time, not tonight's confirmed lineup.\n- The player card shows current-season team PP and opponent PK ranks. Both can swing early in the season.")
+            st.markdown("- **PP rank** orders priced players by PP context, with boost, PP1, and PP minutes breaking ties.\n- **PP context /100** blends team PP strength with opponent PK weakness. It is a matchup rating, not a predicted hit rate. **Boost** is an unvalidated usage and matchup tag.\n- **PPP L5** is the player's credited power-play points in completed regular-season games against over 0.5. It is a record, not a forecast.\n- **Book break-even %** is the hit rate required by the posted price; there is no tested PPP model rate to compare it with yet.\n- **PP min/game** is official power-play ice time per completed game. **PP unit** is inferred from recorded ice time, not tonight's confirmed lineup.\n- The player card shows current-season team PP and opponent PK ranks. Both can swing early in the season; detailed stats and the assist cross-check are below.")
 
     with st.expander("Detailed PP stats and filters"):
         unit_sel = st.multiselect("PP unit", ["PP1", "PP2", "Unconfirmed"],
@@ -6000,16 +5974,10 @@ elif page == "Power Play":
         pp_cols = [
             "Game", "Player", "Pos", "Team", "Opp", "Tier_Tag", "PP_Unit",
             "PP_TOI_PG", "PP_TeamShare_pct", "PP_Tier", "PP_Path", "PP_BOOST",
-            "PP_TOI_Pct", "PP_Points60", "PP_iXG60", "PP_OnIce_xGF60", "PP_iXA60",
+            "PP_TOI_Pct", "PP_Points60", "PP_iXG60", "PP_iXA60",
             "Team_PP_xGF60", "Opp_PK_xGA60", "PP_Matchup", "PPP10_total", "Drought_PPP",
         ]
-        detailed = df_pp[[column for column in pp_cols if column in df_pp.columns]].rename(
-            columns={"PP_iXA60": "PP weighted credited assists/60",
-                     "PP_OnIce_xGF60": "PP on-ice xGF/60",
-                     "PP_iXG60": "Player PP xG/60",
-                     "PP_Points60": "PP involvement proxy/60"})
-        show_table(detailed, detailed.columns.tolist(),
-                   "Power Play (5v4) — usage, chances, matchup, PPP form")
+        show_table(df_pp, pp_cols, "Power Play (5v4) — Usage, creation, matchup, PPP drought")
 
 
 elif page == "🧪 Dagger Lab":

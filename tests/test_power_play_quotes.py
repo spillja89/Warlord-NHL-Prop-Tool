@@ -2,21 +2,10 @@ import unittest
 
 import pandas as pd
 
-from power_play_quotes import main_move_crosscheck, priced_ppp_quotes, summarize_pp_usage
+from power_play_quotes import priced_ppp_quotes, summarize_pp_usage
 
 
 class PowerPlayQuotesTests(unittest.TestCase):
-    def test_crosscheck_keeps_main_move_rate_separate_from_ppp(self):
-        card = {"baseline_rule": "Green", "moves": [
-            {"name": "Staff", "wins": 49, "picks": 100},
-            {"name": "Runic", "wins": 53, "picks": 90},
-        ]}
-        qualified, label = main_move_crosscheck(card, "Assists")
-        self.assertTrue(qualified)
-        self.assertEqual(label, "Assists: Runic · 58% (53/90)")
-        self.assertEqual(main_move_crosscheck(None, "Points"),
-                         (False, "No priced points card"))
-
     def test_current_pp_usage_uses_only_games_before_the_slate(self):
         rows = [
             {"playerId": 8481617, "gameDate": "2026-09-29", "ppTimeOnIce": 290},
