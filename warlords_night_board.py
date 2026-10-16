@@ -510,7 +510,12 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
                 fired_late_picks = int(fired_move["later_picks"])
                 fired_pct = 100 * fired_wins / fired_picks if fired_picks else 0
                 fired_late_pct = 100 * fired_late_wins / fired_late_picks if fired_late_picks else 0
-                fired_rule = fired_move.get("rule", fired_move.get("condition", ""))
+                fired_rule = str(fired_move.get("rule", fired_move.get("condition", "")))
+                # Historical move keys stay frozen for comparable records.
+                # Show their actual source meaning rather than implying xA.
+                fired_rule = (fired_rule.replace("PP_iXA60", "weighted PP assists/60 (actual)")
+                                         .replace("PP_Points60", "PP involvement proxy/60")
+                                         .replace("iXA%", "observed assist rank %"))
                 fired_label = ("TRACK" if fired_move.get("track") else
                                "LAB" if fired_move.get("experimental") else fired_move["kind"])
                 move_rows.append(f'''<div class="wn-move-entry">

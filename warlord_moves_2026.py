@@ -11,7 +11,7 @@ import math
 from typing import Any, Mapping
 
 
-VERSION = "2026-09-24-frozen-v2"
+VERSION = "2026-10-16-current-season-audit-v3"
 
 
 def _number(row: Mapping[str, Any], key: str) -> float | None:
@@ -130,7 +130,9 @@ def sog_moves(row: Mapping[str, Any]) -> list[dict[str, Any]]:
     if line not in (2.5, 3.5) or not _green(row, "SOG") or not _at_least(_number(row, "Conf_SOG"), 75):
         return []
     moves: list[dict[str, Any]] = []
-    share = _number(row, "Player_5v5_SOG_Share")
+    # The archived Volley record used a slate-level SOG proxy, not the full
+    # team's actual 5v5 SOG share. Preserve that input for comparability.
+    share = _number(row, "Player_SOG_Share_Proxy")
 
     if line == 2.5:
         moves.append(_move("Jungle Stance", "STANCE", "sog_basic_swipe.svg",
@@ -149,7 +151,7 @@ def sog_moves(row: Mapping[str, Any]) -> list[dict[str, Any]]:
                                "L20_A >= 9 + L40_A <= 29", 50, 75, 36, 53))
         if volley:
             moves.append(_move("Berserker Volley", "SUPPORT", "sog_berserker_volley.svg",
-                               "L10_Rate_SOG >= 2.9 + SOG share >= 18.8", 34, 50, 21, 33,
+                               "L10 SOG/game >= 2.9 + slate SOG share proxy >= 18.8", 34, 50, 21, 33,
                                track=True))
         if rage and volley:
             moves.append(_move("Assassin’s Overdrive", "CRIT", "sog_assassins_overdrive.svg",

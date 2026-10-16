@@ -1303,10 +1303,10 @@ def _render_assists_combat_hud(r) -> None:
     stars_key = None
     if staff_on and (not math.isnan(ixa_pct)):
         if (conf >= 90) and (ixa_pct >= 95):
-            stars_tier = "Tier B: Conf ≥ 90 + iXA% ≥ 95"
+            stars_tier = "Tier B: Conf ≥ 90 + observed assist rank ≥ 95"
             stars_key = "stars_aligned_b"
         elif (conf >= 88) and (ixa_pct >= 96):
-            stars_tier = "Tier A: Conf ≥ 88 + iXA% ≥ 96"
+            stars_tier = "Tier A: Conf ≥ 88 + observed assist rank ≥ 96"
             stars_key = "stars_aligned_a"
 
     arcane_transcendence = (
@@ -1426,7 +1426,7 @@ def _render_assists_combat_hud(r) -> None:
         _move_line("staff.svg", "Staff (Base Shell)", "staff", "Matrix Green + Line 0.5 + Conf ≥ 80")
 
     if odin_on:
-        _move_line("odins_arcane_orb.svg", "Odin (Role Engine)", "odin", "iXA% ≥ 95")
+        _move_line("odins_arcane_orb.svg", "Odin (Role Engine)", "odin", "observed assist rank ≥ 95")
 
     if arcane_key:
         tier_map = {
@@ -1439,7 +1439,7 @@ def _render_assists_combat_hud(r) -> None:
                    tier_map.get(arcane_key, "Arcane Channel"), arcane_key)
 
     if runic_key:
-        tier_map = {"runic": "Runic Infusion (PP_iXA60 ≥ 3.5)", "runic_2": "Runic Infusion II (PP_iXA60 ≥ 4.0)"}
+        tier_map = {"runic": "Runic Infusion (weighted PP assists/60 ≥ 3.5)", "runic_2": "Runic Infusion II (weighted PP assists/60 ≥ 4.0)"}
         _move_line("runic_infusion.svg", tier_map.get(runic_key, "Runic Infusion"), runic_key)
 
     if silent_key:
@@ -1460,10 +1460,10 @@ def _render_assists_combat_hud(r) -> None:
         _move_line("stars.svg", "Arcane Alignment", "arcane_alignment", "μ ≥ 1.30 + Team_GF_L5 ≥ 20")
 
     if rune_orchestration_on:
-        _move_line("runic_infusion.svg", "Rune Orchestration", "rune_orchestration", "PP_iXA60 ≥ 4.0 + μ ≥ 1.30")
+        _move_line("runic_infusion.svg", "Rune Orchestration", "rune_orchestration", "weighted PP assists/60 ≥ 4.0 + μ ≥ 1.30")
 
     if magic_on:
-        _move_line("magic_mans_transcendence.svg", "Magic Man (Elite Creator Core)", "magic", "iXA% ≥ 99")
+        _move_line("magic_mans_transcendence.svg", "Magic Man (Elite Creator Core)", "magic", "observed assist rank ≥ 99")
 
     if stars_tier:
         _move_line("stars.svg", "Stars Aligned", stars_key, stars_tier)
@@ -1478,7 +1478,7 @@ def _render_assists_combat_hud(r) -> None:
 
     if supernova_overdrive:
         _move_line("supernova.svg", "Supernova Overdrive", "supernova_overdrive",
-                   "Conf ≥ 80 + iXA% ≥ 95 + PP_iXA60 ≥ 3.7 + Team_GF_L5 ≥ 20")
+                   "Conf ≥ 80 + observed assist rank ≥ 95 + weighted PP assists/60 ≥ 3.7 + Team_GF_L5 ≥ 20")
 
     
     # Rank label (best active proc)
@@ -2050,14 +2050,16 @@ def build_ladder_alerts(
             # If we had to fill neutral (50) league-wide, don't spam the UI with it.
             if sv is not None and abs(float(sv) - 50.0) > 0.01:
                 parts.append(f"SlotSA60 {sv:.2f}")
-        # Prefer true 5v5 share when available; otherwise fall back to our proxy share.
+        # Only the full-team 5v5 feed share may be called a 5v5 share.
         sh = None
         if "Player_5v5_SOG_Share" in df0.columns:
             sh = _num(r.get("Player_5v5_SOG_Share"))
-        if sh is None and "Player_SOG_Share_Proxy" in df0.columns:
-            sh = _num(r.get("Player_SOG_Share_Proxy"))
         if sh is not None:
             parts.append(f"5v5Share {sh:.1f}%")
+        elif "Player_SOG_Share_Proxy" in df0.columns:
+            proxy_share = _num(r.get("Player_SOG_Share_Proxy"))
+            if proxy_share is not None:
+                parts.append(f"Slate SOG proxy {proxy_share:.1f}%")
 
         # Market-specific
         if M == "SOG":
@@ -2174,18 +2176,8 @@ def build_ladder_alerts(
                 "SlotSA60": (None if _num(r.get("opp_5v5_SlotSA60")) is None or abs(float(_num(r.get("opp_5v5_SlotSA60"))) - 50.0) <= 0.01 else round(float(_num(r.get("opp_5v5_SlotSA60"))), 2)),
                 "5v5Share%": (
                     None
-                    if (
-                        _num(r.get("Player_5v5_SOG_Share")) is None
-                        and _num(r.get("Player_SOG_Share_Proxy")) is None
-                    )
-                    else round(
-                        float(
-                            _num(r.get("Player_5v5_SOG_Share"))
-                            if _num(r.get("Player_5v5_SOG_Share")) is not None
-                            else _num(r.get("Player_SOG_Share_Proxy"))
-                        ),
-                        1,
-                    )
+                    if _num(r.get("Player_5v5_SOG_Share")) is None
+                    else round(float(_num(r.get("Player_5v5_SOG_Share"))), 1)
                 ),
                 "OppSOG_L10": (None if _num(r.get("Opp_SOG_Against_L10")) is None else round(float(_num(r.get("Opp_SOG_Against_L10"))), 2)),
                 "OppSOG_L50": (None if _num(r.get("Opp_SOG_Against_L50")) is None else round(float(_num(r.get("Opp_SOG_Against_L50"))), 2)),
@@ -2454,9 +2446,19 @@ COLUMN_WIDTHS = {
 # Column tooltips (market engines & key signals)
 COLUMN_HELP = {
     # Assists
-    "PP_PROOF": "PP Proof = PP usage + PP iXA creation + matchup aligned. Required for Assists engine (EV+Green+0.5).",
+    "PP_PROOF": "PP Proof combines PP usage, observed assist production, and matchup. It is a heuristic, not an expected-assists model.",
+    "iXA%": "Legacy name: percentile of observed assists (primary + secondary) among available skaters. The current MoneyPuck feed has no expected-assists field; totals also depend on games played.",
+    "PP_iXA60": "Legacy name: (observed PP primary assists + 0.75 × secondary assists) per 60 PP minutes. Not expected assists. Rates are unstable with little PP time.",
+    "PP_Points60": "Legacy involvement proxy: PP expected goals/60 + 0.85 × weighted observed PP assists/60. Not actual PP points or a predicted hit rate.",
+    "PP_ActualPoints60": "Observed PP points per 60 PP minutes from MoneyPuck. Early-season samples are volatile.",
+    "PP_TOI_min": "Season-total PP minutes used for per-60 rates. Under 10 minutes is a very small sample.",
+    "PP_Role": "Estimated PP unit from season PP ice-time rank (top five / next five); not a confirmed game-night lineup.",
+    "Exp_A_10": "Heuristic assist pace for 10 games: observed season assists per game with talent multipliers. Not expected assists from shot quality.",
+    "Exp_A_10_Gap_Basis": "The season assist-pace baseline actually used to compute the A pace gap, before the final market-tier bonus.",
+    "Reg_Gap_A10": "Assist baseline minus observed assists, both scaled to 10 games. Unavailable below five recorded games. This does not predict a rebound.",
+    "PP_Matchup": "0–100 context blend of team PP expected offense and opponent PK expected goals allowed. Not a PPP hit probability.",
     # Points
-    "Reg_Gap_P10": "Points engine: Reg_Gap_P10 ≥ 2.5 is the verified regression cliff (EV+Green+0.5).",
+    "Reg_Gap_P10": "Heuristic points gap comparing two 10-game paces. Unavailable below five recorded games; it is not a calibrated rebound signal.",
     # SOG
     "Reg_Gap_S10": "SOG engine sweet spot: Reg_Gap_S10 in [2.6, 4.3] (EV+Green+Line≤2.5).",
     # Points (UI)
@@ -2464,29 +2466,39 @@ COLUMN_HELP = {
     "REG_PRESSURE": "Visual pressure meter from Reg_Gap_P10 (text bar). Pops when >=2.5.",
     "REG_DROUGHT": "🎰 Jackpot badge when Points engine is READY and Drought_P ≥ 2 (amplifier; not a gate).",
 }
+COLUMN_LABELS = {
+    "iXA%": "Observed assist rank %",
+    "PP_iXA60": "Weighted PP assists/60",
+    "PP_Points60": "PP involvement proxy/60",
+    "PP_ActualPoints60": "Actual PP points/60",
+    "Exp_A_10": "Assist pace heuristic/10",
+    "Exp_A_10_Gap_Basis": "Assist gap basis/10",
+    "Reg_Gap_A10": "Assist pace gap/10",
+}
 def build_column_config(df: pd.DataFrame, cols: list[str]) -> dict:
     cfg = {}
 
     for c in cols:
         width = COLUMN_WIDTHS.get(c, "small")
         help_txt = COLUMN_HELP.get(c)
+        label = COLUMN_LABELS.get(c, c)
 
         if c not in df.columns:
-            cfg[c] = st.column_config.TextColumn(width=width, help=help_txt)
+            cfg[c] = st.column_config.TextColumn(label=label, width=width, help=help_txt)
             continue
 
         if pd.api.types.is_numeric_dtype(df[c]):
             # Betting-friendly numeric formats
             if c.endswith("_Line") or c == "Line":
-                cfg[c] = st.column_config.NumberColumn(width=width, format="%.1f", help=help_txt)
+                cfg[c] = st.column_config.NumberColumn(label=label, width=width, format="%.1f", help=help_txt)
             elif c.endswith("_Odds_Over") or c == "Odds":
-                cfg[c] = st.column_config.NumberColumn(width=width, format="%.0f", help=help_txt)
+                cfg[c] = st.column_config.NumberColumn(label=label, width=width, format="%.0f", help=help_txt)
             elif c.endswith("_Model%") or c.endswith("_Imp%") or c.endswith("_EV%"):
-                cfg[c] = st.column_config.NumberColumn(width=width, format="%.1f", help=help_txt)
+                cfg[c] = st.column_config.NumberColumn(label=label, width=width, format="%.1f", help=help_txt)
             else:
-                cfg[c] = st.column_config.NumberColumn(width=width, help=help_txt)
+                cfg[c] = st.column_config.NumberColumn(label=label, width=width, help=help_txt)
         else:
-            cfg[c] = st.column_config.TextColumn(width=width, help=help_txt)
+            cfg[c] = st.column_config.TextColumn(label=label, width=width, help=help_txt)
 
     return cfg
 
@@ -5393,8 +5405,9 @@ elif page == "Assists":
 
     # MAIN tier from PP_iXA60 (display)
     _pp_ix = safe_num(df_a, "PP_iXA60", 0)
+    _pp_sample = safe_num(df_a, "PP_TOI_min", 0) >= 10
     df_a["PP_iXA60_Tier"] = np.select(
-        [_pp_ix >= 4.2, _pp_ix >= 3.0],
+        [_pp_sample & (_pp_ix >= 4.2), _pp_sample & (_pp_ix >= 3.0)],
         ["ELITE", "STRONG"],
         default=""
     )
@@ -5436,7 +5449,7 @@ elif page == "Assists":
         "Drought_A",
        
         
-        "Reg_Heat_A", "Reg_Gap_A10", "Exp_A_10", "L10_A",
+        "Reg_Heat_A", "Reg_Gap_A10", "Exp_A_10_Gap_Basis", "L10_A",
         "PP_Tier", "PP_Path", 
        
 
@@ -5735,7 +5748,7 @@ elif page == "Power Play":
             _render_season_skater_form(df_f, pp_slate_day)
     pp_health = []
     for label, column in (("Player PP time/game", "PP_TOI_per_game"),
-                          ("Player PP creation", "PP_iXA60"),
+                          ("Weighted PP assists/60 (actual)", "PP_iXA60"),
                           ("Team PP xGF/60", "Team_PP_xGF60"),
                           ("Opponent PK xGA/60", "Opp_PK_xGA60"),
                           ("PP drought", "Drought_PPP"),
@@ -5974,10 +5987,11 @@ elif page == "Power Play":
         pp_cols = [
             "Game", "Player", "Pos", "Team", "Opp", "Tier_Tag", "PP_Unit",
             "PP_TOI_PG", "PP_TeamShare_pct", "PP_Tier", "PP_Path", "PP_BOOST",
-            "PP_TOI_Pct", "PP_Points60", "PP_iXG60", "PP_iXA60",
+            "PP_TOI_Pct", "PP_TOI_min", "PP_Points60", "PP_ActualPoints60", "PP_iXG60", "PP_iXA60",
             "Team_PP_xGF60", "Opp_PK_xGA60", "PP_Matchup", "PPP10_total", "Drought_PPP",
         ]
-        show_table(df_pp, pp_cols, "Power Play (5v4) — Usage, creation, matchup, PPP drought")
+        show_table(df_pp, pp_cols, "Power Play (5v4) — Usage, production, matchup, PPP drought")
+        st.caption("Weighted PP assists/60 is observed assist production, not expected assists. The involvement rate is a legacy proxy used by historical moves; check PP minutes before trusting an early-season rate.")
 
 
 elif page == "🧪 Dagger Lab":
@@ -6143,7 +6157,7 @@ elif page == "🧪 Dagger Lab":
                 "PP_TOI_Pct_Game": _disp(g("PP_TOI_Pct_Game")),
                 "PP_Env_Score": _disp(g("PP_Env_Score")),
                 "PP_Matchup": _disp(g("PP_Matchup")),
-                "PP_iXA60": _disp(g("PP_iXA60")),
+                "Weighted PP assists/60 (actual)": _disp(g("PP_iXA60")),
                 "PP_BOOST": _disp(g("PP_BOOST")),
             })
 

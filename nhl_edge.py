@@ -1587,12 +1587,14 @@ def normalize_skaters_all(df: pd.DataFrame, debug: bool = False) -> pd.DataFrame
     if "I_F_xAssists" in out.columns:
         out["iXA_raw"] = pd.to_numeric(out["I_F_xAssists"], errors="coerce")
         out["iXA_Source"] = "xAssists"
+        out["iXA_Is_Expected"] = True
     else:
         out["iXA_raw"] = (
             pd.to_numeric(out["I_F_primaryAssists"], errors="coerce").fillna(0)
             + pd.to_numeric(out["I_F_secondaryAssists"], errors="coerce").fillna(0)
         )
         out["iXA_Source"] = "A1+A2"
+        out["iXA_Is_Expected"] = False
 
     out["iXG_pct"] = out["iXG_raw"].rank(pct=True) * 100.0
     out["iXA_pct"] = out["iXA_raw"].rank(pct=True) * 100.0
@@ -1603,11 +1605,9 @@ def normalize_skaters_all(df: pd.DataFrame, debug: bool = False) -> pd.DataFrame
     gp = pd.to_numeric(out["games_played"], errors="coerce").replace(0, np.nan)
     toi_raw = pd.to_numeric(out["icetime"], errors="coerce")
 
-    # MoneyPuck icetime is season TOTAL in SECONDS (usually > 10,000)
-    # Convert to minutes before per-game calc
-    toi_minutes = toi_raw.copy()
-    sec_mask = toi_raw > 10000
-    toi_minutes.loc[sec_mask] = toi_raw.loc[sec_mask] / 60.0
+    # MoneyPuck seasonSummary icetime is always seconds, including the first
+    # games of a season. A size-based heuristic inflates early-season TOI 60x.
+    toi_minutes = toi_raw / 60.0
 
     out["TOI_per_game"] = (toi_minutes / gp).replace([np.inf, -np.inf], np.nan)
 
@@ -1670,7 +1670,8 @@ def normalize_skaters_5v5(df: pd.DataFrame, debug: bool = False) -> pd.DataFrame
     a1s = pd.to_numeric(out[col_a1], errors="coerce") if col_a1 else pd.Series(np.nan, index=out.index)
 
     col_sa  = find_col(out, ["I_F_shotAssists", "shotAssists", "shotassists"])
-    col_icf = find_col(out, ["I_F_iCF", "icf", "iCF"])
+    col_icf = find_col(out, ["I_F_shotAttempts", "I_F_iCF", "icf", "iCF"])
+    col_sog = find_col(out, ["I_F_shotsOnGoal"])
 
     if debug and (col_sa is None or col_icf is None):
         print("\n[DEBUG] skaters.csv 5v5 missing columns:")
@@ -1685,8 +1686,14 @@ def normalize_skaters_5v5(df: pd.DataFrame, debug: bool = False) -> pd.DataFrame
     out["i5v5_primaryAssists60"] = per60(a1s, out["icetime"])
     out["i5v5_shotAssists60"] = per60(shot_assists, out["icetime"])
     out["i5v5_iCF60"] = per60(icf, out["icetime"])
+    if col_sog:
+        sog = pd.to_numeric(out[col_sog], errors="coerce")
+        team_sog = sog.groupby(out["Team"]).transform("sum").replace(0, np.nan)
+        out["Player_5v5_SOG_Share"] = (100.0 * sog / team_sog).round(1)
+    else:
+        out["Player_5v5_SOG_Share"] = np.nan
 
-    keep = ["playerId", "Team", "i5v5_points60", "i5v5_primaryAssists60", "i5v5_shotAssists60", "i5v5_iCF60"]
+    keep = ["playerId", "Team", "i5v5_points60", "i5v5_primaryAssists60", "i5v5_shotAssists60", "i5v5_iCF60", "Player_5v5_SOG_Share"]
     return out[keep].copy()
 
 
@@ -1757,8 +1764,21 @@ def normalize_skaters_pp(df: pd.DataFrame, debug: bool = False) -> pd.DataFrame:
     out["PP_iXG60"] = (ixg / denom).replace([np.inf, -np.inf], np.nan)
     # Save unit chance creation for future graded audits. Existing moves do not use it.
     out["PP_OnIce_xGF60"] = (onice_xgf / denom).replace([np.inf, -np.inf], np.nan)
-    out["PP_iXA60"] = (((a1.fillna(0) + 0.75*a2.fillna(0))) / denom).replace([np.inf, -np.inf], np.nan)
-    out["PP_iP60"]  = (out["PP_iXG60"].fillna(0) + 0.85*out["PP_iXA60"].fillna(0)).replace([np.inf, -np.inf], np.nan)
+    # MoneyPuck does not provide individual xAssists here. Preserve the
+    # historical PP_iXA60 key for frozen move thresholds, but record its true
+    # meaning: weighted *observed* assists per 60, not expected assists.
+    weighted_assists = (a1.fillna(0) + 0.75 * a2.fillna(0)).where(a1.notna() | a2.notna())
+    out["PP_iXA60"] = (weighted_assists / denom).replace([np.inf, -np.inf], np.nan)
+    out["PP_WeightedAssists60"] = out["PP_iXA60"]
+    out["PP_iXA60_Source"] = "weighted observed PP assists (A1 + 0.75*A2) / 60"
+    # This legacy key mixes expected goals with observed assists. It remains
+    # unchanged for historical move compatibility; it is not actual PP points.
+    out["PP_iP60"] = (out["PP_iXG60"].fillna(0) + 0.85 * out["PP_iXA60"].fillna(0)).where(
+        out["PP_iXG60"].notna() | out["PP_iXA60"].notna()
+    ).replace([np.inf, -np.inf], np.nan)
+    col_points = find_col(out, ["I_F_points", "points"])
+    actual_points = pd.to_numeric(out[col_points], errors="coerce") if col_points else pd.Series(np.nan, index=out.index)
+    out["PP_ActualPoints60"] = (actual_points / denom).replace([np.inf, -np.inf], np.nan)
 
     # Team-relative PP role by PP TOI rank (PP1=top5, PP2=next5)
     out["Team"] = out[col_team].astype(str).str.upper().str.strip().map(norm_team)
@@ -1775,7 +1795,8 @@ def normalize_skaters_pp(df: pd.DataFrame, debug: bool = False) -> pd.DataFrame:
 
     out["PP_Role"] = role
 
-    keep = out[["playerId", "Team", "PP_TOI_min", "PP_TOI_per_game", "PP_iXG60", "PP_OnIce_xGF60", "PP_iXA60", "PP_iP60", "PP_Role"]].copy()
+    keep = out[["playerId", "Team", "PP_TOI_min", "PP_TOI_per_game", "PP_iXG60", "PP_OnIce_xGF60",
+                "PP_iXA60", "PP_WeightedAssists60", "PP_iXA60_Source", "PP_iP60", "PP_ActualPoints60", "PP_Role"]].copy()
 
     if debug:
         print("\n[DEBUG] normalize_skaters_pp: ok", keep.head(8).to_dict(orient="records"))
@@ -2375,6 +2396,9 @@ def compute_lastN_features(payload: Dict[str, Any], n10: int = 10, n5: int = 5) 
         "G10_total": g10_total,
         "S10_total": s10_total,
         "N_games_found": len(shots),
+        "L10_Games": len(v10_shots),
+        "L20_Games": len(v20_shots),
+        "L40_Games": len(v40_shots),
         "A10_total": a10_total,        "PPP10_total": ppp10_total,
         "P20_total": p20_total,
         "S20_total": s20_total,
@@ -2637,10 +2661,17 @@ def matrix_points_v2(ixa_pct: float, v2_stab: Optional[float], reg_heat_p: str =
         return "Green"
     if ixa_pct >= 90 and stab >= 63 and dw >= 60:
         return "Green"
-    if ixa_pct >= 95 and conf_v >= 80:
-        return "Green"
-
     return "Yellow"
+
+
+def ten_game_pace_gap(expected_10: pd.Series, observed_total: pd.Series,
+                      games_observed: pd.Series, min_games: int = 5) -> pd.Series:
+    """Compare two 10-game-equivalent paces, requiring an observable sample."""
+    count = pd.to_numeric(games_observed, errors="coerce")
+    total = pd.to_numeric(observed_total, errors="coerce")
+    expected = pd.to_numeric(expected_10, errors="coerce")
+    observed_10 = total * 10.0 / count.where(count >= min_games)
+    return (expected - observed_10).round(2)
 
 def matrix_assists_v1(
     ixa_pct: float,
@@ -2903,20 +2934,10 @@ def add_v2_scores(df: pd.DataFrame) -> pd.DataFrame:
 # Big 3 helper (SOG): player 5v5 share proxy
 # ============================
 def add_player_5v5_sog_share_proxy(df: pd.DataFrame) -> pd.DataFrame:
-    """Add Player_5v5_SOG_Share as a team-share proxy derived from i5v5_iCF60.
-
-    Note: MoneyPuck skater dumps we ingest do not reliably expose true 5v5 SOG by player.
-    We therefore use i5v5_iCF60 (5v5 shot attempts /60 proxy) to derive an intra-team share.
-    This is used only for ladder 'proof' / explainability.
-    """
+    """Keep the feed-derived 5v5 SOG share; never replace it with a proxy."""
     out = df.copy()
-    if "Team" not in out.columns or "i5v5_iCF60" not in out.columns:
+    if "Player_5v5_SOG_Share" not in out.columns:
         out["Player_5v5_SOG_Share"] = np.nan
-        return out
-    icf = pd.to_numeric(out["i5v5_iCF60"], errors="coerce")
-    team_sum = icf.groupby(out["Team"]).transform("sum")
-    share = (icf / team_sum) * 100.0
-    out["Player_5v5_SOG_Share"] = share.replace([np.inf, -np.inf], np.nan).round(1)
     return out
 
 
@@ -3490,10 +3511,13 @@ def build_tracker(today_local: date, debug: bool = False, api_key: str | None = 
         sk5 = normalize_skaters_5v5(sk_raw, debug=debug)
         sk5 = align_skater_stats_team(sk5, current_team_by_id,
                                       preferred_source=preferred_stats_team)
+        # Old-club shot shares cannot describe a player's new team.
+        moved_ids_5v5 = set(sk.loc[sk["Team_Changed"], "playerId"].dropna().astype(int))
+        sk5.loc[sk5["playerId"].isin(moved_ids_5v5), "Player_5v5_SOG_Share"] = np.nan
         sk = sk.merge(sk5, on=["playerId", "Team"], how="left")
     except Exception as e:
         print(f"WARNING: Player 5v5 unavailable; continuing neutral. ({type(e).__name__}: {e})")
-        for c in ["i5v5_points60", "i5v5_primaryAssists60", "i5v5_shotAssists60", "i5v5_iCF60"]:
+        for c in ["i5v5_points60", "i5v5_primaryAssists60", "i5v5_shotAssists60", "i5v5_iCF60", "Player_5v5_SOG_Share"]:
             sk[c] = np.nan
 
     # Assist volume proxy
@@ -3523,7 +3547,8 @@ def build_tracker(today_local: date, debug: bool = False, api_key: str | None = 
     except Exception as e:
         if debug:
             print(f"WARNING: PP skaters unavailable; continuing neutral. ({type(e).__name__}: {e})")
-        for c in ["PP_TOI_min", "PP_TOI_per_game", "PP_iXG60", "PP_OnIce_xGF60", "PP_iXA60", "PP_iP60", "PP_Role"]:
+        for c in ["PP_TOI_min", "PP_TOI_per_game", "PP_iXG60", "PP_OnIce_xGF60", "PP_iXA60",
+                  "PP_WeightedAssists60", "PP_iXA60_Source", "PP_iP60", "PP_ActualPoints60", "PP_Role"]:
             sk[c] = np.nan
 
     # --- Restore PP_Tier from PP_Role (legacy behavior) ---
@@ -3651,13 +3676,15 @@ def build_tracker(today_local: date, debug: bool = False, api_key: str | None = 
 
 
 
-        # PP_Points60: proxy for PP point involvement per 60
+        # PP_Points60 is a legacy xG + observed-assists involvement proxy.
+        # Frozen moves use it, so keep the number and expose its source.
 
 
         if "PP_iP60" in sk.columns and ("PP_Points60" not in sk.columns or pd.to_numeric(sk.get("PP_Points60"), errors="coerce").isna().all()):
 
 
             sk["PP_Points60"] = pd.to_numeric(sk["PP_iP60"], errors="coerce")
+        sk["PP_Points60_Source"] = "PP xG/60 + 0.85 * weighted observed PP assists/60 (proxy)"
 
 
 
@@ -4101,7 +4128,10 @@ def build_tracker(today_local: date, debug: bool = False, api_key: str | None = 
         # total_cols: {10:"L10_X", 20:"L20_X", 40:"L40_X"} where X is P/A/S
         for w in (10, 20, 40):
             tot = pd.to_numeric(sk.get(total_cols[w], np.nan), errors="coerce")
-            rate = (tot / float(w)).round(3)
+            # Early in a season, an L10/L20/L40 total contains fewer than
+            # 10/20/40 games. Divide by the observed sample, not the label.
+            sample = pd.to_numeric(sk.get(f"L{w}_Games", np.nan), errors="coerce").replace(0, np.nan)
+            rate = (tot / sample).round(3)
             linev = pd.to_numeric(sk.get(line_col, np.nan), errors="coerce")
             diff = (rate - linev).round(3)
             sk[f"L{w}_Rate_{prefix}"] = rate
@@ -4128,10 +4158,18 @@ def build_tracker(today_local: date, debug: bool = False, api_key: str | None = 
 
     sk["Exp_S_10"] = (pd.to_numeric(sk.get("ShotIntent", np.nan), errors="coerce") * 10.0).round(2)
 
-    sk["Reg_Gap_P10"] = (sk["Exp_P_10"] - sk["L10_P"]).round(2)
-    sk["Reg_Gap_G10"] = (sk["Exp_G_10"] - sk["L10_G"]).round(2)
-    sk["Reg_Gap_S10"] = (sk["Exp_S_10"] - sk["L10_S"]).round(2)
-    sk["Reg_Gap_A10"] = (sk["Exp_A_10"] - sk["L10_A"]).round(2)
+    # The gap is calculated from this first, season-pace baseline. A later
+    # market-tier premium changes Exp_*_10 for legacy moves, so save the
+    # exact basis used by the regression gaps for truthful display.
+    sk["Exp_P_10_Gap_Basis"] = sk["Exp_P_10"]
+    sk["Exp_A_10_Gap_Basis"] = sk["Exp_A_10"]
+    # A partial L10 total must be converted to a 10-game pace before comparing
+    # it with a 10-game expectation. With fewer than five games, leave the gap
+    # unavailable instead of declaring a rebound from a tiny sample.
+    sk["Reg_Gap_P10"] = ten_game_pace_gap(sk["Exp_P_10_Gap_Basis"], sk["L10_P"], sk["L10_Games"])
+    sk["Reg_Gap_G10"] = ten_game_pace_gap(sk["Exp_G_10"], sk["L10_G"], sk["L10_Games"])
+    sk["Reg_Gap_S10"] = ten_game_pace_gap(sk["Exp_S_10"], sk["L10_S"], sk["L10_Games"])
+    sk["Reg_Gap_A10"] = ten_game_pace_gap(sk["Exp_A_10_Gap_Basis"], sk["L10_A"], sk["L10_Games"])
 
     sk["Reg_Heat_A"] = sk["Reg_Gap_A10"].apply(lambda x: heat_from_gap(safe_float(x)))
     sk["Reg_Heat_P"] = sk["Reg_Gap_P10"].apply(lambda x: heat_from_gap(safe_float(x)))
@@ -4616,6 +4654,7 @@ def build_tracker(today_local: date, debug: bool = False, api_key: str | None = 
         "iXG%": sk["iXG_pct"].round(1),
         "iXA%": sk["iXA_pct"].round(1),
         "iXA_Source": sk.get("iXA_Source", ""),
+        "iXA_Is_Expected": sk.get("iXA_Is_Expected", False),
 
         "TOI_per_game": sk["TOI_per_game"].round(2),
         "TOI_Pct": sk["TOI_Pct"].round(1),
@@ -4641,6 +4680,9 @@ def build_tracker(today_local: date, debug: bool = False, api_key: str | None = 
         "ShotIntent": sk.get("ShotIntent"),
         "ShotIntent_Pct": sk.get("ShotIntent_Pct"),
         "L10_P": sk.get("L10_P"),
+        "L10_Games": sk.get("L10_Games"),
+        "L20_Games": sk.get("L20_Games"),
+        "L40_Games": sk.get("L40_Games"),
         "L10_G": sk.get("L10_G"),
         "L10_S": sk.get("L10_S"),
         "L5_G": sk.get("G5_total"),
@@ -4689,6 +4731,7 @@ def build_tracker(today_local: date, debug: bool = False, api_key: str | None = 
         "i5v5_primaryAssists60": sk.get("i5v5_primaryAssists60"),
         "i5v5_shotAssists60": sk.get("i5v5_shotAssists60"),
         "i5v5_iCF60": sk.get("i5v5_iCF60"),
+        "Player_5v5_SOG_Share": sk.get("Player_5v5_SOG_Share"),
         "Assist_Volume": sk.get("Assist_Volume"),
 
         "opp_5v5_xGA60": sk.get("opp_5v5_xGA60"),
@@ -4700,6 +4743,7 @@ def build_tracker(today_local: date, debug: bool = False, api_key: str | None = 
         "v2_defense_vulnerability": sk.get("v2_defense_vulnerability"),
 
         "Exp_P_10": sk.get("Exp_P_10"),
+        "Exp_P_10_Gap_Basis": sk.get("Exp_P_10_Gap_Basis"),
         "Exp_G_10": sk.get("Exp_G_10"),
         "Exp_S_10": sk.get("Exp_S_10"),
         "Reg_Gap_P10": sk.get("Reg_Gap_P10"),
@@ -4709,6 +4753,7 @@ def build_tracker(today_local: date, debug: bool = False, api_key: str | None = 
         "Reg_Heat_G": sk.get("Reg_Heat_G"),
         "Reg_Heat_S": sk.get("Reg_Heat_S"),
         "Exp_A_10": sk.get("Exp_A_10"),
+        "Exp_A_10_Gap_Basis": sk.get("Exp_A_10_Gap_Basis"),
         "Reg_Gap_A10": sk.get("Reg_Gap_A10"),
         "Reg_Heat_A": sk.get("Reg_Heat_A"),
 
@@ -4748,9 +4793,13 @@ def build_tracker(today_local: date, debug: bool = False, api_key: str | None = 
         "PP_TOI_Pct_Game": sk.get("PP_TOI_Pct_Game"),
         "PP_TOI_Pct": sk.get("PP_TOI_Pct"),
         "PP_Points60": sk.get("PP_Points60"),
+        "PP_Points60_Source": sk.get("PP_Points60_Source"),
+        "PP_ActualPoints60": sk.get("PP_ActualPoints60"),
         "PP_iXG60": sk.get("PP_iXG60"),
         "PP_OnIce_xGF60": sk.get("PP_OnIce_xGF60"),
         "PP_iXA60": sk.get("PP_iXA60"),
+        "PP_WeightedAssists60": sk.get("PP_WeightedAssists60"),
+        "PP_iXA60_Source": sk.get("PP_iXA60_Source"),
         "Team_PP_xGF60": sk.get("Team_PP_xGF60"),
         "Team_PP_GF60": sk.get("Team_PP_GF60"),
         "Opp_PK_xGA60": sk.get("Opp_PK_xGA60"),
@@ -5144,7 +5193,8 @@ def build_tracker(today_local: date, debug: bool = False, api_key: str | None = 
             for _m, _l10col in [("Points", "L10_P"), ("Assists", "L10_A"), ("SOG", "L10_S")]:
                 _line_col = f"{_m}_Line"
                 if _l10col in tracker.columns and _line_col in tracker.columns:
-                    _rate = pd.to_numeric(tracker[_l10col], errors="coerce") / 10.0
+                    _games = pd.to_numeric(tracker.get("L10_Games", np.nan), errors="coerce").replace(0, np.nan)
+                    _rate = pd.to_numeric(tracker[_l10col], errors="coerce") / _games
                     _line = pd.to_numeric(tracker[_line_col], errors="coerce")
                     _diff = (_rate - _line)
 
@@ -5266,9 +5316,6 @@ def build_tracker(today_local: date, debug: bool = False, api_key: str | None = 
             proxy = (m10 / team_sum.replace(0, np.nan) * 100.0).round(1)
             tracker["Player_SOG_Share_Proxy"] = proxy
 
-            # If true 5v5 share is missing, backfill with proxy (keeps one simple field for UI)
-            if "Player_5v5_SOG_Share" in tracker.columns:
-                tracker["Player_5v5_SOG_Share"] = pd.to_numeric(tracker["Player_5v5_SOG_Share"], errors="coerce").fillna(proxy)
         except Exception:
             tracker["Player_SOG_Share_Proxy"] = np.nan
 
