@@ -1,0 +1,371 @@
+{
+  "method": "Top five and next five dressed skaters by their own previous five games' PP ice time; three prior games required. Formal PP units are not recorded by this NHL endpoint.",
+  "source": "https://api.nhle.com/stats/rest/en/skater/powerplay",
+  "historical_2025_26": {
+    "PP1": {
+      "player_games": 12602,
+      "team_games": 2528,
+      "pp_points": 2646,
+      "players_with_ppp": 2357,
+      "ppp_hit_pct": 18.7,
+      "pp_points_per_player_game": 0.21,
+      "actual_pp_min_per_player_game": 2.58,
+      "pp_points_per_60_actual_pp_minutes": 4.89,
+      "prior_pp_min_per_game": 2.68
+    },
+    "PP2": {
+      "player_games": 12090,
+      "team_games": 2501,
+      "pp_points": 399,
+      "players_with_ppp": 382,
+      "ppp_hit_pct": 3.16,
+      "pp_points_per_player_game": 0.033,
+      "actual_pp_min_per_player_game": 0.67,
+      "pp_points_per_60_actual_pp_minutes": 2.97,
+      "prior_pp_min_per_game": 0.62
+    }
+  },
+  "historical_2025_26_paired": {
+    "paired_team_games": 2460,
+    "pp1_more": 960,
+    "tied": 1429,
+    "pp2_more": 71
+  },
+  "historical_2025_26_by_month": {
+    "2025-10": {
+      "PP1": {
+        "player_games": 1282,
+        "team_games": 264,
+        "pp_points": 273,
+        "players_with_ppp": 246,
+        "ppp_hit_pct": 19.19,
+        "pp_points_per_player_game": 0.213,
+        "actual_pp_min_per_player_game": 2.69,
+        "pp_points_per_60_actual_pp_minutes": 4.75,
+        "prior_pp_min_per_game": 2.86
+      },
+      "PP2": {
+        "player_games": 1034,
+        "team_games": 237,
+        "pp_points": 45,
+        "players_with_ppp": 43,
+        "ppp_hit_pct": 4.16,
+        "pp_points_per_player_game": 0.044,
+        "actual_pp_min_per_player_game": 0.63,
+        "pp_points_per_60_actual_pp_minutes": 4.18,
+        "prior_pp_min_per_game": 0.58
+      }
+    },
+    "2025-11": {
+      "PP1": {
+        "player_games": 2250,
+        "team_games": 450,
+        "pp_points": 429,
+        "players_with_ppp": 394,
+        "ppp_hit_pct": 17.51,
+        "pp_points_per_player_game": 0.191,
+        "actual_pp_min_per_player_game": 2.62,
+        "pp_points_per_60_actual_pp_minutes": 4.37,
+        "prior_pp_min_per_game": 2.81
+      },
+      "PP2": {
+        "player_games": 2219,
+        "team_games": 450,
+        "pp_points": 68,
+        "players_with_ppp": 65,
+        "ppp_hit_pct": 2.93,
+        "pp_points_per_player_game": 0.031,
+        "actual_pp_min_per_player_game": 0.72,
+        "pp_points_per_60_actual_pp_minutes": 2.55,
+        "prior_pp_min_per_game": 0.68
+      }
+    },
+    "2025-12": {
+      "PP1": {
+        "player_games": 2260,
+        "team_games": 452,
+        "pp_points": 483,
+        "players_with_ppp": 431,
+        "ppp_hit_pct": 19.07,
+        "pp_points_per_player_game": 0.214,
+        "actual_pp_min_per_player_game": 2.61,
+        "pp_points_per_60_actual_pp_minutes": 4.92,
+        "prior_pp_min_per_game": 2.67
+      },
+      "PP2": {
+        "player_games": 2216,
+        "team_games": 452,
+        "pp_points": 75,
+        "players_with_ppp": 72,
+        "ppp_hit_pct": 3.25,
+        "pp_points_per_player_game": 0.034,
+        "actual_pp_min_per_player_game": 0.71,
+        "pp_points_per_60_actual_pp_minutes": 2.86,
+        "prior_pp_min_per_game": 0.65
+      }
+    },
+    "2026-01": {
+      "PP1": {
+        "player_games": 2400,
+        "team_games": 480,
+        "pp_points": 512,
+        "players_with_ppp": 440,
+        "ppp_hit_pct": 18.33,
+        "pp_points_per_player_game": 0.213,
+        "actual_pp_min_per_player_game": 2.45,
+        "pp_points_per_60_actual_pp_minutes": 5.23,
+        "prior_pp_min_per_game": 2.55
+      },
+      "PP2": {
+        "player_games": 2300,
+        "team_games": 480,
+        "pp_points": 75,
+        "players_with_ppp": 68,
+        "ppp_hit_pct": 2.96,
+        "pp_points_per_player_game": 0.033,
+        "actual_pp_min_per_player_game": 0.59,
+        "pp_points_per_60_actual_pp_minutes": 3.32,
+        "prior_pp_min_per_game": 0.53
+      }
+    },
+    "2026-02": {
+      "PP1": {
+        "player_games": 740,
+        "team_games": 148,
+        "pp_points": 183,
+        "players_with_ppp": 165,
+        "ppp_hit_pct": 22.3,
+        "pp_points_per_player_game": 0.247,
+        "actual_pp_min_per_player_game": 2.81,
+        "pp_points_per_60_actual_pp_minutes": 5.28,
+        "prior_pp_min_per_game": 2.93
+      },
+      "PP2": {
+        "player_games": 737,
+        "team_games": 148,
+        "pp_points": 41,
+        "players_with_ppp": 41,
+        "ppp_hit_pct": 5.56,
+        "pp_points_per_player_game": 0.056,
+        "actual_pp_min_per_player_game": 0.96,
+        "pp_points_per_60_actual_pp_minutes": 3.47,
+        "prior_pp_min_per_game": 0.93
+      }
+    },
+    "2026-03": {
+      "PP1": {
+        "player_games": 2420,
+        "team_games": 484,
+        "pp_points": 517,
+        "players_with_ppp": 461,
+        "ppp_hit_pct": 19.05,
+        "pp_points_per_player_game": 0.214,
+        "actual_pp_min_per_player_game": 2.6,
+        "pp_points_per_60_actual_pp_minutes": 4.94,
+        "prior_pp_min_per_game": 2.68
+      },
+      "PP2": {
+        "player_games": 2370,
+        "team_games": 484,
+        "pp_points": 65,
+        "players_with_ppp": 63,
+        "ppp_hit_pct": 2.66,
+        "pp_points_per_player_game": 0.027,
+        "actual_pp_min_per_player_game": 0.63,
+        "pp_points_per_60_actual_pp_minutes": 2.6,
+        "prior_pp_min_per_game": 0.62
+      }
+    },
+    "2026-04": {
+      "PP1": {
+        "player_games": 1250,
+        "team_games": 250,
+        "pp_points": 249,
+        "players_with_ppp": 220,
+        "ppp_hit_pct": 17.6,
+        "pp_points_per_player_game": 0.199,
+        "actual_pp_min_per_player_game": 2.38,
+        "pp_points_per_60_actual_pp_minutes": 5.02,
+        "prior_pp_min_per_game": 2.41
+      },
+      "PP2": {
+        "player_games": 1214,
+        "team_games": 250,
+        "pp_points": 30,
+        "players_with_ppp": 30,
+        "ppp_hit_pct": 2.47,
+        "pp_points_per_player_game": 0.025,
+        "actual_pp_min_per_player_game": 0.56,
+        "pp_points_per_60_actual_pp_minutes": 2.65,
+        "prior_pp_min_per_game": 0.51
+      }
+    }
+  },
+  "current_2026_27": {
+    "PP1": {
+      "player_games": 598,
+      "team_games": 124,
+      "pp_points": 110,
+      "players_with_ppp": 98,
+      "ppp_hit_pct": 16.39,
+      "pp_points_per_player_game": 0.184,
+      "actual_pp_min_per_player_game": 2.46,
+      "pp_points_per_60_actual_pp_minutes": 4.49,
+      "prior_pp_min_per_game": 2.65
+    },
+    "PP2": {
+      "player_games": 405,
+      "team_games": 106,
+      "pp_points": 21,
+      "players_with_ppp": 21,
+      "ppp_hit_pct": 5.19,
+      "pp_points_per_player_game": 0.052,
+      "actual_pp_min_per_player_game": 0.6,
+      "pp_points_per_60_actual_pp_minutes": 5.19,
+      "prior_pp_min_per_game": 0.5
+    }
+  },
+  "current_2026_27_paired": {
+    "paired_team_games": 80,
+    "pp1_more": 34,
+    "tied": 41,
+    "pp2_more": 5
+  },
+  "current_saved_prices": {
+    "matched_priced_props": 416,
+    "official_result_mismatches": 0,
+    "official_result_comparisons": 996,
+    "dates": 9,
+    "by_estimated_unit": {
+      "PP1": {
+        "props": 353,
+        "hits": 62,
+        "hit_pct": 17.56,
+        "mean_book_break_even_pct": 24.07,
+        "flat_unit_roi_pct": -35.78,
+        "date_bootstrap_roi_95pct": [
+          -58.9,
+          -12.5
+        ],
+        "dates": 9
+      },
+      "PP2": {
+        "props": 63,
+        "hits": 11,
+        "hit_pct": 17.46,
+        "mean_book_break_even_pct": 15.21,
+        "flat_unit_roi_pct": 20.32,
+        "date_bootstrap_roi_95pct": [
+          -30.8,
+          77.1
+        ],
+        "dates": 7
+      }
+    },
+    "by_date": {
+      "2026-10-06": {
+        "PP1": {
+          "props": 10,
+          "hits": 5,
+          "flat_unit_roi_pct": 112.5
+        }
+      },
+      "2026-10-07": {
+        "PP1": {
+          "props": 3,
+          "hits": 0,
+          "flat_unit_roi_pct": -100.0
+        }
+      },
+      "2026-10-08": {
+        "PP1": {
+          "props": 40,
+          "hits": 11,
+          "flat_unit_roi_pct": 15.9
+        },
+        "PP2": {
+          "props": 6,
+          "hits": 0,
+          "flat_unit_roi_pct": -100.0
+        }
+      },
+      "2026-10-09": {
+        "PP1": {
+          "props": 26,
+          "hits": 5,
+          "flat_unit_roi_pct": -33.8
+        },
+        "PP2": {
+          "props": 3,
+          "hits": 0,
+          "flat_unit_roi_pct": -100.0
+        }
+      },
+      "2026-10-10": {
+        "PP1": {
+          "props": 89,
+          "hits": 17,
+          "flat_unit_roi_pct": -35.4
+        },
+        "PP2": {
+          "props": 10,
+          "hits": 3,
+          "flat_unit_roi_pct": 107.5
+        }
+      },
+      "2026-10-11": {
+        "PP1": {
+          "props": 26,
+          "hits": 1,
+          "flat_unit_roi_pct": -89.2
+        },
+        "PP2": {
+          "props": 9,
+          "hits": 1,
+          "flat_unit_roi_pct": 0.0
+        }
+      },
+      "2026-10-12": {
+        "PP1": {
+          "props": 16,
+          "hits": 0,
+          "flat_unit_roi_pct": -100.0
+        },
+        "PP2": {
+          "props": 4,
+          "hits": 1,
+          "flat_unit_roi_pct": 125.0
+        }
+      },
+      "2026-10-13": {
+        "PP1": {
+          "props": 125,
+          "hits": 22,
+          "flat_unit_roi_pct": -36.8
+        },
+        "PP2": {
+          "props": 29,
+          "hits": 5,
+          "flat_unit_roi_pct": 11.4
+        }
+      },
+      "2026-10-14": {
+        "PP1": {
+          "props": 18,
+          "hits": 1,
+          "flat_unit_roi_pct": -85.3
+        },
+        "PP2": {
+          "props": 2,
+          "hits": 1,
+          "flat_unit_roi_pct": 137.5
+        }
+      }
+    }
+  },
+  "limitations": [
+    "Historical pregame PP prop prices are not archived locally.",
+    "Player PP points count scorer and assists; they are not unit goals.",
+    "Active players are identified from final game records, while unit estimates use prior PP minutes."
+  ]
+}
