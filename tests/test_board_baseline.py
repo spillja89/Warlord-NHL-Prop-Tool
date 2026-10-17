@@ -239,10 +239,10 @@ class BoardBaselineTests(unittest.TestCase):
 
     def test_a_tier_watch_requires_fifty_percent_move(self):
         common = {"goal_tier": "A", "later_wins": 0, "later_picks": 1}
-        low = {**common, "name": "Base Attack", "wins": 68, "picks": 128,
+        low = {**common, "name": "Below Half", "wins": 4, "picks": 10,
                "a_band_wins": 9, "a_band_picks": 23}
-        high = {**common, "name": "Armor Sunder", "wins": 53, "picks": 84,
-                "a_band_wins": 6, "a_band_picks": 10}
+        high = {**common, "name": "Base Attack", "wins": 68, "picks": 128,
+                "a_band_wins": 9, "a_band_picks": 23}
         cards = [
             {"player": "Low A", "baseline_rule": "Green", "confidence": 87,
              "moves": [low], "move": low},
