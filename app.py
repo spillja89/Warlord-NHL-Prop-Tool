@@ -814,7 +814,7 @@ def _render_class_shortlist(frame: pd.DataFrame, role: str,
         st.caption(f"{s_goal_count} S-tier goal profiles (Points confidence 84+) · "
                    f"{a_goal_count} A-tier watches (82–83) · "
                    f"{len(goal_cards) - s_goal_count - a_goal_count} other Green goal baselines. "
-                   "A cards show the same move replayed at an 82+ cutoff, including the 84+ games. S shows 84+ only. The 82–83-only result is shown separately; it must also clear 50% for an A card.")
+                   "A cards show the same move replayed at an 82+ cutoff, including the 84+ games. S shows 84+ only. The 82–83-only result is shown separately for context; the 82+ move must clear 50% for an A card.")
         st.html(render_warlords({"Carry": goal_cards}, limit=len(goal_cards),
                                 roles=("Carry",), show_hero=False))
     elif featured[role]:
