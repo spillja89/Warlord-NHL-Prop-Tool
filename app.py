@@ -17,7 +17,7 @@ import streamlit as st
 from published_output import fetch_grade_file, fetch_tracker, is_newer_tracker, list_grade_files, local_matches_sha, save_if_changed
 from warlord_moves_2026 import VERSION as MOVE_KIT_VERSION
 from warlord_moves_2026 import best_move, points_moves, sog_moves, goals_moves as _goals_carry_moves, assists_moves as _assists_mapped_moves
-from warlords_night_board import CLASSES, baseline_audit, rank_warlords, rank_priced_slate, featured_warlords, unfeatured_baselines, render_warlords, render_power_play_form, _character_uri
+from warlords_night_board import CLASSES, baseline_audit, rank_warlords, rank_priced_slate, featured_warlords, unfeatured_baselines, goal_display_cards, render_warlords, render_power_play_form, _character_uri
 from player_form import compact_regular_log, summarize_form
 from current_season_stats import current_season_rows, season_for_day
 from season_sources import (fetch_moneypuck_skaters, fetch_moneypuck_teams,
@@ -799,24 +799,26 @@ def _render_class_shortlist(frame: pd.DataFrame, role: str,
     priced = _sort_slate_boards(priced, slate_sort, starts_by_game)
     featured = _sort_slate_boards(featured, slate_sort, starts_by_game)
     total = len(priced[role])
-    st.subheader(f"{role} · {len(featured[role])} featured of {total} priced players")
+    goal_cards = goal_display_cards(priced[role]) if role == "Carry" else []
+    if goal_cards and slate_sort != "Top ranked":
+        goal_cards = _sort_slate_boards({"Carry": goal_cards}, slate_sort, starts_by_game)["Carry"]
+    st.subheader(f"{role} · {len(goal_cards)} Green goal candidates of {total} priced players"
+                 if role == "Carry" else f"{role} · {len(featured[role])} featured of {total} priced players")
     if total == 0:
         st.info("No posted player line and price for this class yet.")
         return
     watch = unfeatured_baselines(priced[role])
-    if role == "Carry" and watch:
-        st.subheader(f"Green goal candidates · {len(watch)} without a tested 50%+ move")
-        st.caption("These players clear today's goal baseline and have a posted price. "
-                   "The old goal move record may not apply, so no historical move % is claimed for them.")
-        watch_cols = ["Player", "Team", "Game", "Start (CT)", "Line", "Over odds",
-                      "Book", "Book break-even %", "Model conf", "Reason"]
-        st.dataframe(_priced_pool_table(watch)[watch_cols], hide_index=True,
-                     use_container_width=True)
-    if featured[role]:
+    if role == "Carry":
+        st.caption(f"{len(featured[role])} have a 50%+ historical move; the rest remain visible with their "
+                   "Green goal baseline and any goal signals that fire. Goal move histories were recounted "
+                   "without a Points-score gate. These percentages are past results, not tonight's probability.")
+        st.html(render_warlords({"Carry": goal_cards}, limit=len(goal_cards),
+                                roles=("Carry",), show_hero=False))
+    elif featured[role]:
         st.html(render_warlords(featured, limit=len(featured[role]), roles=(role,), show_hero=False))
     else:
         st.caption("No player clears both the current baseline and a tested move at 50%+ on this slate.")
-    st.caption("Character cards require the current Green baseline and a historical move at 50%+. Book break-even % comes from the posted odds; move percentages describe past results for that rule, not a forecast. Model confidence is a separate ranking score.")
+    st.caption("Book break-even % comes from posted odds; move percentages describe past results for that rule, not a forecast. Model confidence is a separate ranking score.")
     if watch and role != "Carry":
         with st.expander(f"Green baseline, no 50%+ move ({len(watch)})"):
             watch_cols = ["Player", "Team", "Game", "Line", "Over odds", "Book",
@@ -4831,28 +4833,25 @@ if page == "⚔️ Warlords of the Night":
     featured_boards = _sort_slate_boards(featured_boards, slate_sort, starts_by_game)
     priced_total = sum(len(cards) for cards in priced_boards.values())
     featured_total = sum(len(cards) for cards in featured_boards.values())
+    goal_cards = goal_display_cards(priced_boards["Carry"])
+    display_boards = {**featured_boards, "Carry": goal_cards}
+    if slate_sort != "Top ranked":
+        display_boards = _sort_slate_boards(display_boards, slate_sort, starts_by_game)
+    display_total = sum(len(cards) for cards in display_boards.values())
     st.caption(f"Current view: {night_df['Game'].nunique() if 'Game' in night_df else 0} games · "
                f"{night_df['Team'].nunique() if 'Team' in night_df else 0} teams · "
                f"{len(night_df)} roster skaters · {priced_total} priced prop entries · "
-               f"{featured_total} meet both the Green baseline and a 50%+ historical move. "
+               f"{len(goal_cards)} Green goal candidates · {featured_total} player props have a 50%+ historical move. "
                "Every priced entry is in the complete slate below.")
-    if featured_total:
-        st.html(render_warlords(featured_boards, max(map(len, featured_boards.values())), _load_svg_icon))
-        order_note = ("Classes rank by the strongest qualifying move" if slate_sort == "Top ranked"
+    if display_total:
+        st.html(render_warlords(display_boards, max(map(len, display_boards.values())), _load_svg_icon))
+        order_note = ("Goal cards put 50%+ move records first, then Green goal candidates by confidence" if slate_sort == "Top ranked"
                       else f"Cards are sorted by {slate_sort.lower()}; same-game move ranks stay intact")
-        st.caption(f"{featured_total} featured cards from {priced_total} priced prop entries. Cards require the current Green baseline and a fired move at 50%+ historically. {order_note}; model confidence is shown separately. Historical rates are not forecasts.")
+        st.caption(f"{len(goal_cards)} Green goal candidates, including {len(featured_boards['Carry'])} with a 50%+ historical move; "
+                   f"{featured_total-len(featured_boards['Carry'])} other prop entries have a 50%+ move. "
+                   f"{order_note}. Move histories are not forecasts.")
     else:
         st.info(f"{priced_total} priced prop entries. No player currently clears both the baseline and a 50%+ historical move; see the complete slate below.")
-
-    goal_candidates = unfeatured_baselines(priced_boards["Carry"])
-    if goal_candidates:
-        st.subheader(f"Green goal candidates · {len(goal_candidates)} without a tested 50%+ move")
-        st.caption("Goal baseline and price are present. The old goal move record may not apply; "
-                   "these rows have no claimed historical move percentage.")
-        goal_candidate_cols = ["Player", "Team", "Game", "Start (CT)", "Line",
-                               "Over odds", "Book", "Book break-even %", "Model conf", "Reason"]
-        st.dataframe(_priced_pool_table(goal_candidates)[goal_candidate_cols],
-                     hide_index=True, use_container_width=True)
 
     with st.expander(f"Complete priced slate · {priced_total} prop entries", expanded=True):
         st.caption("Every player's displayed priced prop appears here. Book break-even % comes from the displayed odds; Move % and Later % are historical results for the named rule, not forecasts. Active roster players without model history are marked odds only and have no tested move. NHL roster membership does not confirm tonight's dressed lineup.")
