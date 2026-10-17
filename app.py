@@ -4854,7 +4854,7 @@ if page == "⚔️ Warlords of the Night":
         order_note = ("Goal cards put S tier first, then A tier watch, then remaining Green baselines" if slate_sort == "Top ranked"
                       else f"Cards are sorted by {slate_sort.lower()}; same-game move ranks stay intact")
         st.caption(f"{len(goal_cards)} Green goal candidates: {s_goal_count} S tier and {a_goal_count} A tier watch. "
-                   f"{len(featured_boards['Carry'])} S-tier goals have a 50%+ historical move; 
+                   f"{len(featured_boards['Carry'])} S-tier goals have a 50%+ historical move; "
                    f"{featured_total-len(featured_boards['Carry'])} other prop entries have a 50%+ move. "
                    f"{order_note}. Move histories are not forecasts.")
     else:
