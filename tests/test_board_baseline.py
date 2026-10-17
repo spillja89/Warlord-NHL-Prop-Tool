@@ -7,7 +7,8 @@ import pandas as pd
 import nhl_edge
 from player_availability import unavailable_mask
 from warlords_night_board import (baseline_audit, featured_warlords,
-                                  rank_priced_slate, rank_warlords, render_warlords)
+                                  rank_priced_slate, rank_warlords, render_warlords,
+                                  unfeatured_baselines)
 
 
 class BoardBaselineTests(unittest.TestCase):
@@ -183,6 +184,19 @@ class BoardBaselineTests(unittest.TestCase):
         self.assertEqual(statuses["Goal high"], "Baseline only")
         self.assertNotIn("Points high", statuses.index)
         self.assertEqual(summary.set_index("Prop").loc["Goals", "Baseline"], 1)
+
+    def test_green_goal_candidate_with_low_points_score_remains_visible(self):
+        row = pd.DataFrame([{
+            "Player": "Andrei Svechnikov", "Team": "CAR", "Game": "CAR@WPG",
+            "Goal_Line": 0.5, "Goal_Odds_Over": 180, "Goal_Book": "BetMGM",
+            "Matrix_Goal": "Green", "Conf_Goal": 94, "Conf_Points": 82,
+        }])
+        priced = rank_priced_slate(row)["Carry"]
+        self.assertEqual([card["player"] for card in unfeatured_baselines(priced)],
+                         ["Andrei Svechnikov"])
+        self.assertEqual(priced[0]["odds"], 180)
+        self.assertEqual(priced[0]["book"], "BetMGM")
+        self.assertEqual(featured_warlords({"Carry": priced})["Carry"], [])
 
     def test_empty_slate_has_safe_audit(self):
         summary, by_team, roster = baseline_audit(pd.DataFrame())

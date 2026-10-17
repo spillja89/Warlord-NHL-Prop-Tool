@@ -17,7 +17,7 @@ import streamlit as st
 from published_output import fetch_grade_file, fetch_tracker, is_newer_tracker, list_grade_files, local_matches_sha, save_if_changed
 from warlord_moves_2026 import VERSION as MOVE_KIT_VERSION
 from warlord_moves_2026 import best_move, points_moves, sog_moves, goals_moves as _goals_carry_moves, assists_moves as _assists_mapped_moves
-from warlords_night_board import CLASSES, baseline_audit, rank_warlords, rank_priced_slate, featured_warlords, render_warlords, render_power_play_form, _character_uri
+from warlords_night_board import CLASSES, baseline_audit, rank_warlords, rank_priced_slate, featured_warlords, unfeatured_baselines, render_warlords, render_power_play_form, _character_uri
 from player_form import compact_regular_log, summarize_form
 from current_season_stats import current_season_rows, season_for_day
 from season_sources import (fetch_moneypuck_skaters, fetch_moneypuck_teams,
@@ -803,15 +803,21 @@ def _render_class_shortlist(frame: pd.DataFrame, role: str,
     if total == 0:
         st.info("No posted player line and price for this class yet.")
         return
+    watch = unfeatured_baselines(priced[role])
+    if role == "Carry" and watch:
+        st.subheader(f"Green goal candidates · {len(watch)} without a tested 50%+ move")
+        st.caption("These players clear today's goal baseline and have a posted price. "
+                   "The old goal move record may not apply, so no historical move % is claimed for them.")
+        watch_cols = ["Player", "Team", "Game", "Start (CT)", "Line", "Over odds",
+                      "Book", "Book break-even %", "Model conf", "Reason"]
+        st.dataframe(_priced_pool_table(watch)[watch_cols], hide_index=True,
+                     use_container_width=True)
     if featured[role]:
         st.html(render_warlords(featured, limit=len(featured[role]), roles=(role,), show_hero=False))
     else:
         st.caption("No player clears both the current baseline and a tested move at 50%+ on this slate.")
     st.caption("Character cards require the current Green baseline and a historical move at 50%+. Book break-even % comes from the posted odds; move percentages describe past results for that rule, not a forecast. Model confidence is a separate ranking score.")
-    watch = [card for card in priced[role] if card.get("baseline_rule") and not any(
-        int(move["picks"]) > 0 and int(move["wins"]) / int(move["picks"]) >= 0.5
-        for move in card["moves"])]
-    if watch:
+    if watch and role != "Carry":
         with st.expander(f"Green baseline, no 50%+ move ({len(watch)})"):
             watch_cols = ["Player", "Team", "Game", "Line", "Over odds", "Book",
                           "Book break-even %", "Model conf", "Fired move", "Move %", "Reason"]

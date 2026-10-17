@@ -260,6 +260,13 @@ def featured_warlords(boards: dict[str, list[dict]]) -> dict[str, list[dict]]:
     return featured
 
 
+def unfeatured_baselines(cards: list[dict]) -> list[dict]:
+    """Priced Green candidates without a qualifying historical move."""
+    return [card for card in cards if card.get("baseline_rule") and not any(
+        int(move["picks"]) > 0 and int(move["wins"]) / int(move["picks"]) >= 0.5
+        for move in card["moves"])]
+
+
 def baseline_audit(frame: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     """Show each priced baseline and where the other posted lines drop out.
 
