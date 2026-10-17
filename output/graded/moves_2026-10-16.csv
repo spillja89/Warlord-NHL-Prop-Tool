@@ -1,0 +1,12 @@
+Date,Game,Game_ID,Player,Player_ID,Team,Market,Move,Kind,Rule,Icon,Kit_Version,Line,Actual,Outcome,Grade_Status,Match_Status
+2026-10-16,BOS@ANA,2026020120,Leo Carlsson,8484153.0,ANA,Assists,Staff (Green Stance),STANCE,Green + Assists 0.5,staff.svg,2026-10-16-opportunity-v4,0.5,0.0,L,FINAL,OK
+2026-10-16,BOS@ANA,2026020120,David Pastrnak,8477956.0,BOS,Points,DPS Tank stance,STANCE,Conf_Points >= 75,PTS15_TWO_HANDED_HAMMER.svg,2026-10-16-opportunity-v4,1.5,2.0,W,FINAL,OK
+2026-10-16,BOS@ANA,2026020120,David Pastrnak,8477956.0,BOS,Points,Backbone,FLOOR,Conf_Points >= 75 + Conf_Goal <= 88 + Conf_SOG >= 80,PTS15_TWO_HANDED_HAMMER.svg,2026-10-16-opportunity-v4,1.5,2.0,W,FINAL,OK
+2026-10-16,BOS@ANA,2026020120,David Pastrnak,8477956.0,BOS,Points,Blade Impale (Power Tier),HEAVY,Backbone + Assists_mu <= 1.55,PTS15_BLADE_IMPALE.svg,2026-10-16-opportunity-v4,1.5,2.0,W,FINAL,OK
+2026-10-16,BOS@ANA,2026020120,David Pastrnak,8477956.0,BOS,Assists,Staff (Green Stance),STANCE,Green + Assists 0.5,staff.svg,2026-10-16-opportunity-v4,0.5,1.0,W,FINAL,OK
+2026-10-16,BOS@ANA,2026020120,David Pastrnak,8477956.0,BOS,SOG,Sniper Stance,STANCE,Green + SOG 3.5 + Conf_SOG >= 75,sog_class_shooter.svg,2026-10-16-opportunity-v4,3.5,4.0,W,FINAL,OK
+2026-10-16,PIT@COL,2026020119,Nathan MacKinnon,8477492.0,COL,Points,DPS Tank stance,STANCE,Conf_Points >= 75,PTS15_TWO_HANDED_HAMMER.svg,2026-10-16-opportunity-v4,1.5,4.0,W,FINAL,OK
+2026-10-16,PIT@COL,2026020119,Nathan MacKinnon,8477492.0,COL,Points,Blade Slash,SPECIAL,Conf_Points >= 75 + Goal_Model% >= 33.4 + Opp_PK_xGA60 >= 7.38249,PTS15_BLADE_SLASH.svg,2026-10-16-opportunity-v4,1.5,4.0,W,FINAL,OK
+2026-10-16,PIT@COL,2026020119,Nathan MacKinnon,8477492.0,COL,Assists,Staff (Green Stance),STANCE,Green + Assists 0.5,staff.svg,2026-10-16-opportunity-v4,0.5,3.0,W,FINAL,OK
+2026-10-16,PIT@COL,2026020119,Nathan MacKinnon,8477492.0,COL,Assists,Staff Awakened,STANCE,Green + Assists 0.5 + Conf_Assists ≥ 83,staff.svg,2026-10-16-opportunity-v4,0.5,3.0,W,FINAL,OK
+2026-10-16,PIT@COL,2026020119,Erik Karlsson,8474578.0,PIT,Assists,Staff (Green Stance),STANCE,Green + Assists 0.5,staff.svg,2026-10-16-opportunity-v4,0.5,1.0,W,FINAL,OK

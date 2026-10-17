@@ -1,0 +1,152 @@
+{
+  "frozen_moves_available": true,
+  "games_found": 2,
+  "grade_status": {
+    "FINAL": 71,
+    "NO_PLAYER": 11
+  },
+  "grader_version": "2026-10-01-v2",
+  "markets": {
+    "ATG": {
+      "L": 58,
+      "UNSET": 12,
+      "W": 12
+    },
+    "Assists": {
+      "L": 28,
+      "UNSET": 39,
+      "W": 15
+    },
+    "Goal": {
+      "L": 58,
+      "UNSET": 12,
+      "W": 12
+    },
+    "PPP": {
+      "L": 29,
+      "UNSET": 44,
+      "W": 9
+    },
+    "Points": {
+      "L": 25,
+      "UNSET": 33,
+      "W": 24
+    },
+    "SOG": {
+      "L": 24,
+      "UNSET": 39,
+      "W": 19
+    }
+  },
+  "moves": [
+    {
+      "Games": 2,
+      "Hit_Pct": 75.0,
+      "Kind": "STANCE",
+      "Kit_Version": "2026-10-16-opportunity-v4",
+      "Losses": 1,
+      "Market": "Assists",
+      "Move": "Staff (Green Stance)",
+      "Picks": 4,
+      "Players": 4,
+      "Pushes": 0,
+      "Rule": "Green + Assists 0.5",
+      "Unresolved": 0,
+      "Wins": 3
+    },
+    {
+      "Games": 2,
+      "Hit_Pct": 100.0,
+      "Kind": "STANCE",
+      "Kit_Version": "2026-10-16-opportunity-v4",
+      "Losses": 0,
+      "Market": "Points",
+      "Move": "DPS Tank stance",
+      "Picks": 2,
+      "Players": 2,
+      "Pushes": 0,
+      "Rule": "Conf_Points >= 75",
+      "Unresolved": 0,
+      "Wins": 2
+    },
+    {
+      "Games": 1,
+      "Hit_Pct": 100.0,
+      "Kind": "STANCE",
+      "Kit_Version": "2026-10-16-opportunity-v4",
+      "Losses": 0,
+      "Market": "Assists",
+      "Move": "Staff Awakened",
+      "Picks": 1,
+      "Players": 1,
+      "Pushes": 0,
+      "Rule": "Green + Assists 0.5 + Conf_Assists \u2265 83",
+      "Unresolved": 0,
+      "Wins": 1
+    },
+    {
+      "Games": 1,
+      "Hit_Pct": 100.0,
+      "Kind": "FLOOR",
+      "Kit_Version": "2026-10-16-opportunity-v4",
+      "Losses": 0,
+      "Market": "Points",
+      "Move": "Backbone",
+      "Picks": 1,
+      "Players": 1,
+      "Pushes": 0,
+      "Rule": "Conf_Points >= 75 + Conf_Goal <= 88 + Conf_SOG >= 80",
+      "Unresolved": 0,
+      "Wins": 1
+    },
+    {
+      "Games": 1,
+      "Hit_Pct": 100.0,
+      "Kind": "HEAVY",
+      "Kit_Version": "2026-10-16-opportunity-v4",
+      "Losses": 0,
+      "Market": "Points",
+      "Move": "Blade Impale (Power Tier)",
+      "Picks": 1,
+      "Players": 1,
+      "Pushes": 0,
+      "Rule": "Backbone + Assists_mu <= 1.55",
+      "Unresolved": 0,
+      "Wins": 1
+    },
+    {
+      "Games": 1,
+      "Hit_Pct": 100.0,
+      "Kind": "SPECIAL",
+      "Kit_Version": "2026-10-16-opportunity-v4",
+      "Losses": 0,
+      "Market": "Points",
+      "Move": "Blade Slash",
+      "Picks": 1,
+      "Players": 1,
+      "Pushes": 0,
+      "Rule": "Conf_Points >= 75 + Goal_Model% >= 33.4 + Opp_PK_xGA60 >= 7.38249",
+      "Unresolved": 0,
+      "Wins": 1
+    },
+    {
+      "Games": 1,
+      "Hit_Pct": 100.0,
+      "Kind": "STANCE",
+      "Kit_Version": "2026-10-16-opportunity-v4",
+      "Losses": 0,
+      "Market": "SOG",
+      "Move": "Sniper Stance",
+      "Picks": 1,
+      "Players": 1,
+      "Pushes": 0,
+      "Rule": "Green + SOG 3.5 + Conf_SOG >= 75",
+      "Unresolved": 0,
+      "Wins": 1
+    }
+  ],
+  "slate_date": "2026-10-16",
+  "source_file": "tracker_2026-10-16.csv",
+  "source_sha256": "6ba3c4fb9a524cdab614e163f1019acff0030e9c957222802c52454e622c9e2b",
+  "tracker_rows": 82
+}
