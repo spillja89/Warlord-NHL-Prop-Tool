@@ -139,6 +139,7 @@ def rank_warlords(frame: pd.DataFrame) -> dict[str, list[dict]]:
             key = (team.casefold(), player.casefold())
             candidate = {
                 "player": player, "team": team,
+                "position": str(_value(row, "Pos") or "").strip(),
                 "opponent": str(_value(row, "Opp") or "").strip(),
                 "game": str(_value(row, "Game") or "").strip(),
                 "time": str(_value(row, "Time") or _value(row, "StartTimeLocal") or "").strip(),
@@ -202,6 +203,7 @@ def rank_priced_slate(frame: pd.DataFrame) -> dict[str, list[dict]]:
             )
             candidate = {
                 "player": player, "team": team,
+                "position": str(_value(row, "Pos") or "").strip(),
                 "opponent": str(_value(row, "Opp") or "").strip(),
                 "game": str(_value(row, "Game") or "").strip(),
                 "time": str(_value(row, "Time") or _value(row, "StartTimeLocal") or "").strip(),
@@ -549,6 +551,11 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
                            f' · {int(goalie_gp)} GP' if goalie_gp is not None else '')
             goalie_note = (f'<div class="wn-goalie">Opp goalie: {_h(goalie_name)} · {_h(goalie_status)}{sample_note}</div>'
                            if goalie_name else '<div class="wn-goalie">Opp goalie: unknown</div>')
+            positional = card.get("position_sog") if role == "Jungle" else None
+            position_note = (f'<div class="wn-position-sog">{_h(positional["opponent"])} allows '
+                             f'<b>{positional["shots_per_game"]:.1f} SOG/game</b> to {_h(positional["position"])} '
+                             f'· #{positional["rank"]} most · {positional["gp"]} GP</div>'
+                             if positional else "")
             fired = card.get("moves") or ([] if not move or baseline_only else [move])
             move_rows = []
             for fired_move in fired:
@@ -606,6 +613,7 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
                 <div class="wn-attack"><span class="wn-attack-name">{_h(move_name)}</span><span class="wn-badge">{_h(status + sample)}</span></div>
                 <div class="wn-unit-foot"><span>{_h(line)} <b>{_h(price)}</b>{book_note}</span><span>{_h(later_note)}{confidence_note}</span></div>
                 {book_rate_note}
+                {position_note}
                 {goalie_note}
               </div>
               {record_html}
@@ -660,6 +668,7 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
       .wn-book{font-size:9px;color:var(--accent);font-weight:800;white-space:nowrap;margin-left:5px}
       .wn-book-rate{font-size:9px;color:#b9c9dc;margin-top:4px;font-weight:800;letter-spacing:.06em}
       .wn-goalie{font-size:9px;color:#9fb6cb;margin-top:3px}
+      .wn-position-sog{font-size:10px;color:#9edac1;margin-top:5px}.wn-position-sog b{color:#e6fff3}
       .wn-record{position:relative;z-index:1;text-align:right;flex:none;min-width:66px;display:flex;flex-direction:column;line-height:1.1}.wn-record strong{font-size:21px;color:#fff}.wn-record span{color:var(--accent);font-size:12px;font-weight:900;margin-top:3px}.wn-record em{font-style:normal;color:#8092a9;font-size:8px;letter-spacing:.08em;margin-top:3px}
       .wn-details{position:relative;z-index:1;flex:0 0 100%;font-size:10px;color:#aebbd0;border-top:1px solid #ffffff14;padding-top:5px}.wn-details summary{cursor:pointer;color:var(--accent);font-weight:700}.wn-move-list{max-height:320px;overflow:auto;display:grid;gap:6px;margin-top:8px;padding-right:3px}
       .wn-form,.wn-form-empty{position:relative;z-index:1;flex:0 0 100%;font-size:10px;color:#b9c9dc;border-top:1px solid #ffffff14;padding-top:5px}.wn-form summary{cursor:pointer;color:#e4c892;font-weight:800}.wn-form p{margin:7px 0;color:#aebbd0}.wn-form-tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(102px,1fr));gap:5px;margin:8px 0}.wn-form-tiles>div{border:1px solid #ffffff1d;border-radius:5px;padding:6px;background:#0b1629a8}.wn-form-tiles small{display:block;color:#98adc6;font-size:8px;letter-spacing:.07em}.wn-form-tiles strong{display:block;color:#fff;font-size:11px;margin-top:3px}.wn-form-meta{margin:4px 0}.wn-form-strip{display:flex;flex-wrap:wrap;gap:4px;margin:8px 0}.wn-form-strip span{border-radius:4px;padding:3px 5px;font-weight:800;text-align:center;min-width:36px}.wn-form-strip span b{display:block}.wn-form-strip span small{display:block;font-size:8px;font-weight:600;margin-top:2px;opacity:.85}.wn-form-strip .hit{background:#1d6145;color:#c4ffde}.wn-form-strip .miss{background:#603036;color:#ffd7d7}
@@ -687,4 +696,3 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
       <div class="wn-hero-foot">{_h(hero_foot)} · HISTORICAL MOVE RATE IS NOT A FORECAST</div></div>"""
     board_class = "wn-board" if show_hero else "wn-board wn-board--compact"
     return styles + f'<div class="{board_class}">' + (hero if show_hero else "") + '<div class="wn-grid">' + ''.join(lanes) + '</div></div>'
-
