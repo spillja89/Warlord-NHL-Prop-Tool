@@ -12,6 +12,8 @@ from bs4 import BeautifulSoup
 
 
 SOURCE_URL = "https://shotpropz.com/nhl/sog-against-by-position/"
+HEADERS = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/125.0 Safari/537.36",
+           "Accept": "text/html,application/xhtml+xml"}
 POSITIONS = {"C": "C", "L": "LW", "LW": "LW", "R": "RW", "RW": "RW", "D": "D", "LD": "D", "RD": "D"}
 
 
@@ -58,10 +60,12 @@ def parse_position_sog(html: str, season: str) -> dict:
 
 def fetch_position_sog(season: str, session=None) -> dict:
     """One small public-page request; caller caches and handles outages."""
-    import requests
-
-    http = session or requests.Session()
-    response = http.get(SOURCE_URL, params={"season": f"{season[2:4]}_{season[-2:]}", "span": "YTD"}, timeout=20)
+    if session is None:
+        import requests
+        session = requests.Session()
+    http = session
+    response = http.get(SOURCE_URL, params={"season": f"{season[2:4]}_{season[-2:]}", "span": "YTD"},
+                        headers=HEADERS, timeout=20)
     response.raise_for_status()
     return parse_position_sog(response.text, season)
 
