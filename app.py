@@ -27,6 +27,7 @@ from season_sources import (fetch_moneypuck_skaters, fetch_moneypuck_teams,
 from ledger_store import append_bet as _append_cloud_bet, recent_bets as _recent_cloud_bets
 from power_play_quotes import fetch_current_pp_usage, format_ppp_book_prices, priced_ppp_quotes
 from player_availability import unavailable_mask
+from position_sog import current_slate_only, fetch_position_sog, position_matchup, SOURCE_URL as POSITION_SOG_URL
 
 
 @st.cache_data(ttl=600, show_spinner=False)
@@ -52,6 +53,27 @@ def _cached_moneypuck_teams(start_year: int):
 @st.cache_data(ttl=1800, show_spinner=False)
 def _cached_player_log(player_id: int, season_id: int):
     return fetch_nhl_player_log(player_id, season_id)
+
+
+@st.cache_data(ttl=3600, show_spinner=False)
+def _cached_position_sog(season: str):
+    try:
+        return fetch_position_sog(season), None
+    except Exception as exc:
+        return None, type(exc).__name__
+
+
+def _position_sog_for_day(slate_day: str):
+    today = datetime.now(ZoneInfo("America/Chicago")).date()
+    if not current_slate_only(slate_day, today):
+        return None, None
+    return _cached_position_sog(season_for_day(slate_day))
+
+
+def _add_position_sog_to_cards(cards: list[dict], data: dict | None) -> None:
+    for card in cards:
+        card["position_sog"] = position_matchup(
+            card.get("team"), card.get("game"), card.get("position"), data)
 # -------------------------
 # Back-compat SVG helpers (used by player-card tags / older HUD snippets)
 # -------------------------
@@ -756,6 +778,7 @@ def _render_class_header(mkt: str, frame: pd.DataFrame) -> None:
 
 def _priced_pool_table(cards: list[dict]) -> pd.DataFrame:
     rows = []
+    has_position_data = any(card.get("position_sog") for card in cards)
     for card in cards:
         qualified = [move for move in card["moves"] if int(move["picks"]) > 0
                      and int(move["wins"]) / int(move["picks"]) >= 0.5]
@@ -763,7 +786,7 @@ def _priced_pool_table(cards: list[dict]) -> pd.DataFrame:
             int(item["wins"]) / int(item["picks"]) if int(item["picks"]) else -1,
             int(item["picks"]))) if card["moves"] else None
         featured = bool(card.get("baseline_rule") and qualified)
-        rows.append({
+        row = {
             "Player": card["player"], "Team": card["team"], "Game": card["game"],
             "Start (CT)": card.get("time") or "",
             "Line": card["line"], "Over odds": int(card["odds"]),
@@ -781,12 +804,19 @@ def _priced_pool_table(cards: list[dict]) -> pd.DataFrame:
                 "Below current baseline" if not card.get("baseline_rule") else
                 (card.get("move_block_reason") or "No frozen move fired") if not card["moves"] else
                 "Fired move below 50%"),
-        })
-    return pd.DataFrame(rows, columns=("Player", "Team", "Game", "Start (CT)", "Line", "Over odds",
-                                        "Book", "Book break-even %",
-                                        "Model conf", "Matrix", "Featured",
-                                        "Fired move", "Move record", "Move %",
-                                        "Later record", "Later %", "Reason"))
+        }
+        if has_position_data:
+            matchup = card.get("position_sog")
+            row["Opp SOG vs position/GP"] = matchup["shots_per_game"] if matchup else None
+            row["Opp position rank"] = matchup["rank"] if matchup else None
+            row["Opp position GP"] = matchup["gp"] if matchup else None
+        rows.append(row)
+    columns = ["Player", "Team", "Game", "Start (CT)", "Line", "Over odds",
+               "Book", "Book break-even %", "Model conf", "Matrix", "Featured",
+               "Fired move", "Move record", "Move %", "Later record", "Later %", "Reason"]
+    if has_position_data:
+        columns[7:7] = ["Opp SOG vs position/GP", "Opp position rank", "Opp position GP"]
+    return pd.DataFrame(rows, columns=columns)
 
 
 def _render_class_shortlist(frame: pd.DataFrame, role: str,
@@ -794,6 +824,11 @@ def _render_class_shortlist(frame: pd.DataFrame, role: str,
     """Show every priced player, with move tags as context."""
     slate_frame, _ = _class_slate_frame(frame)
     priced = rank_priced_slate(slate_frame)
+    position_data = None
+    position_error = None
+    if role == "Jungle" and not slate_frame.empty and "Date" in slate_frame:
+        position_data, position_error = _position_sog_for_day(str(slate_frame["Date"].iloc[0]))
+        _add_position_sog_to_cards(priced[role], position_data)
     featured = featured_warlords(priced)
     starts_by_game = _slate_start_times(slate_frame)
     priced = _sort_slate_boards(priced, slate_sort, starts_by_game)
@@ -824,6 +859,10 @@ def _render_class_shortlist(frame: pd.DataFrame, role: str,
     else:
         st.caption("No player clears both the current baseline and a tested move at 50%+ on this slate.")
     st.caption("Book break-even % comes from posted odds; move percentages describe past results for that rule, not a forecast. Model confidence is a separate ranking score.")
+    if role == "Jungle" and position_data:
+        st.caption(f"Position matchup: [Shot Propz]({POSITION_SOG_URL}) current-season YTD shots allowed per game to that position; #1 allows the most. Updated {position_data['updated']}. Descriptive context only; it does not change moves or ranking.")
+    elif role == "Jungle" and position_error:
+        st.caption(f"Positional SOG matchup feed unavailable ({position_error}); saved SOG cards and moves are unaffected.")
     if watch and role != "Carry":
         with st.expander(f"Green baseline, no 50%+ move ({len(watch)})"):
             watch_cols = ["Player", "Team", "Game", "Line", "Over odds", "Book",
@@ -4832,6 +4871,8 @@ if page == "⚔️ Warlords of the Night":
     night_df = df_f.loc[dates.eq(night)] if night is not None else df_f
     slate_day = night.isoformat() if night is not None else datetime.now(ZoneInfo("America/Chicago")).date().isoformat()
     priced_boards = rank_priced_slate(night_df)
+    position_data, _position_error = _position_sog_for_day(slate_day)
+    _add_position_sog_to_cards(priced_boards["Jungle"], position_data)
     featured_boards = featured_warlords(priced_boards)
     starts_by_game = _slate_start_times(night_df)
     priced_boards = _sort_slate_boards(priced_boards, slate_sort, starts_by_game)
@@ -4854,6 +4895,10 @@ if page == "⚔️ Warlords of the Night":
                "Every priced entry is in the complete slate below.")
     if display_total:
         st.html(render_warlords(display_boards, max(map(len, display_boards.values())), _load_svg_icon))
+        if position_data:
+            st.caption(f"Jungle matchup numbers: [Shot Propz]({POSITION_SOG_URL}) current-season YTD shots allowed by position · updated {position_data['updated']}. Context only; rankings and frozen moves are unchanged.")
+        elif _position_error:
+            st.caption(f"Positional SOG matchup feed unavailable ({_position_error}); saved cards and moves are unaffected.")
         order_note = ("Goal cards put S tier first, then A and B tier watches, then remaining Green baselines" if slate_sort == "Top ranked"
                       else f"Cards are sorted by {slate_sort.lower()}; same-game move ranks stay intact")
         st.caption(f"{len(goal_cards)} Green goal candidates: {s_goal_count} S tier, {a_goal_count} A tier watch, and {b_goal_count} B tier watch. "
@@ -5516,6 +5561,15 @@ elif page == "SOG":
 
     df_s["Green"] = df_s["Green_SOG"].map(lambda x: "🟢" if bool(x) else "")
 
+    sog_position_data = None
+    if not df_s.empty and "Date" in df_s:
+        sog_position_data, _ = _position_sog_for_day(str(df_s["Date"].iloc[0]))
+    position_matches = [position_matchup(row.get("Team"), row.get("Game"), row.get("Pos"), sog_position_data)
+                        for row in df_s.to_dict("records")]
+    df_s["Opp SOG vs position/GP"] = [match["shots_per_game"] if match else None for match in position_matches]
+    df_s["Opp SOG position rank"] = [match["rank"] if match else None for match in position_matches]
+    df_s["Opp position GP"] = [match["gp"] if match else None for match in position_matches]
+
     sog_cols = [
        "Game",
        "Player", "Pos",
@@ -5529,6 +5583,7 @@ elif page == "SOG":
         "SOG_Line",
         "SOG_Odds_Over",
         "SOG_Book",
+        "Opp SOG vs position/GP", "Opp SOG position rank", "Opp position GP",
         "SOG_Opportunity_Matchup", "SOG_Opportunity_Coverage",
         "L20_Rate_SOG", "L40_Rate_SOG",
         "Opp_SOG_Against_L50", "opp_5v5_xGA60", "Player_5v5_SOG_Share",
@@ -5587,6 +5642,8 @@ elif page == "SOG":
     st.markdown("---")
 
     show_table(df_s, sog_cols, "SOG View")
+    if sog_position_data:
+        st.caption(f"Position matchup columns: [Shot Propz]({POSITION_SOG_URL}) current-season YTD · updated {sog_position_data['updated']}. Rank #1 allows the most SOG to that position. These observed team totals do not change player picks or move percentages.")
     st.caption("Opportunity SOG/game combines recorded 5v5 and PP shot rates with minutes and a modest opponent shot-volume adjustment. It is an experimental volume view, not a tested hit probability; unavailable inputs stay visible in Coverage.")
 
 
@@ -7165,4 +7222,3 @@ elif page == "Ledger":
 else:
     st.subheader("Raw CSV (all columns)")
     st.dataframe(df_f, width="stretch", hide_index=True)
-
