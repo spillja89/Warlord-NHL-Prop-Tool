@@ -179,7 +179,7 @@ class BoardBaselineTests(unittest.TestCase):
         self.assertEqual(cards["Goal high"]["baseline_rule"],
                          "Green + Goal 0.5 + Conf_Goal ≥ 84")
         self.assertEqual(cards["Goal high"]["move_block_reason"],
-                         "Goal move needs Points conf ≥ 84")
+                         "Goal move needs Points conf ≥ 82")
         self.assertIsNone(cards["Points high"]["baseline_rule"])
         statuses = audit.set_index("Player")["Status"]
         self.assertEqual(statuses["Goal high"], "Baseline only")
@@ -199,10 +199,17 @@ class BoardBaselineTests(unittest.TestCase):
         self.assertEqual(priced[0]["book"], "BetMGM")
         self.assertEqual(featured_warlords({"Carry": priced})["Carry"], [])
 
-    def test_goal_moves_keep_points_gate_and_original_history(self):
+    def test_goal_moves_keep_s_tier_history_and_separate_a_tier(self):
         row = {"Goal_Line": 0.5, "Matrix_Goal": "Green", "Conf_Goal": 94,
                "Conf_Points": 20, "Goal_mu": .50, "Opp_PK_xGA60": 8.0}
         self.assertEqual(_goals_carry_moves(row), [])
+        row["Conf_Points"] = 82
+        a_moves = {move["name"]: move for move in _goals_carry_moves(row)}
+        self.assertEqual((a_moves["Base Attack"]["wins"], a_moves["Base Attack"]["picks"]),
+                         (9, 23))
+        self.assertEqual((a_moves["Armor Sunder"]["wins"], a_moves["Armor Sunder"]["picks"]),
+                         (6, 10))
+        self.assertEqual(a_moves["Armor Sunder"]["goal_tier"], "A")
         row["Conf_Points"] = 90
         moves = {move["name"]: move for move in _goals_carry_moves(row)}
         self.assertEqual((moves["Base Attack"]["wins"], moves["Base Attack"]["picks"]),
@@ -210,6 +217,7 @@ class BoardBaselineTests(unittest.TestCase):
         self.assertEqual((moves["Armor Sunder"]["wins"], moves["Armor Sunder"]["picks"]),
                          (47, 74))
         self.assertEqual(moves["Base Attack"]["later_picks"], 55)
+        self.assertEqual(moves["Base Attack"]["goal_tier"], "S")
 
     def test_goal_display_includes_baseline_candidates_below_half_rate(self):
         row = pd.DataFrame([{
@@ -223,7 +231,7 @@ class BoardBaselineTests(unittest.TestCase):
         self.assertIsNone(cards[0]["move"])
         html = render_warlords({"Carry": cards}, roles=("Carry",))
         self.assertIn("GOAL CANDIDATES", html)
-        self.assertIn("Goal move needs Points conf", html)
+        self.assertIn("Goal move needs Points conf ≥ 82", html)
         self.assertIn("BOOK BREAK-EVEN 35.7%", html)
         self.assertNotIn("46.0%", html)
 
