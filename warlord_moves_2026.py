@@ -214,6 +214,34 @@ def _safe_float(value, default=None):
         return default
 
 
+# Prior-season graded Green 0.5-goal rows with Conf_Points exactly 82 or 83.
+# Kept separate from the established 84+ goal move records. Each tuple is
+# wins, graded rows, later wins, later rows (later = Mar 15 onward).
+GOAL_A_TIER_RECORDS = {
+    "Base Attack": (9, 23, 5, 13),
+    "Weakened Armor": (11, 22, 7, 15),
+    "Open Lanes": (6, 14, 4, 10),
+    "Fallen Guardian": (8, 15, 6, 11),
+    "Open Lanes Assault": (4, 9, 2, 6),
+    "Armor Sunder": (6, 10, 3, 6),
+    "Bloodlust": (4, 11, 3, 8),
+    "Berserker Aggression": (3, 7, 1, 3),
+    "Finisher Strike": (5, 13, 3, 9),
+    "Enraged Finisher": (4, 11, 2, 8),
+    "Tyr’s Wrath Unleashed": (2, 9, 1, 6),
+    "Armor Annihilation": (2, 4, 2, 3),
+    "Warlord Smash Attack": (2, 6, 1, 4),
+    "Warlord Smash Attack (Crit)": (1, 4, 1, 3),
+    "Press the Attack": (2, 4, 1, 2),
+    "Press the Attack (Crit)": (2, 4, 1, 2),
+    "Fury Shredder": (2, 5, 1, 3),
+    "Enraged Fury Shredder": (2, 5, 1, 3),
+    "Bloodlusted": (4, 8, 3, 6),
+    "Bloodlusted Surge": (2, 6, 1, 4),
+    "FOR VALHALLA!": (3, 7, 1, 3),
+}
+
+
 def _goals_carry_moves(r) -> list[dict]:
     """Current 0.5 Goal Carry attacks and opponent weakness effects."""
     line = _safe_float(r.get("Goal_Line"), None)
@@ -221,8 +249,9 @@ def _goals_carry_moves(r) -> list[dict]:
         line = _safe_float(r.get("ATG_Line"), None)
     matrix = str(r.get("Matrix_Goal", "") or "").strip().casefold()
     conf_points = _safe_float(r.get("Conf_Points"), None)
-    if line != 0.5 or matrix != "green" or conf_points is None or conf_points < 84:
+    if line != 0.5 or matrix != "green" or conf_points is None or conf_points < 82:
         return []
+    a_tier = conf_points < 84
 
     goal_mu = _safe_float(r.get("Goal_mu"), None)
     opp_pk = _safe_float(r.get("Opp_PK_xGA60"), None)
@@ -255,9 +284,13 @@ def _goals_carry_moves(r) -> list[dict]:
     moves = []
     def add(name, kind, condition, wins, picks, later_wins, later_picks, icon,
             crit=False, experimental=False):
+        if a_tier:
+            wins, picks, later_wins, later_picks = GOAL_A_TIER_RECORDS[name]
         moves.append({"name": name, "kind": kind, "condition": condition,
                       "wins": wins, "picks": picks, "later_wins": later_wins,
                       "later_picks": later_picks, "icon": icon, "crit": crit,
+                      "goal_tier": "A" if a_tier else "S",
+                      "record_scope": "Points confidence 82–83" if a_tier else "Points confidence 84+",
                       "experimental": experimental})
     if attack:
         add("Base Attack", "BASE ATTACK", "Goal_mu >= 0.4048",
