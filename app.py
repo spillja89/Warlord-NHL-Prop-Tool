@@ -668,7 +668,7 @@ _ROLE_INFO = {
 # One description is reused by the prop headers, move gate, and Ledger.
 # Fired counts always come from warlord_moves_2026, never from this copy.
 _CLASS_RULES = {
-    "GOALS": {"role": "Carry", "market": "Goal", "entry": "Matrix_Goal Green · Goal 0.5 · Conf_Goal ≥ 84", "note": "S-tier moves require Conf_Points ≥ 84. A-tier watches use Conf_Points 82–83 and their own smaller prior-season records. Other Green goal candidates remain visible."},
+    "GOALS": {"role": "Carry", "market": "Goal", "entry": "Matrix_Goal Green · Goal 0.5 · Conf_Goal ≥ 84", "note": "S-tier cards have Conf_Points ≥ 84 and show the 84+ historical move. A-tier watches have Conf_Points 82–83 and show the same move at the cumulative 82+ cutoff, plus the 82–83-only result. Other Green goal candidates remain visible."},
     "ASSISTS": {"role": "Support", "market": "Assists", "entry": "Matrix_Assists Green · Assists 0.5 · Conf_Assists ≥ 83 for named attacks", "note": "Green 0.5 alone fires Staff stance; 83 unlocks named attacks."},
     "POINTS": {"role": "Tank", "market": "Points", "entry": "Matrix_Points Green · Points 0.5 with Conf_Points ≥ 80, or Points 1.5 with Conf_Points ≥ 75", "note": "The 0.5 and 1.5 lines have separate move trees."},
     "SOG": {"role": "Jungle", "market": "SOG", "entry": "Matrix_SOG Green · exact SOG 2.5 or 3.5 · Conf_SOG ≥ 75", "note": "The 2.5 and 3.5 lines have separate move trees."},
@@ -814,7 +814,7 @@ def _render_class_shortlist(frame: pd.DataFrame, role: str,
         st.caption(f"{s_goal_count} S-tier goal profiles (Points confidence 84+) · "
                    f"{a_goal_count} A-tier watches (82–83) · "
                    f"{len(goal_cards) - s_goal_count - a_goal_count} other Green goal baselines. "
-                   "A uses only last season's 82–83 rows; S uses 84+ rows. These are separate samples, and each named move has its own conditions. A-tier moves below 50% stay off the cards.")
+                   "A cards show the same move replayed at an 82+ cutoff, including the 84+ games. S shows 84+ only. The 82–83-only result is shown separately; it must also clear 50% for an A card.")
         st.html(render_warlords({"Carry": goal_cards}, limit=len(goal_cards),
                                 roles=("Carry",), show_hero=False))
     elif featured[role]:
@@ -4856,7 +4856,7 @@ if page == "⚔️ Warlords of the Night":
         st.caption(f"{len(goal_cards)} Green goal candidates: {s_goal_count} S tier and {a_goal_count} A tier watch. "
                    f"{len(featured_boards['Carry'])} S-tier goals have a 50%+ historical move; "
                    f"{featured_total-len(featured_boards['Carry'])} other prop entries have a 50%+ move. "
-                   f"{order_note}. A records use 82–83 only; S records use 84+ only. Each named move has its own conditions. Move histories are not forecasts.")
+                   f"{order_note}. A move records use all 82+ historical rows; S uses 84+ only. Each A card also shows its 82–83-only result. Move histories are not forecasts.")
     else:
         st.info(f"{priced_total} priced prop entries. No player currently clears both the baseline and a 50%+ historical move; see the complete slate below.")
 
