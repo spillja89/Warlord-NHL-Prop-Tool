@@ -668,7 +668,7 @@ _ROLE_INFO = {
 # One description is reused by the prop headers, move gate, and Ledger.
 # Fired counts always come from warlord_moves_2026, never from this copy.
 _CLASS_RULES = {
-    "GOALS": {"role": "Carry", "market": "Goal", "entry": "Matrix_Goal Green · Goal 0.5 · Conf_Goal ≥ 84", "note": "Historical goal moves also require Conf_Points ≥ 84. Green goal candidates below that threshold remain visible without a move percentage."},
+    "GOALS": {"role": "Carry", "market": "Goal", "entry": "Matrix_Goal Green · Goal 0.5 · Conf_Goal ≥ 84", "note": "S-tier moves require Conf_Points ≥ 84. A-tier watches use Conf_Points 82–83 and their own smaller prior-season records. Other Green goal candidates remain visible."},
     "ASSISTS": {"role": "Support", "market": "Assists", "entry": "Matrix_Assists Green · Assists 0.5 · Conf_Assists ≥ 83 for named attacks", "note": "Green 0.5 alone fires Staff stance; 83 unlocks named attacks."},
     "POINTS": {"role": "Tank", "market": "Points", "entry": "Matrix_Points Green · Points 0.5 with Conf_Points ≥ 80, or Points 1.5 with Conf_Points ≥ 75", "note": "The 0.5 and 1.5 lines have separate move trees."},
     "SOG": {"role": "Jungle", "market": "SOG", "entry": "Matrix_SOG Green · exact SOG 2.5 or 3.5 · Conf_SOG ≥ 75", "note": "The 2.5 and 3.5 lines have separate move trees."},
@@ -800,6 +800,8 @@ def _render_class_shortlist(frame: pd.DataFrame, role: str,
     featured = _sort_slate_boards(featured, slate_sort, starts_by_game)
     total = len(priced[role])
     goal_cards = goal_display_cards(priced[role]) if role == "Carry" else []
+    s_goal_count = sum((card.get("move") or {}).get("goal_tier") == "S" for card in goal_cards)
+    a_goal_count = sum((card.get("move") or {}).get("goal_tier") == "A" for card in goal_cards)
     if goal_cards and slate_sort != "Top ranked":
         goal_cards = _sort_slate_boards({"Carry": goal_cards}, slate_sort, starts_by_game)["Carry"]
     st.subheader(f"{role} · {len(goal_cards)} Green goal candidates of {total} priced players"
@@ -809,9 +811,10 @@ def _render_class_shortlist(frame: pd.DataFrame, role: str,
         return
     watch = unfeatured_baselines(priced[role])
     if role == "Carry":
-        st.caption(f"{len(featured[role])} have a 50%+ historical move; the rest remain visible with their "
-                   "Green goal baseline. Goal moves require Points confidence ≥ 84 because their historical "
-                   "records were measured with that gate. These percentages are past results, not tonight's probability.")
+        st.caption(f"{s_goal_count} S-tier goal profiles (Points confidence 84+) · "
+                   f"{a_goal_count} A-tier watches (82–83) · "
+                   f"{len(goal_cards) - s_goal_count - a_goal_count} other Green goal baselines. "
+                   "A-tier move percentages use only last season's 82–83 sample; they are not tonight's probability.")
         st.html(render_warlords({"Carry": goal_cards}, limit=len(goal_cards),
                                 roles=("Carry",), show_hero=False))
     elif featured[role]:
@@ -4834,6 +4837,8 @@ if page == "⚔️ Warlords of the Night":
     priced_total = sum(len(cards) for cards in priced_boards.values())
     featured_total = sum(len(cards) for cards in featured_boards.values())
     goal_cards = goal_display_cards(priced_boards["Carry"])
+    s_goal_count = sum((card.get("move") or {}).get("goal_tier") == "S" for card in goal_cards)
+    a_goal_count = sum((card.get("move") or {}).get("goal_tier") == "A" for card in goal_cards)
     display_boards = {**featured_boards, "Carry": goal_cards}
     if slate_sort != "Top ranked":
         display_boards = _sort_slate_boards(display_boards, slate_sort, starts_by_game)
@@ -4841,13 +4846,15 @@ if page == "⚔️ Warlords of the Night":
     st.caption(f"Current view: {night_df['Game'].nunique() if 'Game' in night_df else 0} games · "
                f"{night_df['Team'].nunique() if 'Team' in night_df else 0} teams · "
                f"{len(night_df)} roster skaters · {priced_total} priced prop entries · "
-               f"{len(goal_cards)} Green goal candidates · {featured_total} player props have a 50%+ historical move. "
+               f"{len(goal_cards)} Green goal candidates ({s_goal_count} S tier, {a_goal_count} A tier watch) · "
+               f"{featured_total} player props have a 50%+ historical move. "
                "Every priced entry is in the complete slate below.")
     if display_total:
         st.html(render_warlords(display_boards, max(map(len, display_boards.values())), _load_svg_icon))
-        order_note = ("Goal cards put 50%+ move records first, then Green goal candidates by confidence" if slate_sort == "Top ranked"
+        order_note = ("Goal cards put S tier first, then A tier watch, then remaining Green baselines" if slate_sort == "Top ranked"
                       else f"Cards are sorted by {slate_sort.lower()}; same-game move ranks stay intact")
-        st.caption(f"{len(goal_cards)} Green goal candidates, including {len(featured_boards['Carry'])} with a 50%+ historical move; "
+        st.caption(f"{len(goal_cards)} Green goal candidates: {s_goal_count} S tier and {a_goal_count} A tier watch. "
+                   f"{len(featured_boards['Carry'])} S-tier goals have a 50%+ historical move; 
                    f"{featured_total-len(featured_boards['Carry'])} other prop entries have a 50%+ move. "
                    f"{order_note}. Move histories are not forecasts.")
     else:
