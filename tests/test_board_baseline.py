@@ -179,7 +179,7 @@ class BoardBaselineTests(unittest.TestCase):
         self.assertEqual(cards["Goal high"]["baseline_rule"],
                          "Green + Goal 0.5 + Conf_Goal ≥ 84")
         self.assertEqual(cards["Goal high"]["move_block_reason"],
-                         "No goal signal threshold fired")
+                         "Goal move needs Points conf ≥ 84")
         self.assertIsNone(cards["Points high"]["baseline_rule"])
         statuses = audit.set_index("Player")["Status"]
         self.assertEqual(statuses["Goal high"], "Baseline only")
@@ -199,15 +199,17 @@ class BoardBaselineTests(unittest.TestCase):
         self.assertEqual(priced[0]["book"], "BetMGM")
         self.assertEqual(featured_warlords({"Carry": priced})["Carry"], [])
 
-    def test_goal_moves_fire_without_points_score_and_use_ungated_history(self):
+    def test_goal_moves_keep_points_gate_and_original_history(self):
         row = {"Goal_Line": 0.5, "Matrix_Goal": "Green", "Conf_Goal": 94,
                "Conf_Points": 20, "Goal_mu": .50, "Opp_PK_xGA60": 8.0}
+        self.assertEqual(_goals_carry_moves(row), [])
+        row["Conf_Points"] = 90
         moves = {move["name"]: move for move in _goals_carry_moves(row)}
         self.assertEqual((moves["Base Attack"]["wins"], moves["Base Attack"]["picks"]),
-                         (183, 439))
+                         (59, 105))
         self.assertEqual((moves["Armor Sunder"]["wins"], moves["Armor Sunder"]["picks"]),
-                         (115, 250))
-        self.assertEqual(moves["Base Attack"]["later_picks"], 0)
+                         (47, 74))
+        self.assertEqual(moves["Base Attack"]["later_picks"], 55)
 
     def test_goal_display_includes_baseline_candidates_below_half_rate(self):
         row = pd.DataFrame([{
@@ -218,12 +220,12 @@ class BoardBaselineTests(unittest.TestCase):
         }])
         cards = goal_display_cards(rank_priced_slate(row)["Carry"])
         self.assertEqual([card["player"] for card in cards], ["Goal Candidate"])
-        self.assertEqual(cards[0]["move"]["name"], "Armor Sunder")
+        self.assertIsNone(cards[0]["move"])
         html = render_warlords({"Carry": cards}, roles=("Carry",))
         self.assertIn("GOAL CANDIDATES", html)
-        self.assertIn("46.0%", html)
+        self.assertIn("Goal move needs Points conf", html)
         self.assertIn("BOOK BREAK-EVEN 35.7%", html)
-        self.assertNotIn("LATER 0/0", html)
+        self.assertNotIn("46.0%", html)
 
     def test_empty_slate_has_safe_audit(self):
         summary, by_team, roster = baseline_audit(pd.DataFrame())
