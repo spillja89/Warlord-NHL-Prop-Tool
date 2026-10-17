@@ -206,9 +206,11 @@ class BoardBaselineTests(unittest.TestCase):
         row["Conf_Points"] = 82
         a_moves = {move["name"]: move for move in _goals_carry_moves(row)}
         self.assertEqual((a_moves["Base Attack"]["wins"], a_moves["Base Attack"]["picks"]),
-                         (9, 23))
+                         (68, 128))
         self.assertEqual((a_moves["Armor Sunder"]["wins"], a_moves["Armor Sunder"]["picks"]),
-                         (6, 10))
+                         (53, 84))
+        self.assertEqual((a_moves["Armor Sunder"]["a_band_wins"],
+                          a_moves["Armor Sunder"]["a_band_picks"]), (6, 10))
         self.assertEqual(a_moves["Armor Sunder"]["goal_tier"], "A")
         row["Conf_Points"] = 90
         moves = {move["name"]: move for move in _goals_carry_moves(row)}
@@ -235,6 +237,21 @@ class BoardBaselineTests(unittest.TestCase):
         self.assertIn("BOOK BREAK-EVEN 35.7%", html)
         self.assertNotIn("46.0%", html)
 
+    def test_a_tier_watch_requires_fifty_percent_move(self):
+        common = {"goal_tier": "A", "later_wins": 0, "later_picks": 1}
+        low = {**common, "name": "Base Attack", "wins": 68, "picks": 128,
+               "a_band_wins": 9, "a_band_picks": 23}
+        high = {**common, "name": "Armor Sunder", "wins": 53, "picks": 84,
+                "a_band_wins": 6, "a_band_picks": 10}
+        cards = [
+            {"player": "Low A", "baseline_rule": "Green", "confidence": 87,
+             "moves": [low], "move": low},
+            {"player": "High A", "baseline_rule": "Green", "confidence": 96,
+             "moves": [high], "move": high},
+        ]
+        self.assertEqual([card["player"] for card in goal_display_cards(cards)],
+                         ["High A"])
+
     def test_empty_slate_has_safe_audit(self):
         summary, by_team, roster = baseline_audit(pd.DataFrame())
         self.assertEqual(len(summary), 4)
@@ -260,3 +277,4 @@ class BoardBaselineTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
