@@ -814,7 +814,7 @@ def _render_class_shortlist(frame: pd.DataFrame, role: str,
         st.caption(f"{s_goal_count} S-tier goal profiles (Points confidence 84+) · "
                    f"{a_goal_count} A-tier watches (82–83) · "
                    f"{len(goal_cards) - s_goal_count - a_goal_count} other Green goal baselines. "
-                   "A-tier move percentages use only last season's 82–83 sample; they are not tonight's probability.")
+                   "A uses only last season's 82–83 rows; S uses 84+ rows. These are separate samples, and each named move has its own conditions. A-tier moves below 50% stay off the cards.")
         st.html(render_warlords({"Carry": goal_cards}, limit=len(goal_cards),
                                 roles=("Carry",), show_hero=False))
     elif featured[role]:
@@ -4856,7 +4856,7 @@ if page == "⚔️ Warlords of the Night":
         st.caption(f"{len(goal_cards)} Green goal candidates: {s_goal_count} S tier and {a_goal_count} A tier watch. "
                    f"{len(featured_boards['Carry'])} S-tier goals have a 50%+ historical move; "
                    f"{featured_total-len(featured_boards['Carry'])} other prop entries have a 50%+ move. "
-                   f"{order_note}. Move histories are not forecasts.")
+                   f"{order_note}. A records use 82–83 only; S records use 84+ only. Each named move has its own conditions. Move histories are not forecasts.")
     else:
         st.info(f"{priced_total} priced prop entries. No player currently clears both the baseline and a 50%+ historical move; see the complete slate below.")
 
@@ -7162,3 +7162,4 @@ elif page == "Ledger":
 else:
     st.subheader("Raw CSV (all columns)")
     st.dataframe(df_f, width="stretch", hide_index=True)
+
