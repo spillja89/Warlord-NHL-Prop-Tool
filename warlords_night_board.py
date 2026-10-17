@@ -270,9 +270,16 @@ def unfeatured_baselines(cards: list[dict]) -> list[dict]:
 
 
 def goal_display_cards(cards: list[dict]) -> list[dict]:
-    """Show S-tier goal profiles, then A-tier watches, then other Green baselines."""
-    eligible = [{**card, "goal_candidate": True, "baseline_only": not bool(card["moves"])}
-                for card in cards if card.get("baseline_rule")]
+    """Show goal tiers; A watches need a move with a 50%+ graded record."""
+    eligible = []
+    for card in cards:
+        if not card.get("baseline_rule"):
+            continue
+        move = card.get("move")
+        if move and move.get("goal_tier") == "A" and _move_rank(move)[0] < 0.5:
+            continue
+        eligible.append({**card, "goal_candidate": True,
+                         "baseline_only": not bool(card["moves"])})
     def tier(card):
         return (card.get("move") or {}).get("goal_tier")
     def rank(card):
@@ -663,3 +670,4 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
       <div class="wn-hero-foot">{_h(hero_foot)} · HISTORICAL MOVE RATE IS NOT A FORECAST</div></div>"""
     board_class = "wn-board" if show_hero else "wn-board wn-board--compact"
     return styles + f'<div class="{board_class}">' + (hero if show_hero else "") + '<div class="wn-grid">' + ''.join(lanes) + '</div></div>'
+
