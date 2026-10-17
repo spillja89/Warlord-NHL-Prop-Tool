@@ -192,8 +192,14 @@ def rank_priced_slate(frame: pd.DataFrame) -> dict[str, list[dict]]:
             baseline = None if watch else _baseline_rule(row, market, line)
             confidence = _number(row.get(f"Conf_{market}"))
             matrix = str(_value(row, f"Matrix_{market}") or "Unknown").strip()
-            move_block_reason = ("No goal signal threshold fired"
-                                 if market == "Goal" and baseline and not moves else None)
+            points_confidence = _number(row.get("Conf_Points"))
+            move_block_reason = (
+                "Goal move needs Points conf ≥ 84"
+                if market == "Goal" and baseline and not moves
+                and (points_confidence is None or points_confidence < 84)
+                else "No goal move threshold fired" if market == "Goal" and baseline and not moves
+                else None
+            )
             candidate = {
                 "player": player, "team": team,
                 "opponent": str(_value(row, "Opp") or "").strip(),
@@ -570,7 +576,7 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
         backdrop = f'<img class="wn-gorilla" src="{character_uri}" alt="" />' if character_uri else ""
         count_label = ("GOAL CANDIDATES" if role == "Carry" and any(card.get("goal_candidate") for card in cards)
                        else "FEATURED" if cards and "confidence" in cards[0] else "PRICED")
-        lane_subtitle = ("GREEN GOAL BASELINE · UNGATED MOVE HISTORY · BOOK BREAK-EVEN %"
+        lane_subtitle = ("GREEN GOAL BASELINE · TESTED MOVES REQUIRE POINTS CONF ≥ 84 · BOOK BREAK-EVEN %"
                          if role == "Carry" and count_label == "GOAL CANDIDATES" else
                          f"{market.upper()} ✦ HISTORICAL MOVE % ✦ BOOK BREAK-EVEN % FROM POSTED ODDS")
         lanes.append(f"""<section class="wn-lane wn-lane--{role.lower()}" style="--accent:{color}">
@@ -620,7 +626,7 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
     </style>"""
     goal_count = sum(card.get("goal_candidate", False) for card in boards.get("Carry", []))
     other_count = total - goal_count
-    hero_text = ("Goals show every priced Green baseline; their move records were recounted without a Points-score gate. "
+    hero_text = ("Goals show every priced Green baseline; historical goal moves also require Points confidence of at least 84. "
                  "Other featured props require a Green baseline and a 50%+ historical move. "
                  "Compare each record with the book break-even percentage; historical rates are not forecasts."
                  if goal_count else
