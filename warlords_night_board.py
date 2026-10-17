@@ -270,14 +270,20 @@ def unfeatured_baselines(cards: list[dict]) -> list[dict]:
 
 
 def goal_display_cards(cards: list[dict]) -> list[dict]:
-    """Show goal tiers; A watches need a move with a 50%+ graded record."""
+    """Show goal tiers; A watches need 50%+ at 82+ and in the 82–83 band."""
     eligible = []
     for card in cards:
         if not card.get("baseline_rule"):
             continue
         move = card.get("move")
-        if move and move.get("goal_tier") == "A" and _move_rank(move)[0] < 0.5:
-            continue
+        if move and move.get("goal_tier") == "A":
+            qualifying = [m for m in card["moves"] if m.get("goal_tier") == "A"
+                          and _move_rank(m)[0] >= 0.5
+                          and m.get("a_band_picks", 0) > 0
+                          and m["a_band_wins"] / m["a_band_picks"] >= 0.5]
+            if not qualifying:
+                continue
+            card = {**card, "move": max(qualifying, key=_move_rank)}
         eligible.append({**card, "goal_candidate": True,
                          "baseline_only": not bool(card["moves"])})
     def tier(card):
@@ -566,8 +572,11 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
                   <div class="wn-move-record">{fired_wins}/{fired_picks} · {fired_pct:.1f}% <span>{later_text}</span></div>
                   <div class="wn-move-rule">{_h(fired_rule)}</div>
                 </div>''')
-            tier_note = (" · 82–83 POINTS ONLY" if goal_tier == "A" else
+            tier_note = (" · 82+ POINTS SAMPLE" if goal_tier == "A" else
                          " · 84+ POINTS ONLY" if goal_tier == "S" else "")
+            if goal_tier == "A" and move.get("a_band_picks"):
+                band_wins, band_picks = move["a_band_wins"], move["a_band_picks"]
+                tier_note += f" · 82–83 ONLY {band_wins}/{band_picks} ({100 * band_wins / band_picks:.1f}%)"
             later_note = (f"MOVE {wins}/{picks}{tier_note}" +
                           (f" · LATER {late_wins}/{late_picks} ({late_pct:.1f}%)" if late_picks else
                            " · GOAL RECORD WITHOUT POINTS GATE" if card.get("goal_candidate") else "")
@@ -576,7 +585,7 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
             confidence = card.get("confidence")
             confidence_note = (f" · CONF {confidence:.0f} {_h(card.get('matrix') or 'Unknown')}"
                                if confidence is not None else "")
-            record_label = "2025-26 · 82–83 ONLY" if goal_tier == "A" else "2025-26 · 84+ ONLY" if goal_tier == "S" else "HISTORICAL MOVE"
+            record_label = "2025-26 · 82+ POOLED" if goal_tier == "A" else "2025-26 · 84+ ONLY" if goal_tier == "S" else "HISTORICAL MOVE"
             record_html = (f'<div class="wn-record"><strong>{pct:.1f}%</strong><span>{wins}/{picks}</span><em>{record_label}</em></div>'
                            if picks else '<div class="wn-record"><strong>BASE</strong><em>SCREEN ONLY</em></div>')
             details_html = (f'<details class="wn-details"><summary>Full fired move list ({len(fired)})</summary>'
@@ -602,7 +611,7 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
         backdrop = f'<img class="wn-gorilla" src="{character_uri}" alt="" />' if character_uri else ""
         count_label = ("GOAL CANDIDATES" if role == "Carry" and any(card.get("goal_candidate") for card in cards)
                        else "FEATURED" if cards and "confidence" in cards[0] else "PRICED")
-        lane_subtitle = ("S TIER: POINTS CONF 84+ ONLY · A WATCH: 82–83 ONLY WITH 50%+ MOVE · GREEN GOAL BASELINE REQUIRED"
+        lane_subtitle = ("S: CURRENT POINTS CONF 84+ · A: 82–83 WITH 50%+ MOVE · A RECORD USES 82+ HISTORY"
                          if role == "Carry" and count_label == "GOAL CANDIDATES" else
                          f"{market.upper()} ✦ HISTORICAL MOVE % ✦ BOOK BREAK-EVEN % FROM POSTED ODDS")
         lanes.append(f"""<section class="wn-lane wn-lane--{role.lower()}" style="--accent:{color}">
@@ -656,8 +665,8 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
     </style>"""
     goal_count = sum(card.get("goal_candidate", False) for card in boards.get("Carry", []))
     other_count = total - goal_count
-    hero_text = ("Goals show every priced Green baseline. S-tier goal moves require Points confidence 84+; "
-                 "A-tier watches require 82–83 and show their separate, smaller prior-season sample. "
+    hero_text = ("Goal cards show Green baselines. S-tier moves use the 84+ prior-season record; "
+                 "A-tier watches have current Points confidence 82–83 and show the same move at the pooled 82+ cutoff, plus the 82–83-only result. "
                  "Other featured props require a Green baseline and a 50%+ historical move. "
                  "Compare each record with the book break-even percentage; historical rates are not forecasts."
                  if goal_count else
