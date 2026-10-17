@@ -566,8 +566,8 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
                   <div class="wn-move-record">{fired_wins}/{fired_picks} · {fired_pct:.1f}% <span>{later_text}</span></div>
                   <div class="wn-move-rule">{_h(fired_rule)}</div>
                 </div>''')
-            tier_note = (" · 82–83 POINTS SAMPLE" if goal_tier == "A" else
-                         " · 84+ POINTS SAMPLE" if goal_tier == "S" else "")
+            tier_note = (" · 82–83 POINTS ONLY" if goal_tier == "A" else
+                         " · 84+ POINTS ONLY" if goal_tier == "S" else "")
             later_note = (f"MOVE {wins}/{picks}{tier_note}" +
                           (f" · LATER {late_wins}/{late_picks} ({late_pct:.1f}%)" if late_picks else
                            " · GOAL RECORD WITHOUT POINTS GATE" if card.get("goal_candidate") else "")
@@ -576,7 +576,7 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
             confidence = card.get("confidence")
             confidence_note = (f" · CONF {confidence:.0f} {_h(card.get('matrix') or 'Unknown')}"
                                if confidence is not None else "")
-            record_label = "2025-26 A SAMPLE" if goal_tier == "A" else "2025-26 S SAMPLE" if goal_tier == "S" else "HISTORICAL MOVE"
+            record_label = "2025-26 · 82–83 ONLY" if goal_tier == "A" else "2025-26 · 84+ ONLY" if goal_tier == "S" else "HISTORICAL MOVE"
             record_html = (f'<div class="wn-record"><strong>{pct:.1f}%</strong><span>{wins}/{picks}</span><em>{record_label}</em></div>'
                            if picks else '<div class="wn-record"><strong>BASE</strong><em>SCREEN ONLY</em></div>')
             details_html = (f'<details class="wn-details"><summary>Full fired move list ({len(fired)})</summary>'
@@ -602,7 +602,7 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
         backdrop = f'<img class="wn-gorilla" src="{character_uri}" alt="" />' if character_uri else ""
         count_label = ("GOAL CANDIDATES" if role == "Carry" and any(card.get("goal_candidate") for card in cards)
                        else "FEATURED" if cards and "confidence" in cards[0] else "PRICED")
-        lane_subtitle = ("S TIER: POINTS CONF 84+ · A WATCH: 82–83 · GREEN GOAL BASELINE REQUIRED"
+        lane_subtitle = ("S TIER: POINTS CONF 84+ ONLY · A WATCH: 82–83 ONLY WITH 50%+ MOVE · GREEN GOAL BASELINE REQUIRED"
                          if role == "Carry" and count_label == "GOAL CANDIDATES" else
                          f"{market.upper()} ✦ HISTORICAL MOVE % ✦ BOOK BREAK-EVEN % FROM POSTED ODDS")
         lanes.append(f"""<section class="wn-lane wn-lane--{role.lower()}" style="--accent:{color}">
