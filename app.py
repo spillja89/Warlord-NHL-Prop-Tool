@@ -4844,6 +4844,16 @@ if page == "⚔️ Warlords of the Night":
     else:
         st.info(f"{priced_total} priced prop entries. No player currently clears both the baseline and a 50%+ historical move; see the complete slate below.")
 
+    goal_candidates = unfeatured_baselines(priced_boards["Carry"])
+    if goal_candidates:
+        st.subheader(f"Green goal candidates · {len(goal_candidates)} without a tested 50%+ move")
+        st.caption("Goal baseline and price are present. The old goal move record may not apply; "
+                   "these rows have no claimed historical move percentage.")
+        goal_candidate_cols = ["Player", "Team", "Game", "Start (CT)", "Line",
+                               "Over odds", "Book", "Book break-even %", "Model conf", "Reason"]
+        st.dataframe(_priced_pool_table(goal_candidates)[goal_candidate_cols],
+                     hide_index=True, use_container_width=True)
+
     with st.expander(f"Complete priced slate · {priced_total} prop entries", expanded=True):
         st.caption("Every player's displayed priced prop appears here. Book break-even % comes from the displayed odds; Move % and Later % are historical results for the named rule, not forecasts. Active roster players without model history are marked odds only and have no tested move. NHL roster membership does not confirm tonight's dressed lineup.")
         pool_tabs = st.tabs([f"{role} ({len(priced_boards[role])})" for role, *_ in CLASSES])
