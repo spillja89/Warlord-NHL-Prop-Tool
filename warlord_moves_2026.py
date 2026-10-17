@@ -214,14 +214,32 @@ def _safe_float(value, default=None):
         return default
 
 
+# Recounted from 1,024 graded Green 0.5-goal rows (Jan 18-Apr 20, 2026)
+# in nhl_goal_all_tracker_rows.csv, without the legacy Conf_Points gate.
+# The old counts below were conditional on Conf_Points >= 84 and must not be
+# displayed for players admitted by the broader goal-only rule.
+GOAL_UNGATED_RECORDS = {
+    "Base Attack": (183, 439), "Weakened Armor": (226, 591),
+    "Open Lanes": (109, 284), "Fallen Guardian": (128, 298),
+    "Open Lanes Assault": (55, 119), "Armor Sunder": (115, 250),
+    "Bloodlust": (82, 206), "Berserker Aggression": (61, 122),
+    "Finisher Strike": (97, 248), "Enraged Finisher": (63, 154),
+    "Tyr’s Wrath Unleashed": (59, 150), "Armor Annihilation": (51, 107),
+    "Warlord Smash Attack": (41, 87), "Warlord Smash Attack (Crit)": (28, 58),
+    "Press the Attack": (53, 101), "Press the Attack (Crit)": (38, 71),
+    "Fury Shredder": (31, 71), "Enraged Fury Shredder": (31, 70),
+    "Bloodlusted": (65, 170), "Bloodlusted Surge": (33, 70),
+    "FOR VALHALLA!": (51, 101),
+}
+
+
 def _goals_carry_moves(r) -> list[dict]:
     """Current 0.5 Goal Carry attacks and opponent weakness effects."""
     line = _safe_float(r.get("Goal_Line"), None)
     if line is None:
         line = _safe_float(r.get("ATG_Line"), None)
     matrix = str(r.get("Matrix_Goal", "") or "").strip().casefold()
-    conf_points = _safe_float(r.get("Conf_Points"), None)
-    if line != 0.5 or matrix != "green" or conf_points is None or conf_points < 84:
+    if line != 0.5 or matrix != "green":
         return []
 
     goal_mu = _safe_float(r.get("Goal_mu"), None)
@@ -255,9 +273,11 @@ def _goals_carry_moves(r) -> list[dict]:
     moves = []
     def add(name, kind, condition, wins, picks, later_wins, later_picks, icon,
             crit=False, experimental=False):
+        wins, picks = GOAL_UNGATED_RECORDS[name]
         moves.append({"name": name, "kind": kind, "condition": condition,
-                      "wins": wins, "picks": picks, "later_wins": later_wins,
-                      "later_picks": later_picks, "icon": icon, "crit": crit,
+                      "wins": wins, "picks": picks, "later_wins": 0,
+                      "later_picks": 0, "icon": icon, "crit": crit,
+                      "record_scope": "Green Goal 0.5 without Points gate",
                       "experimental": experimental})
     if attack:
         add("Base Attack", "BASE ATTACK", "Goal_mu >= 0.4048",
