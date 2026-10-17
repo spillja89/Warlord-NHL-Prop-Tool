@@ -194,9 +194,9 @@ def rank_priced_slate(frame: pd.DataFrame) -> dict[str, list[dict]]:
             matrix = str(_value(row, f"Matrix_{market}") or "Unknown").strip()
             points_confidence = _number(row.get("Conf_Points"))
             move_block_reason = (
-                "Goal move needs Points conf ≥ 82"
+                "Goal move needs Points conf ≥ 81"
                 if market == "Goal" and baseline and not moves
-                and (points_confidence is None or points_confidence < 82)
+                and (points_confidence is None or points_confidence < 81)
                 else "No goal move threshold fired" if market == "Goal" and baseline and not moves
                 else None
             )
@@ -252,7 +252,7 @@ def featured_warlords(boards: dict[str, list[dict]]) -> dict[str, list[dict]]:
                 continue
             qualifying = [move for move in card["moves"] if int(move["picks"]) > 0
                           and int(move["wins"]) / int(move["picks"]) >= 0.5
-                          and move.get("goal_tier") != "A"]
+                          and move.get("goal_tier") not in {"A", "B"}]
             if not qualifying:
                 continue
             selected.append({**card, "move": max(qualifying, key=_move_rank)})
@@ -270,14 +270,14 @@ def unfeatured_baselines(cards: list[dict]) -> list[dict]:
 
 
 def goal_display_cards(cards: list[dict]) -> list[dict]:
-    """Show goal tiers; A watches need a 50%+ move at the 82+ cutoff."""
+    """Show goal tiers; A and B watches need a 50%+ move at their cutoff."""
     eligible = []
     for card in cards:
         if not card.get("baseline_rule"):
             continue
         move = card.get("move")
-        if move and move.get("goal_tier") == "A":
-            qualifying = [m for m in card["moves"] if m.get("goal_tier") == "A"
+        if move and move.get("goal_tier") in {"A", "B"}:
+            qualifying = [m for m in card["moves"] if m.get("goal_tier") == move["goal_tier"]
                           and _move_rank(m)[0] >= 0.5]
             if not qualifying:
                 continue
@@ -292,10 +292,11 @@ def goal_display_cards(cards: list[dict]) -> list[dict]:
                 card.get("confidence") or -1, card["player"].casefold())
     s_cards = sorted((card for card in eligible if tier(card) == "S"), key=rank, reverse=True)
     a_cards = sorted((card for card in eligible if tier(card) == "A"), key=rank, reverse=True)
-    baseline = sorted((card for card in eligible if tier(card) not in {"S", "A"}),
+    b_cards = sorted((card for card in eligible if tier(card) == "B"), key=rank, reverse=True)
+    baseline = sorted((card for card in eligible if tier(card) not in {"S", "A", "B"}),
                       key=lambda card: (card.get("confidence") or -1, card["player"].casefold()),
                       reverse=True)
-    return s_cards + a_cards + baseline
+    return s_cards + a_cards + b_cards + baseline
 
 
 def baseline_audit(frame: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
@@ -510,8 +511,8 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
             move = card.get("move")
             goal_tier = move.get("goal_tier") if role == "Carry" and move else None
             tier_badge = (f'<span class="wn-tier wn-tier--{goal_tier.lower()}">{goal_tier} TIER</span>'
-                          if goal_tier in {"S", "A"} else "")
-            tier_class = f" wn-unit--{goal_tier.lower()}" if goal_tier in {"S", "A"} else ""
+                          if goal_tier in {"S", "A", "B"} else "")
+            tier_class = f" wn-unit--{goal_tier.lower()}" if goal_tier in {"S", "A", "B"} else ""
             baseline_only = bool(card.get("baseline_only"))
             wins, picks = (int(move["wins"]), int(move["picks"])) if move else (0, 0)
             late_wins, late_picks = ((int(move["later_wins"]), int(move["later_picks"]))
@@ -521,6 +522,7 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
             status = (("BASELINE" if "confidence" in card else "BASELINE ONLY") if baseline_only
                       else "OPEN POOL" if not move else
                       "A TIER WATCH" if goal_tier == "A" else
+                      "B TIER WATCH" if goal_tier == "B" else
                       "S TIER MOVE" if goal_tier == "S" else
                       "GOAL SIGNAL" if card.get("goal_candidate") and picks and wins / picks < .5 else
                       "TRACK" if move.get("track") else "LAB" if move.get("experimental")
@@ -570,11 +572,15 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
                   <div class="wn-move-record">{fired_wins}/{fired_picks} · {fired_pct:.1f}% <span>{later_text}</span></div>
                   <div class="wn-move-rule">{_h(fired_rule)}</div>
                 </div>''')
-            tier_note = (" · 82+ POINTS SAMPLE" if goal_tier == "A" else
+            tier_note = (" · 81+ POINTS SAMPLE" if goal_tier == "B" else
+                         " · 82+ POINTS SAMPLE" if goal_tier == "A" else
                          " · 84+ POINTS ONLY" if goal_tier == "S" else "")
             if goal_tier == "A" and move.get("a_band_picks"):
                 band_wins, band_picks = move["a_band_wins"], move["a_band_picks"]
                 tier_note += f" · 82–83 ONLY {band_wins}/{band_picks} ({100 * band_wins / band_picks:.1f}%)"
+            if goal_tier == "B" and move.get("b_band_picks"):
+                band_wins, band_picks = move["b_band_wins"], move["b_band_picks"]
+                tier_note += f" · 81 ONLY {band_wins}/{band_picks} ({100 * band_wins / band_picks:.1f}%)"
             later_note = (f"MOVE {wins}/{picks}{tier_note}" +
                           (f" · LATER {late_wins}/{late_picks} ({late_pct:.1f}%)" if late_picks else
                            " · GOAL RECORD WITHOUT POINTS GATE" if card.get("goal_candidate") else "")
@@ -583,7 +589,9 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
             confidence = card.get("confidence")
             confidence_note = (f" · CONF {confidence:.0f} {_h(card.get('matrix') or 'Unknown')}"
                                if confidence is not None else "")
-            record_label = "2025-26 · 82+ POOLED" if goal_tier == "A" else "2025-26 · 84+ ONLY" if goal_tier == "S" else "HISTORICAL MOVE"
+            record_label = ("2025-26 · 81+ POOLED" if goal_tier == "B" else
+                            "2025-26 · 82+ POOLED" if goal_tier == "A" else
+                            "2025-26 · 84+ ONLY" if goal_tier == "S" else "HISTORICAL MOVE")
             record_html = (f'<div class="wn-record"><strong>{pct:.1f}%</strong><span>{wins}/{picks}</span><em>{record_label}</em></div>'
                            if picks else '<div class="wn-record"><strong>BASE</strong><em>SCREEN ONLY</em></div>')
             details_html = (f'<details class="wn-details"><summary>Full fired move list ({len(fired)})</summary>'
@@ -609,7 +617,7 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
         backdrop = f'<img class="wn-gorilla" src="{character_uri}" alt="" />' if character_uri else ""
         count_label = ("GOAL CANDIDATES" if role == "Carry" and any(card.get("goal_candidate") for card in cards)
                        else "FEATURED" if cards and "confidence" in cards[0] else "PRICED")
-        lane_subtitle = ("S: CURRENT POINTS CONF 84+ · A: 82–83 WITH 50%+ MOVE · A RECORD USES 82+ HISTORY"
+        lane_subtitle = ("S: 84+ · A: 82–83 · B: 81 · HISTORICAL MOVE RECORDS AT EACH CUTOFF"
                          if role == "Carry" and count_label == "GOAL CANDIDATES" else
                          f"{market.upper()} ✦ HISTORICAL MOVE % ✦ BOOK BREAK-EVEN % FROM POSTED ODDS")
         lanes.append(f"""<section class="wn-lane wn-lane--{role.lower()}" style="--accent:{color}">
@@ -639,8 +647,9 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
       .wn-units{padding:8px}.wn-unit{position:relative;isolation:isolate;overflow:hidden;display:flex;flex-wrap:wrap;gap:4px 10px;min-height:104px;align-items:center;background:#1b2739;border:1px solid #3b4b64;border-left:3px solid var(--accent);border-radius:9px;padding:10px;margin-bottom:7px}
       .wn-unit--s{border-left:4px solid #f4bf55;background:linear-gradient(100deg,#3d3026,#1b2739 39%);box-shadow:inset 0 0 0 1px #f4bf5538}
       .wn-unit--a{border-left:4px solid #9bbcff;background:linear-gradient(100deg,#263653,#1b2739 39%);box-shadow:inset 0 0 0 1px #9bbcff30}
+      .wn-unit--b{border-left:4px solid #82d5b0;background:linear-gradient(100deg,#203b36,#1b2739 39%);box-shadow:inset 0 0 0 1px #82d5b030}
       .wn-tier{flex:none;border-radius:4px;padding:2px 5px;font-size:9px;font-weight:950;letter-spacing:.07em}
-      .wn-tier--s{color:#211803;background:#f4bf55}.wn-tier--a{color:#0a1832;background:#9bbcff}
+      .wn-tier--s{color:#211803;background:#f4bf55}.wn-tier--a{color:#0a1832;background:#9bbcff}.wn-tier--b{color:#09251c;background:#82d5b0}
       .wn-unit-ghost{position:absolute;z-index:0;left:65px;top:-28px;height:190px;width:auto;opacity:.16;pointer-events:none;mask-image:linear-gradient(90deg,#000 25%,transparent 95%)}
       .wn-unit:last-child{margin-bottom:0}.wn-portrait{position:relative;z-index:1;width:46px;height:46px;flex:none;display:grid;place-items:center;border:1px solid #ffffff2e;border-radius:9px;background:radial-gradient(circle at top left,color-mix(in srgb,var(--accent) 34%,#162035),#162035 75%);font-size:24px}
       .wn-portrait svg{width:29px;height:29px;max-width:29px;max-height:29px;fill:var(--accent)}
@@ -665,6 +674,7 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
     other_count = total - goal_count
     hero_text = ("Goal cards show Green baselines. S-tier moves use the 84+ prior-season record; "
                  "A-tier watches have current Points confidence 82–83 and show the same move at the pooled 82+ cutoff, plus the 82–83-only result. "
+                 "B-tier watches have current Points confidence 81 and show the pooled 81+ record, plus the 81-only result. "
                  "Other featured props require a Green baseline and a 50%+ historical move. "
                  "Compare each record with the book break-even percentage; historical rates are not forecasts."
                  if goal_count else
