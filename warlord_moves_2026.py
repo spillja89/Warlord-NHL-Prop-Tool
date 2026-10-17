@@ -214,9 +214,9 @@ def _safe_float(value, default=None):
         return default
 
 
-# Prior-season graded Green 0.5-goal rows with Conf_Points exactly 82 or 83.
-# Kept separate from the established 84+ goal move records. Each tuple is
-# wins, graded rows, later wins, later rows (later = Mar 15 onward).
+# Incremental prior-season graded Green 0.5-goal rows with Conf_Points 82–83.
+# Add these to the original 84+ records to replay each move at an 82+ cutoff.
+# Each tuple is wins, graded rows, later wins, later rows (Mar 15 onward).
 GOAL_A_TIER_RECORDS = {
     "Base Attack": (9, 23, 5, 13),
     "Weakened Armor": (11, 22, 7, 15),
@@ -284,13 +284,19 @@ def _goals_carry_moves(r) -> list[dict]:
     moves = []
     def add(name, kind, condition, wins, picks, later_wins, later_picks, icon,
             crit=False, experimental=False):
+        band_wins = band_picks = 0
         if a_tier:
-            wins, picks, later_wins, later_picks = GOAL_A_TIER_RECORDS[name]
+            band_wins, band_picks, band_later_wins, band_later_picks = GOAL_A_TIER_RECORDS[name]
+            wins += band_wins
+            picks += band_picks
+            later_wins += band_later_wins
+            later_picks += band_later_picks
         moves.append({"name": name, "kind": kind, "condition": condition,
                       "wins": wins, "picks": picks, "later_wins": later_wins,
                       "later_picks": later_picks, "icon": icon, "crit": crit,
                       "goal_tier": "A" if a_tier else "S",
-                      "record_scope": "Points confidence 82–83" if a_tier else "Points confidence 84+",
+                      "record_scope": "Points confidence 82+" if a_tier else "Points confidence 84+",
+                      "a_band_wins": band_wins, "a_band_picks": band_picks,
                       "experimental": experimental})
     if attack:
         add("Base Attack", "BASE ATTACK", "Goal_mu >= 0.4048",
@@ -427,3 +433,4 @@ def frozen_move_tags(row: Mapping[str, Any]) -> list[dict[str, str]]:
                 "kit_version": VERSION,
             }.items()})
     return tags
+
