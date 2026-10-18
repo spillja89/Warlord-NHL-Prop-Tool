@@ -139,6 +139,7 @@ def rank_warlords(frame: pd.DataFrame) -> dict[str, list[dict]]:
             key = (team.casefold(), player.casefold())
             candidate = {
                 "player": player, "team": team,
+                "talent_tier": str(_value(row, "Talent_Tier") or "NONE").strip().upper(),
                 "position": str(_value(row, "Pos") or "").strip(),
                 "opponent": str(_value(row, "Opp") or "").strip(),
                 "game": str(_value(row, "Game") or "").strip(),
@@ -193,9 +194,9 @@ def rank_priced_slate(frame: pd.DataFrame) -> dict[str, list[dict]]:
             baseline = None if watch else _baseline_rule(row, market, line)
             confidence = _number(row.get(f"Conf_{market}"))
             matrix = str(_value(row, f"Matrix_{market}") or "Unknown").strip()
-            points_confidence = _number(row.get("Conf_Points"))
+            points_confidence = _number(row.get("Conf_Points_Move", row.get("Conf_Points")))
             move_block_reason = (
-                "Goal move needs Points conf ≥ 81"
+                "Frozen goal move needs original Points score ≥ 81"
                 if market == "Goal" and baseline and not moves
                 and (points_confidence is None or points_confidence < 81)
                 else "No goal move threshold fired" if market == "Goal" and baseline and not moves
@@ -203,6 +204,7 @@ def rank_priced_slate(frame: pd.DataFrame) -> dict[str, list[dict]]:
             )
             candidate = {
                 "player": player, "team": team,
+                "talent_tier": str(_value(row, "Talent_Tier") or "NONE").strip().upper(),
                 "position": str(_value(row, "Pos") or "").strip(),
                 "opponent": str(_value(row, "Opp") or "").strip(),
                 "game": str(_value(row, "Game") or "").strip(),
@@ -295,10 +297,15 @@ def goal_display_cards(cards: list[dict]) -> list[dict]:
     s_cards = sorted((card for card in eligible if tier(card) == "S"), key=rank, reverse=True)
     a_cards = sorted((card for card in eligible if tier(card) == "A"), key=rank, reverse=True)
     b_cards = sorted((card for card in eligible if tier(card) == "B"), key=rank, reverse=True)
-    baseline = sorted((card for card in eligible if tier(card) not in {"S", "A", "B"}),
+    talent_watch = sorted((card for card in eligible if tier(card) not in {"S", "A", "B"}
+                           and card.get("talent_tier") in {"ELITE", "STAR"}),
+                          key=lambda card: (card.get("confidence") or -1, card["player"].casefold()),
+                          reverse=True)
+    baseline = sorted((card for card in eligible if tier(card) not in {"S", "A", "B"}
+                       and card.get("talent_tier") not in {"ELITE", "STAR"}),
                       key=lambda card: (card.get("confidence") or -1, card["player"].casefold()),
                       reverse=True)
-    return s_cards + a_cards + b_cards + baseline
+    return s_cards + a_cards + b_cards + talent_watch + baseline
 
 
 def baseline_audit(frame: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
@@ -521,7 +528,9 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
                                      if move else (0, 0))
             pct = 100 * wins / picks if picks else 0
             late_pct = 100 * late_wins / late_picks if late_picks else 0
-            status = (("BASELINE" if "confidence" in card else "BASELINE ONLY") if baseline_only
+            status = (("ELITE GOAL WATCH" if card.get("goal_candidate") and card.get("talent_tier") == "ELITE" else
+                       "STAR GOAL WATCH" if card.get("goal_candidate") and card.get("talent_tier") == "STAR" else
+                       "BASELINE" if "confidence" in card else "BASELINE ONLY") if baseline_only
                       else "OPEN POOL" if not move else
                       "A TIER WATCH" if goal_tier == "A" else
                       "B TIER WATCH" if goal_tier == "B" else
