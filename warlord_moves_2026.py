@@ -52,7 +52,7 @@ def points_moves(row: Mapping[str, Any]) -> list[dict[str, Any]]:
     line = _number(row, "Points_Line")
     if line not in (0.5, 1.5) or not _green(row, "Points"):
         return []
-    conf = _number(row, "Conf_Points")
+    conf = _number(row, "Conf_Points_Move" if "Conf_Points_Move" in row else "Conf_Points")
     assists_mu = _number(row, "Assists_mu")
     toi = _number(row, "TOI_per_game")
     l10_s = _number(row, "L10_S")
@@ -274,7 +274,7 @@ def _goals_carry_moves(r) -> list[dict]:
     if line is None:
         line = _safe_float(r.get("ATG_Line"), None)
     matrix = str(r.get("Matrix_Goal", "") or "").strip().casefold()
-    conf_points = _safe_float(r.get("Conf_Points"), None)
+    conf_points = _safe_float(r.get("Conf_Points_Move", r.get("Conf_Points")), None)
     if line != 0.5 or matrix != "green" or conf_points is None or conf_points < 81:
         return []
     goal_tier = "S" if conf_points >= 84 else "A" if conf_points >= 82 else "B"
