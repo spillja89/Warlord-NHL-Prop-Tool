@@ -2840,6 +2840,23 @@ def conf_points(ixa_pct: float, p10_gap: Optional[float], stab: float, defweak: 
     base += USAGE_WEIGHT_POINTS * (toi_pct - 50.0)
     return int(round(clamp(base)))
 
+def points_rank_with_talent_prior(move_conf: float, p10_gap: Optional[float], tier: str,
+                                  matrix: str) -> int:
+    """Current Points ranking; preserve move_conf for frozen historical rules.
+
+    A zero regression gap previously scored zero in a 14-point component while
+    missing data scored 65. A gap is not a calibrated rebound probability, so
+    give it neutral credit in the ranking. Proven talent supplies a ranking
+    floor only for an otherwise Green Points profile.
+    """
+    old_reg = 65.0 if p10_gap is None else clamp((p10_gap / 4.0) * 100.0)
+    rank = int(round(clamp(float(move_conf) + 0.14 * (50.0 - old_reg))))
+    if str(matrix).strip().casefold() == "green":
+        floor = {"ELITE": 82, "STAR": 78}.get(str(tier).strip().upper())
+        if floor is not None:
+            rank = max(rank, floor)
+    return rank
+
 def conf_assists(
     ixa_pct: float,
     ixg_pct: float,
@@ -4529,6 +4546,17 @@ def build_tracker(today_local: date, debug: bool = False, api_key: str | None = 
         .astype(int)
     )
 
+    # The original score remains the input to the 2025-26 graded move kit.
+    # The displayed ranking uses neutral regression and the existing talent
+    # tiers; a new ranking must not inherit an old move's hit-rate record.
+    sk["Conf_Points_Move"] = sk["Conf_Points"].copy()
+    sk["Conf_Points"] = sk.apply(
+        lambda r: points_rank_with_talent_prior(
+            r["Conf_Points_Move"], safe_float(r.get("Reg_Gap_P10")),
+            r.get("Talent_Tier", "NONE"), r.get("Matrix_Points", "")),
+        axis=1,
+    )
+
     sk["Conf_Assists"] = (
         pd.to_numeric(sk["Conf_Assists"], errors="coerce")
         .fillna(0)
@@ -4552,6 +4580,7 @@ def build_tracker(today_local: date, debug: bool = False, api_key: str | None = 
     gf_fail = ~sk.get("Team_GF_Gate", False).astype(bool)
 
     sk.loc[gf_fail, ["Conf_Goal", "Conf_Points", "Conf_Assists"]] = 0
+    sk.loc[gf_fail, "Conf_Points_Move"] = 0
 
     sk.loc[gf_fail, "Matrix_Goal"] = "FAIL_GF"
     sk.loc[gf_fail, "Matrix_Points"] = "FAIL_GF"
@@ -4823,6 +4852,7 @@ def build_tracker(today_local: date, debug: bool = False, api_key: str | None = 
         "Matrix_Assists": sk.get("Matrix_Assists"),
 
         "Conf_Points": sk.get("Conf_Points"),
+        "Conf_Points_Move": sk.get("Conf_Points_Move"),
         "Conf_SOG": sk.get("Conf_SOG"),
         "Conf_Goal": sk.get("Conf_Goal"),
         "Conf_Assists": sk.get("Conf_Assists"),
