@@ -838,6 +838,8 @@ def _render_class_shortlist(frame: pd.DataFrame, role: str,
     s_goal_count = sum((card.get("move") or {}).get("goal_tier") == "S" for card in goal_cards)
     a_goal_count = sum((card.get("move") or {}).get("goal_tier") == "A" for card in goal_cards)
     b_goal_count = sum((card.get("move") or {}).get("goal_tier") == "B" for card in goal_cards)
+    talent_goal_count = sum((card.get("move") or {}).get("goal_tier") not in {"S", "A", "B"}
+                            and card.get("talent_tier") in {"ELITE", "STAR"} for card in goal_cards)
     if goal_cards and slate_sort != "Top ranked":
         goal_cards = _sort_slate_boards({"Carry": goal_cards}, slate_sort, starts_by_game)["Carry"]
     st.subheader(f"{role} · {len(goal_cards)} Green goal candidates of {total} priced players"
@@ -850,7 +852,8 @@ def _render_class_shortlist(frame: pd.DataFrame, role: str,
         st.caption(f"{s_goal_count} S-tier goal profiles (Points confidence 84+) · "
                    f"{a_goal_count} A-tier watches (82–83) · "
                    f"{b_goal_count} B-tier watches (81) · "
-                   f"{len(goal_cards) - s_goal_count - a_goal_count - b_goal_count} other Green goal baselines. "
+                   f"{talent_goal_count} ELITE/STAR goal watches · "
+                   f"{len(goal_cards) - s_goal_count - a_goal_count - b_goal_count - talent_goal_count} other Green goal baselines. "
                    "A cards show the cumulative 82+ move record; B cards show 81+. S shows 84+ only. Each watch also shows its narrow confidence band separately. The cumulative move must clear 50%.")
         st.html(render_warlords({"Carry": goal_cards}, limit=len(goal_cards),
                                 roles=("Carry",), show_hero=False))
@@ -858,7 +861,7 @@ def _render_class_shortlist(frame: pd.DataFrame, role: str,
         st.html(render_warlords(featured, limit=len(featured[role]), roles=(role,), show_hero=False))
     else:
         st.caption("No player clears both the current baseline and a tested move at 50%+ on this slate.")
-    st.caption("Book break-even % comes from posted odds; move percentages describe past results for that rule, not a forecast. Model confidence is a separate ranking score.")
+    st.caption("Book break-even % comes from posted odds; move percentages describe past results for that rule, not a forecast. Points ranking now gives neutral regression credit and protects Green ELITE/STAR roles; frozen move records still use the original Points score.")
     if role == "Jungle" and position_data:
         st.caption(f"Position matchup: [Shot Propz]({POSITION_SOG_URL}) current-season YTD shots allowed per game to that position; #1 allows the most. Updated {position_data['updated']}. Descriptive context only; it does not change moves or ranking.")
     elif role == "Jungle" and position_error:
@@ -2511,6 +2514,7 @@ COLUMN_HELP = {
     "PP_Matchup": "0–100 context blend of team PP expected offense and opponent PK expected goals allowed. Not a PPP hit probability.",
     # Points
     "Reg_Gap_P10": "Heuristic points gap comparing two 10-game paces. Unavailable below five recorded games; it is not a calibrated rebound signal.",
+    "Conf_Points_Move": "Original Points score used by the frozen 2025–26 historical move rules. Conf_Points is the current talent-aware ranking score.",
     # SOG
     "Reg_Gap_S10": "SOG engine sweet spot: Reg_Gap_S10 in [2.6, 4.3] (EV+Green+Line≤2.5).",
     # Points (UI)
@@ -5307,7 +5311,7 @@ elif page == "Points":
         "Points_Line","Points_Odds_Over","Points_Book",
 
         # --- SIGNALS ---
-        "Conf_Points","Matrix_Points",
+        "Conf_Points","Conf_Points_Move","Matrix_Points",
 
         # --- HUD MATH (core) ---
         "Assists_mu","Points_mu",
