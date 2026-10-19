@@ -3462,6 +3462,8 @@ def build_tracker(today_local: date, debug: bool = False, api_key: str | None = 
     from roster_watchlist import load_active_rosters, current_roster_teams_by_id
     active_rosters = load_active_rosters(sess, teams_playing, debug=debug)
     current_team_by_id = current_roster_teams_by_id(active_rosters)
+    from pregame_checks import fetch_official_lineups, player_lineup_status
+    official_lineups, lineup_check_utc = fetch_official_lineups(sess, games)
 
     # MoneyPuck skaters
     sk_raw = load_moneypuck_best_effort(sess, "skaters", teams_playing, today_local)
@@ -3492,6 +3494,10 @@ def build_tracker(today_local: date, debug: bool = False, api_key: str | None = 
 
     # DFO starter map
     dfo_map = fetch_dailyfaceoff_starters(today_local, debug=debug)
+    goalie_check_utc = datetime.now(timezone.utc).isoformat(timespec="seconds")
+    for team, lineup in official_lineups.items():
+        if lineup.get("status") == "Official lineup" and lineup.get("starter_name"):
+            dfo_map[team] = {"goalie": lineup["starter_name"], "status": "Official"}
 
     # DFO injuries
     inj_df = fetch_dfo_injuries_for_teams(teams_playing, debug=debug)
@@ -3504,6 +3510,10 @@ def build_tracker(today_local: date, debug: bool = False, api_key: str | None = 
     sk["Opp"] = sk["Team"].map(opp_map).fillna("")
     sk["StartTimeUTC"] = sk["Game"].map(game_time_utc).fillna("")
     sk["StartTimeLocal"] = sk["Game"].map(game_time_local).fillna("")
+    sk["Lineup_Status"] = sk.apply(
+        lambda r: player_lineup_status(r.get("playerId"), r.get("Team"), official_lineups), axis=1)
+    sk["Lineup_Check_UTC"] = lineup_check_utc
+    sk["Goalie_Check_UTC"] = goalie_check_utc
 
     # Goalie info
     def _goalie_pack(r: pd.Series) -> pd.Series:
@@ -3516,7 +3526,10 @@ def build_tracker(today_local: date, debug: bool = False, api_key: str | None = 
             "Opp_SV": g.get("SV", None),
             "Opp_GAA": g.get("GAA", None),
             "Opp_Goalie_Shots_Faced": g.get("SOG_Against", None),
-            "Opp_Goalie_Source": g.get("Source", ""),
+            "Opp_Goalie_Source": ("nhl_official_lineup_name_and_stats" if g.get("Source") == "dailyfaceoff_name_and_stats"
+                                  else "nhl_official_lineup_name_only")
+                                 if dfo_map.get(opp_team, {}).get("status") == "Official"
+                                 else g.get("Source", ""),
             "Opp_Goalie_Status": dfo_map.get(opp_team, {}).get("status", ""),
         })
 
@@ -3531,7 +3544,7 @@ def build_tracker(today_local: date, debug: bool = False, api_key: str | None = 
     sk["Goalie_League_SV"] = round(league_goalie_sv, 4)
     sk["Goalie_League_GAA"] = round(league_goalie_gaa, 3)
     sk["Goalie_Context_Status"] = np.where(
-        sk["Opp_Goalie_Status"].astype(str).str.casefold().eq("confirmed"),
+        sk["Opp_Goalie_Status"].astype(str).str.casefold().isin({"confirmed", "official"}),
         "confirmed_sample_shrunk", "unconfirmed_neutral",
     )
     sk["Goalie_Weak"] = sk.apply(
@@ -3542,7 +3555,7 @@ def build_tracker(today_local: date, debug: bool = False, api_key: str | None = 
             shots_faced=safe_float(r.get("Opp_Goalie_Shots_Faced")),
             league_sv=league_goalie_sv,
             league_gaa=league_goalie_gaa,
-            confirmed=str(r.get("Opp_Goalie_Status", "")).casefold() == "confirmed",
+            confirmed=str(r.get("Opp_Goalie_Status", "")).casefold() in {"confirmed", "official"},
         ),
         axis=1
     )
@@ -4200,6 +4213,11 @@ def build_tracker(today_local: date, debug: bool = False, api_key: str | None = 
     sk["Assist_Volume"] = _assist_vol
     sk.loc[sk["Assist_Volume"].isna() | (sk["Assist_Volume"] <= 0), "Assist_Volume"] = _l10_a
     sk["Assist_Volume"] = pd.to_numeric(sk["Assist_Volume"], errors="coerce").fillna(0.0).round(2)
+    sk["Assist_Volume_Source"] = np.select(
+        [_assist_vol.notna() & (_assist_vol > 0), _l10_a.notna()],
+        ["MoneyPuck 5v5 shot assists", "NHL last-10 recorded assists"],
+        default="Unavailable",
+    )
 
 
     sk["Exp_S_10"] = (pd.to_numeric(sk.get("ShotIntent", np.nan), errors="coerce") * 10.0).round(2)
@@ -4692,6 +4710,9 @@ def build_tracker(today_local: date, debug: bool = False, api_key: str | None = 
         "Injury_Reports_Count": injury_reports_count,
         "Injury_Excluded_Count": injury_excluded_count,
         "Injury_Check_UTC": injury_check_utc,
+        "Lineup_Status": sk.get("Lineup_Status"),
+        "Lineup_Check_UTC": sk.get("Lineup_Check_UTC"),
+        "Goalie_Check_UTC": sk.get("Goalie_Check_UTC"),
 
         "Opp": sk["Opp"].fillna(""),
         "Opp_Goalie": sk["Opp_Goalie"].fillna(""),
@@ -4808,6 +4829,7 @@ def build_tracker(today_local: date, debug: bool = False, api_key: str | None = 
         "i5v5_iCF60": sk.get("i5v5_iCF60"),
         "Player_5v5_SOG_Share": sk.get("Player_5v5_SOG_Share"),
         "Assist_Volume": sk.get("Assist_Volume"),
+        "Assist_Volume_Source": sk.get("Assist_Volume_Source"),
 
         "opp_5v5_xGA60": sk.get("opp_5v5_xGA60"),
         "opp_5v5_HDCA60": sk.get("opp_5v5_HDCA60"),
@@ -5419,6 +5441,13 @@ def build_tracker(today_local: date, debug: bool = False, api_key: str | None = 
     tracker["Game_ID"] = tracker["Team"].map(game_id_map)
     tracker["StartTimeUTC"] = tracker["Game"].map(game_time_utc)
     tracker["StartTimeLocal"] = tracker["Game"].map(game_time_local)
+    tracker["Lineup_Status"] = tracker.apply(
+        lambda r: player_lineup_status(r.get("Player_ID"), r.get("Team"), official_lineups), axis=1)
+    tracker["Lineup_Check_UTC"] = lineup_check_utc
+    tracker["Goalie_Check_UTC"] = goalie_check_utc
+    lineup_excluded = int(tracker["Lineup_Status"].eq("Not dressed").sum())
+    tracker = tracker.loc[tracker["Lineup_Status"].ne("Not dressed")].copy()
+    tracker["Lineup_Excluded_Count"] = lineup_excluded
 
     # Freeze the displayed move rules with the pregame tracker. The grader
     # reads these tags instead of applying future code to an old slate.
