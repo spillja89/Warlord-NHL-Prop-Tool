@@ -151,6 +151,7 @@ def rank_warlords(frame: pd.DataFrame) -> dict[str, list[dict]]:
                 "goalie": str(_value(row, "Opp_Goalie") or ""),
                 "goalie_gp": _number(_value(row, "Opp_GP")),
                 "goalie_status": str(_value(row, "Opp_Goalie_Status") or "Unknown"),
+                "lineup_status": str(_value(row, "Lineup_Status") or "Lineup pending"),
                 "baseline_only": baseline_only,
                 "move": move, "moves": sorted(moves, key=lambda item: (
                     item["kind"] != "STANCE", _move_rank(item)), reverse=True),
@@ -218,6 +219,7 @@ def rank_priced_slate(frame: pd.DataFrame) -> dict[str, list[dict]]:
                 "move_block_reason": move_block_reason,
                 "goalie": str(_value(row, "Opp_Goalie") or ""),
                 "goalie_status": str(_value(row, "Opp_Goalie_Status") or "Unknown"),
+                "lineup_status": str(_value(row, "Lineup_Status") or "Lineup pending"),
                 "move": best,
                 "moves": sorted(moves, key=lambda item: (
                     item["kind"] != "STANCE", _move_rank(item)), reverse=True),
@@ -554,12 +556,17 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
                               if book_prob is not None else "")
             goalie_name = str(card.get("goalie") or "").strip()
             goalie_status = str(card.get("goalie_status") or "Unknown").strip()
+            if goalie_status.casefold() == "confirmed":
+                goalie_status = "DailyFaceoff confirmed"
+            elif goalie_status.casefold() == "official":
+                goalie_status = "NHL official starter"
             goalie_gp = _number(card.get("goalie_gp"))
             sample_note = (f' · {int(goalie_gp)} GP, goalie matchup neutral'
                            if goalie_gp is not None and goalie_gp < 3 else
                            f' · {int(goalie_gp)} GP' if goalie_gp is not None else '')
             goalie_note = (f'<div class="wn-goalie">Opp goalie: {_h(goalie_name)} · {_h(goalie_status)}{sample_note}</div>'
                            if goalie_name else '<div class="wn-goalie">Opp goalie: unknown</div>')
+            lineup_note = f'<div class="wn-goalie">Player lineup: {_h(card.get("lineup_status") or "Lineup pending")}</div>'
             positional = card.get("position_sog") if role == "Jungle" else None
             position_note = (f'<div class="wn-position-sog">{_h(positional["opponent"])} allows '
                              f'<b>{positional["shots_per_game"]:.1f} SOG/game</b> to {_h(positional["position"])} '
@@ -624,6 +631,7 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
                 {book_rate_note}
                 {position_note}
                 {goalie_note}
+                {lineup_note}
               </div>
               {record_html}
               {_form_html(card)}
