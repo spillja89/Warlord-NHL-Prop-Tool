@@ -5247,7 +5247,7 @@ def build_tracker(today_local: date, debug: bool = False, api_key: str | None = 
             def _tier_from_diff(_d, _mname: str):
                 """Return tier labels for L10 support. Blank if line/diff missing."""
                 _m = str(_mname).strip().upper()
-                _d = pd.to_numeric(_d, errors="coerce")
+                _d = pd.to_numeric(pd.Series(_d, index=tracker.index), errors="coerce")
                 out = np.full(len(_d), "", dtype=object)
 
                 mask = _d.notna()
@@ -5287,9 +5287,9 @@ def build_tracker(today_local: date, debug: bool = False, api_key: str | None = 
                     tracker[f"L10_Rate_{_m}"] = np.nan
                     tracker[f"L10_Diff_{_m}"] = np.nan
                     tracker[f"L10_Tier_{_m}"] = ""
-        except Exception:
-            # Never fail tracker build for UI-only columns
-            pass
+        except Exception as exc:
+            # These are UI-only columns, but a silent failure hides missing data.
+            print(f"WARNING: L10 support columns unavailable: {type(exc).__name__}: {exc}")
 
 
 
