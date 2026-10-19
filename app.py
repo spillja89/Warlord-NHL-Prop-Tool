@@ -789,6 +789,8 @@ def _priced_pool_table(cards: list[dict]) -> pd.DataFrame:
         row = {
             "Player": card["player"], "Team": card["team"], "Game": card["game"],
             "Start (CT)": card.get("time") or "",
+            "Lineup": card.get("lineup_status") or "Lineup pending",
+            "Opp goalie": card.get("goalie_status") or "Unknown",
             "Line": card["line"], "Over odds": int(card["odds"]),
             "Book": card["book"] or "", "Model conf": card.get("confidence"),
             "Book break-even %": round(card["book_prob"] * 100, 1) if card.get("book_prob") is not None else None,
@@ -811,11 +813,11 @@ def _priced_pool_table(cards: list[dict]) -> pd.DataFrame:
             row["Opp position rank"] = matchup["rank"] if matchup else None
             row["Opp position GP"] = matchup["gp"] if matchup else None
         rows.append(row)
-    columns = ["Player", "Team", "Game", "Start (CT)", "Line", "Over odds",
+    columns = ["Player", "Team", "Game", "Start (CT)", "Lineup", "Opp goalie", "Line", "Over odds",
                "Book", "Book break-even %", "Model conf", "Matrix", "Featured",
                "Fired move", "Move record", "Move %", "Later record", "Later %", "Reason"]
     if has_position_data:
-        columns[7:7] = ["Opp SOG vs position/GP", "Opp position rank", "Opp position GP"]
+        columns[9:9] = ["Opp SOG vs position/GP", "Opp position rank", "Opp position GP"]
     return pd.DataFrame(rows, columns=columns)
 
 
@@ -4154,10 +4156,12 @@ df = withhold_ambiguous_player_odds(df)
 # The engine also removes confirmed out players when creating a fresh tracker.
 has_availability = "Injury_Status" in df.columns or "Available" in df.columns
 unavailable = unavailable_mask(df)
+if "Lineup_Status" in df.columns:
+    unavailable = unavailable | df["Lineup_Status"].fillna("").astype(str).eq("Not dressed")
 if unavailable.any():
-    excluded = df.loc[unavailable, [c for c in ("Player", "Team", "Injury_Status") if c in df.columns]]
+    excluded = df.loc[unavailable, [c for c in ("Player", "Team", "Injury_Status", "Lineup_Status") if c in df.columns]]
     df = df.loc[~unavailable].copy().reset_index(drop=True)
-    st.warning(f"Excluded {len(excluded)} unavailable player(s) from all boards and prop pages (Out/IR/Scratch).")
+    st.warning(f"Excluded {len(excluded)} unavailable player(s) from all boards and prop pages (Out/IR/Scratch/official lineup).")
     with st.expander("Excluded players"):
         st.dataframe(excluded, hide_index=True, use_container_width=True)
 elif source == "latest" and not has_availability:
@@ -4174,6 +4178,8 @@ if "Injury_Badge" not in df.columns:
     df["Injury_Badge"] = ""
 if "Injury_Status" not in df.columns:
     df["Injury_Status"] = "Healthy"
+if "Lineup_Status" not in df.columns:
+    df["Lineup_Status"] = "Lineup pending"
 # -------------------------
 # Ensure drought columns exist (older CSV safe)
 # -------------------------
@@ -4683,6 +4689,28 @@ if source == "latest" and "Roster_Status" in df.columns and not df.empty:
     st.caption(f"Official NHL roster check: {verified} active skaters verified · {watch} odds-only returners/newcomers.")
     if unverified:
         st.warning(f"{unverified} skaters could not be roster verified. Check tonight's lineup before using their cards.")
+    dressed = int(df["Lineup_Status"].eq("Dressed").sum())
+    pending = int(df["Lineup_Status"].eq("Lineup pending").sum())
+    st.caption(f"Tonight's lineup: {dressed} skaters verified in an official NHL game roster · {pending} pending. Active roster and no injury report do not confirm a player will dress.")
+    if "Lineup_Excluded_Count" in df.columns:
+        removed = pd.to_numeric(df["Lineup_Excluded_Count"], errors="coerce").fillna(0).max()
+        if removed:
+            st.caption(f"{int(removed)} player(s) absent from a complete official game roster were removed during the saved run.")
+
+if source == "latest" and not df.empty and "StartTimeUTC" in df.columns:
+    now_utc = pd.Timestamp.now(tz="UTC")
+    starts = pd.to_datetime(df["StartTimeUTC"], utc=True, errors="coerce")
+    close_games = starts.between(now_utc - pd.Timedelta(minutes=10),
+                                 now_utc + pd.Timedelta(minutes=90)).any()
+    if close_games:
+        stale_checks = []
+        for field, label in (("Injury_Check_UTC", "injury"), ("Goalie_Check_UTC", "goalie")):
+            checked = pd.to_datetime(df.iloc[0].get(field), utc=True, errors="coerce")
+            if pd.isna(checked) or now_utc - checked > pd.Timedelta(minutes=30):
+                stale_checks.append(label)
+        if stale_checks:
+            st.warning("Game time is close and the saved " + " and ".join(stale_checks)
+                       + " check is over 30 minutes old or missing. Run / Refresh slate before using these cards.")
 
 ambiguous_names = int(df.get("Odds_Name_Ambiguous", pd.Series(False, index=df.index)).fillna(False).sum())
 if ambiguous_names:
@@ -4923,9 +4951,11 @@ if page == "⚔️ Warlords of the Night":
     if {"Opp", "Opp_Goalie_Status"}.issubset(night_df.columns):
         goalie_teams = night_df.loc[night_df["Opp"].fillna("").astype(str).str.strip().ne(""),
                                     ["Opp", "Opp_Goalie_Status"]].drop_duplicates("Opp")
-        confirmed = goalie_teams["Opp_Goalie_Status"].astype(str).str.casefold().eq("confirmed").sum()
-        st.caption(f"Goalie snapshot: {confirmed}/{len(goalie_teams)} opposing teams confirmed. "
-                   "Likely, unconfirmed, and unknown starters are provisional; rerun the slate to refresh them.")
+        statuses = goalie_teams["Opp_Goalie_Status"].astype(str).str.casefold()
+        official = int(statuses.eq("official").sum())
+        reported = int(statuses.eq("confirmed").sum())
+        st.caption(f"Goalie snapshot: {official} official NHL starter(s), {reported} DailyFaceoff-confirmed report(s), "
+                   f"{len(goalie_teams)-official-reported} provisional. Status is from the saved run; rerun near puck drop to check for changes.")
 
     summary, by_team, baseline_roster = baseline_audit(night_df)
     with st.expander("Baseline and historical move audit", expanded=False):
@@ -5502,7 +5532,7 @@ elif page == "Assists":
                  "Assists_Odds_Over",
         "Assists_Book",
         "Conf_Assists", "Matrix_Assists", "Assists_Line","iXA%",  "PP_iXA60","PPP10_total",
-        "Assist_5v5_Setups_per_game", "PP_Observed_Assists_per_game",
+        "i5v5_primaryAssists60", "i5v5_shotAssists60", "Assist_Volume_Source",
         "Drought_PPP",
 "PP_Matchup", "PP_TOI_Pct_Game", 
         "opp_5v5_xGA60",   
@@ -5536,7 +5566,7 @@ elif page == "Assists":
 
     # Full table (Assists)
     show_table(df_a, assists_cols, "Assists View")
-    st.caption("5v5 setups/game are recorded shot assists at the player's current ice-time rate. PP observed assists/game are actual production; neither is an expected-assists model or a predicted assist probability.")
+    st.caption("5v5 primary assists/60 are recorded first assists from MoneyPuck. Its current skater file has no 5v5 shot-assist field, so that column stays blank and assist volume uses NHL last-10 recorded assists when needed. These are different stats, not expected assists or predicted hit rates.")
 
 # =========================
 # SOG
