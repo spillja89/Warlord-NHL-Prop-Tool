@@ -2,7 +2,7 @@ import unittest
 
 import pandas as pd
 
-from tonight_goal_projection import add_tonight_goal_projection
+from tonight_goal_projection import add_tonight_goal_projection, add_tonight_market_projections
 from warlords_night_board import rank_priced_slate, render_warlords
 
 
@@ -64,6 +64,45 @@ class TonightGoalProjectionTests(unittest.TestCase):
         self.assertIn("TONIGHT RESEARCH PROJECTION", html)
         self.assertIn("being graded, not a tested move", html)
 
+    def test_other_markets_keep_existing_means_and_use_their_own_lines(self):
+        row = {**self.base(), "Team_GP": 10,
+               "Assists_mu": .8, "Assists_Line": .5, "Assists_Odds_Over": -120,
+               "Points_mu": 1.2, "Points_Line": 1.5, "Points_Odds_Over": 180,
+               "SOG_mu": 3.0, "SOG_Line": 2.5, "SOG_Odds_Over": -110,
+               "SOG_Opp_Volume_Factor": 1.1,
+               "PP_Points60": 4.0, "PP_ActualPoints60": 3.0,
+               "Team_PP_xGF60": 8.0, "League_PP_xGF60": 8.0}
+        result = add_tonight_market_projections(pd.DataFrame([row])).iloc[0]
+        self.assertEqual(result["Assists_mu"], .8)
+        self.assertEqual(result["Points_mu"], 1.2)
+        self.assertEqual(result["SOG_mu"], 3.0)
+        self.assertAlmostEqual(result["Tonight_SOG_mu"], 3.3)
+        self.assertGreater(result["Tonight_Assists_over_pct"], 0)
+        self.assertGreater(result["Tonight_Points_over_pct"], 0)
+        self.assertGreater(result["Tonight_SOG_over_pct"], 0)
+        self.assertGreater(result["Tonight_PPP_1plus_pct"], 0)
+
+    def test_ppp_requires_usage_sample(self):
+        row = {**self.base(), "Model_Player_GP": 2, "PP_Points60": 4,
+               "PP_ActualPoints60": 3}
+        result = add_tonight_market_projections(pd.DataFrame([row])).iloc[0]
+        self.assertTrue(pd.isna(result["Tonight_PPP_1plus_pct"]))
+        self.assertIn("Unavailable", result["Tonight_PPP_Status"])
+
+    def test_assist_and_shot_cards_show_market_specific_projection(self):
+        row = {**self.base(), "Player": "Example", "Team": "COL", "Game": "PIT@COL",
+               "Assists_mu": .8, "Assists_Line": .5, "Assists_Odds_Over": -120,
+               "SOG_mu": 3.0, "SOG_Line": 2.5, "SOG_Odds_Over": -110,
+               "SOG_Opp_Volume_Factor": 1.1}
+        frame = add_tonight_market_projections(pd.DataFrame([row]))
+        cards = rank_priced_slate(frame)
+        html = render_warlords({"Support": cards["Support"], "Jungle": cards["Jungle"]},
+                               roles=("Support", "Jungle"))
+        self.assertIn("expected assists", html)
+        self.assertIn("expected shots", html)
+        self.assertIn("over 2.5", html)
+
 
 if __name__ == "__main__":
     unittest.main()
+

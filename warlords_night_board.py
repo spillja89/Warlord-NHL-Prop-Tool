@@ -151,6 +151,9 @@ def rank_warlords(frame: pd.DataFrame) -> dict[str, list[dict]]:
                 "tonight_goal_xg": _number(row.get("Tonight_Goal_xG")) if market == "Goal" else None,
                 "tonight_goal_pct": _number(row.get("Tonight_Goal_1plus_pct")) if market == "Goal" else None,
                 "tonight_goal_status": str(_value(row, "Tonight_Goal_Status") or "") if market == "Goal" else "",
+                "tonight_mu": _number(row.get(f"Tonight_{market}_mu")),
+                "tonight_over_pct": _number(row.get(f"Tonight_{market}_over_pct")),
+                "tonight_status": str(_value(row, f"Tonight_{market}_Status") or ""),
                 "goalie": str(_value(row, "Opp_Goalie") or ""),
                 "goalie_gp": _number(_value(row, "Opp_GP")),
                 "goalie_status": str(_value(row, "Opp_Goalie_Status") or "Unknown"),
@@ -220,6 +223,9 @@ def rank_priced_slate(frame: pd.DataFrame) -> dict[str, list[dict]]:
                 "tonight_goal_xg": _number(row.get("Tonight_Goal_xG")) if market == "Goal" else None,
                 "tonight_goal_pct": _number(row.get("Tonight_Goal_1plus_pct")) if market == "Goal" else None,
                 "tonight_goal_status": str(_value(row, "Tonight_Goal_Status") or "") if market == "Goal" else "",
+                "tonight_mu": _number(row.get(f"Tonight_{market}_mu")),
+                "tonight_over_pct": _number(row.get(f"Tonight_{market}_over_pct")),
+                "tonight_status": str(_value(row, f"Tonight_{market}_Status") or ""),
                 "confidence": confidence, "matrix": matrix,
                 "baseline_rule": baseline, "baseline_only": bool(baseline and not best),
                 "move_block_reason": move_block_reason,
@@ -566,6 +572,14 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
                             f'{tonight_xg:.2f} expected goals · {tonight_pct:.1f}% for 1+ '
                             f'· being graded, not a tested move</div>'
                             if tonight_xg is not None and tonight_pct is not None else "")
+            if role != "Carry":
+                projected_mu = _number(card.get("tonight_mu"))
+                projected_pct = _number(card.get("tonight_over_pct"))
+                if projected_mu is not None and projected_pct is not None:
+                    unit = "shots" if role == "Jungle" else "assists" if role == "Support" else "points"
+                    tonight_note = (f'<div class="wn-goalie">TONIGHT RESEARCH PROJECTION · '
+                                    f'{projected_mu:.2f} expected {unit} · {projected_pct:.1f}% '
+                                    f'over {card["line"]:g} · being graded, not a tested move</div>')
             goalie_name = str(card.get("goalie") or "").strip()
             goalie_status = str(card.get("goalie_status") or "Unknown").strip()
             if goalie_status.casefold() == "confirmed":

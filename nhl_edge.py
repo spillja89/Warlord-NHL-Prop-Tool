@@ -2848,6 +2848,7 @@ def conf_points(ixa_pct: float, p10_gap: Optional[float], stab: float, defweak: 
     base += USAGE_WEIGHT_POINTS * (toi_pct - 50.0)
     return int(round(clamp(base)))
 
+
 def points_rank_with_talent_prior(move_conf: float, p10_gap: Optional[float], tier: str,
                                   matrix: str) -> int:
     """Current Points ranking; preserve move_conf for frozen historical rules.
@@ -3706,6 +3707,7 @@ def build_tracker(today_local: date, debug: bool = False, api_key: str | None = 
                 "GP": pd.to_numeric(teams_raw[team_gp_col], errors="coerce"),
             }).groupby("Team")["GP"].max()
             sk["Opp_Team_GP"] = sk["Opp"].map(team_games)
+            sk["Team_GP"] = sk["Team"].map(team_games)
 
 
         # POWER PLAY / PENALTY KILL team context
@@ -3713,6 +3715,8 @@ def build_tracker(today_local: date, debug: bool = False, api_key: str | None = 
             tpp = normalize_teams_pppk(teams_raw, debug=debug)
             sk["League_PK_xGA60"] = pd.to_numeric(
                 tpp.get("Team_PK_xGA60"), errors="coerce").dropna().mean()
+            sk["League_PP_xGF60"] = pd.to_numeric(
+                tpp.get("Team_PP_xGF60"), errors="coerce").dropna().mean()
             # Team PP strength
             sk = sk.merge(tpp[["Team", "Team_PP_xGF60", "Team_PP_GF60", "PP_Score", "Team_PK_xGA60", "Team_PK_GA60", "PK_Weak"]], on="Team", how="left")
             # Opponent PK weakness (join on Opp)
@@ -4791,9 +4795,11 @@ def build_tracker(today_local: date, debug: bool = False, api_key: str | None = 
         "i5v5_xG60": sk.get("i5v5_xG60"),
         "Goal_Opportunity_xG": sk.get("Goal_Opportunity_xG"),
         "Model_Player_GP": sk.get("games_played"),
+        "Team_GP": sk.get("Team_GP"),
         "Opp_Team_GP": sk.get("Opp_Team_GP"),
         "League_5v5_xGA60": sk.get("League_5v5_xGA60"),
         "League_PK_xGA60": sk.get("League_PK_xGA60"),
+        "League_PP_xGF60": sk.get("League_PP_xGF60"),
         "Assist_5v5_Setups_per_game": sk.get("Assist_5v5_Setups_per_game"),
         "PP_Observed_Assists_per_game": sk.get("PP_Observed_Assists_per_game"),
         "PP_SOG60": sk.get("PP_SOG60"),
@@ -5288,8 +5294,9 @@ def build_tracker(today_local: date, debug: bool = False, api_key: str | None = 
         # gets a new filesystem mtime, which is not the quote collection time.
         tracker["Odds_Checked_UTC"] = datetime.now(timezone.utc).isoformat()
         tracker = add_bdl_ev_all(tracker)
-        from tonight_goal_projection import add_tonight_goal_projection
+        from tonight_goal_projection import add_tonight_goal_projection, add_tonight_market_projections
         tracker = add_tonight_goal_projection(tracker)
+        tracker = add_tonight_market_projections(tracker)
         # -------------------------------
         # L10 Support Tiers (presentation helper columns)
         # -------------------------------
@@ -5530,6 +5537,7 @@ def main() -> None:
 if __name__ == "__main__":
 
     main()
+
 
 
 
