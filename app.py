@@ -868,6 +868,7 @@ def _render_class_shortlist(frame: pd.DataFrame, role: str,
         st.caption("Tonight research projection is a separate matchup-adjusted estimate. It is not the historical move %, does not affect tiers or card selection, and is being graded before it is used as a betting edge.")
     elif featured[role]:
         st.html(render_warlords(featured, limit=len(featured[role]), roles=(role,), show_hero=False))
+        st.caption("Tonight research projections appear beneath book break-even on cards after a fresh run. They use a separate matchup adjustment, do not change moves or ranks, and need forward grading before they can be treated as betting probabilities.")
     else:
         st.caption("No player clears both the current baseline and a tested move at 50%+ on this slate.")
     st.caption("Book break-even % comes from posted odds; move percentages describe past results for that rule, not a forecast. Points ranking now gives neutral regression credit and protects Green ELITE/STAR roles; frozen move records still use the original Points score.")
@@ -5826,7 +5827,7 @@ elif page == "GOALS (0.5)":
 # =========================
 elif page == "Power Play":
     st.subheader("⚡ Power Play · over 0.5 point")
-    st.caption("Current prices, recent PPP, power-play time, and matchup. PPP has no tested move yet.")
+    st.caption("Current prices, recent PPP, power-play time, and matchup. PPP has no tested move yet. Tonight's PPP estimate is experimental and uses an observed-assist involvement proxy.")
     pp_dates = pd.to_datetime(df_f.get("Date", pd.Series(dtype=str)), errors="coerce").dropna()
     pp_slate_day = (pp_dates.max().date().isoformat() if not pp_dates.empty else
                     datetime.now(ZoneInfo("America/Chicago")).date().isoformat())
@@ -6028,6 +6029,7 @@ elif page == "Power Play":
                    ppp_quotes.loc[ppp_quotes["Team"].eq(selected_team)]).copy()
         display_quotes = pp_view[["PP rank", "Player", "Game", "Best feed price",
                                   "PP matchup /100", "PP boost", "Current PPP L5",
+                                  "Tonight PPP mean", "Tonight PPP 1+ %",
                                   "Current PP min/game", "PP unit", "PP on-ice xG/game"]].rename(columns={
                                       "Best feed price": "Best price",
                                       "Current PPP L5": "PPP L5",
@@ -6066,6 +6068,9 @@ elif page == "Power Play":
                       'Current-season PP minutes unavailable')
         st.caption(f'Book break-even {selected["Book break-even %"]:.1f}% · '
                    f'{usage_note} · {selected["PP unit"]}')
+        if pd.notna(selected.get("Tonight PPP 1+ %")):
+            st.caption(f'Tonight research projection: {selected["Tonight PPP mean"]:.2f} expected PPP · '
+                       f'{selected["Tonight PPP 1+ %"]:.1f}% for 1+ · observed-assist proxy, uncalibrated')
         if pd.notna(selected.get("PP on-ice xG/game")):
             st.caption(f'Observed PP opportunity: {selected["PP on-ice xG/game"]:.2f} team xG/game while on ice · '
                        f'{selected["PP shooter xG/game"]:.2f} individual xG/game'
@@ -6075,7 +6080,7 @@ elif page == "Power Play":
         if observed_prices:
             st.caption(f'Captured over 0.5 book prices: {observed_prices}')
         with st.expander("How to read these numbers"):
-            st.markdown("- **PP rank** orders priced players by PP context, with boost, PP1, and PP minutes breaking ties.\n- **PP context /100** blends team PP strength with opponent PK weakness. It is a matchup rating, not a predicted hit rate. **Boost** is an unvalidated usage and matchup tag.\n- **PPP L5** is the player's credited power-play points in completed regular-season games against over 0.5. It is a record, not a forecast.\n- **Book break-even %** is the hit rate required by the posted price; there is no tested PPP model rate to compare it with yet.\n- **PP min/game** is season power-play ice time per completed game from MoneyPuck, with NHL stats used when that feed is missing. **PP unit** is inferred from recorded ice time, not tonight's confirmed lineup.\n- The player card shows current-season team PP and opponent PK ranks. Both can swing early in the season; detailed stats and the assist cross-check are below.")
+            st.markdown("- **PP rank** orders priced players by PP context, with boost, PP1, and PP minutes breaking ties.\n- **PP context /100** blends team PP strength with opponent PK weakness. It is a matchup rating, not a predicted hit rate. **Boost** is an unvalidated usage and matchup tag.\n- **PPP L5** is the player's credited power-play points in completed regular-season games against over 0.5. It is a record, not a forecast.\n- **Tonight PPP 1+ %** is an experimental estimate from player PP involvement, PP minutes, team offense, and opponent PK. Its assist input uses actual past assists, and the estimate has not been calibrated.\n- **Book break-even %** is the hit rate required by the posted price; there is no tested PPP model rate to compare it with yet.\n- **PP min/game** is season power-play ice time per completed game from MoneyPuck, with NHL stats used when that feed is missing. **PP unit** is inferred from recorded ice time, not tonight's confirmed lineup.\n- The player card shows current-season team PP and opponent PK ranks. Both can swing early in the season; detailed stats and the assist cross-check are below.")
 
     with st.expander("Detailed PP stats and filters"):
         unit_sel = st.multiselect("PP unit", ["PP1", "PP2", "Unconfirmed"],
@@ -7266,3 +7271,4 @@ elif page == "Ledger":
 else:
     st.subheader("Raw CSV (all columns)")
     st.dataframe(df_f, width="stretch", hide_index=True)
+
