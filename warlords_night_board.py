@@ -276,7 +276,7 @@ def unfeatured_baselines(cards: list[dict]) -> list[dict]:
 
 
 def goal_display_cards(cards: list[dict]) -> list[dict]:
-    """Show goal tiers; A and B watches need a 50%+ move at their cutoff."""
+    """Show goal tiers; watches use the move rate rounded to a whole percent."""
     eligible = []
     for card in cards:
         if not card.get("baseline_rule"):
@@ -284,7 +284,7 @@ def goal_display_cards(cards: list[dict]) -> list[dict]:
         move = card.get("move")
         if move and move.get("goal_tier") in {"A", "B"}:
             qualifying = [m for m in card["moves"] if m.get("goal_tier") == move["goal_tier"]
-                          and _move_rank(m)[0] >= 0.5]
+                          and _move_rank(m)[0] >= 0.495]
             if not qualifying:
                 continue
             card = {**card, "move": max(qualifying, key=_move_rank)}
