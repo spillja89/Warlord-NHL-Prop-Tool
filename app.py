@@ -856,7 +856,7 @@ def _render_class_shortlist(frame: pd.DataFrame, role: str,
                    f"{b_goal_count} B-tier watches (81) · "
                    f"{talent_goal_count} ELITE/STAR goal watches · "
                    f"{len(goal_cards) - s_goal_count - a_goal_count - b_goal_count - talent_goal_count} other Green goal baselines. "
-                   "A cards show the cumulative 82+ move record; B cards show 81+. S shows 84+ only. Each watch also shows its narrow confidence band separately. The cumulative move must clear 50%.")
+                   "A cards show the cumulative 82+ move record; B cards show 81+. S shows 84+ only. Each watch also shows its narrow confidence band separately. The cumulative move must round to at least 50%; its exact rate stays visible.")
         st.html(render_warlords({"Carry": goal_cards}, limit=len(goal_cards),
                                 roles=("Carry",), show_hero=False))
     elif featured[role]:
