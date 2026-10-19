@@ -3111,6 +3111,20 @@ def add_talent_tiers(sk: pd.DataFrame, debug: bool = False) -> pd.DataFrame:
 
     return out
 
+def _completed_regular_season_games(games: list[dict]) -> list[dict]:
+    """Exclude preseason/playoffs from rolling team context."""
+    completed = []
+    for game in games:
+        state = str(game.get("gameState", "") or "").upper()
+        game_type = game.get("gameType")
+        game_id = str(game.get("id") or game.get("gameId") or "")
+        is_regular = str(game_type) == "2" or (game_type is None and len(game_id) == 10 and game_id[4:6] == "02")
+        if is_regular and state in {"OFF", "FINAL", "FINAL_OT", "FINAL_SO"}:
+            completed.append(game)
+    completed.sort(key=lambda game: str(game.get("gameDate") or game.get("startTimeUTC") or ""))
+    return completed
+
+
 def get_team_recent_gf(sess: requests.Session, team_abbrev: str, n_games: int = 5, debug: bool = False) ->  tuple[int, float, int]:
     """
     Returns (gf_sum, gf_avg, n_used) over the last n completed games.
@@ -3128,17 +3142,7 @@ def get_team_recent_gf(sess: requests.Session, team_abbrev: str, n_games: int = 
 
     games = data.get("games", []) or []
 
-    # Keep only completed games
-    completed = []
-    for g in games:
-        state = str(g.get("gameState", "") or "").upper()
-        if state in ("OFF", "FINAL", "FINAL_OT", "FINAL_SO"):
-            completed.append(g)
-
-    # Sort by date ascending, then take the most recent n
-    def _gdate(x):
-        return str(x.get("gameDate", "") or x.get("startTimeUTC", "") or "")
-    completed.sort(key=_gdate)
+    completed = _completed_regular_season_games(games)
 
     last = completed[-n_games:] if completed else []
     gf = 0
@@ -3184,17 +3188,7 @@ def get_team_recent_ga(sess: requests.Session, team_abbrev: str, n_games: int = 
 
     games = data.get("games", []) or []
 
-    # Keep only completed games
-    completed = []
-    for g in games:
-        state = str(g.get("gameState", "") or "").upper()
-        if state in ("OFF", "FINAL", "FINAL_OT", "FINAL_SO"):
-            completed.append(g)
-
-    # Sort by date ascending, then take the most recent n
-    def _gdate(x):
-        return str(x.get("gameDate", "") or x.get("startTimeUTC", "") or "")
-    completed.sort(key=_gdate)
+    completed = _completed_regular_season_games(games)
 
     last = completed[-n_games:] if completed else []
     ga = 0
@@ -3305,15 +3299,7 @@ def get_team_recent_soga(sess: requests.Session, team_abbrev: str, n_games: int 
 
     games = data.get("games", []) or []
 
-    completed = []
-    for g in games:
-        state = str(g.get("gameState", "") or "").upper()
-        if state in ("OFF", "FINAL", "FINAL_OT", "FINAL_SO"):
-            completed.append(g)
-
-    def _gdate(x):
-        return str(x.get("gameDate", "") or x.get("startTimeUTC", "") or "")
-    completed.sort(key=_gdate)
+    completed = _completed_regular_season_games(games)
 
     last = completed[-n_games:] if completed else []
     soga = 0
