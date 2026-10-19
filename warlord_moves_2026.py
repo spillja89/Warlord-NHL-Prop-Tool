@@ -2,7 +2,8 @@
 
 These are historical subsets, not model probabilities. The rules only label
 tracker rows; they do not change model predictions or eligibility.
-Discovery: Jan 18–Apr 13, 2026. "Later" is Mar 15 onward, an analysis split.
+Regular-season archive: Jan 18–Apr 13, 2026. Apr 18/20 playoff rows are
+excluded. "Later" is Mar 15 onward within that regular-season archive.
 """
 
 from __future__ import annotations
@@ -64,26 +65,26 @@ def points_moves(row: Mapping[str, Any]) -> list[dict[str, Any]]:
         if not _at_least(conf, 80):
             return []
         moves.append(_move("Hammer Fists", "FLOOR", "PTS05_HAMMER_FISTS.svg",
-                           "Conf_Points >= 80", 226, 367, 153, 254))
+                           "Conf_Points >= 80", 220, 358, 147, 245))
         if _at_least(l10_s, 17):
             moves.append(_move("Echo Stomp I", "TIER", "PTS05_HAMMER_STOMP.svg",
-                               "Conf_Points >= 80 + L10_S >= 17", 189, 287, 133, 203))
+                               "Conf_Points >= 80 + L10_S >= 17", 184, 280, 128, 196))
         if _at_least(toi, 19.18):
             moves.append(_move("Echo Stomp II", "TIER", "PTS05_HAMMER_STOMP.svg",
-                               "Conf_Points >= 80 + TOI_per_game >= 19.18", 161, 234, 111, 167))
+                               "Conf_Points >= 80 + TOI_per_game >= 19.18", 157, 228, 107, 161))
         if _at_least(assists_mu, 0.746):
             moves.append(_move("Gaia’s Blessing", "TIER", "PTS05_GAIAS_BLESSING.svg",
-                               "Conf_Points >= 80 + Assists_mu >= 0.746", 158, 242, 111, 171))
+                               "Conf_Points >= 80 + Assists_mu >= 0.746", 152, 234, 105, 163))
             if _at_least(conf, 81):
                 moves.append(_move("Gaia’s Blessing+ (Press)", "HEAVY", "PTS05_GAIAS_BLESSING.svg",
-                                   "Conf_Points >= 81 + Assists_mu >= 0.746", 138, 206, 97, 145))
+                                   "Conf_Points >= 81 + Assists_mu >= 0.746", 133, 200, 92, 139))
             if _at_least(conf, 83):
                 moves.append(_move("Gaia’s Blessing++ (Smash)", "HEAVY", "PTS05_GAIAS_BLESSING.svg",
-                                   "Conf_Points >= 83 + Assists_mu >= 0.746", 98, 141, 68, 99))
+                                   "Conf_Points >= 83 + Assists_mu >= 0.746", 98, 140, 68, 98))
         if _at_least(toi, 19.18) and _at_least(l10_s, 17):
             moves.append(_move("Hammer Fists II", "HEAVY", "PTS05_HAMMER_FISTS.svg",
                                "Conf_Points >= 80 + TOI_per_game >= 19.18 + L10_S >= 17",
-                               146, 207, 102, 148))
+                               143, 203, 99, 144))
         if _at_least(conf, 83) and _at_least(l10_p, 8) and _at_least(l10_s, 17):
             moves.append(_move("Enraged Engine", "CRIT", "PTS05_ENRAGED_FURY.svg",
                                "Conf_Points >= 83 + L10_P >= 8 + L10_S >= 17",
@@ -97,14 +98,14 @@ def points_moves(row: Mapping[str, Any]) -> list[dict[str, Any]]:
     if not _at_least(conf, 75):
         return []
     moves.append(_move("DPS Tank stance", "STANCE", "PTS15_TWO_HANDED_HAMMER.svg",
-                       "Conf_Points >= 75", 136, 331, 66, 173))
+                       "Conf_Points >= 75", 135, 329, 65, 171))
     conf_goal = _number(row, "Conf_Goal")
     conf_sog = _number(row, "Conf_SOG")
     volume = _at_most(conf_goal, 88) and _at_least(conf_sog, 80)
     if volume:
         moves.append(_move("Backbone", "FLOOR", "PTS15_TWO_HANDED_HAMMER.svg",
                            "Conf_Points >= 75 + Conf_Goal <= 88 + Conf_SOG >= 80",
-                           73, 142, 31, 55))
+                           72, 141, 30, 54))
         if _at_most(assists_mu, 1.55):
             moves.append(_move("Blade Impale (Power Tier)", "HEAVY", "PTS15_BLADE_IMPALE.svg",
                                "Backbone + Assists_mu <= 1.55", 53, 88, 25, 38))
@@ -136,19 +137,19 @@ def sog_moves(row: Mapping[str, Any]) -> list[dict[str, Any]]:
 
     if line == 2.5:
         moves.append(_move("Jungle Stance", "STANCE", "sog_basic_swipe.svg",
-                           "Green + SOG 2.5 + Conf_SOG >= 75", 103, 200, 60, 114))
+                           "Green + SOG 2.5 + Conf_SOG >= 75", 100, 196, 57, 110))
         ixg = _number(row, "iXG%")
         if _at_least(ixg, 93.2):
             moves.append(_move("Berserker Swipe", "FLOOR", "sog_basic_swipe.svg",
-                               "iXG% >= 93.2", 78, 136, 46, 77))
+                               "iXG% >= 93.2", 77, 135, 45, 76))
         if _at_least(_number(row, "Goalie_Weak"), 62.5):
             moves.append(_move("Paralysis", "ENV", "sog_env_paralysis.svg",
-                               "Goalie_Weak >= 62.5", 34, 53, 23, 34))
+                               "Goalie_Weak >= 62.5", 34, 52, 23, 33))
         rage = _at_least(_number(row, "L20_A"), 9) and _at_most(_number(row, "L40_A"), 29)
         volley = _at_least(_number(row, "L10_Rate_SOG"), 2.9) and _at_least(share, 18.8)
         if rage:
             moves.append(_move("Berserker’s Rage", "HEAVY", "sog_berserkers_rage.svg",
-                               "L20_A >= 9 + L40_A <= 29", 50, 75, 36, 53))
+                               "L20_A >= 9 + L40_A <= 29", 48, 73, 34, 51))
         if volley:
             moves.append(_move("Berserker Volley", "SUPPORT", "sog_berserker_volley.svg",
                                "L10 SOG/game >= 2.9 + slate SOG share proxy >= 18.8", 34, 50, 21, 33,
@@ -158,14 +159,14 @@ def sog_moves(row: Mapping[str, Any]) -> list[dict[str, Any]]:
                                "Rage + Volley", 26, 33, 18, 22, track=True))
         if _at_least(_number(row, "PP_TOI_Pct"), 15.9) and _at_least(ixg, 93.2):
             moves.append(_move("Bloodthirst", "HEAVY", "sog_bloodthirst.svg",
-                               "PP_TOI_Pct >= 15.9 + iXG% >= 93.2", 44, 67, 22, 37))
+                               "PP_TOI_Pct >= 15.9 + iXG% >= 93.2", 43, 66, 21, 36))
         if rage and _at_least(_number(row, "i5v5_points60"), 2.2):
             moves.append(_move("Siege", "ULTIMATE", "sog_berserker_siege.svg",
-                               "Rage + i5v5_points60 >= 2.2", 32, 41, 21, 26, track=True))
+                               "Rage + i5v5_points60 >= 2.2", 30, 39, 19, 24, track=True))
         return moves
 
     moves.append(_move("Sniper Stance", "STANCE", "sog_class_shooter.svg",
-                       "Green + SOG 3.5 + Conf_SOG >= 75", 136, 338, 79, 193))
+                       "Green + SOG 3.5 + Conf_SOG >= 75", 135, 334, 78, 189))
     hdca = _at_least(_number(row, "opp_5v5_HDCA60"), 2.36)
     strong = hdca and _at_least(_number(row, "PPP10_total"), 3)
     permission = hdca and _at_least(_number(row, "Best_Conf"), 89)
@@ -173,11 +174,11 @@ def sog_moves(row: Mapping[str, Any]) -> list[dict[str, Any]]:
     if strong:
         moves.append(_move("Strong", "FLOOR", "sog_berserkers_rage.svg",
                            "PPP10_total >= 3 + opp_5v5_HDCA60 >= 2.36",
-                           66, 124, 35, 69))
+                           66, 123, 35, 68))
     if permission:
         moves.append(_move("Permission Special", "SUPPORT", "sog_env_paralysis.svg",
                            "Best_Conf >= 89 + opp_5v5_HDCA60 >= 2.36",
-                           60, 113, 36, 69, track=True))
+                           60, 112, 36, 68, track=True))
     if strong and assist_model:
         moves.append(_move("Enhanced Enraged", "SPECIAL", "sog_enhanced_enraged_1.svg",
                            "Strong + Assists_Model% >= 56.3", 42, 62, 25, 39,
@@ -218,12 +219,12 @@ def _safe_float(value, default=None):
 # Add these to the original 84+ records to replay each move at an 82+ cutoff.
 # Each tuple is wins, graded rows, later wins, later rows (Mar 15 onward).
 GOAL_A_TIER_RECORDS = {
-    "Base Attack": (9, 23, 5, 13),
-    "Weakened Armor": (11, 22, 7, 15),
+    "Base Attack": (8, 22, 4, 12),
+    "Weakened Armor": (10, 21, 6, 14),
     "Open Lanes": (6, 14, 4, 10),
     "Fallen Guardian": (8, 15, 6, 11),
     "Open Lanes Assault": (4, 9, 2, 6),
-    "Armor Sunder": (6, 10, 3, 6),
+    "Armor Sunder": (5, 9, 2, 5),
     "Bloodlust": (4, 11, 3, 8),
     "Berserker Aggression": (3, 7, 1, 3),
     "Finisher Strike": (5, 13, 3, 9),
@@ -245,7 +246,7 @@ GOAL_A_TIER_RECORDS = {
 # Add these to the 82+ records for the cumulative B-tier 81+ sample.
 GOAL_B_TIER_RECORDS = {
     "Base Attack": (4, 16, 2, 9),
-    "Weakened Armor": (3, 16, 2, 8),
+    "Weakened Armor": (2, 15, 1, 7),
     "Open Lanes": (0, 8, 0, 4),
     "Fallen Guardian": (3, 7, 2, 3),
     "Open Lanes Assault": (0, 3, 0, 2),
@@ -422,7 +423,7 @@ def _assists_mapped_moves(r) -> list[dict]:
     if line != 0.5 or matrix not in {"green", "🟢"}:
         return []
     conf = _safe_float(r.get("Conf_Assists", r.get("Conf_A")), default=float("nan"))
-    specs = [('STANCE', 'Staff (Green Stance)', 'staff.svg', [], 724, 1616, 381, 882, False), ('STANCE', 'Staff Awakened', 'staff.svg', [], 310, 633, 165, 351, False), ('VOLUME', "Odin's Arcane Orb", 'odins_arcane_orb.svg', [('L40_A', '≥', 32.0)], 131, 232, 74, 133, True), ('VOLUME', 'Arcane Channel I', 'arcane_channel_i.svg', [('PP_Points60', '≥', 5.3)], 92, 157, 49, 84, True), ('VOLUME', 'Runic Infusion', 'runic_infusion.svg', [('PP_iXA60', '≥', 4.4)], 92, 157, 53, 90, True), ('VOLUME', 'Assist Dagger', 'magic-dagger.svg', [('Assist_Dagger', '≥', 86.0)], 126, 229, 69, 132, True), ('HEAVY', 'Arcane Channel II', 'arcane_channel_ii.svg', [('PP_Points60', '≥', 5.3), ('L40_A', '≥', 32.0)], 68, 105, 37, 53, True), ('HEAVY', 'Rune Orchestration', 'runic_infusion.svg', [('PP_Points60', '≥', 5.3), ('Assists_mu', '≥', 1.4)], 67, 102, 35, 48, False), ('HEAVY', 'Enchanted Dagger', 'magic-dagger.svg', [('Assist_Dagger', '≥', 86.0), ('L40_A', '≥', 32.0)], 78, 122, 46, 70, True), ('HEAVY', 'Stars Aligned', 'stars.svg', [('PP_Points60', '≥', 5.3), ('L40_A', '≥', 32.0), ('StarScore', '≤', 96.2)], 46, 65, 26, 32, False), ('HEAVY', 'Starlit Dagger', 'stars.svg', [('Assist_Dagger', '≥', 86.0), ('L40_A', '≥', 32.0), ('StarScore', '≤', 96.2)], 53, 73, 36, 46, False), ('HEAVY', 'Runic Dagger', 'runic_infusion.svg', [('Assist_Dagger', '≥', 86.0), ('L40_A', '≥', 32.0), ('PP_iXA60', '≥', 4.0)], 70, 103, 43, 60, False), ('SPECIAL', 'Arcane Alignment', 'odins_arcane_orb.svg', [('PP_Points60', '≥', 5.3), ('L40_A', '≥', 32.0), ('Exp_P_10', '≤', 22.0)], 46, 62, 25, 32, False), ('SPECIAL', 'Rune Orchestration II', 'runic_infusion.svg', [('PP_Points60', '≥', 5.3), ('Assists_mu', '≥', 1.4), ('Exp_P_10', '≤', 22.0)], 43, 57, 23, 27, False), ('SPECIAL', 'Dagger Ascension', 'magic-dagger.svg', [('Assist_Dagger', '≥', 86.0), ('L40_A', '≥', 32.0), ('Exp_P_10', '≤', 22.0)], 53, 73, 35, 48, True), ('SPECIAL', "Odin's Blessing", 'odins-eye.svg', [('PP_Points60', '≥', 5.3), ('L40_A', '≥', 32.0), ('Team_GF_L5', '≤', 18.0), ('Opp_PK_xGA60', '≥', 6.8)], 46, 57, 26, 31, False), ('SPECIAL', 'Runic Overdrive', 'runic_infusion.svg', [('Assist_Dagger', '≥', 86.0), ('L40_A', '≥', 32.0), ('Exp_P_10', '≤', 22.0), ('PPP10_total', '≥', 3.0)], 47, 58, 32, 41, False), ('ULTIMATE', 'Valhalla', 'valhalla.svg', [('PP_Points60', '≥', 5.3), ('L40_A', '≥', 32.0), ('Team_GF_L5', '≤', 18.0), ('Conf_Goal', '≤', 84.0)], 35, 38, 17, 18, False), ('LAB CRIT', 'Arcane Transcendence', 'magic_mans_transcendence.svg', [('PP_Points60', '≥', 5.3), ('L40_A', '≥', 32.0), ('Team_GF_L5', '≤', 18.0), ('Opp_PK_xGA60', '≥', 6.8), ('Goal_Model%', '≤', 37.0)], 38, 42, 20, 21, False), ('LAB CRIT', "Odin's Blessing CRIT", 'odins-eye.svg', [('PP_Points60', '≥', 5.3), ('L40_A', '≥', 32.0), ('Team_GF_L5', '≤', 18.0), ('Opp_PK_xGA60', '≥', 6.8), ('L20_S', '≤', 61.0)], 25, 25, 15, 15, False), ('LAB CRIT', 'Supernova Overdrive', 'supernova.svg', [('Assist_Dagger', '≥', 86.0), ('L40_A', '≥', 32.0), ('Exp_P_10', '≤', 22.0), ('PPP10_total', '≥', 3.0), ('L5_A', '≤', 4.0)], 26, 27, 16, 17, False), ('LAB CRIT', 'Arcane Supernova', 'supernova.svg', [('PP_Points60', '≥', 5.3), ('L40_A', '≥', 32.0), ('Team_GF_L5', '≤', 18.0), ('Conf_Goal', '≤', 84.0), ('SOG_Model%', '≤', 46.4)], 32, 32, 17, 17, False)]
+    specs = [('STANCE', 'Staff (Green Stance)', 'staff.svg', [], 711, 1591, 368, 857, False), ('STANCE', 'Staff Awakened', 'staff.svg', [], 307, 627, 162, 345, False), ('VOLUME', "Odin's Arcane Orb", 'odins_arcane_orb.svg', [('L40_A', '≥', 32.0)], 130, 229, 73, 130, True), ('VOLUME', 'Arcane Channel I', 'arcane_channel_i.svg', [('PP_Points60', '≥', 5.3)], 91, 155, 48, 82, True), ('VOLUME', 'Runic Infusion', 'runic_infusion.svg', [('PP_iXA60', '≥', 4.4)], 91, 154, 52, 87, True), ('VOLUME', 'Assist Dagger', 'magic-dagger.svg', [('Assist_Dagger', '≥', 86.0)], 125, 226, 68, 129, True), ('HEAVY', 'Arcane Channel II', 'arcane_channel_ii.svg', [('PP_Points60', '≥', 5.3), ('L40_A', '≥', 32.0)], 67, 103, 36, 51, True), ('HEAVY', 'Rune Orchestration', 'runic_infusion.svg', [('PP_Points60', '≥', 5.3), ('Assists_mu', '≥', 1.4)], 66, 101, 34, 47, False), ('HEAVY', 'Enchanted Dagger', 'magic-dagger.svg', [('Assist_Dagger', '≥', 86.0), ('L40_A', '≥', 32.0)], 77, 119, 45, 67, True), ('HEAVY', 'Stars Aligned', 'stars.svg', [('PP_Points60', '≥', 5.3), ('L40_A', '≥', 32.0), ('StarScore', '≤', 96.2)], 45, 63, 25, 30, False), ('HEAVY', 'Starlit Dagger', 'stars.svg', [('Assist_Dagger', '≥', 86.0), ('L40_A', '≥', 32.0), ('StarScore', '≤', 96.2)], 52, 70, 35, 43, False), ('HEAVY', 'Runic Dagger', 'runic_infusion.svg', [('Assist_Dagger', '≥', 86.0), ('L40_A', '≥', 32.0), ('PP_iXA60', '≥', 4.0)], 69, 100, 42, 57, False), ('SPECIAL', 'Arcane Alignment', 'odins_arcane_orb.svg', [('PP_Points60', '≥', 5.3), ('L40_A', '≥', 32.0), ('Exp_P_10', '≤', 22.0)], 45, 60, 24, 30, False), ('SPECIAL', 'Rune Orchestration II', 'runic_infusion.svg', [('PP_Points60', '≥', 5.3), ('Assists_mu', '≥', 1.4), ('Exp_P_10', '≤', 22.0)], 42, 56, 22, 26, False), ('SPECIAL', 'Dagger Ascension', 'magic-dagger.svg', [('Assist_Dagger', '≥', 86.0), ('L40_A', '≥', 32.0), ('Exp_P_10', '≤', 22.0)], 52, 70, 34, 45, True), ('SPECIAL', "Odin's Blessing", 'odins-eye.svg', [('PP_Points60', '≥', 5.3), ('L40_A', '≥', 32.0), ('Team_GF_L5', '≤', 18.0), ('Opp_PK_xGA60', '≥', 6.8)], 45, 56, 25, 30, False), ('SPECIAL', 'Runic Overdrive', 'runic_infusion.svg', [('Assist_Dagger', '≥', 86.0), ('L40_A', '≥', 32.0), ('Exp_P_10', '≤', 22.0), ('PPP10_total', '≥', 3.0)], 46, 55, 31, 38, False), ('ULTIMATE', 'Valhalla', 'valhalla.svg', [('PP_Points60', '≥', 5.3), ('L40_A', '≥', 32.0), ('Team_GF_L5', '≤', 18.0), ('Conf_Goal', '≤', 84.0)], 34, 37, 16, 17, False), ('LAB CRIT', 'Arcane Transcendence', 'magic_mans_transcendence.svg', [('PP_Points60', '≥', 5.3), ('L40_A', '≥', 32.0), ('Team_GF_L5', '≤', 18.0), ('Opp_PK_xGA60', '≥', 6.8), ('Goal_Model%', '≤', 37.0)], 38, 42, 20, 21, False), ('LAB CRIT', "Odin's Blessing CRIT", 'odins-eye.svg', [('PP_Points60', '≥', 5.3), ('L40_A', '≥', 32.0), ('Team_GF_L5', '≤', 18.0), ('Opp_PK_xGA60', '≥', 6.8), ('L20_S', '≤', 61.0)], 24, 24, 14, 14, False), ('LAB CRIT', 'Supernova Overdrive', 'supernova.svg', [('Assist_Dagger', '≥', 86.0), ('L40_A', '≥', 32.0), ('Exp_P_10', '≤', 22.0), ('PPP10_total', '≥', 3.0), ('L5_A', '≤', 4.0)], 25, 25, 15, 15, False), ('LAB CRIT', 'Arcane Supernova', 'supernova.svg', [('PP_Points60', '≥', 5.3), ('L40_A', '≥', 32.0), ('Team_GF_L5', '≤', 18.0), ('Conf_Goal', '≤', 84.0), ('SOG_Model%', '≤', 46.4)], 31, 31, 16, 16, False)]
     active = []
     for kind, name, icon, checks, wins, picks, later_wins, later_picks, track in specs:
         if kind != "STANCE" and conf < 83:
