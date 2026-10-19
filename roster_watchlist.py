@@ -107,6 +107,7 @@ def add_roster_watchlist(tracker: pd.DataFrame, session, teams: set[str],
     tracker["Roster_Status"] = "Unverified"
     tracker["Roster_Check_UTC"] = datetime.now(timezone.utc).isoformat(timespec="seconds")
     tracker["Roster_Watch"] = False
+    watchlist_checked_utc = datetime.now(timezone.utc).isoformat(timespec="seconds")
     if rosters is None:
         rosters = load_active_rosters(session, teams, debug=debug)
 
@@ -207,6 +208,7 @@ def add_roster_watchlist(tracker: pd.DataFrame, session, teams: set[str],
                             tracker.at[existing_index, line_col] = price[0]
                             tracker.at[existing_index, odds_col] = price[1]
                             tracker.at[existing_index, book_col] = price[2]
+                            tracker.at[existing_index, f"{market}_Odds_Source"] = "BallDontLie"
                         elif (math.isclose(float(line_now), float(price[0]))
                               and math.isclose(float(odds_now), float(price[1]))
                               and (book_col not in tracker or pd.isna(tracker.at[existing_index, book_col])
@@ -223,6 +225,7 @@ def add_roster_watchlist(tracker: pd.DataFrame, session, teams: set[str],
                        "Pos": official["position"],
                        "Roster_Status": "Active roster", "Roster_Watch": True,
                        "Roster_Check_UTC": tracker["Roster_Check_UTC"].iloc[0] if len(tracker) else "",
+                       "Odds_Checked_UTC": watchlist_checked_utc,
                        "Fired_Moves": "[]", "Model_Stats_Season": "Unavailable",
                        "Injury_Status": "GTD" if any(token in injury_status for token in ("gtd", "day", "dtd")) else "Unknown",
                        "Injury_Badge": "🟡 GTD" if any(token in injury_status for token in ("gtd", "day", "dtd")) else "",
@@ -233,6 +236,7 @@ def add_roster_watchlist(tracker: pd.DataFrame, session, teams: set[str],
                             row["BDL_PPP_Line"], row["BDL_PPP_Odds"], row["BDL_PPP_Book"] = price
                         else:
                             row[f"{market}_Line"], row[f"{market}_Odds_Over"], row[f"{market}_Book"] = price
+                        row[f"{market}_Odds_Source"] = "BallDontLie"
                 rows.append(row)
                 existing.add((team, key))
                 break
