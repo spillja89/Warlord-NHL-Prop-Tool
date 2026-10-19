@@ -1,0 +1,36 @@
+Date,Game,Game_ID,Player,Player_ID,Team,Market,Move,Kind,Rule,Icon,Kit_Version,Line,Actual,Outcome,Grade_Status,Match_Status
+2026-10-18,CAR@CGY,2026020136,Andrei Svechnikov,8480830.0,CAR,Assists,Staff (Green Stance),STANCE,Green + Assists 0.5,staff.svg,2026-10-16-opportunity-v4,0.5,0.0,L,FINAL,OK
+2026-10-18,CAR@CGY,2026020136,Jackson Blake,8482809.0,CAR,Points,Hammer Fists,FLOOR,Conf_Points >= 80,PTS05_HAMMER_FISTS.svg,2026-10-16-opportunity-v4,0.5,0.0,L,FINAL,OK
+2026-10-18,CAR@CGY,2026020136,Jackson Blake,8482809.0,CAR,Points,Echo Stomp I,TIER,Conf_Points >= 80 + L10_S >= 17,PTS05_HAMMER_STOMP.svg,2026-10-16-opportunity-v4,0.5,0.0,L,FINAL,OK
+2026-10-18,CAR@CGY,2026020136,Jackson Blake,8482809.0,CAR,Points,Gaia’s Blessing,TIER,Conf_Points >= 80 + Assists_mu >= 0.746,PTS05_GAIAS_BLESSING.svg,2026-10-16-opportunity-v4,0.5,0.0,L,FINAL,OK
+2026-10-18,CAR@CGY,2026020136,Jackson Blake,8482809.0,CAR,Points,Gaia’s Blessing+ (Press),HEAVY,Conf_Points >= 81 + Assists_mu >= 0.746,PTS05_GAIAS_BLESSING.svg,2026-10-16-opportunity-v4,0.5,0.0,L,FINAL,OK
+2026-10-18,CAR@CGY,2026020136,Jackson Blake,8482809.0,CAR,Points,Gaia’s Blessing++ (Smash),HEAVY,Conf_Points >= 83 + Assists_mu >= 0.746,PTS05_GAIAS_BLESSING.svg,2026-10-16-opportunity-v4,0.5,0.0,L,FINAL,OK
+2026-10-18,CAR@CGY,2026020136,Jackson Blake,8482809.0,CAR,Points,Enraged Engine,CRIT,Conf_Points >= 83 + L10_P >= 8 + L10_S >= 17,PTS05_ENRAGED_FURY.svg,2026-10-16-opportunity-v4,0.5,0.0,L,FINAL,OK
+2026-10-18,CAR@CGY,2026020136,Jackson Blake,8482809.0,CAR,Assists,Staff (Green Stance),STANCE,Green + Assists 0.5,staff.svg,2026-10-16-opportunity-v4,0.5,0.0,L,FINAL,OK
+2026-10-18,CAR@CGY,2026020136,Jackson Blake,8482809.0,CAR,Assists,Staff Awakened,STANCE,Green + Assists 0.5 + Conf_Assists ≥ 83,staff.svg,2026-10-16-opportunity-v4,0.5,0.0,L,FINAL,OK
+2026-10-18,CAR@CGY,2026020136,Jackson Blake,8482809.0,CAR,Goal,Base Attack,BASE ATTACK,Goal_mu >= 0.4048,base.svg,2026-10-16-opportunity-v4,0.5,0.0,L,FINAL,OK
+2026-10-18,CAR@CGY,2026020136,Sebastian Aho,8478427.0,CAR,Points,DPS Tank stance,STANCE,Conf_Points >= 75,PTS15_TWO_HANDED_HAMMER.svg,2026-10-16-opportunity-v4,1.5,1.0,L,FINAL,OK
+2026-10-18,CAR@CGY,2026020136,Sebastian Aho,8478427.0,CAR,Assists,Staff (Green Stance),STANCE,Green + Assists 0.5,staff.svg,2026-10-16-opportunity-v4,0.5,1.0,W,FINAL,OK
+2026-10-18,CAR@CGY,2026020136,Sebastian Aho,8478427.0,CAR,Assists,Staff Awakened,STANCE,Green + Assists 0.5 + Conf_Assists ≥ 83,staff.svg,2026-10-16-opportunity-v4,0.5,1.0,W,FINAL,OK
+2026-10-18,CAR@CGY,2026020136,Sebastian Aho,8478427.0,CAR,SOG,Jungle Stance,STANCE,Green + SOG 2.5 + Conf_SOG >= 75,sog_basic_swipe.svg,2026-10-16-opportunity-v4,2.5,3.0,W,FINAL,OK
+2026-10-18,CAR@CGY,2026020136,Sebastian Aho,8478427.0,CAR,SOG,Berserker Swipe,FLOOR,iXG% >= 93.2,sog_basic_swipe.svg,2026-10-16-opportunity-v4,2.5,3.0,W,FINAL,OK
+2026-10-18,CAR@CGY,2026020136,Sebastian Aho,8478427.0,CAR,SOG,Bloodthirst,HEAVY,PP_TOI_Pct >= 15.9 + iXG% >= 93.2,sog_bloodthirst.svg,2026-10-16-opportunity-v4,2.5,3.0,W,FINAL,OK
+2026-10-18,CAR@CGY,2026020136,William Carrier,8477478.0,CAR,Assists,Staff (Green Stance),STANCE,Green + Assists 0.5,staff.svg,2026-10-16-opportunity-v4,0.5,0.0,L,FINAL,OK
+2026-10-18,CBJ@MIN,2026020135,Charlie Coyle,8475745.0,CBJ,Points,Hammer Fists,FLOOR,Conf_Points >= 80,PTS05_HAMMER_FISTS.svg,2026-10-16-opportunity-v4,0.5,0.0,L,FINAL,OK
+2026-10-18,CBJ@MIN,2026020135,Charlie Coyle,8475745.0,CBJ,Points,Gaia’s Blessing,TIER,Conf_Points >= 80 + Assists_mu >= 0.746,PTS05_GAIAS_BLESSING.svg,2026-10-16-opportunity-v4,0.5,0.0,L,FINAL,OK
+2026-10-18,CBJ@MIN,2026020135,Kirill Kaprizov,8478864.0,MIN,Assists,Staff (Green Stance),STANCE,Green + Assists 0.5,staff.svg,2026-10-16-opportunity-v4,0.5,0.0,L,FINAL,OK
+2026-10-18,CBJ@MIN,2026020135,Kirill Kaprizov,8478864.0,MIN,SOG,Sniper Stance,STANCE,Green + SOG 3.5 + Conf_SOG >= 75,sog_class_shooter.svg,2026-10-16-opportunity-v4,3.5,5.0,W,FINAL,OK
+2026-10-18,CBJ@MIN,2026020135,Kirill Kaprizov,8478864.0,MIN,SOG,Strong,FLOOR,PPP10_total >= 3 + opp_5v5_HDCA60 >= 2.36,sog_berserkers_rage.svg,2026-10-16-opportunity-v4,3.5,5.0,W,FINAL,OK
+2026-10-18,CBJ@MIN,2026020135,Kirill Kaprizov,8478864.0,MIN,SOG,Permission Special,SUPPORT,Best_Conf >= 89 + opp_5v5_HDCA60 >= 2.36,sog_env_paralysis.svg,2026-10-16-opportunity-v4,3.5,5.0,W,FINAL,OK
+2026-10-18,CBJ@MIN,2026020135,Kirill Kaprizov,8478864.0,MIN,SOG,Enhanced Enraged,SPECIAL,Strong + Assists_Model% >= 56.3,sog_enhanced_enraged_1.svg,2026-10-16-opportunity-v4,3.5,5.0,W,FINAL,OK
+2026-10-18,CBJ@MIN,2026020135,Matt Boldy,8481557.0,MIN,SOG,Sniper Stance,STANCE,Green + SOG 3.5 + Conf_SOG >= 75,sog_class_shooter.svg,2026-10-16-opportunity-v4,3.5,6.0,W,FINAL,OK
+2026-10-18,CBJ@MIN,2026020135,Matt Boldy,8481557.0,MIN,SOG,Permission Special,SUPPORT,Best_Conf >= 89 + opp_5v5_HDCA60 >= 2.36,sog_env_paralysis.svg,2026-10-16-opportunity-v4,3.5,6.0,W,FINAL,OK
+2026-10-18,CBJ@MIN,2026020135,Quinn Hughes,8480800.0,MIN,Points,DPS Tank stance,STANCE,Conf_Points >= 75,PTS15_TWO_HANDED_HAMMER.svg,2026-10-16-opportunity-v4,1.5,0.0,L,FINAL,OK
+2026-10-18,CBJ@MIN,2026020135,Quinn Hughes,8480800.0,MIN,Assists,Staff (Green Stance),STANCE,Green + Assists 0.5,staff.svg,2026-10-16-opportunity-v4,0.5,0.0,L,FINAL,OK
+2026-10-18,CBJ@MIN,2026020135,Quinn Hughes,8480800.0,MIN,Assists,Staff Awakened,STANCE,Green + Assists 0.5 + Conf_Assists ≥ 83,staff.svg,2026-10-16-opportunity-v4,0.5,0.0,L,FINAL,OK
+2026-10-18,CBJ@MIN,2026020135,Quinn Hughes,8480800.0,MIN,Assists,Arcane Channel I,VOLUME,Green + Assists 0.5 + Conf_Assists ≥ 83 + PP_Points60 ≥ 5.3,arcane_channel_i.svg,2026-10-16-opportunity-v4,0.5,0.0,L,FINAL,OK
+2026-10-18,CBJ@MIN,2026020135,Quinn Hughes,8480800.0,MIN,Assists,Runic Infusion,VOLUME,Green + Assists 0.5 + Conf_Assists ≥ 83 + PP_iXA60 ≥ 4.4,runic_infusion.svg,2026-10-16-opportunity-v4,0.5,0.0,L,FINAL,OK
+2026-10-18,CBJ@MIN,2026020135,Quinn Hughes,8480800.0,MIN,Assists,Assist Dagger,VOLUME,Green + Assists 0.5 + Conf_Assists ≥ 83 + Assist_Dagger ≥ 86,magic-dagger.svg,2026-10-16-opportunity-v4,0.5,0.0,L,FINAL,OK
+2026-10-18,CBJ@MIN,2026020135,Quinn Hughes,8480800.0,MIN,Assists,Rune Orchestration,HEAVY,Green + Assists 0.5 + Conf_Assists ≥ 83 + PP_Points60 ≥ 5.3 + Assists_mu ≥ 1.4,runic_infusion.svg,2026-10-16-opportunity-v4,0.5,0.0,L,FINAL,OK
+2026-10-18,CBJ@MIN,2026020135,Quinn Hughes,8480800.0,MIN,Assists,Rune Orchestration II,SPECIAL,Green + Assists 0.5 + Conf_Assists ≥ 83 + PP_Points60 ≥ 5.3 + Assists_mu ≥ 1.4 + Exp_P_10 ≤ 22,runic_infusion.svg,2026-10-16-opportunity-v4,0.5,0.0,L,FINAL,OK
+2026-10-18,CBJ@MIN,2026020135,Quinn Hughes,8480800.0,MIN,Goal,Weakened Armor,WEAK DEFENSE,Opp_PK_xGA60 >= 7.3,shattered_armor.svg,2026-10-16-opportunity-v4,0.5,0.0,L,FINAL,OK
