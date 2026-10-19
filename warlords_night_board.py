@@ -361,10 +361,10 @@ def baseline_audit(frame: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame, pd.
                     counts["Named move"].add(identity)
             stats_source = str(_value(row, "Opp_Goalie_Source") or "none")
             stats_label = {
-                "dailyfaceoff_name_and_stats": "Last season: matched goalie",
+                "dailyfaceoff_name_and_stats": "Matched starter stats",
                 "dailyfaceoff_name_only": "Starter named; stats unavailable",
-                "moneypuck_team_proxy_unconfirmed": "Last season: team proxy",
-                "moneypuck_team_proxy": "Last season: team proxy",
+                "moneypuck_team_proxy_unconfirmed": "Team goalie proxy",
+                "moneypuck_team_proxy": "Team goalie proxy",
                 "none": "Unavailable",
             }.get(stats_source, stats_source)
             baseline_rows.append({
