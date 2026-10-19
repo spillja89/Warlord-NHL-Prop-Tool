@@ -588,7 +588,7 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
                                          .replace("iXA%", "observed assist rank %"))
                 fired_label = ("TRACK" if fired_move.get("track") else
                                "LAB" if fired_move.get("experimental") else fired_move["kind"])
-                later_text = (f"Later {fired_late_wins}/{fired_late_picks} · {fired_late_pct:.1f}%"
+                later_text = (f"Mar 15+ {fired_late_wins}/{fired_late_picks} · {fired_late_pct:.1f}%"
                               if fired_late_picks else "No separate later sample")
                 move_rows.append(f'''<div class="wn-move-entry">
                   <div class="wn-move-title"><strong>{_h(fired_move["name"])}</strong><em>{_h(fired_label)}</em></div>
@@ -605,16 +605,16 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
                 band_wins, band_picks = move["b_band_wins"], move["b_band_picks"]
                 tier_note += f" · 81 ONLY {band_wins}/{band_picks} ({100 * band_wins / band_picks:.1f}%)"
             later_note = (f"MOVE {wins}/{picks}{tier_note}" +
-                          (f" · LATER {late_wins}/{late_picks} ({late_pct:.1f}%)" if late_picks else
+                          (f" · MAR 15+ {late_wins}/{late_picks} ({late_pct:.1f}%)" if late_picks else
                            " · GOAL RECORD WITHOUT POINTS GATE" if card.get("goal_candidate") else "")
                           if picks else "No tested move · posted line" if "confidence" in card
                           else "Baseline screen · no upgraded move")
             confidence = card.get("confidence")
             confidence_note = (f" · CONF {confidence:.0f} {_h(card.get('matrix') or 'Unknown')}"
                                if confidence is not None else "")
-            record_label = ("2025-26 · 81+ POOLED" if goal_tier == "B" else
-                            "2025-26 · 82+ POOLED" if goal_tier == "A" else
-                            "2025-26 · 84+ ONLY" if goal_tier == "S" else "HISTORICAL MOVE")
+            record_label = ("2025-26 REG · 81+ POOLED" if goal_tier == "B" else
+                            "2025-26 REG · 82+ POOLED" if goal_tier == "A" else
+                            "2025-26 REG · 84+ ONLY" if goal_tier == "S" else "2025-26 REG MOVE")
             record_html = (f'<div class="wn-record"><strong>{pct:.1f}%</strong><span>{wins}/{picks}</span><em>{record_label}</em></div>'
                            if picks else '<div class="wn-record"><strong>BASE</strong><em>SCREEN ONLY</em></div>')
             details_html = (f'<details class="wn-details"><summary>Full fired move list ({len(fired)})</summary>'
@@ -713,3 +713,4 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
       <div class="wn-hero-foot">{_h(hero_foot)} · HISTORICAL MOVE RATE IS NOT A FORECAST</div></div>"""
     board_class = "wn-board" if show_hero else "wn-board wn-board--compact"
     return styles + f'<div class="{board_class}">' + (hero if show_hero else "") + '<div class="wn-grid">' + ''.join(lanes) + '</div></div>'
+
