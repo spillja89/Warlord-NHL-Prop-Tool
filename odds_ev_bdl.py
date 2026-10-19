@@ -865,6 +865,9 @@ def merge_bdl_props_altlines(
         df[f"BDL_{market}_Line"] = chosen_line
         df[f"BDL_{market}_Odds"] = chosen_odds
         df[f"BDL_{market}_Book"] = chosen_book
+        df[f"{market}_Odds_Source"] = [
+            "BallDontLie" if odds is not None else "" for odds in chosen_odds
+        ]
 
     df.drop(columns=["__player_key", "__team_key"], inplace=True, errors="ignore")
     return df
