@@ -1883,6 +1883,7 @@ def normalize_goalies(df: pd.DataFrame) -> pd.DataFrame:
     col_it   = find_col(df, ["icetime", "timeonice", "toi", "timeOnIce"])
     col_ongoal = find_col(df, ["ongoal", "shotsagainst", "shots_against", "shotsAgainst"])
     col_goals  = find_col(df, ["goals", "ga", "goalsagainst", "goals_against"])
+    col_xgoals = find_col(df, ["xGoals", "xgoals", "xGoalsAgainst", "expectedGoalsAgainst"])
 
     missing = [k for k, v in {
         "name": col_name, "team": col_team, "situation": col_sit, "gp": col_gp,
@@ -1893,6 +1894,7 @@ def normalize_goalies(df: pd.DataFrame) -> pd.DataFrame:
 
     out = df[[col_name, col_team, col_sit, col_gp, col_it, col_ongoal, col_goals]].copy()
     out.columns = ["Goalie", "Team", "situation", "GP", "icetime", "SOG_Against", "GA"]
+    out["xGA"] = pd.to_numeric(df.loc[out.index, col_xgoals], errors="coerce") if col_xgoals else np.nan
 
     out["Team"] = out["Team"].apply(norm_team)
     out["situation"] = out["situation"].astype(str).str.lower()
@@ -2045,6 +2047,8 @@ def build_team_goalie_map(goalies_df: pd.DataFrame) -> Dict[str, Dict[str, Any]]
             "SV": safe_float(top["SV"]),
             "GAA": safe_float(top["GAA"]),
             "SOG_Against": safe_float(top["SOG_Against"]),
+            "GA": safe_float(top.get("GA")),
+            "xGA": safe_float(top.get("xGA")),
         }
     return m
 
@@ -2063,7 +2067,7 @@ def resolve_goalie_for_team(
         fallback["Source"] = "moneypuck_team_proxy_unconfirmed"
     else:
         fallback = {"Goalie": "", "GP": None, "SV": None, "GAA": None,
-                    "SOG_Against": None, "Source": "none"}
+                    "SOG_Against": None, "GA": None, "xGA": None, "Source": "none"}
 
     if not starter_name:
         return fallback
@@ -2071,7 +2075,8 @@ def resolve_goalie_for_team(
     sub = gdf[gdf["Team"] == team_abbr].copy()
     if sub.empty:
         return {"Goalie": starter_name, "GP": None, "SV": None,
-                "GAA": None, "SOG_Against": None, "Source": "dailyfaceoff_name_only"}
+                "GAA": None, "SOG_Against": None, "GA": None, "xGA": None,
+                "Source": "dailyfaceoff_name_only"}
 
     want = _norm_name(starter_name)
     sub["__n"] = sub["Goalie"].astype(str).map(_norm_name)
@@ -2081,7 +2086,8 @@ def resolve_goalie_for_team(
     if hit.empty:
         # Never attach a different goalie's save percentage/GAA to this name.
         return {"Goalie": starter_name, "GP": None, "SV": None,
-                "GAA": None, "SOG_Against": None, "Source": "dailyfaceoff_name_only"}
+                "GAA": None, "SOG_Against": None, "GA": None, "xGA": None,
+                "Source": "dailyfaceoff_name_only"}
 
     hit_row = hit.sort_values("GP", ascending=False).iloc[0]
     return {
@@ -2090,6 +2096,8 @@ def resolve_goalie_for_team(
         "SV": safe_float(hit_row.get("SV")),
         "GAA": safe_float(hit_row.get("GAA")),
         "SOG_Against": safe_float(hit_row.get("SOG_Against")),
+        "GA": safe_float(hit_row.get("GA")),
+        "xGA": safe_float(hit_row.get("xGA")),
         "Source": "dailyfaceoff_name_and_stats",
     }
 
@@ -3526,6 +3534,8 @@ def build_tracker(today_local: date, debug: bool = False, api_key: str | None = 
             "Opp_SV": g.get("SV", None),
             "Opp_GAA": g.get("GAA", None),
             "Opp_Goalie_Shots_Faced": g.get("SOG_Against", None),
+            "Opp_Goalie_GA": g.get("GA", None),
+            "Opp_Goalie_xGA": g.get("xGA", None),
             "Opp_Goalie_Source": ("nhl_official_lineup_name_and_stats" if g.get("Source") == "dailyfaceoff_name_and_stats"
                                   else "nhl_official_lineup_name_only")
                                  if dfo_map.get(opp_team, {}).get("status") == "Official"
@@ -3686,11 +3696,23 @@ def build_tracker(today_local: date, debug: bool = False, api_key: str | None = 
         teams_raw = load_moneypuck_best_effort(sess, "teams", teams_playing, today_local)
         team_stats_year = teams_raw.attrs.get("moneypuck_start_year")
         t5 = normalize_teams_5v5(teams_raw, debug=debug)
+        sk["League_5v5_xGA60"] = pd.to_numeric(
+            t5.get("opp_5v5_xGA60"), errors="coerce").dropna().mean()
+        team_name_col = find_col(teams_raw, ["team", "teamabbrev", "teamAbbrev", "team_abbrev"])
+        team_gp_col = find_col(teams_raw, ["games_played", "gamesplayed", "gp"])
+        if team_name_col and team_gp_col:
+            team_games = pd.DataFrame({
+                "Team": teams_raw[team_name_col].map(norm_team),
+                "GP": pd.to_numeric(teams_raw[team_gp_col], errors="coerce"),
+            }).groupby("Team")["GP"].max()
+            sk["Opp_Team_GP"] = sk["Opp"].map(team_games)
 
 
         # POWER PLAY / PENALTY KILL team context
         try:
             tpp = normalize_teams_pppk(teams_raw, debug=debug)
+            sk["League_PK_xGA60"] = pd.to_numeric(
+                tpp.get("Team_PK_xGA60"), errors="coerce").dropna().mean()
             # Team PP strength
             sk = sk.merge(tpp[["Team", "Team_PP_xGF60", "Team_PP_GF60", "PP_Score", "Team_PK_xGA60", "Team_PK_GA60", "PK_Weak"]], on="Team", how="left")
             # Opponent PK weakness (join on Opp)
@@ -4720,6 +4742,8 @@ def build_tracker(today_local: date, debug: bool = False, api_key: str | None = 
         "Opp_SV": sk["Opp_SV"],
         "Opp_GAA": sk["Opp_GAA"],
         "Opp_Goalie_Shots_Faced": sk.get("Opp_Goalie_Shots_Faced"),
+        "Opp_Goalie_GA": sk.get("Opp_Goalie_GA"),
+        "Opp_Goalie_xGA": sk.get("Opp_Goalie_xGA"),
         "Goalie_League_SV": sk.get("Goalie_League_SV"),
         "Goalie_League_GAA": sk.get("Goalie_League_GAA"),
         "Goalie_Context_Status": sk.get("Goalie_Context_Status"),
@@ -4766,6 +4790,10 @@ def build_tracker(today_local: date, debug: bool = False, api_key: str | None = 
         "i5v5_SOG60": sk.get("i5v5_SOG60"),
         "i5v5_xG60": sk.get("i5v5_xG60"),
         "Goal_Opportunity_xG": sk.get("Goal_Opportunity_xG"),
+        "Model_Player_GP": sk.get("games_played"),
+        "Opp_Team_GP": sk.get("Opp_Team_GP"),
+        "League_5v5_xGA60": sk.get("League_5v5_xGA60"),
+        "League_PK_xGA60": sk.get("League_PK_xGA60"),
         "Assist_5v5_Setups_per_game": sk.get("Assist_5v5_Setups_per_game"),
         "PP_Observed_Assists_per_game": sk.get("PP_Observed_Assists_per_game"),
         "PP_SOG60": sk.get("PP_SOG60"),
@@ -5260,6 +5288,8 @@ def build_tracker(today_local: date, debug: bool = False, api_key: str | None = 
         # gets a new filesystem mtime, which is not the quote collection time.
         tracker["Odds_Checked_UTC"] = datetime.now(timezone.utc).isoformat()
         tracker = add_bdl_ev_all(tracker)
+        from tonight_goal_projection import add_tonight_goal_projection
+        tracker = add_tonight_goal_projection(tracker)
         # -------------------------------
         # L10 Support Tiers (presentation helper columns)
         # -------------------------------

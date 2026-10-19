@@ -148,6 +148,9 @@ def rank_warlords(frame: pd.DataFrame) -> dict[str, list[dict]]:
                 "form_log": _value(row, "Form_Log"),
                 "form_season": _value(row, "Form_Season"),
                 "model_prob": model_prob, "book_prob": book_prob, "price_gap": price_gap,
+                "tonight_goal_xg": _number(row.get("Tonight_Goal_xG")) if market == "Goal" else None,
+                "tonight_goal_pct": _number(row.get("Tonight_Goal_1plus_pct")) if market == "Goal" else None,
+                "tonight_goal_status": str(_value(row, "Tonight_Goal_Status") or "") if market == "Goal" else "",
                 "goalie": str(_value(row, "Opp_Goalie") or ""),
                 "goalie_gp": _number(_value(row, "Opp_GP")),
                 "goalie_status": str(_value(row, "Opp_Goalie_Status") or "Unknown"),
@@ -214,6 +217,9 @@ def rank_priced_slate(frame: pd.DataFrame) -> dict[str, list[dict]]:
                 "form_log": _value(row, "Form_Log"),
                 "form_season": _value(row, "Form_Season"),
                 "model_prob": model_prob, "book_prob": book_prob, "price_gap": price_gap,
+                "tonight_goal_xg": _number(row.get("Tonight_Goal_xG")) if market == "Goal" else None,
+                "tonight_goal_pct": _number(row.get("Tonight_Goal_1plus_pct")) if market == "Goal" else None,
+                "tonight_goal_status": str(_value(row, "Tonight_Goal_Status") or "") if market == "Goal" else "",
                 "confidence": confidence, "matrix": matrix,
                 "baseline_rule": baseline, "baseline_only": bool(baseline and not best),
                 "move_block_reason": move_block_reason,
@@ -554,6 +560,12 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
             book_prob = card.get("book_prob")
             book_rate_note = (f'<div class="wn-book-rate">BOOK BREAK-EVEN {book_prob*100:.1f}%</div>'
                               if book_prob is not None else "")
+            tonight_xg = _number(card.get("tonight_goal_xg")) if role == "Carry" else None
+            tonight_pct = _number(card.get("tonight_goal_pct")) if role == "Carry" else None
+            tonight_note = (f'<div class="wn-goalie">TONIGHT RESEARCH PROJECTION · '
+                            f'{tonight_xg:.2f} expected goals · {tonight_pct:.1f}% for 1+ '
+                            f'· being graded, not a tested move</div>'
+                            if tonight_xg is not None and tonight_pct is not None else "")
             goalie_name = str(card.get("goalie") or "").strip()
             goalie_status = str(card.get("goalie_status") or "Unknown").strip()
             if goalie_status.casefold() == "confirmed":
@@ -629,6 +641,7 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
                 <div class="wn-attack"><span class="wn-attack-name">{_h(move_name)}</span><span class="wn-badge">{_h(status + sample)}</span></div>
                 <div class="wn-unit-foot"><span>{_h(line)} <b>{_h(price)}</b>{book_note}</span><span>{_h(later_note)}{confidence_note}</span></div>
                 {book_rate_note}
+                {tonight_note}
                 {position_note}
                 {goalie_note}
                 {lineup_note}

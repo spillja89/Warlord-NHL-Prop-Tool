@@ -779,6 +779,7 @@ def _render_class_header(mkt: str, frame: pd.DataFrame) -> None:
 def _priced_pool_table(cards: list[dict]) -> pd.DataFrame:
     rows = []
     has_position_data = any(card.get("position_sog") for card in cards)
+    has_goal_projection = any(card.get("market") == "Goal" for card in cards)
     for card in cards:
         qualified = [move for move in card["moves"] if int(move["picks"]) > 0
                      and int(move["wins"]) / int(move["picks"]) >= 0.5]
@@ -807,6 +808,9 @@ def _priced_pool_table(cards: list[dict]) -> pd.DataFrame:
                 (card.get("move_block_reason") or "No frozen move fired") if not card["moves"] else
                 "Fired move below 50%"),
         }
+        if has_goal_projection:
+            row["Tonight xG · research"] = card.get("tonight_goal_xg")
+            row["Tonight 1+ % · research"] = card.get("tonight_goal_pct")
         if has_position_data:
             matchup = card.get("position_sog")
             row["Opp SOG vs position/GP"] = matchup["shots_per_game"] if matchup else None
@@ -816,6 +820,8 @@ def _priced_pool_table(cards: list[dict]) -> pd.DataFrame:
     columns = ["Player", "Team", "Game", "Start (CT)", "Lineup", "Opp goalie", "Line", "Over odds",
                "Book", "Book break-even %", "Model conf", "Matrix", "Featured",
                "Fired move", "Move record", "Move %", "Later record", "Later %", "Reason"]
+    if has_goal_projection:
+        columns[10:10] = ["Tonight xG · research", "Tonight 1+ % · research"]
     if has_position_data:
         columns[9:9] = ["Opp SOG vs position/GP", "Opp position rank", "Opp position GP"]
     return pd.DataFrame(rows, columns=columns)
@@ -859,6 +865,7 @@ def _render_class_shortlist(frame: pd.DataFrame, role: str,
                    "A cards show the cumulative 82+ move record; B cards show 81+. S shows 84+ only. Each watch also shows its narrow confidence band separately. The cumulative move must round to at least 50%; its exact rate stays visible.")
         st.html(render_warlords({"Carry": goal_cards}, limit=len(goal_cards),
                                 roles=("Carry",), show_hero=False))
+        st.caption("Tonight research projection is a separate matchup-adjusted estimate. It is not the historical move %, does not affect tiers or card selection, and is being graded before it is used as a betting edge.")
     elif featured[role]:
         st.html(render_warlords(featured, limit=len(featured[role]), roles=(role,), show_hero=False))
     else:
@@ -5743,6 +5750,7 @@ elif page == "GOALS (0.5)":
         "Goal_Line",
         "Goal_Odds_Over",
         "Goal_Book",
+        "Tonight_Goal_xG", "Tonight_Goal_1plus_pct", "Tonight_Goal_Status",
 
         # --- SIGNALS ---
         "Green",
@@ -5750,7 +5758,9 @@ elif page == "GOALS (0.5)":
         "Conf_Goal", "Matrix_Goal",
 
         # --- GOALS CARRY MOVE INPUTS ---
-        "Goal_mu", "Goal_Opportunity_xG", "Opp_PK_xGA60", "Opp_SOG_Against_L50", "opp_5v5_HDCA60",
+        "Goal_mu", "Goal_Opportunity_xG", "Tonight_Goal_EV_xG", "Tonight_Goal_PP_xG",
+        "Tonight_Goal_EV_factor", "Tonight_Goal_PK_factor", "Tonight_Goal_Goalie_factor",
+        "Opp_PK_xGA60", "Opp_SOG_Against_L50", "opp_5v5_HDCA60",
         "TOI_per_game", "PP_TOI_Pct", "StarScore",
         "Opp_SOG_Against_L10",
         "iXG%",
