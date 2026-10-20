@@ -1,0 +1,94 @@
+Date,Game,Game_ID,Player,Player_ID,Team,Market,Move,Kind,Rule,Icon,Kit_Version,Line,Actual,Outcome,Grade_Status,Match_Status
+2026-10-19,ANA@NYR,2026020137,Adam Fox,8479323.0,NYR,Points,Hammer Fists,FLOOR,Conf_Points >= 80,PTS05_HAMMER_FISTS.svg,2026-10-16-opportunity-v4,0.5,1.0,W,FINAL,OK
+2026-10-19,ANA@NYR,2026020137,Adam Fox,8479323.0,NYR,Points,Echo Stomp II,TIER,Conf_Points >= 80 + TOI_per_game >= 19.18,PTS05_HAMMER_STOMP.svg,2026-10-16-opportunity-v4,0.5,1.0,W,FINAL,OK
+2026-10-19,ANA@NYR,2026020137,Adam Fox,8479323.0,NYR,Points,Gaia’s Blessing,TIER,Conf_Points >= 80 + Assists_mu >= 0.746,PTS05_GAIAS_BLESSING.svg,2026-10-16-opportunity-v4,0.5,1.0,W,FINAL,OK
+2026-10-19,ANA@NYR,2026020137,Adam Fox,8479323.0,NYR,Points,Gaia’s Blessing+ (Press),HEAVY,Conf_Points >= 81 + Assists_mu >= 0.746,PTS05_GAIAS_BLESSING.svg,2026-10-16-opportunity-v4,0.5,1.0,W,FINAL,OK
+2026-10-19,ANA@NYR,2026020137,Adam Fox,8479323.0,NYR,Assists,Staff (Green Stance),STANCE,Green + Assists 0.5,staff.svg,2026-10-16-opportunity-v4,0.5,1.0,W,FINAL,OK
+2026-10-19,ANA@NYR,2026020137,Adam Fox,8479323.0,NYR,Assists,Staff Awakened,STANCE,Green + Assists 0.5 + Conf_Assists ≥ 83,staff.svg,2026-10-16-opportunity-v4,0.5,1.0,W,FINAL,OK
+2026-10-19,COL@PHI,2026020138,Cale Makar,8480069.0,COL,Assists,Staff (Green Stance),STANCE,Green + Assists 0.5,staff.svg,2026-10-16-opportunity-v4,0.5,0.0,L,FINAL,OK
+2026-10-19,COL@PHI,2026020138,Cale Makar,8480069.0,COL,Assists,Staff Awakened,STANCE,Green + Assists 0.5 + Conf_Assists ≥ 83,staff.svg,2026-10-16-opportunity-v4,0.5,0.0,L,FINAL,OK
+2026-10-19,COL@PHI,2026020138,Martin Necas,8480039.0,COL,Assists,Staff (Green Stance),STANCE,Green + Assists 0.5,staff.svg,2026-10-16-opportunity-v4,0.5,0.0,L,FINAL,OK
+2026-10-19,COL@PHI,2026020138,Martin Necas,8480039.0,COL,Assists,Staff Awakened,STANCE,Green + Assists 0.5 + Conf_Assists ≥ 83,staff.svg,2026-10-16-opportunity-v4,0.5,0.0,L,FINAL,OK
+2026-10-19,COL@PHI,2026020138,Nathan MacKinnon,8477492.0,COL,Points,DPS Tank stance,STANCE,Conf_Points >= 75,PTS15_TWO_HANDED_HAMMER.svg,2026-10-16-opportunity-v4,1.5,0.0,L,FINAL,OK
+2026-10-19,COL@PHI,2026020138,Nathan MacKinnon,8477492.0,COL,Assists,Staff (Green Stance),STANCE,Green + Assists 0.5,staff.svg,2026-10-16-opportunity-v4,0.5,0.0,L,FINAL,OK
+2026-10-19,COL@PHI,2026020138,Nathan MacKinnon,8477492.0,COL,Assists,Staff Awakened,STANCE,Green + Assists 0.5 + Conf_Assists ≥ 83,staff.svg,2026-10-16-opportunity-v4,0.5,0.0,L,FINAL,OK
+2026-10-19,COL@PHI,2026020138,Nathan MacKinnon,8477492.0,COL,SOG,Sniper Stance,STANCE,Green + SOG 3.5 + Conf_SOG >= 75,sog_class_shooter.svg,2026-10-16-opportunity-v4,3.5,1.0,L,FINAL,OK
+2026-10-19,COL@PHI,2026020138,Nathan MacKinnon,8477492.0,COL,Goal,Base Attack,BASE ATTACK,Goal_mu >= 0.4048,base.svg,2026-10-16-opportunity-v4,0.5,0.0,L,FINAL,OK
+2026-10-19,COL@PHI,2026020138,Nathan MacKinnon,8477492.0,COL,Goal,Open Lanes,WEAK DEFENSE,Opp_SOG_Against_L50 >= 29.2,armor_shred.svg,2026-10-16-opportunity-v4,0.5,0.0,L,FINAL,OK
+2026-10-19,COL@PHI,2026020138,Nathan MacKinnon,8477492.0,COL,Goal,Open Lanes Assault,HEAVY ATTACK,Goal_mu >= 0.4048 + Opp_SOG_Against_L50 >= 29.2,fury.svg,2026-10-16-opportunity-v4,0.5,0.0,L,FINAL,OK
+2026-10-19,COL@PHI,2026020138,Nathan MacKinnon,8477492.0,COL,Goal,Finisher Strike,HEAVY ATTACK,Opp_SOG_Against_L50 >= 29.2 + iXG% >= 93.2,fenrir_claw.svg,2026-10-16-opportunity-v4,0.5,0.0,L,FINAL,OK
+2026-10-19,COL@PHI,2026020138,Nathan MacKinnon,8477492.0,COL,Goal,Enraged Finisher,HEAVY ATTACK,Opp_SOG_Against_L50 >= 29.2 + iXG% >= 96.2,fenrir_claw.svg,2026-10-16-opportunity-v4,0.5,0.0,L,FINAL,OK
+2026-10-19,COL@PHI,2026020138,Nathan MacKinnon,8477492.0,COL,Goal,Fury Shredder,SPECIAL ATTACK,Opp_SOG_Against_L50 >= 29.2 + ShotIntent >= 3.4,stack_fury_shredder.svg,2026-10-16-opportunity-v4,0.5,0.0,L,FINAL,OK
+2026-10-19,COL@PHI,2026020138,Nazem Kadri,8475172.0,COL,Points,Hammer Fists,FLOOR,Conf_Points >= 80,PTS05_HAMMER_FISTS.svg,2026-10-16-opportunity-v4,0.5,0.0,L,FINAL,OK
+2026-10-19,COL@PHI,2026020138,Nazem Kadri,8475172.0,COL,Points,Echo Stomp I,TIER,Conf_Points >= 80 + L10_S >= 17,PTS05_HAMMER_STOMP.svg,2026-10-16-opportunity-v4,0.5,0.0,L,FINAL,OK
+2026-10-19,COL@PHI,2026020138,Nazem Kadri,8475172.0,COL,Points,Echo Stomp II,TIER,Conf_Points >= 80 + TOI_per_game >= 19.18,PTS05_HAMMER_STOMP.svg,2026-10-16-opportunity-v4,0.5,0.0,L,FINAL,OK
+2026-10-19,COL@PHI,2026020138,Nazem Kadri,8475172.0,COL,Points,Gaia’s Blessing,TIER,Conf_Points >= 80 + Assists_mu >= 0.746,PTS05_GAIAS_BLESSING.svg,2026-10-16-opportunity-v4,0.5,0.0,L,FINAL,OK
+2026-10-19,COL@PHI,2026020138,Nazem Kadri,8475172.0,COL,Points,Gaia’s Blessing+ (Press),HEAVY,Conf_Points >= 81 + Assists_mu >= 0.746,PTS05_GAIAS_BLESSING.svg,2026-10-16-opportunity-v4,0.5,0.0,L,FINAL,OK
+2026-10-19,COL@PHI,2026020138,Nazem Kadri,8475172.0,COL,Points,Gaia’s Blessing++ (Smash),HEAVY,Conf_Points >= 83 + Assists_mu >= 0.746,PTS05_GAIAS_BLESSING.svg,2026-10-16-opportunity-v4,0.5,0.0,L,FINAL,OK
+2026-10-19,COL@PHI,2026020138,Nazem Kadri,8475172.0,COL,Points,Hammer Fists II,HEAVY,Conf_Points >= 80 + TOI_per_game >= 19.18 + L10_S >= 17,PTS05_HAMMER_FISTS.svg,2026-10-16-opportunity-v4,0.5,0.0,L,FINAL,OK
+2026-10-19,COL@PHI,2026020138,Nazem Kadri,8475172.0,COL,Assists,Staff (Green Stance),STANCE,Green + Assists 0.5,staff.svg,2026-10-16-opportunity-v4,0.5,0.0,L,FINAL,OK
+2026-10-19,COL@PHI,2026020138,Nazem Kadri,8475172.0,COL,Assists,Staff Awakened,STANCE,Green + Assists 0.5 + Conf_Assists ≥ 83,staff.svg,2026-10-16-opportunity-v4,0.5,0.0,L,FINAL,OK
+2026-10-19,PIT@UTA,2026020140,Erik Karlsson,8474578.0,PIT,Points,Hammer Fists,FLOOR,Conf_Points >= 80,PTS05_HAMMER_FISTS.svg,2026-10-16-opportunity-v4,0.5,2.0,W,FINAL,OK
+2026-10-19,PIT@UTA,2026020140,Erik Karlsson,8474578.0,PIT,Points,Echo Stomp II,TIER,Conf_Points >= 80 + TOI_per_game >= 19.18,PTS05_HAMMER_STOMP.svg,2026-10-16-opportunity-v4,0.5,2.0,W,FINAL,OK
+2026-10-19,PIT@UTA,2026020140,Erik Karlsson,8474578.0,PIT,Points,Gaia’s Blessing,TIER,Conf_Points >= 80 + Assists_mu >= 0.746,PTS05_GAIAS_BLESSING.svg,2026-10-16-opportunity-v4,0.5,2.0,W,FINAL,OK
+2026-10-19,PIT@UTA,2026020140,Erik Karlsson,8474578.0,PIT,Points,Gaia’s Blessing+ (Press),HEAVY,Conf_Points >= 81 + Assists_mu >= 0.746,PTS05_GAIAS_BLESSING.svg,2026-10-16-opportunity-v4,0.5,2.0,W,FINAL,OK
+2026-10-19,PIT@UTA,2026020140,Erik Karlsson,8474578.0,PIT,Assists,Staff (Green Stance),STANCE,Green + Assists 0.5,staff.svg,2026-10-16-opportunity-v4,0.5,1.0,W,FINAL,OK
+2026-10-19,PIT@UTA,2026020140,Barrett Hayton,8480849.0,UTA,Assists,Staff (Green Stance),STANCE,Green + Assists 0.5,staff.svg,2026-10-16-opportunity-v4,0.5,1.0,W,FINAL,OK
+2026-10-19,PIT@UTA,2026020140,Clayton Keller,8479343.0,UTA,Points,DPS Tank stance,STANCE,Conf_Points >= 75,PTS15_TWO_HANDED_HAMMER.svg,2026-10-16-opportunity-v4,1.5,2.0,W,FINAL,OK
+2026-10-19,PIT@UTA,2026020140,Clayton Keller,8479343.0,UTA,Assists,Staff (Green Stance),STANCE,Green + Assists 0.5,staff.svg,2026-10-16-opportunity-v4,0.5,1.0,W,FINAL,OK
+2026-10-19,PIT@UTA,2026020140,Clayton Keller,8479343.0,UTA,Assists,Staff Awakened,STANCE,Green + Assists 0.5 + Conf_Assists ≥ 83,staff.svg,2026-10-16-opportunity-v4,0.5,1.0,W,FINAL,OK
+2026-10-19,PIT@UTA,2026020140,Clayton Keller,8479343.0,UTA,Assists,Arcane Channel I,VOLUME,Green + Assists 0.5 + Conf_Assists ≥ 83 + PP_Points60 ≥ 5.3,arcane_channel_i.svg,2026-10-16-opportunity-v4,0.5,1.0,W,FINAL,OK
+2026-10-19,PIT@UTA,2026020140,Clayton Keller,8479343.0,UTA,Assists,Runic Infusion,VOLUME,Green + Assists 0.5 + Conf_Assists ≥ 83 + PP_iXA60 ≥ 4.4,runic_infusion.svg,2026-10-16-opportunity-v4,0.5,1.0,W,FINAL,OK
+2026-10-19,PIT@UTA,2026020140,Clayton Keller,8479343.0,UTA,Assists,Assist Dagger,VOLUME,Green + Assists 0.5 + Conf_Assists ≥ 83 + Assist_Dagger ≥ 86,magic-dagger.svg,2026-10-16-opportunity-v4,0.5,1.0,W,FINAL,OK
+2026-10-19,PIT@UTA,2026020140,Dylan Guenther,8482699.0,UTA,Assists,Staff (Green Stance),STANCE,Green + Assists 0.5,staff.svg,2026-10-16-opportunity-v4,0.5,0.0,L,FINAL,OK
+2026-10-19,PIT@UTA,2026020140,Mikhail Sergachev,8479410.0,UTA,Assists,Staff (Green Stance),STANCE,Green + Assists 0.5,staff.svg,2026-10-16-opportunity-v4,0.5,1.0,W,FINAL,OK
+2026-10-19,PIT@UTA,2026020140,Nick Schmaltz,8477951.0,UTA,Assists,Staff (Green Stance),STANCE,Green + Assists 0.5,staff.svg,2026-10-16-opportunity-v4,0.5,1.0,W,FINAL,OK
+2026-10-19,SJS@TOR,2026020139,Macklin Celebrini,8484801.0,SJS,Points,DPS Tank stance,STANCE,Conf_Points >= 75,PTS15_TWO_HANDED_HAMMER.svg,2026-10-16-opportunity-v4,1.5,0.0,L,FINAL,OK
+2026-10-19,SJS@TOR,2026020139,Macklin Celebrini,8484801.0,SJS,Points,Backbone,FLOOR,Conf_Points >= 75 + Conf_Goal <= 88 + Conf_SOG >= 80,PTS15_TWO_HANDED_HAMMER.svg,2026-10-16-opportunity-v4,1.5,0.0,L,FINAL,OK
+2026-10-19,SJS@TOR,2026020139,Macklin Celebrini,8484801.0,SJS,Points,Blade Impale,SPECIAL,Conf_Points >= 83 + Goal_ProofCount >= 3,PTS15_BLADE_IMPALE.svg,2026-10-16-opportunity-v4,1.5,0.0,L,FINAL,OK
+2026-10-19,SJS@TOR,2026020139,Macklin Celebrini,8484801.0,SJS,Points,Blade Slash,SPECIAL,Conf_Points >= 75 + Goal_Model% >= 33.4 + Opp_PK_xGA60 >= 7.38249,PTS15_BLADE_SLASH.svg,2026-10-16-opportunity-v4,1.5,0.0,L,FINAL,OK
+2026-10-19,SJS@TOR,2026020139,Macklin Celebrini,8484801.0,SJS,Points,Ragnarok,ULTIMATE,Blade Impale + Blade Slash,PTS15_POLARIZING_SMASH.svg,2026-10-16-opportunity-v4,1.5,0.0,L,FINAL,OK
+2026-10-19,SJS@TOR,2026020139,Macklin Celebrini,8484801.0,SJS,Assists,Staff (Green Stance),STANCE,Green + Assists 0.5,staff.svg,2026-10-16-opportunity-v4,0.5,0.0,L,FINAL,OK
+2026-10-19,SJS@TOR,2026020139,Macklin Celebrini,8484801.0,SJS,Assists,Staff Awakened,STANCE,Green + Assists 0.5 + Conf_Assists ≥ 83,staff.svg,2026-10-16-opportunity-v4,0.5,0.0,L,FINAL,OK
+2026-10-19,SJS@TOR,2026020139,Macklin Celebrini,8484801.0,SJS,Assists,Arcane Channel I,VOLUME,Green + Assists 0.5 + Conf_Assists ≥ 83 + PP_Points60 ≥ 5.3,arcane_channel_i.svg,2026-10-16-opportunity-v4,0.5,0.0,L,FINAL,OK
+2026-10-19,SJS@TOR,2026020139,Macklin Celebrini,8484801.0,SJS,Assists,Runic Infusion,VOLUME,Green + Assists 0.5 + Conf_Assists ≥ 83 + PP_iXA60 ≥ 4.4,runic_infusion.svg,2026-10-16-opportunity-v4,0.5,0.0,L,FINAL,OK
+2026-10-19,SJS@TOR,2026020139,Macklin Celebrini,8484801.0,SJS,Assists,Assist Dagger,VOLUME,Green + Assists 0.5 + Conf_Assists ≥ 83 + Assist_Dagger ≥ 86,magic-dagger.svg,2026-10-16-opportunity-v4,0.5,0.0,L,FINAL,OK
+2026-10-19,SJS@TOR,2026020139,Macklin Celebrini,8484801.0,SJS,Assists,Rune Orchestration,HEAVY,Green + Assists 0.5 + Conf_Assists ≥ 83 + PP_Points60 ≥ 5.3 + Assists_mu ≥ 1.4,runic_infusion.svg,2026-10-16-opportunity-v4,0.5,0.0,L,FINAL,OK
+2026-10-19,SJS@TOR,2026020139,Macklin Celebrini,8484801.0,SJS,SOG,Sniper Stance,STANCE,Green + SOG 3.5 + Conf_SOG >= 75,sog_class_shooter.svg,2026-10-16-opportunity-v4,3.5,5.0,W,FINAL,OK
+2026-10-19,SJS@TOR,2026020139,Macklin Celebrini,8484801.0,SJS,Goal,Base Attack,BASE ATTACK,Goal_mu >= 0.4048,base.svg,2026-10-16-opportunity-v4,0.5,0.0,L,FINAL,OK
+2026-10-19,SJS@TOR,2026020139,Macklin Celebrini,8484801.0,SJS,Goal,Weakened Armor,WEAK DEFENSE,Opp_PK_xGA60 >= 7.3,shattered_armor.svg,2026-10-16-opportunity-v4,0.5,0.0,L,FINAL,OK
+2026-10-19,SJS@TOR,2026020139,Macklin Celebrini,8484801.0,SJS,Goal,Open Lanes,WEAK DEFENSE,Opp_SOG_Against_L50 >= 29.2,armor_shred.svg,2026-10-16-opportunity-v4,0.5,0.0,L,FINAL,OK
+2026-10-19,SJS@TOR,2026020139,Macklin Celebrini,8484801.0,SJS,Goal,Fallen Guardian,WEAK DEFENSE,Opp_GAA >= 3.01,fenrir_claw.svg,2026-10-16-opportunity-v4,0.5,0.0,L,FINAL,OK
+2026-10-19,SJS@TOR,2026020139,Macklin Celebrini,8484801.0,SJS,Goal,Open Lanes Assault,HEAVY ATTACK,Goal_mu >= 0.4048 + Opp_SOG_Against_L50 >= 29.2,fury.svg,2026-10-16-opportunity-v4,0.5,0.0,L,FINAL,OK
+2026-10-19,SJS@TOR,2026020139,Macklin Celebrini,8484801.0,SJS,Goal,Armor Sunder,HEAVY ATTACK,Goal_mu >= 0.4048 + Opp_PK_xGA60 >= 7.3,smash.svg,2026-10-16-opportunity-v4,0.5,0.0,L,FINAL,OK
+2026-10-19,SJS@TOR,2026020139,Macklin Celebrini,8484801.0,SJS,Goal,Bloodlust,HEAVY ATTACK,Opp_SOG_Against_L50 >= 29.2 + Opp_PK_xGA60 >= 7.3,armor_shred.svg,2026-10-16-opportunity-v4,0.5,0.0,L,FINAL,OK
+2026-10-19,SJS@TOR,2026020139,Macklin Celebrini,8484801.0,SJS,Goal,Berserker Aggression,HEAVY ATTACK,Goal_mu >= 0.4048 + Opp_GAA >= 3.01,fury.svg,2026-10-16-opportunity-v4,0.5,0.0,L,FINAL,OK
+2026-10-19,SJS@TOR,2026020139,Macklin Celebrini,8484801.0,SJS,Goal,Warlord Smash Attack,SPECIAL ATTACK,Opp_SOG_Against_L50 >= 29.2 + Goal_mu >= 0.4048 + Opp_PK_xGA60 >= 7.3,smash.svg,2026-10-16-opportunity-v4,0.5,0.0,L,FINAL,OK
+2026-10-19,SJS@TOR,2026020139,Macklin Celebrini,8484801.0,SJS,Goal,Warlord Smash Attack (Crit),SPECIAL ATTACK,Opp_SOG_Against_L50 >= 29.2 + Goal_mu >= 0.4048 + Opp_PK_xGA60 >= 7.5,smash.svg,2026-10-16-opportunity-v4,0.5,0.0,L,FINAL,OK
+2026-10-19,SJS@TOR,2026020139,Macklin Celebrini,8484801.0,SJS,Goal,Press the Attack,SPECIAL ATTACK,Goal_mu >= 0.4048 + Opp_PK_xGA60 >= 7.3 + Opp_GAA >= 2.85,smash.svg,2026-10-16-opportunity-v4,0.5,0.0,L,FINAL,OK
+2026-10-19,SJS@TOR,2026020139,Macklin Celebrini,8484801.0,SJS,Goal,Press the Attack (Crit),SPECIAL ATTACK,Goal_mu >= 0.4048 + Opp_PK_xGA60 >= 7.3 + Opp_GAA >= 3.01,smash.svg,2026-10-16-opportunity-v4,0.5,0.0,L,FINAL,OK
+2026-10-19,SJS@TOR,2026020139,Macklin Celebrini,8484801.0,SJS,Goal,Fury Shredder,SPECIAL ATTACK,Opp_SOG_Against_L50 >= 29.2 + ShotIntent >= 3.4,stack_fury_shredder.svg,2026-10-16-opportunity-v4,0.5,0.0,L,FINAL,OK
+2026-10-19,SJS@TOR,2026020139,Macklin Celebrini,8484801.0,SJS,Goal,Enraged Fury Shredder,LAB CRIT,Fury Shredder + opp_5v5_xGA60 <= 2.8,stack_fury_shredder.svg,2026-10-16-opportunity-v4,0.5,0.0,L,FINAL,OK
+2026-10-19,SJS@TOR,2026020139,Macklin Celebrini,8484801.0,SJS,Goal,Bloodlusted Surge,LAB CRIT,Bloodlust + PP_TOI_Pct >= 17.2,armor_shred.svg,2026-10-16-opportunity-v4,0.5,0.0,L,FINAL,OK
+2026-10-19,SJS@TOR,2026020139,Macklin Celebrini,8484801.0,SJS,Goal,FOR VALHALLA!,ULTIMATE ATTACK,Goal_mu >= 0.4048 + Opp_GAA >= 3.01 + StarScore <= 96.9,valhalla.svg,2026-10-16-opportunity-v4,0.5,0.0,L,FINAL,OK
+2026-10-19,SJS@TOR,2026020139,Auston Matthews,8479318.0,TOR,Points,DPS Tank stance,STANCE,Conf_Points >= 75,PTS15_TWO_HANDED_HAMMER.svg,2026-10-16-opportunity-v4,1.5,3.0,W,FINAL,OK
+2026-10-19,SJS@TOR,2026020139,Auston Matthews,8479318.0,TOR,Assists,Staff (Green Stance),STANCE,Green + Assists 0.5,staff.svg,2026-10-16-opportunity-v4,0.5,2.0,W,FINAL,OK
+2026-10-19,SJS@TOR,2026020139,Auston Matthews,8479318.0,TOR,Assists,Staff Awakened,STANCE,Green + Assists 0.5 + Conf_Assists ≥ 83,staff.svg,2026-10-16-opportunity-v4,0.5,2.0,W,FINAL,OK
+2026-10-19,SJS@TOR,2026020139,Auston Matthews,8479318.0,TOR,SOG,Sniper Stance,STANCE,Green + SOG 3.5 + Conf_SOG >= 75,sog_class_shooter.svg,2026-10-16-opportunity-v4,3.5,3.0,L,FINAL,OK
+2026-10-19,SJS@TOR,2026020139,Auston Matthews,8479318.0,TOR,Goal,Base Attack,BASE ATTACK,Goal_mu >= 0.4048,base.svg,2026-10-16-opportunity-v4,0.5,1.0,W,FINAL,OK
+2026-10-19,SJS@TOR,2026020139,Auston Matthews,8479318.0,TOR,Goal,Weakened Armor,WEAK DEFENSE,Opp_PK_xGA60 >= 7.3,shattered_armor.svg,2026-10-16-opportunity-v4,0.5,1.0,W,FINAL,OK
+2026-10-19,SJS@TOR,2026020139,Auston Matthews,8479318.0,TOR,Goal,Armor Sunder,HEAVY ATTACK,Goal_mu >= 0.4048 + Opp_PK_xGA60 >= 7.3,smash.svg,2026-10-16-opportunity-v4,0.5,1.0,W,FINAL,OK
+2026-10-19,SJS@TOR,2026020139,William Nylander,8477939.0,TOR,Points,DPS Tank stance,STANCE,Conf_Points >= 75,PTS15_TWO_HANDED_HAMMER.svg,2026-10-16-opportunity-v4,1.5,1.0,L,FINAL,OK
+2026-10-19,SJS@TOR,2026020139,William Nylander,8477939.0,TOR,Points,Blade Impale,SPECIAL,Conf_Points >= 83 + Goal_ProofCount >= 3,PTS15_BLADE_IMPALE.svg,2026-10-16-opportunity-v4,1.5,1.0,L,FINAL,OK
+2026-10-19,SJS@TOR,2026020139,William Nylander,8477939.0,TOR,Points,Blade Slash,SPECIAL,Conf_Points >= 75 + Goal_Model% >= 33.4 + Opp_PK_xGA60 >= 7.38249,PTS15_BLADE_SLASH.svg,2026-10-16-opportunity-v4,1.5,1.0,L,FINAL,OK
+2026-10-19,SJS@TOR,2026020139,William Nylander,8477939.0,TOR,Points,Ragnarok,ULTIMATE,Blade Impale + Blade Slash,PTS15_POLARIZING_SMASH.svg,2026-10-16-opportunity-v4,1.5,1.0,L,FINAL,OK
+2026-10-19,SJS@TOR,2026020139,William Nylander,8477939.0,TOR,Assists,Staff (Green Stance),STANCE,Green + Assists 0.5,staff.svg,2026-10-16-opportunity-v4,0.5,1.0,W,FINAL,OK
+2026-10-19,SJS@TOR,2026020139,William Nylander,8477939.0,TOR,Assists,Staff Awakened,STANCE,Green + Assists 0.5 + Conf_Assists ≥ 83,staff.svg,2026-10-16-opportunity-v4,0.5,1.0,W,FINAL,OK
+2026-10-19,SJS@TOR,2026020139,William Nylander,8477939.0,TOR,SOG,Jungle Stance,STANCE,Green + SOG 2.5 + Conf_SOG >= 75,sog_basic_swipe.svg,2026-10-16-opportunity-v4,2.5,3.0,W,FINAL,OK
+2026-10-19,SJS@TOR,2026020139,William Nylander,8477939.0,TOR,SOG,Berserker Swipe,FLOOR,iXG% >= 93.2,sog_basic_swipe.svg,2026-10-16-opportunity-v4,2.5,3.0,W,FINAL,OK
+2026-10-19,SJS@TOR,2026020139,William Nylander,8477939.0,TOR,SOG,Paralysis,ENV,Goalie_Weak >= 62.5,sog_env_paralysis.svg,2026-10-16-opportunity-v4,2.5,3.0,W,FINAL,OK
+2026-10-19,SJS@TOR,2026020139,William Nylander,8477939.0,TOR,SOG,Berserker Volley,SUPPORT,L10 SOG/game >= 2.9 + slate SOG share proxy >= 18.8,sog_berserker_volley.svg,2026-10-16-opportunity-v4,2.5,3.0,W,FINAL,OK
+2026-10-19,SJS@TOR,2026020139,William Nylander,8477939.0,TOR,SOG,Bloodthirst,HEAVY,PP_TOI_Pct >= 15.9 + iXG% >= 93.2,sog_bloodthirst.svg,2026-10-16-opportunity-v4,2.5,3.0,W,FINAL,OK
+2026-10-19,SJS@TOR,2026020139,William Nylander,8477939.0,TOR,Goal,Base Attack,BASE ATTACK,Goal_mu >= 0.4048,base.svg,2026-10-16-opportunity-v4,0.5,0.0,L,FINAL,OK
+2026-10-19,SJS@TOR,2026020139,William Nylander,8477939.0,TOR,Goal,Weakened Armor,WEAK DEFENSE,Opp_PK_xGA60 >= 7.3,shattered_armor.svg,2026-10-16-opportunity-v4,0.5,0.0,L,FINAL,OK
+2026-10-19,SJS@TOR,2026020139,William Nylander,8477939.0,TOR,Goal,Armor Sunder,HEAVY ATTACK,Goal_mu >= 0.4048 + Opp_PK_xGA60 >= 7.3,smash.svg,2026-10-16-opportunity-v4,0.5,0.0,L,FINAL,OK
