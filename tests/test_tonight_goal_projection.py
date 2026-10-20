@@ -2,7 +2,9 @@ import unittest
 
 import pandas as pd
 
-from tonight_goal_projection import add_tonight_goal_projection, add_tonight_market_projections
+from tonight_goal_projection import (add_tonight_goal_projection,
+                                     add_tonight_market_projections,
+                                     add_player_rate_sources)
 from warlords_night_board import rank_priced_slate, render_warlords
 
 
@@ -66,6 +68,11 @@ class TonightGoalProjectionTests(unittest.TestCase):
 
     def test_other_markets_keep_existing_means_and_use_their_own_lines(self):
         row = {**self.base(), "Team_GP": 10,
+               "Current_Rate_GP": 5, "Current_Rate_Assists": 8,
+               "Current_Rate_Points": 10, "Current_Rate_SOG": 15,
+               "Current_Rate_PPP": 3, "Prior_Rate_GP": 80,
+               "Prior_Rate_Assists": 64, "Prior_Rate_Points": 96,
+               "Prior_Rate_SOG": 240, "Prior_Rate_PPP": 24,
                "Assists_mu": .8, "Assists_Line": .5, "Assists_Odds_Over": -120,
                "Points_mu": 1.2, "Points_Line": 1.5, "Points_Odds_Over": 180,
                "SOG_mu": 3.0, "SOG_Line": 2.5, "SOG_Odds_Over": -110,
@@ -77,6 +84,7 @@ class TonightGoalProjectionTests(unittest.TestCase):
         self.assertEqual(result["Points_mu"], 1.2)
         self.assertEqual(result["SOG_mu"], 3.0)
         self.assertAlmostEqual(result["Tonight_SOG_mu"], 3.3)
+        self.assertLess(result["Tonight_Assists_mu"], 1.2)
         self.assertGreater(result["Tonight_Assists_over_pct"], 0)
         self.assertGreater(result["Tonight_Points_over_pct"], 0)
         self.assertGreater(result["Tonight_SOG_over_pct"], 0)
@@ -84,13 +92,17 @@ class TonightGoalProjectionTests(unittest.TestCase):
 
     def test_ppp_requires_usage_sample(self):
         row = {**self.base(), "Model_Player_GP": 2, "PP_Points60": 4,
-               "PP_ActualPoints60": 3}
+               "PP_ActualPoints60": 3, "Current_Rate_GP": 2,
+               "Current_Rate_PPP": 1, "Prior_Rate_GP": 80, "Prior_Rate_PPP": 30}
         result = add_tonight_market_projections(pd.DataFrame([row])).iloc[0]
         self.assertTrue(pd.isna(result["Tonight_PPP_1plus_pct"]))
         self.assertIn("Unavailable", result["Tonight_PPP_Status"])
 
     def test_assist_and_shot_cards_show_market_specific_projection(self):
         row = {**self.base(), "Player": "Example", "Team": "COL", "Game": "PIT@COL",
+               "Current_Rate_GP": 5, "Current_Rate_Assists": 4,
+               "Current_Rate_SOG": 15, "Prior_Rate_GP": 80,
+               "Prior_Rate_Assists": 64, "Prior_Rate_SOG": 240,
                "Assists_mu": .8, "Assists_Line": .5, "Assists_Odds_Over": -120,
                "SOG_mu": 3.0, "SOG_Line": 2.5, "SOG_Odds_Over": -110,
                "SOG_Opp_Volume_Factor": 1.1}
@@ -101,6 +113,37 @@ class TonightGoalProjectionTests(unittest.TestCase):
         self.assertIn("expected assists", html)
         self.assertIn("expected shots", html)
         self.assertIn("over 2.5", html)
+
+    def test_extreme_early_assist_mean_is_shrunk_by_actual_prior(self):
+        row = {**self.base(), "Assists_mu": 3.46,
+               "Current_Rate_GP": 5, "Current_Rate_Assists": 10,
+               "Prior_Rate_GP": 80, "Prior_Rate_Assists": 88}
+        result = add_tonight_market_projections(pd.DataFrame([row])).iloc[0]
+        self.assertLess(result["Tonight_Assists_mu"], 1.5)
+        self.assertEqual(result["Assists_mu"], 3.46)
+
+    def test_missing_prior_and_few_current_games_withholds_research_rate(self):
+        row = {**self.base(), "Assists_mu": 3.46,
+               "Current_Rate_GP": 5, "Current_Rate_Assists": 10,
+               "Assists_Line": .5}
+        result = add_tonight_market_projections(pd.DataFrame([row])).iloc[0]
+        self.assertTrue(pd.isna(result["Tonight_Assists_mu"]))
+
+    def test_rate_source_uses_id_and_regular_season_situation(self):
+        row = {**self.base(), "Player_ID": 123}
+        current = pd.DataFrame([
+            {"playerId": 123, "situation": "all", "games_played": 5,
+             "I_F_assists": 3, "I_F_points": 5, "I_F_shotsOnGoal": 16},
+            {"playerId": 123, "situation": "5on4", "I_F_points": 2},
+        ])
+        prior = pd.DataFrame([
+            {"playerId": 123, "situation": "all", "games_played": 80,
+             "I_F_assists": 64, "I_F_points": 96, "I_F_shotsOnGoal": 240},
+            {"playerId": 123, "situation": "5on4", "I_F_points": 24},
+        ])
+        result = add_player_rate_sources(pd.DataFrame([row]), current, prior).iloc[0]
+        self.assertEqual(result["Current_Rate_PPP"], 2)
+        self.assertEqual(result["Prior_Rate_Assists"], 64)
 
 
 if __name__ == "__main__":

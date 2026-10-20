@@ -143,8 +143,10 @@ def priced_ppp_quotes(frame: pd.DataFrame, *, line_filter: float | None = None) 
                 "PP on-ice xG/game": _finite(row.get("PP_OnIce_xG_per_game")),
                 "PP shooter xG/game": _finite(row.get("PP_iXG_per_game")),
                 "Equal-weight PP context": _finite(row.get("PP_Matchup_Equal")),
-                "Tonight PPP mean": _finite(row.get("Tonight_PPP_mu")),
-                "Tonight PPP 1+ %": _finite(row.get("Tonight_PPP_1plus_pct")),
+                "Tonight PPP mean": _finite(row.get("Tonight_PPP_mu")) if
+                row.get("Tonight_PPP_Version") == "2026-10-19-research-v3" else None,
+                "Tonight PPP 1+ %": _finite(row.get("Tonight_PPP_1plus_pct")) if
+                row.get("Tonight_PPP_Version") == "2026-10-19-research-v3" else None,
                 "Tonight PPP status": str(row.get("Tonight_PPP_Status") or ""),
                 "Stats season": str(row.get("Model_Stats_Season") or ""),
                 "Context": _context_label(row),

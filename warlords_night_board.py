@@ -151,8 +151,10 @@ def rank_warlords(frame: pd.DataFrame) -> dict[str, list[dict]]:
                 "tonight_goal_xg": _number(row.get("Tonight_Goal_xG")) if market == "Goal" else None,
                 "tonight_goal_pct": _number(row.get("Tonight_Goal_1plus_pct")) if market == "Goal" else None,
                 "tonight_goal_status": str(_value(row, "Tonight_Goal_Status") or "") if market == "Goal" else "",
-                "tonight_mu": _number(row.get(f"Tonight_{market}_mu")),
-                "tonight_over_pct": _number(row.get(f"Tonight_{market}_over_pct")),
+                "tonight_mu": _number(row.get(f"Tonight_{market}_mu")) if
+                row.get(f"Tonight_{market}_Version") == "2026-10-19-research-v3" else None,
+                "tonight_over_pct": _number(row.get(f"Tonight_{market}_over_pct")) if
+                row.get(f"Tonight_{market}_Version") == "2026-10-19-research-v3" else None,
                 "tonight_status": str(_value(row, f"Tonight_{market}_Status") or ""),
                 "goalie": str(_value(row, "Opp_Goalie") or ""),
                 "goalie_gp": _number(_value(row, "Opp_GP")),
@@ -223,8 +225,10 @@ def rank_priced_slate(frame: pd.DataFrame) -> dict[str, list[dict]]:
                 "tonight_goal_xg": _number(row.get("Tonight_Goal_xG")) if market == "Goal" else None,
                 "tonight_goal_pct": _number(row.get("Tonight_Goal_1plus_pct")) if market == "Goal" else None,
                 "tonight_goal_status": str(_value(row, "Tonight_Goal_Status") or "") if market == "Goal" else "",
-                "tonight_mu": _number(row.get(f"Tonight_{market}_mu")),
-                "tonight_over_pct": _number(row.get(f"Tonight_{market}_over_pct")),
+                "tonight_mu": _number(row.get(f"Tonight_{market}_mu")) if
+                row.get(f"Tonight_{market}_Version") == "2026-10-19-research-v3" else None,
+                "tonight_over_pct": _number(row.get(f"Tonight_{market}_over_pct")) if
+                row.get(f"Tonight_{market}_Version") == "2026-10-19-research-v3" else None,
                 "tonight_status": str(_value(row, f"Tonight_{market}_Status") or ""),
                 "confidence": confidence, "matrix": matrix,
                 "baseline_rule": baseline, "baseline_only": bool(baseline and not best),

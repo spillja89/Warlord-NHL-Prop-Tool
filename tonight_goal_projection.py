@@ -13,11 +13,54 @@ import pandas as pd
 
 
 VERSION = "2026-10-19-research-v1"
-MULTI_MARKET_VERSION = "2026-10-19-research-v2"
+MULTI_MARKET_VERSION = "2026-10-19-research-v3"
 
 
 def _numeric(frame: pd.DataFrame, name: str) -> pd.Series:
     return pd.to_numeric(frame.get(name, pd.Series(np.nan, index=frame.index)), errors="coerce")
+
+
+def add_player_rate_sources(frame: pd.DataFrame, current: pd.DataFrame,
+                            previous: pd.DataFrame | None) -> pd.DataFrame:
+    """Attach regular-season counting totals by stable player ID for research rates.
+
+    A previous-season file is optional. Missing source columns stay missing rather
+    than being replaced by a model mean or a zero-valued counting stat.
+    """
+    out = frame.copy()
+    def totals(raw: pd.DataFrame | None) -> pd.DataFrame:
+        names = ["Rate_GP", "Rate_Assists", "Rate_Points", "Rate_SOG", "Rate_PPP"]
+        if raw is None or raw.empty or "playerId" not in raw or "situation" not in raw:
+            return pd.DataFrame(columns=names).rename_axis("Player_ID")
+        data = raw.copy()
+        data["playerId"] = pd.to_numeric(data["playerId"], errors="coerce")
+        data = data.dropna(subset=["playerId"])
+        data["situation"] = data["situation"].astype(str).str.lower()
+        all_rows = data[data["situation"].isin(
+            ["all", "all situations", "all_situations", "all-situations"])]
+        pp_rows = data[data["situation"].isin(["5on4", "5v4"])]
+        result = pd.DataFrame(index=all_rows["playerId"].unique())
+        source = {"Rate_GP": "games_played", "Rate_Assists": "I_F_assists",
+                  "Rate_Points": "I_F_points", "Rate_SOG": "I_F_shotsOnGoal"}
+        for dest, column in source.items():
+            if column in all_rows:
+                amounts = pd.to_numeric(all_rows[column], errors="coerce")
+                result[dest] = amounts.groupby(all_rows["playerId"]).sum(min_count=1)
+            else:
+                result[dest] = np.nan
+        if "I_F_points" in pp_rows:
+            amounts = pd.to_numeric(pp_rows["I_F_points"], errors="coerce")
+            result["Rate_PPP"] = amounts.groupby(pp_rows["playerId"]).sum(min_count=1)
+        else:
+            result["Rate_PPP"] = np.nan
+        return result.rename_axis("Player_ID")
+
+    ids = pd.to_numeric(out.get("Player_ID", pd.Series(np.nan, index=out.index)), errors="coerce")
+    for prefix, raw in (("Current", current), ("Prior", previous)):
+        rates = totals(raw)
+        for column in rates.columns:
+            out[f"{prefix}_{column}"] = ids.map(rates[column])
+    return out
 
 
 def add_tonight_goal_projection(frame: pd.DataFrame) -> pd.DataFrame:
@@ -141,7 +184,8 @@ def add_tonight_market_projections(frame: pd.DataFrame) -> pd.DataFrame:
     if out.empty:
         return out
 
-    gp = _numeric(out, "Model_Player_GP").clip(lower=0)
+    gp = _numeric(out, "Current_Rate_GP").clip(lower=0)
+    prior_gp = _numeric(out, "Prior_Rate_GP").clip(lower=0)
     opp_gp = _numeric(out, "Opp_Team_GP").clip(lower=0)
     team_gp = _numeric(out, "Team_GP").clip(lower=0)
     ev_minutes = _numeric(out, "EV5_TOI_per_game").clip(lower=0)
@@ -181,9 +225,16 @@ def add_tonight_market_projections(frame: pd.DataFrame) -> pd.DataFrame:
         ("Points", scoring_factor, .35),
         ("SOG", sog_factor, .25),
     ):
-        base = _numeric(out, f"{market}_mu")
-        valid = base.gt(0) & gp.gt(0)
-        projected = (base * factor).clip(lower=0, upper=8 if market == "SOG" else 4).where(valid)
+        current_total = _numeric(out, f"Current_Rate_{market}")
+        previous_total = _numeric(out, f"Prior_Rate_{market}")
+        prior_rate = previous_total / prior_gp.replace(0, np.nan)
+        # Ten prior games damp the first few current games; the current season
+        # progressively takes over. Newcomers need ten games of their own.
+        prior_weight = prior_gp.clip(upper=10.0)
+        base = (prior_rate * prior_weight + current_total) / (prior_weight + gp)
+        base = base.where(prior_rate.notna(), current_total / gp.replace(0, np.nan))
+        valid = current_total.notna() & gp.gt(0) & (prior_gp.ge(10) | gp.ge(10))
+        projected = (base * factor).where(valid)
         out[f"Tonight_{market}_mu"] = projected.round(3)
         out[f"Tonight_{market}_over_pct"] = _nb_over_pct(
             projected, _numeric(out, f"{market}_Line"), alpha
@@ -192,29 +243,26 @@ def add_tonight_market_projections(frame: pd.DataFrame) -> pd.DataFrame:
         out[f"Tonight_{market}_Status"] = np.where(valid, "Research · uncalibrated", "Unavailable · missing player rate")
         out[f"Tonight_{market}_Version"] = MULTI_MARKET_VERSION
 
-    # PP_iP60 is an opportunity proxy: individual PP xG plus weighted *actual*
-    # assists. It is not an expected-assist measure. Require five player games
-    # and regular PP time, and keep its forecast explicitly experimental.
-    pp_proxy = _numeric(out, "PP_Points60")
-    pp_actual = _numeric(out, "PP_ActualPoints60")
-    pp_base = pp_proxy * pp_minutes / 60.0
-    pp_observed = pp_actual * pp_minutes / 60.0
-    blend = (gp / (gp + 10.0)).clip(0, .5).fillna(0.0)
-    pp_base = pp_base * (1.0 - blend) + pp_observed.fillna(pp_base) * blend
+    pp_current = _numeric(out, "Current_Rate_PPP")
+    pp_prior = _numeric(out, "Prior_Rate_PPP")
+    pp_prior_rate = pp_prior / prior_gp.replace(0, np.nan)
+    pp_weight_games = prior_gp.clip(upper=10.0)
+    pp_base = (pp_prior_rate * pp_weight_games + pp_current) / (pp_weight_games + gp)
+    pp_base = pp_base.where(pp_prior_rate.notna(), pp_current / gp.replace(0, np.nan))
     team_pp = _numeric(out, "Team_PP_xGF60")
     league_pp = _numeric(out, "League_PP_xGF60")
     pp_attack = (1.0 + team_gp / (team_gp + 10.0) * (team_pp / league_pp - 1.0)).clip(.85, 1.15)
     pp_attack = pp_attack.where(team_pp.gt(0) & league_pp.gt(0), 1.0).fillna(1.0)
     pp_matchup = (pp_attack * pk_factor).clip(.75, 1.3)
-    pp_valid = gp.ge(5) & pp_minutes.ge(1) & pp_proxy.ge(0)
-    pp_mu = (pp_base * pp_matchup).clip(lower=0, upper=2.0).where(pp_valid)
+    pp_valid = gp.ge(5) & pp_minutes.ge(1) & pp_current.notna() & (prior_gp.ge(10) | gp.ge(10))
+    pp_mu = (pp_base * pp_matchup).where(pp_valid)
     out["Tonight_PPP_mu"] = pp_mu.round(3)
     out["Tonight_PPP_1plus_pct"] = _nb_over_pct(
         pp_mu, pd.Series(.5, index=out.index), .50
     ).round(1)
     out["Tonight_PPP_Matchup_Factor"] = pp_matchup.round(3)
     out["Tonight_PPP_Status"] = np.where(
-        pp_valid, "Research · observed-assist proxy · uncalibrated", "Unavailable · limited PP sample"
+        pp_valid, "Research · season PP points · uncalibrated", "Unavailable · limited PP sample"
     )
     out["Tonight_PPP_Version"] = MULTI_MARKET_VERSION
     return out

@@ -3477,6 +3477,11 @@ def build_tracker(today_local: date, debug: bool = False, api_key: str | None = 
     # MoneyPuck skaters
     sk_raw = load_moneypuck_best_effort(sess, "skaters", teams_playing, today_local)
     sk_stats_year = int(sk_raw.attrs.get("moneypuck_start_year", current_season_start_year(today_local)))
+    try:
+        prior_sk_raw = load_moneypuck_csv(sess, moneypuck_url("skaters", sk_stats_year - 1))
+    except Exception as exc:
+        print(f"[MoneyPuck] previous-season rate prior unavailable: {exc}")
+        prior_sk_raw = None
     sk = normalize_skaters_all(sk_raw, debug=debug)
     sk = align_skater_stats_team(sk, current_team_by_id, keep_source=True,
                                  weight_column="icetime")
@@ -5294,8 +5299,11 @@ def build_tracker(today_local: date, debug: bool = False, api_key: str | None = 
         # gets a new filesystem mtime, which is not the quote collection time.
         tracker["Odds_Checked_UTC"] = datetime.now(timezone.utc).isoformat()
         tracker = add_bdl_ev_all(tracker)
-        from tonight_goal_projection import add_tonight_goal_projection, add_tonight_market_projections
+        from tonight_goal_projection import (add_tonight_goal_projection,
+                                             add_tonight_market_projections,
+                                             add_player_rate_sources)
         tracker = add_tonight_goal_projection(tracker)
+        tracker = add_player_rate_sources(tracker, sk_raw, prior_sk_raw)
         tracker = add_tonight_market_projections(tracker)
         # -------------------------------
         # L10 Support Tiers (presentation helper columns)
