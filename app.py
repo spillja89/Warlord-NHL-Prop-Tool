@@ -28,6 +28,7 @@ from ledger_store import append_bet as _append_cloud_bet, recent_bets as _recent
 from power_play_quotes import fetch_current_pp_usage, format_ppp_book_prices, priced_ppp_quotes
 from player_availability import unavailable_mask
 from position_sog import current_slate_only, fetch_position_sog, position_matchup, SOURCE_URL as POSITION_SOG_URL
+from typesafe_shadow import review as _jev_review
 
 
 @st.cache_data(ttl=600, show_spinner=False)
@@ -4758,6 +4759,55 @@ if not odds_columns or not any(pd.to_numeric(df[col], errors="coerce").notna().a
 if owner_access:
     with st.expander("Tracker columns (owner)"):
         st.write(list(df.columns))
+    with st.expander("TypeSafe Jev · shadow review (owner)"):
+        st.caption(
+            "Review one player and prop at a time. Jev labels opportunity, matchup, and data coverage "
+            "from saved pregame fields. Its confidence describes the label, not the chance a bet wins. "
+            "This review never changes the cards, moves, prices, or tracker."
+        )
+        if not _owner_setting("TYPESAFE_API_KEY"):
+            st.info("Add TYPESAFE_API_KEY to this app's Secrets to enable the trial.")
+        elif "Player" not in df.columns or df.empty:
+            st.info("Load a tracker to review a player.")
+        else:
+            tracker_stamp = (
+                str(df["Date"].iloc[0]) if "Date" in df.columns else "",
+                str(df["Odds_Checked_UTC"].iloc[0]) if "Odds_Checked_UTC" in df.columns else "",
+            )
+            labels = [
+                f"{row.get('Player', 'Unknown')} · {row.get('Team', '')} · {row.get('Game', '')}"
+                for _, row in df.iterrows()
+            ]
+            with st.form("jev_shadow_form"):
+                market = st.selectbox("Prop", ("Goals", "Assists", "Points", "Shots", "Power play"))
+                player_index = st.selectbox(
+                    "Player", range(len(labels)), format_func=lambda index: labels[index]
+                )
+                submitted = st.form_submit_button("Review with Jev")
+            if submitted:
+                row = df.iloc[player_index]
+                with st.spinner("Checking pregame context with Jev…"):
+                    try:
+                        st.session_state["jev_shadow_result"] = _jev_review(
+                            row, market, _owner_setting("TYPESAFE_API_KEY")
+                        )
+                        st.session_state["jev_shadow_player"] = labels[player_index]
+                        st.session_state["jev_shadow_tracker_stamp"] = tracker_stamp
+                    except (RuntimeError, ValueError) as exc:
+                        st.error(str(exc))
+            result = st.session_state.get("jev_shadow_result")
+            if result and st.session_state.get("jev_shadow_tracker_stamp") == tracker_stamp:
+                st.markdown(f"**{st.session_state.get('jev_shadow_player', '')} · {result['market']}**")
+                answer_labels = {"opportunity": "Player opportunity", "matchup": "Matchup", "evidence": "Data coverage"}
+                for name, label in answer_labels.items():
+                    answer = result["answers"][name]
+                    st.write(f"{label}: **{answer.get('choice', 'unknown').title()}** · label confidence {answer.get('confidence', 0):.0%}")
+                st.caption(f"TypeSafe model: {result['model']}. For research only; labels have not been graded against outcomes.")
+                usage = result.get("usage", {})
+                if usage:
+                    st.caption(f"API usage: {usage.get('input_tokens', 0)} input tokens, {usage.get('output_tokens', 0)} output tokens.")
+                with st.expander("Fields sent for this review"):
+                    st.json(result["state"])
 
 def _render_season_skater_form(df_f: pd.DataFrame, slate_day: str) -> None:
     season = season_for_day(slate_day)
