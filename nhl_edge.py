@@ -23,6 +23,7 @@ import math
 import argparse
 import re
 import shutil
+from zipfile import BadZipFile
 from datetime import date, datetime, timedelta, timezone
 from io import StringIO
 from typing import Optional, Dict, List, Any, Tuple
@@ -4088,6 +4089,19 @@ def build_tracker(today_local: date, debug: bool = False, api_key: str | None = 
 
     feats_df = pd.DataFrame(feats_rows)
     sk = sk.merge(feats_df, on="playerId", how="left")
+    from goal_recent_form import recent_goals_from_log, recent_goal_form_by_player
+    try:
+        recent_goal_form = recent_goal_form_by_player(sess, season_start, today_local.isoformat())
+        print(f"[Goal form] current-season MoneyPuck game logs: {len(recent_goal_form)} players")
+    except (requests.RequestException, ValueError, KeyError, pd.errors.ParserError, BadZipFile) as exc:
+        print(f"[Goal form] recent MoneyPuck form unavailable: {exc}")
+        recent_goal_form = {}
+    sk["Pregame_G_L5_per_game"] = sk["playerId"].map(
+        lambda pid: recent_goal_form.get(int(pid), {}).get("G") if pd.notna(pid) else None)
+    fallback_goals = sk["Form_Log"].map(lambda raw: recent_goals_from_log(raw, today_local.isoformat()))
+    sk["Pregame_G_L5_per_game"] = sk["Pregame_G_L5_per_game"].fillna(fallback_goals)
+    sk["Pregame_xG_L5_per_game"] = sk["playerId"].map(
+        lambda pid: recent_goal_form.get(int(pid), {}).get("xG") if pd.notna(pid) else None)
     for window in (10, 20, 40):
         if f"L{window}_Games" not in sk.columns:
             sk[f"L{window}_Games"] = np.nan
@@ -4725,6 +4739,8 @@ def build_tracker(today_local: date, debug: bool = False, api_key: str | None = 
         "Model_Stats_Team": sk.get("Model_Stats_Team"),
         "Team_Changed": sk.get("Team_Changed"),
         "Form_Log": sk.get("Form_Log", ""),
+        "Pregame_G_L5_per_game": sk.get("Pregame_G_L5_per_game"),
+        "Pregame_xG_L5_per_game": sk.get("Pregame_xG_L5_per_game"),
         "Form_Season": f"{season_start}-{str(season_start + 1)[-2:]}",
         "Team": sk["Team"].fillna(""),
         "Pos": sk["Pos"].fillna("F"),

@@ -690,7 +690,7 @@ _ROLE_INFO = {
 # One description is reused by the prop headers, move gate, and Ledger.
 # Fired counts always come from warlord_moves_2026, never from this copy.
 _CLASS_RULES = {
-    "GOALS": {"role": "Carry", "market": "Goal", "entry": "Matrix_Goal Green · Goal 0.5 · Conf_Goal ≥ 84", "note": "S-tier cards have Conf_Points ≥ 84 and show the 84+ historical move. A-tier watches have Conf_Points 82–83 with the cumulative 82+ record. B-tier watches have Conf_Points 81 with the cumulative 81+ record. Other Green goal candidates remain visible."},
+    "GOALS": {"role": "Carry", "market": "Goal", "entry": "Matrix_Goal Green · Goal 0.5 · Conf_Goal ≥ 85", "note": "Warlord cards require a current-season named Goal attack. The full priced tracker remains below."},
     "ASSISTS": {"role": "Support", "market": "Assists", "entry": "Matrix_Assists Green · Assists 0.5 · Conf_Assists ≥ 83 for named attacks", "note": "Green 0.5 alone fires Staff stance; 83 unlocks named attacks."},
     "POINTS": {"role": "Tank", "market": "Points", "entry": "Matrix_Points Green · Points 0.5 with Conf_Points ≥ 80, or Points 1.5 with Conf_Points ≥ 75", "note": "The 0.5 and 1.5 lines have separate move trees."},
     "SOG": {"role": "Jungle", "market": "SOG", "entry": "Matrix_SOG Green · exact SOG 2.5 or 3.5 · Conf_SOG ≥ 75", "note": "The 2.5 and 3.5 lines have separate move trees."},
@@ -843,35 +843,25 @@ def _render_class_shortlist(frame: pd.DataFrame, role: str,
     featured = _sort_slate_boards(featured, slate_sort, starts_by_game)
     total = len(priced[role])
     goal_cards = goal_display_cards(priced[role]) if role == "Carry" else []
-    s_goal_count = sum((card.get("move") or {}).get("goal_tier") == "S" for card in goal_cards)
-    a_goal_count = sum((card.get("move") or {}).get("goal_tier") == "A" for card in goal_cards)
-    b_goal_count = sum((card.get("move") or {}).get("goal_tier") == "B" for card in goal_cards)
-    talent_goal_count = sum((card.get("move") or {}).get("goal_tier") not in {"S", "A", "B"}
-                            and card.get("talent_tier") in {"ELITE", "STAR"} for card in goal_cards)
     if goal_cards and slate_sort != "Top ranked":
         goal_cards = _sort_slate_boards({"Carry": goal_cards}, slate_sort, starts_by_game)["Carry"]
-    st.subheader(f"{role} · {len(goal_cards)} Green goal candidates of {total} priced players"
+    st.subheader(f"{role} · {len(goal_cards)} named Goal attacks of {total} priced players"
                  if role == "Carry" else f"{role} · {len(featured[role])} featured of {total} priced players")
     if total == 0:
         st.info("No posted player line and price for this class yet.")
         return
     watch = unfeatured_baselines(priced[role])
     if role == "Carry":
-        st.caption(f"{s_goal_count} S-tier goal profiles (Points confidence 84+) · "
-                   f"{a_goal_count} A-tier watches (82–83) · "
-                   f"{b_goal_count} B-tier watches (81) · "
-                   f"{talent_goal_count} ELITE/STAR goal watches · "
-                   f"{len(goal_cards) - s_goal_count - a_goal_count - b_goal_count - talent_goal_count} other Green goal baselines. "
-                   "A cards show the cumulative 82+ move record; B cards show 81+. S shows 84+ only. Each watch also shows its narrow confidence band separately. The cumulative move must round to at least 50%; its exact rate stays visible.")
+        st.caption("Each Goal card has at least one current-season named attack. Its move record is the graded 2026–27 sample; the full priced tracker below includes players without a move.")
         st.html(render_warlords({"Carry": goal_cards}, limit=len(goal_cards),
                                 roles=("Carry",), show_hero=False))
-        st.caption("Tonight research projection is a separate matchup-adjusted estimate. It is not the historical move %, does not affect tiers or card selection, and is being graded before it is used as a betting edge.")
+        st.caption("Tonight research projection is a separate matchup-adjusted estimate. It is not the historical move % and does not affect Goal card selection. It is being graded before use as a betting edge.")
     elif featured[role]:
         st.html(render_warlords(featured, limit=len(featured[role]), roles=(role,), show_hero=False))
         st.caption("Tonight research projections appear beneath book break-even on cards after a fresh run. They use a separate matchup adjustment, do not change moves or ranks, and need forward grading before they can be treated as betting probabilities.")
     else:
         st.caption("No player clears both the current baseline and a tested move at 50%+ on this slate.")
-    st.caption("Book break-even % comes from posted odds; move percentages describe past results for that rule, not a forecast. Points ranking now gives neutral regression credit and protects Green ELITE/STAR roles; frozen move records still use the original Points score.")
+    st.caption("Book break-even % comes from posted odds; move percentages describe past results for that rule, not a forecast.")
     if role == "Jungle" and position_data:
         st.caption(f"Position matchup: [Shot Propz]({POSITION_SOG_URL}) current-season YTD shots allowed per game to that position; #1 allows the most. Updated {position_data['updated']}. Descriptive context only; it does not change moves or ranking.")
     elif role == "Jungle" and position_error:
@@ -1585,27 +1575,25 @@ def _render_assists_mapped_hud(r) -> None:
 
 
 def _render_goals_combat_hud(r) -> None:
-    """Show the tested Goal 0.5 Carry moves; display only."""
+    """Show the current-season Goal 0.5 Carry moves; display only."""
     moves = _goals_carry_moves(r)
     st.markdown("**Combat HUD (GOALS Carry):**")
     if not moves:
-        st.caption("No Base Attack or Weak Defense effect fires on this row.")
+        st.caption("No current-season named Goal attack fires on this row.")
         return
-    for kind in ("BASE ATTACK", "WEAK DEFENSE", "HEAVY ATTACK", "SPECIAL ATTACK", "ULTIMATE ATTACK", "LAB CRIT"):
+    for kind in ("BASE ATTACK", "HEAVY ATTACK", "SPECIAL ATTACK", "ULTIMATE ATTACK"):
         active = [move for move in moves if move["kind"] == kind]
         if not active:
             continue
         st.markdown(f"**{kind.title()}**")
-        if kind in {"LAB CRIT", "ULTIMATE ATTACK"}:
-            st.caption("Exploratory small group from the historical search; not used to rank picks yet.")
+        if kind == "ULTIMATE ATTACK":
+            st.caption("Current-season research sample; track the next graded slates.")
         for move in active:
             win = 100 * move["wins"] / move["picks"]
-            later = 100 * move["later_wins"] / move["later_picks"]
             _wl_why_line(
                 _svg_icon(move["icon"], move["name"], "wl-goals"),
                 f"{'EXPLORATORY • ' if move['experimental'] else ('CRIT • ' if move['crit'] else '')}{move['name']} — {move['condition']} • "
-                f"Goals {move['wins']}/{move['picks']} ({win:.1f}%) • "
-                f"Later {move['later_wins']}/{move['later_picks']} ({later:.1f}%)",
+                f"2026–27 goals {move['wins']}/{move['picks']} ({win:.1f}%)",
             )
             _wl_dps_bar(win, "GOALS")
     best = _probe_goals_best(r)
@@ -4920,9 +4908,6 @@ if page == "⚔️ Warlords of the Night":
     priced_total = sum(len(cards) for cards in priced_boards.values())
     featured_total = sum(len(cards) for cards in featured_boards.values())
     goal_cards = goal_display_cards(priced_boards["Carry"])
-    s_goal_count = sum((card.get("move") or {}).get("goal_tier") == "S" for card in goal_cards)
-    a_goal_count = sum((card.get("move") or {}).get("goal_tier") == "A" for card in goal_cards)
-    b_goal_count = sum((card.get("move") or {}).get("goal_tier") == "B" for card in goal_cards)
     display_boards = {**featured_boards, "Carry": goal_cards}
     if slate_sort != "Top ranked":
         display_boards = _sort_slate_boards(display_boards, slate_sort, starts_by_game)
@@ -4930,7 +4915,7 @@ if page == "⚔️ Warlords of the Night":
     st.caption(f"Current view: {night_df['Game'].nunique() if 'Game' in night_df else 0} games · "
                f"{night_df['Team'].nunique() if 'Team' in night_df else 0} teams · "
                f"{len(night_df)} roster skaters · {priced_total} priced prop entries · "
-               f"{len(goal_cards)} Green goal candidates ({s_goal_count} S tier, {a_goal_count} A tier watch, {b_goal_count} B tier watch) · "
+               f"{len(goal_cards)} named Goal attacks · "
                f"{featured_total} player props have a 50%+ historical move. "
                "Every priced entry is in the complete slate below.")
     if display_total:
@@ -4939,12 +4924,12 @@ if page == "⚔️ Warlords of the Night":
             st.caption(f"Jungle matchup numbers: [Shot Propz]({POSITION_SOG_URL}) current-season YTD shots allowed by position · updated {position_data['updated']}. Context only; rankings and frozen moves are unchanged.")
         elif _position_error:
             st.caption(f"Positional SOG matchup feed unavailable ({_position_error}); saved cards and moves are unaffected.")
-        order_note = ("Goal cards put S tier first, then A and B tier watches, then remaining Green baselines" if slate_sort == "Top ranked"
+        order_note = ("Goal cards rank by their strongest fired current-season attack" if slate_sort == "Top ranked"
                       else f"Cards are sorted by {slate_sort.lower()}; same-game move ranks stay intact")
-        st.caption(f"{len(goal_cards)} Green goal candidates: {s_goal_count} S tier, {a_goal_count} A tier watch, and {b_goal_count} B tier watch. "
-                   f"{len(featured_boards['Carry'])} S-tier goals have a 50%+ historical move; "
+        st.caption(f"{len(goal_cards)} named Goal attack cards. "
+                   f"{len(featured_boards['Carry'])} goals have a 50%+ current-season move; "
                    f"{featured_total-len(featured_boards['Carry'])} other prop entries have a 50%+ move. "
-                   f"{order_note}. B move records use all 81+ historical rows; A uses 82+; S uses 84+ only. Move histories are not forecasts.")
+                   f"{order_note}. Move histories are not forecasts.")
     else:
         st.info(f"{priced_total} priced prop entries. No player currently clears both the baseline and a 50%+ historical move; see the complete slate below.")
 
@@ -5695,7 +5680,7 @@ elif page == "SOG":
 elif page == "GOALS (0.5)":
 
     _render_class_header("GOALS", df_f)
-    st.caption("Goalie context is neutral until the starter is confirmed, then shrunk toward the current league rate by shots faced. GAA-based moves also require at least 150 shots faced. Raw SV% and GAA remain visible for context.")
+    st.caption("Current-season Goal attacks prioritize scoring role and recent production. Goalie stats remain matchup context and do not fire a Goal attack.")
 
     df_g = df_f.copy()
 
@@ -5729,7 +5714,7 @@ elif page == "GOALS (0.5)":
 
     st.sidebar.subheader("Goal Filters")
     show_all = st.sidebar.checkbox("Show all players (ignore optional filters)", value=True)
-    min_conf = st.sidebar.slider("Min Goal Conf", 0, 100, 84, 1)
+    min_conf = st.sidebar.slider("Min Goal Conf", 0, 100, 85, 1)
     color_pick = st.sidebar.multiselect(
         "Colors (Goal)",
         ["green", "yellow", "blue", "red"],
@@ -5762,7 +5747,8 @@ elif page == "GOALS (0.5)":
         "Goal_mu", "Goal_Opportunity_xG", "Tonight_Goal_EV_xG", "Tonight_Goal_PP_xG",
         "Tonight_Goal_EV_factor", "Tonight_Goal_PK_factor", "Tonight_Goal_Goalie_factor",
         "Opp_PK_xGA60", "Opp_SOG_Against_L50", "opp_5v5_HDCA60",
-        "TOI_per_game", "PP_TOI_Pct", "StarScore",
+        "TOI_per_game", "TOI_Pct", "PP_TOI_Pct", "StarScore", "Conf_SOG", "TalentMult", "Points_mu",
+        "PP_iXG60", "Player_5v5_SOG_Share", "Pregame_G_L5_per_game", "Pregame_xG_L5_per_game", "L10_S",
         "Opp_SOG_Against_L10",
         "iXG%",
         "Opp_DefWeak",
@@ -5790,7 +5776,7 @@ elif page == "GOALS (0.5)":
     df_g["EV_Signal"] = [build_ev_signal(gg, ee, pp) for gg, ee, pp in zip(g, e, p if hasattr(p, "__iter__") else [p]*len(df_g))]
 
     df_g["LOCK"] = [build_lock_badge(gg, ee) for gg, ee in zip(g, e)]
-    _f = render_market_filter_bar(default_min_conf=84, key_prefix="goal")
+    _f = render_market_filter_bar(default_min_conf=85, key_prefix="goal")
 
     try:
         df_g = apply_market_filters(

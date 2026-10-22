@@ -91,7 +91,7 @@ def _baseline_rule(row, market, line):
     if matrix not in {"green", "🟢"}:
         return None
     if market == "Goal" and line == 0.5 and _number(row.get("Conf_Goal")) is not None:
-        return "Green + Goal 0.5 + Conf_Goal ≥ 84" if _number(row.get("Conf_Goal")) >= 84 else None
+        return "Green + Goal 0.5 + Conf_Goal ≥ 85" if _number(row.get("Conf_Goal")) >= 85 else None
     if market == "Assists" and line == 0.5:
         return "Green + Assists 0.5"
     if market == "Points" and line in (0.5, 1.5):
@@ -206,14 +206,8 @@ def rank_priced_slate(frame: pd.DataFrame) -> dict[str, list[dict]]:
             baseline = None if watch else _baseline_rule(row, market, line)
             confidence = _number(row.get(f"Conf_{market}"))
             matrix = str(_value(row, f"Matrix_{market}") or "Unknown").strip()
-            points_confidence = _number(row.get("Conf_Points_Move", row.get("Conf_Points")))
-            move_block_reason = (
-                "Frozen goal move needs original Points score ≥ 81"
-                if market == "Goal" and baseline and not moves
-                and (points_confidence is None or points_confidence < 81)
-                else "No goal move threshold fired" if market == "Goal" and baseline and not moves
-                else None
-            )
+            move_block_reason = ("No current-season Goal attack fired"
+                                 if market == "Goal" and baseline and not moves else None)
             candidate = {
                 "player": player, "team": team,
                 "talent_tier": str(_value(row, "Talent_Tier") or "NONE").strip().upper(),
@@ -279,8 +273,7 @@ def featured_warlords(boards: dict[str, list[dict]]) -> dict[str, list[dict]]:
             if not card.get("baseline_rule"):
                 continue
             qualifying = [move for move in card["moves"] if int(move["picks"]) > 0
-                          and int(move["wins"]) / int(move["picks"]) >= 0.5
-                          and move.get("goal_tier") not in {"A", "B"}]
+                          and int(move["wins"]) / int(move["picks"]) >= 0.5]
             if not qualifying:
                 continue
             selected.append({**card, "move": max(qualifying, key=_move_rank)})
@@ -298,38 +291,17 @@ def unfeatured_baselines(cards: list[dict]) -> list[dict]:
 
 
 def goal_display_cards(cards: list[dict]) -> list[dict]:
-    """Show goal tiers; watches use the move rate rounded to a whole percent."""
+    """Only named current-season Goal attacks reach the Warlord cards."""
     eligible = []
     for card in cards:
         if not card.get("baseline_rule"):
             continue
-        move = card.get("move")
-        if move and move.get("goal_tier") in {"A", "B"}:
-            qualifying = [m for m in card["moves"] if m.get("goal_tier") == move["goal_tier"]
-                          and _move_rank(m)[0] >= 0.495]
-            if not qualifying:
-                continue
-            card = {**card, "move": max(qualifying, key=_move_rank)}
-        eligible.append({**card, "goal_candidate": True,
-                         "baseline_only": not bool(card["moves"])})
-    def tier(card):
-        return (card.get("move") or {}).get("goal_tier")
-    def rank(card):
-        move = card.get("move")
-        return (_move_rank(move) if move else (-1, -1, -1),
-                card.get("confidence") or -1, card["player"].casefold())
-    s_cards = sorted((card for card in eligible if tier(card) == "S"), key=rank, reverse=True)
-    a_cards = sorted((card for card in eligible if tier(card) == "A"), key=rank, reverse=True)
-    b_cards = sorted((card for card in eligible if tier(card) == "B"), key=rank, reverse=True)
-    talent_watch = sorted((card for card in eligible if tier(card) not in {"S", "A", "B"}
-                           and card.get("talent_tier") in {"ELITE", "STAR"}),
-                          key=lambda card: (card.get("confidence") or -1, card["player"].casefold()),
-                          reverse=True)
-    baseline = sorted((card for card in eligible if tier(card) not in {"S", "A", "B"}
-                       and card.get("talent_tier") not in {"ELITE", "STAR"}),
-                      key=lambda card: (card.get("confidence") or -1, card["player"].casefold()),
-                      reverse=True)
-    return s_cards + a_cards + b_cards + talent_watch + baseline
+        attacks = [move for move in card.get("moves", [])
+                   if int(move["picks"]) > 0 and int(move["wins"]) / int(move["picks"]) >= .5]
+        if attacks:
+            eligible.append({**card, "move": max(attacks, key=_move_rank)})
+    return sorted(eligible, key=lambda card: (_move_rank(card["move"]),
+                  card.get("confidence") or -1, card["player"].casefold()), reverse=True)
 
 
 def baseline_audit(frame: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
@@ -542,10 +514,8 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
         units = []
         for rank, card in enumerate(cards[:limit], 1):
             move = card.get("move")
-            goal_tier = move.get("goal_tier") if role == "Carry" and move else None
-            tier_badge = (f'<span class="wn-tier wn-tier--{goal_tier.lower()}">{goal_tier} TIER</span>'
-                          if goal_tier in {"S", "A", "B"} else "")
-            tier_class = f" wn-unit--{goal_tier.lower()}" if goal_tier in {"S", "A", "B"} else ""
+            tier_badge = ""
+            tier_class = ""
             baseline_only = bool(card.get("baseline_only"))
             wins, picks = (int(move["wins"]), int(move["picks"])) if move else (0, 0)
             late_wins, late_picks = ((int(move["later_wins"]), int(move["later_picks"]))
@@ -556,9 +526,6 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
                        "STAR GOAL WATCH" if card.get("goal_candidate") and card.get("talent_tier") == "STAR" else
                        "BASELINE" if "confidence" in card else "BASELINE ONLY") if baseline_only
                       else "OPEN POOL" if not move else
-                      "A TIER WATCH" if goal_tier == "A" else
-                      "B TIER WATCH" if goal_tier == "B" else
-                      "S TIER MOVE" if goal_tier == "S" else
                       "GOAL SIGNAL" if card.get("goal_candidate") and picks and wins / picks < .5 else
                       "TRACK" if move.get("track") else "LAB" if move.get("experimental")
                       or move["kind"] == "LAB CRIT" else move["kind"])
@@ -638,22 +605,13 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
                 fired_label = ("TRACK" if fired_move.get("track") else
                                "LAB" if fired_move.get("experimental") else fired_move["kind"])
                 later_text = (f"Mar 15+ {fired_late_wins}/{fired_late_picks} · {fired_late_pct:.1f}%"
-                              if fired_late_picks else "No separate later sample")
+                              if fired_late_picks else "2026–27 regular season" if role == "Carry" else "No separate later sample")
                 move_rows.append(f'''<div class="wn-move-entry">
                   <div class="wn-move-title"><strong>{_h(fired_move["name"])}</strong><em>{_h(fired_label)}</em></div>
                   <div class="wn-move-record">{fired_wins}/{fired_picks} · {fired_pct:.1f}% <span>{later_text}</span></div>
                   <div class="wn-move-rule">{_h(fired_rule)}</div>
                 </div>''')
-            tier_note = (" · 81+ POINTS SAMPLE" if goal_tier == "B" else
-                         " · 82+ POINTS SAMPLE" if goal_tier == "A" else
-                         " · 84+ POINTS ONLY" if goal_tier == "S" else "")
-            if goal_tier == "A" and move.get("a_band_picks"):
-                band_wins, band_picks = move["a_band_wins"], move["a_band_picks"]
-                tier_note += f" · 82–83 ONLY {band_wins}/{band_picks} ({100 * band_wins / band_picks:.1f}%)"
-            if goal_tier == "B" and move.get("b_band_picks"):
-                band_wins, band_picks = move["b_band_wins"], move["b_band_picks"]
-                tier_note += f" · 81 ONLY {band_wins}/{band_picks} ({100 * band_wins / band_picks:.1f}%)"
-            later_note = (f"MOVE {wins}/{picks}{tier_note}" +
+            later_note = (f"MOVE {wins}/{picks}" +
                           (f" · MAR 15+ {late_wins}/{late_picks} ({late_pct:.1f}%)" if late_picks else
                            " · GOAL RECORD WITHOUT POINTS GATE" if card.get("goal_candidate") else "")
                           if picks else "No tested move · posted line" if "confidence" in card
@@ -661,9 +619,7 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
             confidence = card.get("confidence")
             confidence_note = (f" · CONF {confidence:.0f} {_h(card.get('matrix') or 'Unknown')}"
                                if confidence is not None else "")
-            record_label = ("2025-26 REG · 81+ POOLED" if goal_tier == "B" else
-                            "2025-26 REG · 82+ POOLED" if goal_tier == "A" else
-                            "2025-26 REG · 84+ ONLY" if goal_tier == "S" else "2025-26 REG MOVE")
+            record_label = "2026–27 REG MOVE" if role == "Carry" else "HISTORICAL MOVE"
             record_html = (f'<div class="wn-record"><strong>{pct:.1f}%</strong><span>{wins}/{picks}</span><em>{record_label}</em></div>'
                            if picks else '<div class="wn-record"><strong>BASE</strong><em>SCREEN ONLY</em></div>')
             details_html = (f'<details class="wn-details"><summary>Full fired move list ({len(fired)})</summary>'
@@ -691,10 +647,9 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
         if not units:
             units = ['<div class="wn-empty">No posted player line and price for this class yet.</div>']
         backdrop = f'<img class="wn-gorilla" src="{character_uri}" alt="" />' if character_uri else ""
-        count_label = ("GOAL CANDIDATES" if role == "Carry" and any(card.get("goal_candidate") for card in cards)
-                       else "FEATURED" if cards and "confidence" in cards[0] else "PRICED")
-        lane_subtitle = ("S: 84+ · A: 82–83 · B: 81 · HISTORICAL MOVE RECORDS AT EACH CUTOFF"
-                         if role == "Carry" and count_label == "GOAL CANDIDATES" else
+        count_label = "FEATURED" if cards and "confidence" in cards[0] else "PRICED"
+        lane_subtitle = ("GOAL ✦ 2026–27 MOVE % ✦ BOOK BREAK-EVEN % FROM POSTED ODDS"
+                         if role == "Carry" else
                          f"{market.upper()} ✦ HISTORICAL MOVE % ✦ BOOK BREAK-EVEN % FROM POSTED ODDS")
         lanes.append(f"""<section class="wn-lane wn-lane--{role.lower()}" style="--accent:{color}">
           <header class="wn-lane-head">{backdrop}<div class="wn-class-icon" aria-hidden="true">{class_icon}</div>
@@ -748,17 +703,15 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
       @media(max-width:1050px){.wn-grid{grid-template-columns:1fr}}
       @media(max-width:540px){.wn-unit{gap:7px;padding:8px}.wn-unit-ghost{left:45px;opacity:.12}.wn-portrait{width:34px;height:34px}.wn-portrait svg{width:23px;height:23px}.wn-record{min-width:56px}.wn-record strong{font-size:17px}.wn-match{display:none}}
     </style>"""
-    goal_count = sum(card.get("goal_candidate", False) for card in boards.get("Carry", []))
+    goal_count = len(boards.get("Carry", []))
     other_count = total - goal_count
-    hero_text = ("Goal cards show Green baselines. S-tier moves use the 84+ prior-season record; "
-                 "A-tier watches have current Points confidence 82–83 and show the same move at the pooled 82+ cutoff, plus the 82–83-only result. "
-                 "B-tier watches have current Points confidence 81 and show the pooled 81+ record, plus the 81-only result. "
+    hero_text = ("Goal cards require a named 2026–27 Goal attack; their records are current-season graded results. "
                  "Other featured props require a Green baseline and a 50%+ historical move. "
-                 "Compare each record with the book break-even percentage; historical rates are not forecasts."
+                 "Compare each record with the book break-even percentage; move rates are not tonight's probabilities."
                  if goal_count else
                  "Featured cards require a Green baseline and a fired move with a historical hit rate of at least 50%. "
                  "Compare each move's past results with the break-even percentage of the posted book price.")
-    hero_foot = (f"⚔ {goal_count} GREEN GOAL CANDIDATES · {other_count} FEATURED OTHER PROP ENTRIES"
+    hero_foot = (f"⚔ {goal_count} NAMED GOAL ATTACKS · {other_count} FEATURED OTHER PROP ENTRIES"
                  if goal_count else f"⚔ {total} FEATURED PLAYER PROP ENTRIES ACROSS FOUR CLASSES")
     hero = f"""<div class="wn-hero"><span class="wn-eyebrow">WARLORDS OF THE NIGHT · 2026</span>
       <h1>THE NIGHT RAID</h1><p>{_h(hero_text)}</p>

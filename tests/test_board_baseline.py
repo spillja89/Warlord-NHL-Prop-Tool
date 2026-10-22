@@ -5,7 +5,7 @@ from unittest.mock import patch
 import pandas as pd
 
 import nhl_edge
-from warlord_moves_2026 import _goals_carry_moves
+from warlord_moves_2026 import goals_moves
 from player_availability import unavailable_mask
 from warlords_night_board import (baseline_audit, featured_warlords,
                                   goal_display_cards, rank_priced_slate, rank_warlords, render_warlords,
@@ -99,7 +99,7 @@ class BoardBaselineTests(unittest.TestCase):
         self.assertEqual([card["player"] for card in featured["Carry"]], ["Strong"])
         html = render_warlords(featured, roles=("Carry",))
         self.assertIn("60.0%", html)
-        self.assertIn("LATER 3/5 (60.0%)", html)
+        self.assertIn("MOVE 6/10", html)
         self.assertIn("BOOK BREAK-EVEN 45.5%", html)
         self.assertIn("HISTORICAL MOVE", html)
         self.assertIn("CONF 88 Green", html)
@@ -131,7 +131,7 @@ class BoardBaselineTests(unittest.TestCase):
         rows = [
             {"Player": "Goal Scout", "Team": "BOS", "Game": "NYR@BOS",
              "Goal_Line": 0.5, "Goal_Odds_Over": 125, "Matrix_Goal": "Green",
-             "Conf_Goal": 84, "Conf_Points": 20},
+             "Conf_Goal": 85, "Conf_Points": 20},
             {"Player": "Yellow Goal", "Team": "BOS", "Game": "NYR@BOS",
              "Goal_Line": 0.5, "Goal_Odds_Over": 200, "Matrix_Goal": "Yellow",
              "Conf_Goal": 90, "Conf_Points": 90},
@@ -177,9 +177,9 @@ class BoardBaselineTests(unittest.TestCase):
             cards = {card["player"]: card for card in rank_priced_slate(rows)["Carry"]}
             summary, _, audit = baseline_audit(rows)
         self.assertEqual(cards["Goal high"]["baseline_rule"],
-                         "Green + Goal 0.5 + Conf_Goal ≥ 84")
+                         "Green + Goal 0.5 + Conf_Goal ≥ 85")
         self.assertEqual(cards["Goal high"]["move_block_reason"],
-                         "Goal move needs Points conf ≥ 82")
+                         "No current-season Goal attack fired")
         self.assertIsNone(cards["Points high"]["baseline_rule"])
         statuses = audit.set_index("Player")["Status"]
         self.assertEqual(statuses["Goal high"], "Baseline only")
@@ -199,29 +199,16 @@ class BoardBaselineTests(unittest.TestCase):
         self.assertEqual(priced[0]["book"], "BetMGM")
         self.assertEqual(featured_warlords({"Carry": priced})["Carry"], [])
 
-    def test_goal_moves_keep_s_tier_history_and_separate_a_tier(self):
+    def test_goal_attack_replaces_points_based_tiers(self):
         row = {"Goal_Line": 0.5, "Matrix_Goal": "Green", "Conf_Goal": 94,
-               "Conf_Points": 20, "Goal_mu": .50, "Opp_PK_xGA60": 8.0}
-        self.assertEqual(_goals_carry_moves(row), [])
-        row["Conf_Points"] = 82
-        a_moves = {move["name"]: move for move in _goals_carry_moves(row)}
-        self.assertEqual((a_moves["Base Attack"]["wins"], a_moves["Base Attack"]["picks"]),
-                         (68, 128))
-        self.assertEqual((a_moves["Armor Sunder"]["wins"], a_moves["Armor Sunder"]["picks"]),
-                         (53, 84))
-        self.assertEqual((a_moves["Armor Sunder"]["a_band_wins"],
-                          a_moves["Armor Sunder"]["a_band_picks"]), (6, 10))
-        self.assertEqual(a_moves["Armor Sunder"]["goal_tier"], "A")
-        row["Conf_Points"] = 90
-        moves = {move["name"]: move for move in _goals_carry_moves(row)}
-        self.assertEqual((moves["Base Attack"]["wins"], moves["Base Attack"]["picks"]),
-                         (59, 105))
-        self.assertEqual((moves["Armor Sunder"]["wins"], moves["Armor Sunder"]["picks"]),
-                         (47, 74))
-        self.assertEqual(moves["Base Attack"]["later_picks"], 55)
-        self.assertEqual(moves["Base Attack"]["goal_tier"], "S")
+               "Conf_Points": 20, "TOI_per_game": 19, "Conf_SOG": 80}
+        moves = goals_moves(row)
+        self.assertEqual([(move["name"], move["wins"], move["picks"]) for move in moves],
+                         [("Base Attack", 60, 116)])
+        self.assertEqual(goals_moves({**row, "Conf_Points": 99}), moves)
+        self.assertFalse(any("goal_tier" in move for move in moves))
 
-    def test_goal_display_includes_baseline_candidates_below_half_rate(self):
+    def test_goal_display_requires_a_named_attack(self):
         row = pd.DataFrame([{
             "Player": "Goal Candidate", "Team": "CAR", "Game": "CAR@WPG",
             "Goal_Line": 0.5, "Goal_Odds_Over": 180, "Goal_Book": "BetMGM",
@@ -229,20 +216,13 @@ class BoardBaselineTests(unittest.TestCase):
             "Goal_mu": .50, "Opp_PK_xGA60": 8.0,
         }])
         cards = goal_display_cards(rank_priced_slate(row)["Carry"])
-        self.assertEqual([card["player"] for card in cards], ["Goal Candidate"])
-        self.assertIsNone(cards[0]["move"])
-        html = render_warlords({"Carry": cards}, roles=("Carry",))
-        self.assertIn("GOAL CANDIDATES", html)
-        self.assertIn("Goal move needs Points conf ≥ 82", html)
-        self.assertIn("BOOK BREAK-EVEN 35.7%", html)
-        self.assertNotIn("46.0%", html)
+        self.assertEqual(cards, [])
 
-    def test_a_tier_watch_requires_fifty_percent_move(self):
-        common = {"goal_tier": "A", "later_wins": 0, "later_picks": 1}
+    def test_goal_cards_require_current_attack_record(self):
+        common = {"later_wins": 0, "later_picks": 0}
         low = {**common, "name": "Below Half", "wins": 4, "picks": 10,
-               "a_band_wins": 9, "a_band_picks": 23}
-        high = {**common, "name": "Base Attack", "wins": 68, "picks": 128,
-                "a_band_wins": 9, "a_band_picks": 23}
+               }
+        high = {**common, "name": "Base Attack", "wins": 60, "picks": 116}
         cards = [
             {"player": "Low A", "baseline_rule": "Green", "confidence": 87,
              "moves": [low], "move": low},
@@ -267,7 +247,8 @@ class BoardBaselineTests(unittest.TestCase):
                          "https://www.dailyfaceoff.com/starting-goalies/2026-09-29")
 
         goalie_df = pd.DataFrame([{"Team": "BOS", "Goalie": "Existing Goalie",
-                                   "GP": 40, "SV": 0.900, "GAA": 3.1}])
+                                   "GP": 40, "SV": 0.900, "GAA": 3.1,
+                                   "SOG_Against": 1200}])
         proxy = nhl_edge.build_team_goalie_map(goalie_df)
         resolved = nhl_edge.resolve_goalie_for_team(goalie_df, proxy, "BOS", "New Goalie")
         self.assertEqual(resolved["Goalie"], "New Goalie")

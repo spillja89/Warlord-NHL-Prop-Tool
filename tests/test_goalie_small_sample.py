@@ -14,29 +14,10 @@ class GoalieSmallSampleTests(unittest.TestCase):
         established = goalie_weak_score(20, .800, 5.0, shots_faced=600)
         self.assertLess(tiny, established)
 
-    def test_small_sample_does_not_fire_gaa_based_goal_move(self):
-        row = {"Goal_Line": .5, "Matrix_Goal": "Green", "Conf_Points": 90,
-               "Goal_mu": .5, "Opp_GAA": 4.2, "Opp_GP": 2}
-        small_sample = {move["name"] for move in goals_moves(row)}
-        established = {move["name"] for move in goals_moves({**row, "Opp_GP": 3})}
-
-        self.assertIn("Base Attack", small_sample)
-        self.assertNotIn("Fallen Guardian", small_sample)
-        self.assertNotIn("Berserker Aggression", small_sample)
-        self.assertIn("Fallen Guardian", established)
-        self.assertIn("Berserker Aggression", established)
-
-    def test_new_tracker_requires_confirmed_starter_with_real_sample(self):
-        row = {"Goal_Line": .5, "Matrix_Goal": "Green", "Conf_Points": 90,
-               "Goal_mu": .5, "Opp_GAA": 4.2, "Opp_GP": 6,
-               "Goalie_Context_Status": "unconfirmed_neutral",
-               "Opp_Goalie_Shots_Faced": 180}
-        unconfirmed = {move["name"] for move in goals_moves(row)}
-        small = {move["name"] for move in goals_moves({
-            **row, "Goalie_Context_Status": "confirmed_sample_shrunk",
-            "Opp_Goalie_Shots_Faced": 80})}
-        confirmed = {move["name"] for move in goals_moves({
-            **row, "Goalie_Context_Status": "confirmed_sample_shrunk"})}
-        self.assertNotIn("Fallen Guardian", unconfirmed)
-        self.assertNotIn("Fallen Guardian", small)
-        self.assertIn("Fallen Guardian", confirmed)
+    def test_goalie_gaa_alone_never_fires_current_goal_attack(self):
+        row = {"Goal_Line": .5, "Matrix_Goal": "Green", "Conf_Goal": 85,
+               "Conf_Points": 90, "Opp_GAA": 4.2, "Opp_GP": 20}
+        self.assertEqual(goals_moves(row), [])
+        shooter = {**row, "TOI_per_game": 19, "Conf_SOG": 80}
+        self.assertEqual([move["name"] for move in goals_moves(shooter)], ["Base Attack"])
+        self.assertEqual(goals_moves({**row, "Opp_GAA": 1.8}), [])
