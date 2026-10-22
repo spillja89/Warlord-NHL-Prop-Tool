@@ -1,0 +1,30 @@
+Date,Game,Game_ID,Player,Player_ID,Team,Market,Move,Kind,Rule,Icon,Kit_Version,Line,Actual,Outcome,Grade_Status,Match_Status
+2026-10-21,FLA@OTT,2026020153,Brady Tkachuk,8480801.0,FLA,SOG,Sniper Stance,STANCE,Green + SOG 3.5 + Conf_SOG >= 75,sog_class_shooter.svg,2026-10-16-opportunity-v4,3.5,3.0,L,FINAL,OK
+2026-10-21,FLA@OTT,2026020153,Matthew Tkachuk,8479314.0,FLA,Points,Hammer Fists,FLOOR,Conf_Points >= 80,PTS05_HAMMER_FISTS.svg,2026-10-16-opportunity-v4,0.5,1.0,W,FINAL,OK
+2026-10-21,FLA@OTT,2026020153,Matthew Tkachuk,8479314.0,FLA,Points,Echo Stomp I,TIER,Conf_Points >= 80 + L10_S >= 17,PTS05_HAMMER_STOMP.svg,2026-10-16-opportunity-v4,0.5,1.0,W,FINAL,OK
+2026-10-21,FLA@OTT,2026020153,Matthew Tkachuk,8479314.0,FLA,Points,Echo Stomp II,TIER,Conf_Points >= 80 + TOI_per_game >= 19.18,PTS05_HAMMER_STOMP.svg,2026-10-16-opportunity-v4,0.5,1.0,W,FINAL,OK
+2026-10-21,FLA@OTT,2026020153,Matthew Tkachuk,8479314.0,FLA,Points,Gaia’s Blessing,TIER,Conf_Points >= 80 + Assists_mu >= 0.746,PTS05_GAIAS_BLESSING.svg,2026-10-16-opportunity-v4,0.5,1.0,W,FINAL,OK
+2026-10-21,FLA@OTT,2026020153,Matthew Tkachuk,8479314.0,FLA,Points,Hammer Fists II,HEAVY,Conf_Points >= 80 + TOI_per_game >= 19.18 + L10_S >= 17,PTS05_HAMMER_FISTS.svg,2026-10-16-opportunity-v4,0.5,1.0,W,FINAL,OK
+2026-10-21,FLA@OTT,2026020153,Matthew Tkachuk,8479314.0,FLA,Assists,Staff (Green Stance),STANCE,Green + Assists 0.5,staff.svg,2026-10-16-opportunity-v4,0.5,1.0,W,FINAL,OK
+2026-10-21,FLA@OTT,2026020153,Matthew Tkachuk,8479314.0,FLA,Assists,Staff Awakened,STANCE,Green + Assists 0.5 + Conf_Assists ≥ 83,staff.svg,2026-10-16-opportunity-v4,0.5,1.0,W,FINAL,OK
+2026-10-21,FLA@OTT,2026020153,Matthew Tkachuk,8479314.0,FLA,Assists,Arcane Channel I,VOLUME,Green + Assists 0.5 + Conf_Assists ≥ 83 + PP_Points60 ≥ 5.3,arcane_channel_i.svg,2026-10-16-opportunity-v4,0.5,1.0,W,FINAL,OK
+2026-10-21,FLA@OTT,2026020153,Matthew Tkachuk,8479314.0,FLA,Assists,Runic Infusion,VOLUME,Green + Assists 0.5 + Conf_Assists ≥ 83 + PP_iXA60 ≥ 4.4,runic_infusion.svg,2026-10-16-opportunity-v4,0.5,1.0,W,FINAL,OK
+2026-10-21,FLA@OTT,2026020153,Matthew Tkachuk,8479314.0,FLA,Assists,Assist Dagger,VOLUME,Green + Assists 0.5 + Conf_Assists ≥ 83 + Assist_Dagger ≥ 86,magic-dagger.svg,2026-10-16-opportunity-v4,0.5,1.0,W,FINAL,OK
+2026-10-21,FLA@OTT,2026020153,Matthew Tkachuk,8479314.0,FLA,Assists,Rune Orchestration,HEAVY,Green + Assists 0.5 + Conf_Assists ≥ 83 + PP_Points60 ≥ 5.3 + Assists_mu ≥ 1.4,runic_infusion.svg,2026-10-16-opportunity-v4,0.5,1.0,W,FINAL,OK
+2026-10-21,FLA@OTT,2026020153,Matthew Tkachuk,8479314.0,FLA,Assists,Rune Orchestration II,SPECIAL,Green + Assists 0.5 + Conf_Assists ≥ 83 + PP_Points60 ≥ 5.3 + Assists_mu ≥ 1.4 + Exp_P_10 ≤ 22,runic_infusion.svg,2026-10-16-opportunity-v4,0.5,1.0,W,FINAL,OK
+2026-10-21,FLA@OTT,2026020153,Seth Jones,8477495.0,FLA,Points,Hammer Fists,FLOOR,Conf_Points >= 80,PTS05_HAMMER_FISTS.svg,2026-10-16-opportunity-v4,0.5,1.0,W,FINAL,OK
+2026-10-21,FLA@OTT,2026020153,Seth Jones,8477495.0,FLA,Points,Echo Stomp I,TIER,Conf_Points >= 80 + L10_S >= 17,PTS05_HAMMER_STOMP.svg,2026-10-16-opportunity-v4,0.5,1.0,W,FINAL,OK
+2026-10-21,FLA@OTT,2026020153,Seth Jones,8477495.0,FLA,Points,Echo Stomp II,TIER,Conf_Points >= 80 + TOI_per_game >= 19.18,PTS05_HAMMER_STOMP.svg,2026-10-16-opportunity-v4,0.5,1.0,W,FINAL,OK
+2026-10-21,FLA@OTT,2026020153,Seth Jones,8477495.0,FLA,Points,Gaia’s Blessing,TIER,Conf_Points >= 80 + Assists_mu >= 0.746,PTS05_GAIAS_BLESSING.svg,2026-10-16-opportunity-v4,0.5,1.0,W,FINAL,OK
+2026-10-21,FLA@OTT,2026020153,Seth Jones,8477495.0,FLA,Points,Hammer Fists II,HEAVY,Conf_Points >= 80 + TOI_per_game >= 19.18 + L10_S >= 17,PTS05_HAMMER_FISTS.svg,2026-10-16-opportunity-v4,0.5,1.0,W,FINAL,OK
+2026-10-21,FLA@OTT,2026020153,Seth Jones,8477495.0,FLA,Assists,Staff (Green Stance),STANCE,Green + Assists 0.5,staff.svg,2026-10-16-opportunity-v4,0.5,1.0,W,FINAL,OK
+2026-10-21,PHI@BUF,2026020152,Tage Thompson,8479420.0,BUF,SOG,Sniper Stance,STANCE,Green + SOG 3.5 + Conf_SOG >= 75,sog_class_shooter.svg,2026-10-16-opportunity-v4,3.5,3.0,L,FINAL,OK
+2026-10-21,PHI@BUF,2026020152,Zach Benson,8484145.0,BUF,Points,Hammer Fists,FLOOR,Conf_Points >= 80,PTS05_HAMMER_FISTS.svg,2026-10-16-opportunity-v4,0.5,0.0,L,FINAL,OK
+2026-10-21,PHI@BUF,2026020152,Zach Benson,8484145.0,BUF,Points,Echo Stomp I,TIER,Conf_Points >= 80 + L10_S >= 17,PTS05_HAMMER_STOMP.svg,2026-10-16-opportunity-v4,0.5,0.0,L,FINAL,OK
+2026-10-21,PHI@BUF,2026020152,Zach Benson,8484145.0,BUF,Points,Echo Stomp II,TIER,Conf_Points >= 80 + TOI_per_game >= 19.18,PTS05_HAMMER_STOMP.svg,2026-10-16-opportunity-v4,0.5,0.0,L,FINAL,OK
+2026-10-21,PHI@BUF,2026020152,Zach Benson,8484145.0,BUF,Points,Gaia’s Blessing,TIER,Conf_Points >= 80 + Assists_mu >= 0.746,PTS05_GAIAS_BLESSING.svg,2026-10-16-opportunity-v4,0.5,0.0,L,FINAL,OK
+2026-10-21,PHI@BUF,2026020152,Zach Benson,8484145.0,BUF,Points,Gaia’s Blessing+ (Press),HEAVY,Conf_Points >= 81 + Assists_mu >= 0.746,PTS05_GAIAS_BLESSING.svg,2026-10-16-opportunity-v4,0.5,0.0,L,FINAL,OK
+2026-10-21,PHI@BUF,2026020152,Zach Benson,8484145.0,BUF,Points,Gaia’s Blessing++ (Smash),HEAVY,Conf_Points >= 83 + Assists_mu >= 0.746,PTS05_GAIAS_BLESSING.svg,2026-10-16-opportunity-v4,0.5,0.0,L,FINAL,OK
+2026-10-21,PHI@BUF,2026020152,Zach Benson,8484145.0,BUF,Points,Hammer Fists II,HEAVY,Conf_Points >= 80 + TOI_per_game >= 19.18 + L10_S >= 17,PTS05_HAMMER_FISTS.svg,2026-10-16-opportunity-v4,0.5,0.0,L,FINAL,OK
+2026-10-21,PHI@BUF,2026020152,Zach Benson,8484145.0,BUF,Assists,Staff (Green Stance),STANCE,Green + Assists 0.5,staff.svg,2026-10-16-opportunity-v4,0.5,0.0,L,FINAL,OK
+2026-10-21,PHI@BUF,2026020152,Zach Benson,8484145.0,BUF,Assists,Staff Awakened,STANCE,Green + Assists 0.5 + Conf_Assists ≥ 83,staff.svg,2026-10-16-opportunity-v4,0.5,0.0,L,FINAL,OK
