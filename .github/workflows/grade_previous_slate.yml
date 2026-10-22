@@ -44,6 +44,9 @@ jobs:
       - name: Track power play matchup weights
         run: python audit_pp_weights.py
 
+      - name: Track goal confidence and frozen goal moves
+        run: python audit_goal_moves.py
+
       - name: Save graded results
         shell: bash
         run: |
@@ -57,6 +60,7 @@ jobs:
             git add -f output/graded/moves_*.csv
           fi
           git add -f output/graded/pp_weight_audit.json
+          git add -f output/graded/goal_move_audit.json
           if git diff --cached --quiet; then
             echo "No grading changes"
             exit 0
