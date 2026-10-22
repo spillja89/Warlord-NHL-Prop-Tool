@@ -151,6 +151,9 @@ def rank_warlords(frame: pd.DataFrame) -> dict[str, list[dict]]:
                 "tonight_goal_xg": _number(row.get("Tonight_Goal_xG")) if market == "Goal" else None,
                 "tonight_goal_pct": _number(row.get("Tonight_Goal_1plus_pct")) if market == "Goal" else None,
                 "tonight_goal_status": str(_value(row, "Tonight_Goal_Status") or "") if market == "Goal" else "",
+                "goal_profile": {field: _number(row.get(field)) for field in
+                                 ("iXG%", "ShotIntent", "L10_G", "L10_S", "TOI_per_game", "Goal_mu")}
+                                if market == "Goal" else None,
                 "tonight_mu": _number(row.get(f"Tonight_{market}_mu")) if
                 row.get(f"Tonight_{market}_Version") == "2026-10-19-research-v3" else None,
                 "tonight_over_pct": _number(row.get(f"Tonight_{market}_over_pct")) if
@@ -225,6 +228,9 @@ def rank_priced_slate(frame: pd.DataFrame) -> dict[str, list[dict]]:
                 "tonight_goal_xg": _number(row.get("Tonight_Goal_xG")) if market == "Goal" else None,
                 "tonight_goal_pct": _number(row.get("Tonight_Goal_1plus_pct")) if market == "Goal" else None,
                 "tonight_goal_status": str(_value(row, "Tonight_Goal_Status") or "") if market == "Goal" else "",
+                "goal_profile": {field: _number(row.get(field)) for field in
+                                 ("iXG%", "ShotIntent", "L10_G", "L10_S", "TOI_per_game", "Goal_mu")}
+                                if market == "Goal" else None,
                 "tonight_mu": _number(row.get(f"Tonight_{market}_mu")) if
                 row.get(f"Tonight_{market}_Version") == "2026-10-19-research-v3" else None,
                 "tonight_over_pct": _number(row.get(f"Tonight_{market}_over_pct")) if
@@ -576,6 +582,19 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
                             f'{tonight_xg:.2f} expected goals · {tonight_pct:.1f}% for 1+ '
                             f'· being graded, not a tested move</div>'
                             if tonight_xg is not None and tonight_pct is not None else "")
+            profile = card.get("goal_profile") or {}
+            profile_parts = []
+            for field, label, fmt in (("iXG%", "iXG rank", ".0f"),
+                                      ("ShotIntent", "shot intent", ".1f"),
+                                      ("L10_S", "L10 shots", ".0f"),
+                                      ("L10_G", "L10 goals", ".0f"),
+                                      ("TOI_per_game", "TOI/game", ".1f"),
+                                      ("Goal_mu", "model goal μ", ".2f")):
+                value = _number(profile.get(field))
+                if value is not None:
+                    profile_parts.append(f"{label} {value:{fmt}}")
+            goal_profile_note = (f'<div class="wn-goal-profile">GOAL PROFILE · {_h(" · ".join(profile_parts))}</div>'
+                                 if role == "Carry" and profile_parts else "")
             if role != "Carry":
                 projected_mu = _number(card.get("tonight_mu"))
                 projected_pct = _number(card.get("tonight_over_pct"))
@@ -659,6 +678,7 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
                 <div class="wn-attack"><span class="wn-attack-name">{_h(move_name)}</span><span class="wn-badge">{_h(status + sample)}</span></div>
                 <div class="wn-unit-foot"><span>{_h(line)} <b>{_h(price)}</b>{book_note}</span><span>{_h(later_note)}{confidence_note}</span></div>
                 {book_rate_note}
+                {goal_profile_note}
                 {tonight_note}
                 {position_note}
                 {goalie_note}
@@ -716,6 +736,7 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
       .wn-book{font-size:9px;color:var(--accent);font-weight:800;white-space:nowrap;margin-left:5px}
       .wn-book-rate{font-size:9px;color:#b9c9dc;margin-top:4px;font-weight:800;letter-spacing:.06em}
       .wn-goalie{font-size:9px;color:#9fb6cb;margin-top:3px}
+      .wn-goal-profile{font-size:10px;color:#e7cc8b;margin-top:4px;font-weight:700}
       .wn-position-sog{font-size:10px;color:#9edac1;margin-top:5px}.wn-position-sog b{color:#e6fff3}
       .wn-record{position:relative;z-index:1;text-align:right;flex:none;min-width:66px;display:flex;flex-direction:column;line-height:1.1}.wn-record strong{font-size:21px;color:#fff}.wn-record span{color:var(--accent);font-size:12px;font-weight:900;margin-top:3px}.wn-record em{font-style:normal;color:#8092a9;font-size:8px;letter-spacing:.08em;margin-top:3px}
       .wn-details{position:relative;z-index:1;flex:0 0 100%;font-size:10px;color:#aebbd0;border-top:1px solid #ffffff14;padding-top:5px}.wn-details summary{cursor:pointer;color:var(--accent);font-weight:700}.wn-move-list{max-height:320px;overflow:auto;display:grid;gap:6px;margin-top:8px;padding-right:3px}
