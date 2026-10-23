@@ -145,6 +145,23 @@ class TonightGoalProjectionTests(unittest.TestCase):
         self.assertEqual(result["Current_Rate_PPP"], 2)
         self.assertEqual(result["Prior_Rate_Assists"], 64)
 
+    def test_rate_source_uses_primary_and_secondary_assists_when_total_is_absent(self):
+        row = {**self.base(), "Player_ID": 123, "Assists_Line": .5}
+        current = pd.DataFrame([{
+            "playerId": 123, "situation": "all", "games_played": 8,
+            "I_F_primaryAssists": 4, "I_F_secondaryAssists": 3,
+        }])
+        prior = pd.DataFrame([{
+            "playerId": 123, "situation": "all", "games_played": 80,
+            "I_F_primaryAssists": 34, "I_F_secondaryAssists": 30,
+        }])
+        sourced = add_player_rate_sources(pd.DataFrame([row]), current, prior)
+        self.assertEqual(sourced.iloc[0]["Current_Rate_Assists"], 7)
+        self.assertEqual(sourced.iloc[0]["Prior_Rate_Assists"], 64)
+        projected = add_tonight_market_projections(sourced).iloc[0]
+        self.assertGreater(projected["Tonight_Assists_mu"], 0)
+        self.assertGreater(projected["Tonight_Assists_over_pct"], 0)
+
 
 if __name__ == "__main__":
     unittest.main()

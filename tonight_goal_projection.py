@@ -40,14 +40,22 @@ def add_player_rate_sources(frame: pd.DataFrame, current: pd.DataFrame,
             ["all", "all situations", "all_situations", "all-situations"])]
         pp_rows = data[data["situation"].isin(["5on4", "5v4"])]
         result = pd.DataFrame(index=all_rows["playerId"].unique())
-        source = {"Rate_GP": "games_played", "Rate_Assists": "I_F_assists",
-                  "Rate_Points": "I_F_points", "Rate_SOG": "I_F_shotsOnGoal"}
+        source = {"Rate_GP": "games_played", "Rate_Points": "I_F_points",
+                  "Rate_SOG": "I_F_shotsOnGoal"}
         for dest, column in source.items():
             if column in all_rows:
                 amounts = pd.to_numeric(all_rows[column], errors="coerce")
                 result[dest] = amounts.groupby(all_rows["playerId"]).sum(min_count=1)
             else:
                 result[dest] = np.nan
+        if "I_F_assists" in all_rows:
+            assists = pd.to_numeric(all_rows["I_F_assists"], errors="coerce")
+        elif {"I_F_primaryAssists", "I_F_secondaryAssists"}.issubset(all_rows.columns):
+            assists = (pd.to_numeric(all_rows["I_F_primaryAssists"], errors="coerce")
+                       + pd.to_numeric(all_rows["I_F_secondaryAssists"], errors="coerce"))
+        else:
+            assists = pd.Series(np.nan, index=all_rows.index)
+        result["Rate_Assists"] = assists.groupby(all_rows["playerId"]).sum(min_count=1)
         if "I_F_points" in pp_rows:
             amounts = pd.to_numeric(pp_rows["I_F_points"], errors="coerce")
             result["Rate_PPP"] = amounts.groupby(pp_rows["playerId"]).sum(min_count=1)
