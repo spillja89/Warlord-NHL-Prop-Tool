@@ -171,8 +171,8 @@ Date,Game,Game_ID,Player,Player_ID,Team,Market,Move,Kind,Rule,Icon,Kit_Version,L
 2026-10-22,MIN@CGY,2026020162,Quinn Hughes,8480800.0,MIN,Assists,Staff (Green Stance),STANCE,Green + Assists 0.5,staff.svg,2026-10-22-goal-current-v1,0.5,0.0,L,FINAL,OK
 2026-10-22,MIN@CGY,2026020162,Quinn Hughes,8480800.0,MIN,Assists,Staff Awakened,STANCE,Green + Assists 0.5 + Conf_Assists ≥ 83,staff.svg,2026-10-22-goal-current-v1,0.5,0.0,L,FINAL,OK
 2026-10-22,MIN@CGY,2026020162,Quinn Hughes,8480800.0,MIN,Assists,Runic Infusion,VOLUME,Green + Assists 0.5 + Conf_Assists ≥ 83 + PP_iXA60 ≥ 4.4,runic_infusion.svg,2026-10-22-goal-current-v1,0.5,0.0,L,FINAL,OK
-2026-10-22,MIN@CGY,2026020162,Quinn Hughes,8480800.0,MIN,SOG,Jungle Stance,STANCE,Green + SOG 2.5 + Conf_SOG >= 75,sog_basic_swipe.svg,2026-10-22-goal-current-v1,2.5,3.0,W,FINAL,OK
-2026-10-22,MIN@CGY,2026020162,Quinn Hughes,8480800.0,MIN,SOG,Berserker’s Rage,HEAVY,L20_A >= 9 + L40_A <= 29,sog_berserkers_rage.svg,2026-10-22-goal-current-v1,2.5,3.0,W,FINAL,OK
+2026-10-22,MIN@CGY,2026020162,Quinn Hughes,8480800.0,MIN,SOG,Jungle Stance,STANCE,Green + SOG 2.5 + Conf_SOG >= 75,sog_basic_swipe.svg,2026-10-22-goal-current-v1,2.5,4.0,W,FINAL,OK
+2026-10-22,MIN@CGY,2026020162,Quinn Hughes,8480800.0,MIN,SOG,Berserker’s Rage,HEAVY,L20_A >= 9 + L40_A <= 29,sog_berserkers_rage.svg,2026-10-22-goal-current-v1,2.5,4.0,W,FINAL,OK
 2026-10-22,NSH@BOS,2026020154,David Pastrnak,8477956.0,BOS,Points,DPS Tank stance,STANCE,Conf_Points >= 75,PTS15_TWO_HANDED_HAMMER.svg,2026-10-16-opportunity-v4,1.5,4.0,W,FINAL,OK
 2026-10-22,NSH@BOS,2026020154,David Pastrnak,8477956.0,BOS,Points,Backbone,FLOOR,Conf_Points >= 75 + Conf_Goal <= 88 + Conf_SOG >= 80,PTS15_TWO_HANDED_HAMMER.svg,2026-10-16-opportunity-v4,1.5,4.0,W,FINAL,OK
 2026-10-22,NSH@BOS,2026020154,David Pastrnak,8477956.0,BOS,Points,Blade Impale (Power Tier),HEAVY,Backbone + Assists_mu <= 1.55,PTS15_BLADE_IMPALE.svg,2026-10-16-opportunity-v4,1.5,4.0,W,FINAL,OK
