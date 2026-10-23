@@ -1139,9 +1139,17 @@ def apply_dps_filters_ui(df: pd.DataFrame, mk: str, key_prefix: str = "m") -> pd
 # =========================
 # DPS ranking probes (presentation only)
 # =========================
+def _points_display_moves(r: dict) -> list[dict]:
+    """Keep the 1.5 card focused while preserving every move in saved tracking."""
+    moves = points_moves(r)
+    if _safe_float(r.get("Points_Line")) != 1.5:
+        return moves
+    return [move for move in moves if move["name"] in {"DPS Tank stance", "Backbone"}]
+
+
 def _probe_points_best(r: dict) -> dict | None:
-    """Use the same graded Points move kit as the card."""
-    move = best_move(points_moves(r))
+    """Rank by the Points move shown as the card's main attack."""
+    move = best_move(_points_display_moves(r))
     if move is None:
         return None
     win = 100.0 * move["wins"] / move["picks"]
@@ -1200,7 +1208,8 @@ def _probe_best_proc(mkt: str, r: dict) -> dict | None:
 def _render_graded_market_hud(r, market: str) -> None:
     """Render one rule set for the card, with the exact sample behind each move."""
     is_points = market == "POINTS"
-    moves = points_moves(r) if is_points else sog_moves(r)
+    all_moves = points_moves(r) if is_points else sog_moves(r)
+    moves = _points_display_moves(r) if is_points else all_moves
     line_key = "Points_Line" if is_points else "SOG_Line"
     line = _safe_float(r.get(line_key))
     if is_points:
@@ -1208,9 +1217,28 @@ def _render_graded_market_hud(r, market: str) -> None:
     else:
         role = "Jungle" if line == 2.5 else "Sniper" if line == 3.5 else "Jungle"
     st.markdown(f"### {market} — {role} ({line:g})" if line is not None else f"### {market} — {role}")
-    st.caption("Historical graded picks · overlapping moves · TRACK means watch on new slates")
+    st.caption(
+        "Historical graded picks · one main attack with a Power Tier enhancement"
+        if is_points and line == 1.5 else
+        "Historical graded picks · overlapping moves · TRACK means watch on new slates"
+    )
     if not moves:
         st.caption("No tested move fires at this line, color, and confidence.")
+        return
+
+    if is_points and line == 1.5:
+        main = next((move for move in moves if move["name"] == "Backbone"), moves[0])
+        rate = 100.0 * main["wins"] / main["picks"]
+        later = 100.0 * main["later_wins"] / main["later_picks"]
+        _wl_why_line(
+            _svg_icon(main["icon"], main["name"], "wl-points"),
+            f"{main['name']} — {main['rule']} · {main['wins']}/{main['picks']} ({rate:.1f}%)"
+            f" · Later {main['later_wins']}/{main['later_picks']} ({later:.1f}%)",
+        )
+        power = next((move for move in all_moves if move["name"] == "Blade Impale (Power Tier)"), None)
+        if power is not None:
+            st.caption("Power Tier enhancement active · included in Backbone, not an additional pick")
+        _render_rank_line(main["name"], rate, main["picks"], market)
         return
 
     icon_class = "wl-points" if is_points else "wl-sog"
