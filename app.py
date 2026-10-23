@@ -692,7 +692,7 @@ _ROLE_INFO = {
 # Fired counts always come from warlord_moves_2026, never from this copy.
 _CLASS_RULES = {
     "GOALS": {"role": "Carry", "market": "Goal", "entry": "Matrix_Goal Green · Goal 0.5 · Conf_Goal ≥ 85", "note": "Warlord cards require a current-season named Goal attack. The full priced tracker remains below."},
-    "ASSISTS": {"role": "Support", "market": "Assists", "entry": "Matrix_Assists Green · Assists 0.5 · Conf_Assists ≥ 83 for named attacks", "note": "Green 0.5 alone fires Staff stance; 83 unlocks named attacks."},
+    "ASSISTS": {"role": "Support", "market": "Assists", "entry": "Matrix_Assists Green · Assists 0.5 · Conf_Assists ≥ 81 · iXA% ≥ 95", "note": "The PP Specials gain a Crit tier when team PP xGF/60 reaches 8.3."},
     "POINTS": {"role": "Tank", "market": "Points", "entry": "Matrix_Points Green · Points 0.5 with Conf_Points ≥ 80, or Points 1.5 with Conf_Points ≥ 75", "note": "The 0.5 and 1.5 lines have separate move trees."},
     "SOG": {"role": "Jungle", "market": "SOG", "entry": "Matrix_SOG Green · exact SOG 2.5 or 3.5 · Conf_SOG ≥ 75", "note": "The 2.5 and 3.5 lines have separate move trees."},
 }
@@ -1150,11 +1150,14 @@ def _probe_points_best(r: dict) -> dict | None:
 
 
 def _probe_assists_best(r: dict) -> dict | None:
-    """Use the current mapped Support kit for both cards and sorting."""
-    moves = [m for m in _assists_mapped_moves(r) if m["kind"] not in {"STANCE", "LAB CRIT"}]
+    """Use the current Support tier for both cards and sorting."""
+    moves = [m for m in _assists_mapped_moves(r) if m["kind"] != "CONTEXT"]
     if not moves:
         return None
-    move = max(moves, key=lambda m: (_adj_win(100*m["wins"]/m["picks"], m["picks"], k=20), m["picks"]))
+    tier = {"STANCE": 1, "VOLUME": 2, "SPECIAL": 3, "CRIT": 4}
+    move = max(moves, key=lambda m: (tier.get(m["kind"], 0),
+                                     _adj_win(100*m["wins"]/m["picks"], m["picks"], k=20),
+                                     m["picks"]))
     win = 100.0 * move["wins"] / move["picks"]
     return {"title": move["name"], "win": win, "n": move["picks"],
             "adj": _adj_win(win, move["picks"], k=20)}
@@ -1546,33 +1549,30 @@ def _render_assists_combat_hud(r) -> None:
 
 
 def _render_assists_mapped_hud(r) -> None:
-    """Show the mapped Assists move tree with full-tracker grades."""
+    """Show the 2026–27 Assist move tree and the strongest fired tier."""
     moves = _assists_mapped_moves(r)
     st.markdown("**Combat HUD (ASSISTS):**")
     if not moves:
-        st.caption("No Assists move fires on this row.")
+        st.caption("No 2026–27 Assist move fires on this row.")
         return
-    for kind in ("STANCE", "VOLUME", "HEAVY", "SPECIAL", "ULTIMATE", "LAB CRIT"):
+    primary = _probe_assists_best(r)
+    if primary:
+        st.caption(f"Primary move: {primary['title']} · {primary['win']:.1f}% ({primary['n']} saved plays)")
+    for kind in ("CRIT", "SPECIAL", "VOLUME", "STANCE", "CONTEXT"):
         active = [move for move in moves if move["kind"] == kind]
         if not active:
             continue
         st.markdown(f"**{kind.title()}**")
-        if kind == "LAB CRIT":
-            st.caption("Exploratory historical subset; track on new slates.")
         for move in active:
             win = 100 * move["wins"] / move["picks"]
-            later = 100 * move["later_wins"] / move["later_picks"]
-            label = ("TRACK • " if move["track"] else "") + move["name"]
             _wl_why_line(
                 _svg_icon(move["icon"], move["name"], "wl-assists"),
-                f"{label} — {move['rule']} • Assists {move['wins']}/{move['picks']} ({win:.1f}%) • "
-                f"Later {move['later_wins']}/{move['later_picks']} ({later:.1f}%)",
+                f"{move['name']} — {move['rule']} • 2026–27 assists "
+                f"{move['wins']}/{move['picks']} ({win:.1f}%)",
             )
             _wl_dps_bar(win, "ASSISTS")
-    ranking = [m for m in moves if m["kind"] not in {"STANCE", "LAB CRIT"}]
-    if ranking:
-        best = max(ranking, key=lambda m: (_adj_win(100*m["wins"]/m["picks"], m["picks"]), m["picks"]))
-        _render_rank_line(best["name"], 100*best["wins"]/best["picks"], best["picks"], "ASSISTS")
+    if primary:
+        _render_rank_line(primary["title"], primary["win"], primary["n"], "ASSISTS")
 
 
 def _render_goals_combat_hud(r) -> None:

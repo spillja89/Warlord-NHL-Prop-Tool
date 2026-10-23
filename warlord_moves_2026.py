@@ -1,4 +1,4 @@
-"""Graded 2026 Points and SOG display moves.
+"""Graded display moves for the NHL prop markets.
 
 These are historical subsets, not model probabilities. The rules only label
 tracker rows; they do not change model predictions or eligibility.
@@ -12,7 +12,7 @@ import math
 from typing import Any, Mapping
 
 
-VERSION = "2026-10-22-goal-current-v1"
+VERSION = "2026-10-23-assist-current-v1"
 
 
 def _number(row: Mapping[str, Any], key: str) -> float | None:
@@ -244,7 +244,11 @@ def _assists_mapped_moves(r) -> list[dict]:
     return active
 
 from goal_moves_current import goals_moves
-assists_moves = _assists_mapped_moves
+from assist_moves_current import assists_moves
+
+# Preserve the previous rules for saved-slate comparisons. Live cards use the
+# current Assist tree above; historical replay scripts can use this explicitly.
+legacy_assists_moves = _assists_mapped_moves
 
 
 def fired_moves(row: Mapping[str, Any]) -> dict[str, list[dict[str, Any]]]:
@@ -263,7 +267,7 @@ def frozen_move_tags(row: Mapping[str, Any]) -> list[dict[str, str]]:
                 "kind": move["kind"],
                 "rule": move.get("rule", move.get("condition", "")),
                 "icon": move.get("icon", ""),
-                "kit_version": VERSION,
+                "kit_version": move.get("kit_version", VERSION),
             }.items()})
     return tags
 

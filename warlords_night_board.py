@@ -82,6 +82,10 @@ def _price_comparison(row, market, line, odds):
 def _move_rank(move):
     wins, picks = int(move["wins"]), int(move["picks"])
     later_wins, later_picks = int(move["later_wins"]), int(move["later_picks"])
+    if move.get("market") == "Assists":
+        tier = {"CONTEXT": 0, "STANCE": 1, "VOLUME": 2,
+                "SPECIAL": 3, "CRIT": 4}.get(move["kind"], 0)
+        return (tier, wins / picks if picks else -1, picks)
     return (wins / picks if picks else -1, picks,
             later_wins / later_picks if later_picks else -1)
 
@@ -132,7 +136,7 @@ def rank_warlords(frame: pd.DataFrame) -> dict[str, list[dict]]:
                 move = {"name": "Green Baseline", "kind": "BASELINE", "rule": baseline_rule,
                         "wins": 0, "picks": 0, "later_wins": 0, "later_picks": 0}
             else:
-                attacks = [move for move in moves if move["kind"] != "STANCE"]
+                attacks = [move for move in moves if move["kind"] not in {"STANCE", "CONTEXT"}]
                 move = max(attacks or moves, key=_move_rank)
             player = str(row["Player"]).strip()
             team = str(_value(row, "Team") or "").strip()
@@ -159,6 +163,7 @@ def rank_warlords(frame: pd.DataFrame) -> dict[str, list[dict]]:
                 "tonight_over_pct": _number(row.get(f"Tonight_{market}_over_pct")) if
                 row.get(f"Tonight_{market}_Version") == "2026-10-19-research-v3" else None,
                 "tonight_status": str(_value(row, f"Tonight_{market}_Status") or ""),
+                "team_pp_xgf60": _number(row.get("Team_PP_xGF60")) if market == "Assists" else None,
                 "goalie": str(_value(row, "Opp_Goalie") or ""),
                 "goalie_gp": _number(_value(row, "Opp_GP")),
                 "goalie_status": str(_value(row, "Opp_Goalie_Status") or "Unknown"),
@@ -201,7 +206,7 @@ def rank_priced_slate(frame: pd.DataFrame) -> dict[str, list[dict]]:
                 continue
             model_prob, book_prob, price_gap = _price_comparison(row, market, line, odds)
             moves = active[market]
-            attacks = [move for move in moves if move["kind"] != "STANCE"]
+            attacks = [move for move in moves if move["kind"] not in {"STANCE", "CONTEXT"}]
             best = max(attacks or moves, key=_move_rank) if moves else None
             baseline = None if watch else _baseline_rule(row, market, line)
             confidence = _number(row.get(f"Conf_{market}"))
@@ -230,6 +235,7 @@ def rank_priced_slate(frame: pd.DataFrame) -> dict[str, list[dict]]:
                 "tonight_over_pct": _number(row.get(f"Tonight_{market}_over_pct")) if
                 row.get(f"Tonight_{market}_Version") == "2026-10-19-research-v3" else None,
                 "tonight_status": str(_value(row, f"Tonight_{market}_Status") or ""),
+                "team_pp_xgf60": _number(row.get("Team_PP_xGF60")) if market == "Assists" else None,
                 "confidence": confidence, "matrix": matrix,
                 "baseline_rule": baseline, "baseline_only": bool(baseline and not best),
                 "move_block_reason": move_block_reason,
@@ -272,7 +278,8 @@ def featured_warlords(boards: dict[str, list[dict]]) -> dict[str, list[dict]]:
         for card in cards:
             if not card.get("baseline_rule"):
                 continue
-            qualifying = [move for move in card["moves"] if int(move["picks"]) > 0
+            qualifying = [move for move in card["moves"] if move["kind"] != "CONTEXT"
+                          and int(move["picks"]) > 0
                           and int(move["wins"]) / int(move["picks"]) >= 0.5]
             if not qualifying:
                 continue
@@ -286,7 +293,8 @@ def featured_warlords(boards: dict[str, list[dict]]) -> dict[str, list[dict]]:
 def unfeatured_baselines(cards: list[dict]) -> list[dict]:
     """Priced Green candidates without a qualifying historical move."""
     return [card for card in cards if card.get("baseline_rule") and not any(
-        int(move["picks"]) > 0 and int(move["wins"]) / int(move["picks"]) >= 0.5
+        move["kind"] != "CONTEXT" and int(move["picks"]) > 0
+        and int(move["wins"]) / int(move["picks"]) >= 0.5
         for move in card["moves"])]
 
 
@@ -351,7 +359,8 @@ def baseline_audit(frame: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame, pd.
                 continue
             for counts in (totals[label], bucket):
                 counts["Baseline"].add(identity)
-            named = any(move["kind"] != "STANCE" for move in fired_moves(row)[market])
+            named = any(move["kind"] not in {"STANCE", "CONTEXT"}
+                        for move in fired_moves(row)[market])
             if named:
                 for counts in (totals[label], bucket):
                     counts["Named move"].add(identity)
@@ -516,6 +525,9 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
             move = card.get("move")
             tier_badge = ""
             tier_class = ""
+            if role == "Support" and move and move["kind"] == "CRIT":
+                tier_badge = '<span class="wn-tier wn-tier--s">CRIT</span>'
+                tier_class = " wn-unit--crit"
             baseline_only = bool(card.get("baseline_only"))
             wins, picks = (int(move["wins"]), int(move["picks"])) if move else (0, 0)
             late_wins, late_picks = ((int(move["later_wins"]), int(move["later_picks"]))
@@ -589,6 +601,20 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
                              f'· #{positional["rank"]} most · {positional["gp"]} GP</div>'
                              if positional else "")
             fired = card.get("moves") or ([] if not move or baseline_only else [move])
+            support_badges = ""
+            pp_crit_note = ""
+            if role == "Support" and move:
+                secondary = list(dict.fromkeys(
+                    item["name"] for item in fired
+                    if item["name"] != move["name"] and item["kind"] not in {"STANCE", "CRIT"}
+                ))
+                if secondary:
+                    support_badges = (f'<div class="wn-support-badges">Also: '
+                                      f'{_h(" · ".join(secondary[:4]))}</div>')
+                pp_rate = _number(card.get("team_pp_xgf60"))
+                if move["kind"] == "CRIT" and pp_rate is not None:
+                    pp_crit_note = (f'<div class="wn-crit-env">TEAM PP xGF/60 '
+                                    f'{pp_rate:.2f} · CRIT GATE 8.3</div>')
             move_rows = []
             for fired_move in fired:
                 fired_wins, fired_picks = int(fired_move["wins"]), int(fired_move["picks"])
@@ -605,7 +631,8 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
                 fired_label = ("TRACK" if fired_move.get("track") else
                                "LAB" if fired_move.get("experimental") else fired_move["kind"])
                 later_text = (f"Mar 15+ {fired_late_wins}/{fired_late_picks} · {fired_late_pct:.1f}%"
-                              if fired_late_picks else "2026–27 regular season" if role == "Carry" else "No separate later sample")
+                              if fired_late_picks else "2026–27 regular season"
+                              if fired_move.get("sample_season") == "2026-27" else "No separate later sample")
                 move_rows.append(f'''<div class="wn-move-entry">
                   <div class="wn-move-title"><strong>{_h(fired_move["name"])}</strong><em>{_h(fired_label)}</em></div>
                   <div class="wn-move-record">{fired_wins}/{fired_picks} · {fired_pct:.1f}% <span>{later_text}</span></div>
@@ -619,7 +646,8 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
             confidence = card.get("confidence")
             confidence_note = (f" · CONF {confidence:.0f} {_h(card.get('matrix') or 'Unknown')}"
                                if confidence is not None else "")
-            record_label = "2026–27 REG MOVE" if role == "Carry" else "HISTORICAL MOVE"
+            record_label = ("2026–27 REG MOVE" if role == "Carry" or
+                            (move and move.get("sample_season") == "2026-27") else "HISTORICAL MOVE")
             record_html = (f'<div class="wn-record"><strong>{pct:.1f}%</strong><span>{wins}/{picks}</span><em>{record_label}</em></div>'
                            if picks else '<div class="wn-record"><strong>BASE</strong><em>SCREEN ONLY</em></div>')
             details_html = (f'<details class="wn-details"><summary>Full fired move list ({len(fired)})</summary>'
@@ -634,6 +662,8 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
                 <div class="wn-attack"><span class="wn-attack-name">{_h(move_name)}</span><span class="wn-badge">{_h(status + sample)}</span></div>
                 <div class="wn-unit-foot"><span>{_h(line)} <b>{_h(price)}</b>{book_note}</span><span>{_h(later_note)}{confidence_note}</span></div>
                 {book_rate_note}
+                {pp_crit_note}
+                {support_badges}
                 {goal_profile_note}
                 {tonight_note}
                 {position_note}
@@ -679,6 +709,7 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
       .wn-unit--s{border-left:4px solid #f4bf55;background:linear-gradient(100deg,#3d3026,#1b2739 39%);box-shadow:inset 0 0 0 1px #f4bf5538}
       .wn-unit--a{border-left:4px solid #9bbcff;background:linear-gradient(100deg,#263653,#1b2739 39%);box-shadow:inset 0 0 0 1px #9bbcff30}
       .wn-unit--b{border-left:4px solid #82d5b0;background:linear-gradient(100deg,#203b36,#1b2739 39%);box-shadow:inset 0 0 0 1px #82d5b030}
+      .wn-unit--crit{border-left:4px solid #f4bf55;background:linear-gradient(100deg,#413015,#1b2739 43%);box-shadow:inset 0 0 0 1px #f4bf5540}
       .wn-tier{flex:none;border-radius:4px;padding:2px 5px;font-size:9px;font-weight:950;letter-spacing:.07em}
       .wn-tier--s{color:#211803;background:#f4bf55}.wn-tier--a{color:#0a1832;background:#9bbcff}.wn-tier--b{color:#09251c;background:#82d5b0}
       .wn-unit-ghost{position:absolute;z-index:0;left:65px;top:-28px;height:190px;width:auto;opacity:.16;pointer-events:none;mask-image:linear-gradient(90deg,#000 25%,transparent 95%)}
@@ -690,6 +721,8 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
       .wn-unit-foot{display:flex;flex-wrap:wrap;gap:2px 10px;margin-top:5px;font-size:9px;color:#afbed0;letter-spacing:.01em}.wn-unit-foot b{color:#fff;margin-left:3px}
       .wn-book{font-size:9px;color:var(--accent);font-weight:800;white-space:nowrap;margin-left:5px}
       .wn-book-rate{font-size:9px;color:#b9c9dc;margin-top:4px;font-weight:800;letter-spacing:.06em}
+      .wn-crit-env{font-size:9px;color:#f4d47d;margin-top:4px;font-weight:800;letter-spacing:.05em}
+      .wn-support-badges{font-size:9px;color:#b8c8e7;margin-top:4px;line-height:1.4}
       .wn-goalie{font-size:9px;color:#9fb6cb;margin-top:3px}
       .wn-goal-profile{font-size:10px;color:#e7cc8b;margin-top:4px;font-weight:700}
       .wn-position-sog{font-size:10px;color:#9edac1;margin-top:5px}.wn-position-sog b{color:#e6fff3}
