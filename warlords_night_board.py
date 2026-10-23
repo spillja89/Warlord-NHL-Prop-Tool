@@ -688,7 +688,8 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
               {details_html}
             </article>""")
         if not units:
-            units = ['<div class="wn-empty">No posted player line and price for this class yet.</div>']
+            units = ['<div class="wn-empty">No featured move for this class on this slate. '
+                     'Check the complete priced slate below for all posted lines.</div>']
         backdrop = f'<img class="wn-gorilla" src="{character_uri}" alt="" />' if character_uri else ""
         count_label = "FEATURED" if cards and "confidence" in cards[0] else "PRICED"
         lane_subtitle = ("GOAL ✦ 2026–27 MOVE % ✦ BOOK BREAK-EVEN % FROM POSTED ODDS"
