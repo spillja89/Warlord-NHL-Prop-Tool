@@ -108,6 +108,13 @@ def _baseline_rule(row, market, line):
     return None
 
 
+def _display_moves(moves, market, line):
+    """Keep Points 1.5 cards focused without changing saved move records."""
+    if market == "Points" and line == 1.5:
+        return [move for move in moves if move["name"] in {"DPS Tank stance", "Backbone"}]
+    return moves
+
+
 def rank_warlords(frame: pd.DataFrame) -> dict[str, list[dict]]:
     """Best fired historical move per player and class on this filtered slate."""
     boards = {role: {} for role, *_ in CLASSES}
@@ -205,7 +212,8 @@ def rank_priced_slate(frame: pd.DataFrame) -> dict[str, list[dict]]:
             if line is None or odds is None or odds == 0:
                 continue
             model_prob, book_prob, price_gap = _price_comparison(row, market, line, odds)
-            moves = active[market]
+            tracked_moves = active[market]
+            moves = _display_moves(tracked_moves, market, line)
             attacks = [move for move in moves if move["kind"] not in {"STANCE", "CONTEXT"}]
             best = max(attacks or moves, key=_move_rank) if moves else None
             baseline = None if watch else _baseline_rule(row, market, line)
@@ -246,6 +254,8 @@ def rank_priced_slate(frame: pd.DataFrame) -> dict[str, list[dict]]:
                 "moves": sorted(moves, key=lambda item: (
                     item["kind"] != "STANCE", _move_rank(item)), reverse=True),
                 "move_count": len(moves),
+                "points_power_tier": market == "Points" and line == 1.5 and any(
+                    item["name"] == "Blade Impale (Power Tier)" for item in tracked_moves),
                 "roster_watch": watch,
             }
             key = (team.casefold(), player.casefold())
@@ -603,6 +613,8 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
             fired = card.get("moves") or ([] if not move or baseline_only else [move])
             support_badges = ""
             pp_crit_note = ""
+            points_power_note = ('<div class="wn-support-badges">Enhancement: Blade Impale (Power Tier)</div>'
+                                 if role == "Tank" and card.get("points_power_tier") else "")
             if role == "Support" and move:
                 secondary = list(dict.fromkeys(
                     item["name"] for item in fired
@@ -663,6 +675,7 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
                 <div class="wn-unit-foot"><span>{_h(line)} <b>{_h(price)}</b>{book_note}</span><span>{_h(later_note)}{confidence_note}</span></div>
                 {book_rate_note}
                 {pp_crit_note}
+                {points_power_note}
                 {support_badges}
                 {goal_profile_note}
                 {tonight_note}
