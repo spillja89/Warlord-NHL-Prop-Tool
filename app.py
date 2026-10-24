@@ -29,6 +29,7 @@ from power_play_quotes import fetch_current_pp_usage, format_ppp_book_prices, pr
 from player_availability import unavailable_mask
 from position_sog import current_slate_only, fetch_position_sog, position_matchup, SOURCE_URL as POSITION_SOG_URL
 from typesafe_shadow import review as _jev_review
+from blade_check import check_slate as _check_blade
 
 
 @st.cache_data(ttl=600, show_spinner=False)
@@ -4130,6 +4131,11 @@ else:
     if run_now:
         with st.spinner("Running model…"):
             try:
+                if latest_path and os.path.exists(str(latest_path)):
+                    try:
+                        st.session_state["blade_previous_slate"] = load_csv(str(latest_path)).copy()
+                    except (OSError, ValueError, pd.errors.ParserError):
+                        st.session_state.pop("blade_previous_slate", None)
                 # Cache-buster: if nhl_edge.py changed, re-run the model
                 try:
                     engine_path = os.path.join(os.path.dirname(__file__), 'nhl_edge.py') if '__file__' in globals() else 'nhl_edge.py'
@@ -4785,6 +4791,59 @@ if not odds_columns or not any(pd.to_numeric(df[col], errors="coerce").notna().a
     st.warning("No sportsbook odds are available in this tracker. Model moves can still be reviewed, but check the line and price before placing a bet.")
 
 if owner_access:
+    with st.expander("Check the blade · slate review (owner)"):
+        previous_slate = st.session_state.get("blade_previous_slate") if source == "latest" else None
+        audit = _check_blade(df, previous=previous_slate,
+                             selected_day=slate_date if source == "latest" else None)
+        st.caption(
+            f"Saved slate: {audit['teams']} teams · {audit['players']} skaters · "
+            + " · ".join(f"{market} {count}" for market, count in audit["counts"].items())
+        )
+        st.caption(
+            "Read-only checks of the saved tracker and, when available, the previous same-day run. "
+            "Flags ask for a closer look; they are not predicted hit rates or automatic changes to cards."
+        )
+        findings = audit["findings"]
+        if findings:
+            action_count = sum(item["Level"] == "Action" for item in findings)
+            st.write(f"**{action_count} action flags · {len(findings) - action_count} watch flags**")
+            st.dataframe(pd.DataFrame(findings), width="stretch", hide_index=True)
+        else:
+            st.success("No exceptions found in the saved tracker checks.")
+        if previous_slate is None:
+            st.caption("Same-day change checks begin after the next Run / Refresh on this app session.")
+        candidates = audit["review_candidates"]
+        if candidates and _owner_setting("TYPESAFE_API_KEY"):
+            blade_stamp = (
+                str(df["Date"].iloc[0]),
+                str(df["Odds_Checked_UTC"].iloc[0]) if "Odds_Checked_UTC" in df.columns else "",
+            )
+            st.caption("Optional Jev review: choose a flagged card. This makes one paid API request and does not change the board.")
+            selected = st.selectbox(
+                "Flagged card", range(len(candidates)), key="blade_jev_candidate",
+                format_func=lambda index: (
+                    f"{candidates[index]['player']} · {candidates[index]['market']} · "
+                    f"{candidates[index]['issues'][0]}"
+                ),
+            )
+            if st.button("Review flagged card with Jev", key="blade_jev_review"):
+                candidate = candidates[selected]
+                with st.spinner("Checking the flagged card…"):
+                    try:
+                        result = _jev_review(candidate["row"], candidate["market"],
+                                             _owner_setting("TYPESAFE_API_KEY"))
+                        st.session_state["blade_jev_result"] = (blade_stamp, candidate["player"], result)
+                    except (RuntimeError, ValueError) as exc:
+                        st.error(str(exc))
+            flagged_result = st.session_state.get("blade_jev_result")
+            if flagged_result and flagged_result[0] == blade_stamp:
+                _, player, result = flagged_result
+                st.write(f"**Jev review · {player} · {result['market']}**")
+                for name, label in (("opportunity", "Opportunity"), ("matchup", "Matchup"),
+                                    ("evidence", "Evidence")):
+                    answer = result["answers"][name]
+                    st.write(f"{label}: **{answer.get('choice', 'unknown').title()}** · label confidence {answer.get('confidence', 0):.0%}")
+                st.caption("Jev's label confidence is not a betting probability. Review the flagged source fields before acting.")
     with st.expander("Tracker columns (owner)"):
         st.write(list(df.columns))
     with st.expander("TypeSafe Jev · shadow review (owner)"):
