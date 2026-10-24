@@ -149,6 +149,21 @@ def check_slate(frame: pd.DataFrame, *, previous: pd.DataFrame | None = None,
             pd.notna(start) and -10 <= (start - now).total_seconds() / 60 <= 90
         )
 
+    # Gamecenter may not publish a complete dressed roster until near puck drop.
+    # Report that source gap once per game instead of implying each player is doubtful.
+    for game, game_rows in frame.groupby("Game", dropna=False):
+        if not _text(game):
+            continue
+        pending = game_rows.loc[game_rows["Lineup_Status"].fillna("").eq("Lineup pending")]
+        if pending.empty:
+            continue
+        if any(near_start.get((_text(row.get("Team")).casefold(),
+                               _text(row.get("Player")).casefold()))
+               for row in pending.to_dict("records")):
+            add("Watch", "Game", "Official dressed roster unavailable at last refresh",
+                f"{_text(game)}: {len(pending)} skaters pending in the saved tracker. "
+                "This is a feed status, not an indication that those players are doubtful.")
+
     for role, cards in boards.items():
         market = ROLE_MARKET[role]
         for place, card in enumerate(cards):
@@ -164,8 +179,6 @@ def check_slate(frame: pd.DataFrame, *, previous: pd.DataFrame | None = None,
                 issues.append("Odds-only roster watch; model history missing")
             if _true(row.get("Team_Changed")):
                 issues.append("Changed teams; inspect current-team stats and role")
-            if near_start.get(key) and _text(row.get("Lineup_Status")) != "Dressed":
-                issues.append("Game within 90 minutes; lineup still unconfirmed")
             if market == "Goals":
                 ixg = _number(row.get("iXG%"))
                 intent = _number(row.get("ShotIntent_Pct"))
