@@ -1293,6 +1293,68 @@ def fetch_dfo_injuries_for_teams(teams: set[str], debug: bool = False) -> pd.Dat
         print(f"[DFO INJ] collected {len(injuries)} injury reports across {len(teams)} slate teams")
     return injuries.reset_index(drop=True)
 
+
+def parse_espn_injuries(payload: Any, teams: set[str], slate_date: date) -> pd.DataFrame:
+    """Read current-season ESPN reports as a second source of unavailable players."""
+    columns = ["Team", "Player", "Status", "Injury", "Expected_Return", "Player_norm"]
+    if not isinstance(payload, dict):
+        return pd.DataFrame(columns=columns)
+    season = payload.get("season") or {}
+    if season.get("year") != current_season_start_year(slate_date) + 1:
+        return pd.DataFrame(columns=columns)
+    try:
+        checked_at = datetime.fromisoformat(str(payload["timestamp"]).replace("Z", "+00:00"))
+        if abs((datetime.now(timezone.utc) - checked_at).total_seconds()) > 24 * 3600:
+            return pd.DataFrame(columns=columns)
+    except (KeyError, TypeError, ValueError):
+        return pd.DataFrame(columns=columns)
+
+    slate_teams = {norm_team(team) for team in teams}
+    rows = []
+    for club in payload.get("injuries", []):
+        for report in club.get("injuries", []):
+            athlete = report.get("athlete") or {}
+            team = norm_team((athlete.get("team") or {}).get("abbreviation", ""))
+            player = str(athlete.get("displayName") or "").strip()
+            status = _dfo_norm_status(report.get("status", ""))
+            if team not in slate_teams or not player or status not in {"Out", "IR", "GTD", "Scratch"}:
+                continue
+            details = report.get("details") or {}
+            rows.append({
+                "Team": team,
+                "Player": player,
+                "Status": status,
+                "Injury": str(details.get("type") or ""),
+                "Expected_Return": str(details.get("returnDate") or ""),
+                "Player_norm": _norm_name(player),
+            })
+    return pd.DataFrame(rows, columns=columns).drop_duplicates(["Team", "Player_norm"], keep="last")
+
+
+def fetch_espn_injuries_for_teams(teams: set[str], slate_date: date, debug: bool = False) -> pd.DataFrame:
+    if slate_date != datetime.now(ZoneInfo(LOCAL_TZ)).date():
+        return pd.DataFrame(columns=["Team", "Player", "Status", "Injury", "Expected_Return", "Player_norm"])
+    try:
+        payload = http_get_json(http_session(), "https://site.api.espn.com/apis/site/v2/sports/hockey/nhl/injuries")
+        reports = parse_espn_injuries(payload, teams, slate_date)
+        if debug:
+            print(f"[ESPN INJ] collected {len(reports)} current injury reports")
+        return reports
+    except Exception as exc:
+        if debug:
+            print(f"[ESPN INJ] fetch failed: {type(exc).__name__}: {exc}")
+        return pd.DataFrame(columns=["Team", "Player", "Status", "Injury", "Expected_Return", "Player_norm"])
+
+
+def combine_injury_reports(dfo: pd.DataFrame, espn: pd.DataFrame) -> pd.DataFrame:
+    """Keep both sources; an explicit unavailable report beats GTD or absence."""
+    reports = pd.concat([dfo, espn], ignore_index=True)
+    if reports.empty:
+        return reports
+    reports["_priority"] = reports["Status"].map({"IR": 3, "Out": 3, "Scratch": 3, "GTD": 1}).fillna(0)
+    reports = reports.sort_values("_priority", kind="stable")
+    return reports.drop_duplicates(["Team", "Player_norm"], keep="last").drop(columns="_priority").reset_index(drop=True)
+
 def merge_bdl_mainlines(df: pd.DataFrame, path: str = "data/cache/bdl_mainlines_best.json") -> pd.DataFrame:
     import json
     import pandas as pd
@@ -3514,8 +3576,11 @@ def build_tracker(today_local: date, debug: bool = False, api_key: str | None = 
         if lineup.get("status") == "Official lineup" and lineup.get("starter_name"):
             dfo_map[team] = {"goalie": lineup["starter_name"], "status": "Official"}
 
-    # DFO injuries
-    inj_df = fetch_dfo_injuries_for_teams(teams_playing, debug=debug)
+    # Check both injury sources: DFO's line-combo list can omit confirmed absences.
+    inj_df = combine_injury_reports(
+        fetch_dfo_injuries_for_teams(teams_playing, debug=debug),
+        fetch_espn_injuries_for_teams(teams_playing, today_local, debug=debug),
+    )
     injury_reports_count = len(inj_df)
     injury_check_utc = datetime.now(timezone.utc).isoformat(timespec="seconds")
 
