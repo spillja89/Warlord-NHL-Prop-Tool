@@ -53,6 +53,34 @@ class TypeSafeShadowTests(unittest.TestCase):
         self.assertEqual(result["answers"]["opportunity"]["choice"], "unknown")
         self.assertNotIn("test-key", json.dumps(result))
 
+    def test_source_review_sends_both_values_and_timestamps_without_secret(self):
+        finding = {"Player": "Example Player", "Team": "STL",
+                   "Source check": "PP ice time changed", "Saved tracker": "2.1 min/game",
+                   "Fresh sources": "MoneyPuck now 3.2 min/game", "Meaning": "Review deployment"}
+        response = {"answers": {"interpretation": {"type": "choice",
+                                                    "choice": "update_timing", "confidence": 0.6}}}
+
+        class FakeResponse:
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *_args):
+                return False
+
+            def read(self, *_args):
+                return json.dumps(response).encode()
+
+        with patch.object(typesafe_shadow, "urlopen", return_value=FakeResponse()) as call:
+            result = typesafe_shadow.review_source_difference(
+                finding, "2026-10-25T15:00Z", "2026-10-25T14:00Z", "test-key"
+            )
+        sent = json.loads(call.call_args.args[0].data)
+        self.assertEqual(sent["state"]["Saved tracker"], "2.1 min/game")
+        self.assertEqual(sent["state"]["Fresh sources"], "MoneyPuck now 3.2 min/game")
+        self.assertEqual(sent["state"]["MoneyPuck file updated"], "2026-10-25T14:00Z")
+        self.assertEqual(result["answer"]["choice"], "update_timing")
+        self.assertNotIn("test-key", json.dumps(result))
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -140,6 +140,31 @@ def check_slate(frame: pd.DataFrame, *, previous: pd.DataFrame | None = None,
                 if old_count >= 8 and new_count < old_count * 0.6:
                     add("Action", "Refresh", "Priced cards dropped sharply",
                         f"{old_count} → {new_count} cards", market=market)
+            old_by_id = {
+                _text(row.get("Player_ID")): row for row in previous.to_dict("records")
+                if _text(row.get("Player_ID"))
+            }
+            for row in rows:
+                old_row = old_by_id.get(_text(row.get("Player_ID")))
+                if old_row is None:
+                    continue
+                old_role, new_role = _number(old_row.get("PP_Role")), _number(row.get("PP_Role"))
+                if old_role is not None and new_role is not None and old_role != new_role:
+                    label = {0: "No unit", 1: "PP2", 2: "PP1"}
+                    add("Watch", "Refresh", "Estimated PP unit changed",
+                        f"Season ice-time rank: {label.get(int(old_role), old_role)} → "
+                        f"{label.get(int(new_role), new_role)}. This is not tonight's confirmed unit.",
+                        market="Power play", player=_text(row.get("Player")), team=_text(row.get("Team")))
+                    review_candidates.append({"market": "Power play", "row": row,
+                                              "player": _text(row.get("Player")),
+                                              "team": _text(row.get("Team")), "rank": None,
+                                              "issues": ["Estimated PP unit changed between refreshes"]})
+                old_lineup = _text(old_row.get("Lineup_Status"))
+                new_lineup = _text(row.get("Lineup_Status"))
+                if old_lineup and new_lineup and old_lineup != new_lineup:
+                    add("Watch", "Refresh", "Official lineup status changed",
+                        f"{old_lineup} → {new_lineup}; checked {_text(row.get('Lineup_Check_UTC')) or 'time unavailable'}",
+                        player=_text(row.get("Player")), team=_text(row.get("Team")))
 
     starts = pd.to_datetime(frame.get("StartTimeUTC", pd.Series(dtype=str)), utc=True, errors="coerce")
     near_start = {}

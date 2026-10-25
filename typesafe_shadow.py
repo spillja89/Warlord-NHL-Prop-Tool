@@ -156,3 +156,51 @@ def review(row, market: str, api_key: str, *, timeout: float = 15) -> dict:
         "model": result.get("model", MODEL),
         "usage": result.get("usage", {}),
     }
+
+
+def review_source_difference(finding: dict, nhl_checked: str, mp_updated: str,
+                             api_key: str, *, timeout: float = 15) -> dict:
+    """Classify one displayed source difference; this cannot certify either feed."""
+    if not api_key:
+        raise ValueError("TYPESAFE_API_KEY is not configured")
+    fields = ("Player", "Team", "Source check", "Saved tracker", "Fresh sources", "Meaning")
+    state = {key: _clean(finding.get(key)) for key in fields}
+    state["NHL checked UTC"] = _clean(nhl_checked)
+    state["MoneyPuck file updated"] = _clean(mp_updated)
+    payload = {
+        "model": MODEL,
+        "state": state,
+        "questions": {
+            "interpretation": {
+                "type": "choice",
+                "instructions": (
+                    "Classify the displayed difference between saved pregame tracker values and fresh "
+                    "season source values. Use only the fields and timestamps supplied. "
+                    "Do not decide whether a player will hit a prop."
+                ),
+                "criteria": {
+                    "update_timing": "The difference is consistent with feeds updating at different times.",
+                    "definition_or_sample": "The values appear to use different samples or definitions.",
+                    "needs_source_review": "The values materially disagree and a human should inspect the source records.",
+                    "insufficient": "The supplied fields do not establish the cause of the difference.",
+                },
+            },
+        },
+    }
+    request = Request(
+        API_URL, data=json.dumps(payload).encode("utf-8"),
+        headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
+        method="POST",
+    )
+    try:
+        with urlopen(request, timeout=timeout) as response:
+            result = json.load(response)
+    except HTTPError as exc:
+        raise RuntimeError(f"TypeSafe returned HTTP {exc.code}") from exc
+    except URLError as exc:
+        raise RuntimeError("TypeSafe is unreachable right now") from exc
+    answer = result.get("answers", {}).get("interpretation", {})
+    if answer.get("type") != "choice" or answer.get("choice") not in payload["questions"]["interpretation"]["criteria"]:
+        raise RuntimeError("TypeSafe returned an unexpected source-review format")
+    return {"state": state, "answer": answer, "model": result.get("model", MODEL),
+            "usage": result.get("usage", {})}

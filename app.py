@@ -28,8 +28,9 @@ from ledger_store import append_bet as _append_cloud_bet, recent_bets as _recent
 from power_play_quotes import fetch_current_pp_usage, format_ppp_book_prices, priced_ppp_quotes
 from player_availability import unavailable_mask
 from position_sog import current_slate_only, fetch_position_sog, position_matchup, SOURCE_URL as POSITION_SOG_URL
-from typesafe_shadow import review as _jev_review
+from typesafe_shadow import review as _jev_review, review_source_difference as _jev_source_review
 from blade_check import check_slate as _check_blade
+from source_reconcile import compare_slate_sources as _compare_slate_sources
 
 
 @st.cache_data(ttl=600, show_spinner=False)
@@ -4812,6 +4813,55 @@ if owner_access:
             st.success("No exceptions found in the saved tracker checks.")
         if previous_slate is None:
             st.caption("Same-day change checks begin after the next Run / Refresh on this app session.")
+        today_ct = datetime.now(ZoneInfo("America/Chicago")).date()
+        if audit.get("slate_day") == today_ct:
+            source_stamp = (str(audit["slate_day"]), str(df.iloc[0].get("Odds_Checked_UTC", "")))
+            st.caption("Compare the saved tracker with fresh NHL and MoneyPuck season records. This checks source coverage and PP minutes; it does not confirm tonight's PP unit. Live sources are cached for 30 minutes.")
+            if st.button("Check fresh season sources", key="blade_source_check"):
+                season_start = today_ct.year if today_ct.month >= 7 else today_ct.year - 1
+                season_id = season_start * 10000 + season_start + 1
+                with st.spinner("Comparing current season sources…"):
+                    try:
+                        nhl_rows, nhl_checked = _cached_league_skaters(season_id)
+                        mp_rows, mp_updated = _cached_moneypuck_skaters(season_start)
+                        live_rows = league_season_rows(nhl_rows, mp_rows)
+                        starts = pd.to_datetime(df.get("StartTimeUTC", pd.Series(pd.NaT, index=df.index)), utc=True, errors="coerce")
+                        future = df.loc[starts.notna() & (starts > pd.Timestamp.now(tz="UTC"))]
+                        checks = _compare_slate_sources(future, live_rows)
+                        st.session_state["blade_source_result"] = (
+                            source_stamp, checks, nhl_checked, mp_updated, len(future)
+                        )
+                    except Exception as exc:
+                        st.error(f"Fresh source comparison unavailable ({type(exc).__name__}).")
+            source_result = st.session_state.get("blade_source_result")
+            if source_result and source_result[0] == source_stamp:
+                _, checks, nhl_checked, mp_updated, compared = source_result
+                st.caption(f"Compared {compared} skaters in games not yet started · NHL checked {nhl_checked} UTC · MoneyPuck updated {mp_updated}.")
+                if checks:
+                    st.warning(f"{len(checks)} source differences to review. These can reflect update timing.")
+                    st.dataframe(pd.DataFrame(checks), width="stretch", hide_index=True)
+                    if _owner_setting("TYPESAFE_API_KEY"):
+                        chosen_source = st.selectbox(
+                            "Source difference for Jev", range(len(checks)), key="blade_source_candidate",
+                            format_func=lambda index: f"{checks[index]['Player']} · {checks[index]['Source check']}",
+                        )
+                        if st.button("Review source difference with Jev", key="blade_source_jev"):
+                            with st.spinner("Reviewing supplied source evidence…"):
+                                try:
+                                    result = _jev_source_review(checks[chosen_source], nhl_checked, mp_updated,
+                                                                _owner_setting("TYPESAFE_API_KEY"))
+                                    st.session_state["blade_source_jev_result"] = (source_stamp, chosen_source, result)
+                                except (RuntimeError, ValueError) as exc:
+                                    st.error(str(exc))
+                        jev_result = st.session_state.get("blade_source_jev_result")
+                        if jev_result and jev_result[:2] == (source_stamp, chosen_source):
+                            answer = jev_result[2]["answer"]
+                            st.write(f"Jev interpretation: **{answer['choice'].replace('_', ' ').title()}** · label confidence {answer.get('confidence', 0):.0%}")
+                            st.caption("This label describes the supplied evidence. It does not verify either feed or predict the prop.")
+                            with st.expander("Source fields sent to Jev"):
+                                st.json(jev_result[2]["state"])
+                else:
+                    st.success("No large game-count or PP ice-time differences in the compared skaters.")
         candidates = audit["review_candidates"]
         if candidates and _owner_setting("TYPESAFE_API_KEY"):
             blade_stamp = (
