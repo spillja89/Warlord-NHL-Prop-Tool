@@ -41,8 +41,10 @@ def compare_slate_sources(frame: pd.DataFrame, league_rows: list[dict]) -> list[
                              "Meaning": "Check capture times; a newer season file may have arrived."})
         saved_pp, fresh_pp = _num(row.get("PP_TOI_per_game")), _num(live.get("PP TOI/GP"))
         if mp_gp is not None and mp_gp >= 3 and saved_pp is not None and fresh_pp is not None and abs(saved_pp - fresh_pp) >= 0.75:
+            role = _num(row.get("PP_Role"))
+            role_label = {0: "No unit", 1: "PP2", 2: "PP1"}.get(int(role), "Unknown") if role is not None else "Unknown"
             findings.append({"Player": name, "Team": team, "Source check": "PP ice time changed",
-                             "Saved tracker": f"{saved_pp:.1f} min/game · estimated role {row.get('PP_Tier') or 'unknown'}",
+                             "Saved tracker": f"{saved_pp:.1f} min/game · estimated {role_label}",
                              "Fresh sources": f"MoneyPuck now {fresh_pp:.1f} min/game ({mp_gp:g} GP)",
                              "Meaning": "Review recent deployment; season ice-time rank is not a confirmed unit."})
     return findings
