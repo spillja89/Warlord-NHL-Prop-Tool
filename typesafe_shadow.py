@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import math
+from concurrent.futures import ThreadPoolExecutor
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 
@@ -46,6 +47,13 @@ MARKETS = {
         "Team_PP_xGF60", "Opp_PK_xGA60", "Opp_PK_GA60", "PP_Env_Score",
         "PPP10_total",
     ),
+}
+QUOTE_FIELDS = {
+    "Goals": ("Goal_Line", "Goal_Odds_Over"),
+    "Assists": ("Assists_Line", "Assists_Odds_Over"),
+    "Points": ("Points_Line", "Points_Odds_Over"),
+    "Shots": ("SOG_Line", "SOG_Odds_Over"),
+    "Power play": ("BDL_PPP_Line", "BDL_PPP_Odds"),
 }
 
 
@@ -204,3 +212,57 @@ def review_source_difference(finding: dict, nhl_checked: str, mp_updated: str,
         raise RuntimeError("TypeSafe returned an unexpected source-review format")
     return {"state": state, "answer": answer, "model": result.get("model", MODEL),
             "usage": result.get("usage", {})}
+
+
+def review_flagged_cards(candidates: list[dict], api_key: str, *, limit: int = 8) -> list[dict]:
+    """Run a bounded, explicit shadow review; one billable request per unique card."""
+    if not api_key:
+        raise ValueError("TYPESAFE_API_KEY is not configured")
+    selected, seen = [], set()
+    for candidate in candidates:
+        row, market = candidate["row"], candidate["market"]
+        key = (str(row.get("Player_ID") or candidate["player"]), market)
+        if key in seen:
+            continue
+        seen.add(key)
+        selected.append(candidate)
+        if len(selected) >= max(1, min(limit, 8)):
+            break
+
+    def one(candidate):
+        row, market = candidate["row"], candidate["market"]
+        output = {"Date": _clean(row.get("Date")), "Player_ID": _clean(row.get("Player_ID")),
+                  "Player": candidate["player"], "Team": candidate["team"], "Market": market,
+                  "Flag": "; ".join(candidate.get("issues", [])),
+                  "Odds_Checked_UTC": _clean(row.get("Odds_Checked_UTC"))}
+        line_field, odds_field = QUOTE_FIELDS[market]
+        if market == "Power play":
+            quotes = []
+            for suffix in ("", "_1", "_2", "_3", "_4"):
+                try:
+                    line = float(row.get(f"BDL_PPP_Line{suffix}"))
+                    odds = float(row.get(f"BDL_PPP_Odds{suffix}"))
+                except (TypeError, ValueError):
+                    continue
+                if math.isclose(line, 0.5) and math.isfinite(odds):
+                    quotes.append(odds)
+            output["Prop line"] = 0.5 if quotes else None
+            output["Saved odds"] = max(quotes) if quotes else None
+        else:
+            output["Prop line"] = _clean(row.get(line_field))
+            output["Saved odds"] = _clean(row.get(odds_field))
+        output["Fired moves"] = _clean(row.get("Fired_Moves"))
+        try:
+            result = review(row, market, api_key)
+            for name in ("opportunity", "matchup", "evidence"):
+                answer = result["answers"][name]
+                output[name.title()] = answer.get("choice")
+                output[f"{name.title()} label confidence"] = answer.get("confidence")
+            output["Jev model"] = result["model"]
+            output["Status"] = "Reviewed"
+        except (RuntimeError, ValueError) as exc:
+            output["Status"] = f"Error: {exc}"
+        return output
+
+    with ThreadPoolExecutor(max_workers=3) as pool:
+        return list(pool.map(one, selected))

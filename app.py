@@ -28,7 +28,8 @@ from ledger_store import append_bet as _append_cloud_bet, recent_bets as _recent
 from power_play_quotes import fetch_current_pp_usage, format_ppp_book_prices, priced_ppp_quotes
 from player_availability import unavailable_mask
 from position_sog import current_slate_only, fetch_position_sog, position_matchup, SOURCE_URL as POSITION_SOG_URL
-from typesafe_shadow import review as _jev_review, review_source_difference as _jev_source_review
+from typesafe_shadow import (review as _jev_review, review_flagged_cards as _jev_batch_review,
+                             review_source_difference as _jev_source_review)
 from blade_check import check_slate as _check_blade
 from source_reconcile import compare_slate_sources as _compare_slate_sources
 
@@ -4894,6 +4895,22 @@ if owner_access:
                     answer = result["answers"][name]
                     st.write(f"{label}: **{answer.get('choice', 'unknown').title()}** · label confidence {answer.get('confidence', 0):.0%}")
                 st.caption("Jev's label confidence is not a betting probability. Review the flagged source fields before acting.")
+            st.caption("Slate review: one request per unique flagged player and prop, capped at eight paid requests. Results are saved in this browser session until the slate changes.")
+            batch_result = st.session_state.get("blade_jev_batch")
+            if st.button("Review up to 8 flagged cards with Jev", key="blade_jev_batch_button",
+                         disabled=bool(batch_result and batch_result[0] == blade_stamp)):
+                with st.spinner("Reviewing flagged cards…"):
+                    st.session_state["blade_jev_batch"] = (
+                        blade_stamp, _jev_batch_review(candidates, _owner_setting("TYPESAFE_API_KEY"))
+                    )
+            batch_result = st.session_state.get("blade_jev_batch")
+            if batch_result and batch_result[0] == blade_stamp:
+                batch_frame = pd.DataFrame(batch_result[1])
+                st.dataframe(batch_frame, width="stretch", hide_index=True)
+                st.download_button("Download Jev shadow results for grading",
+                                   batch_frame.to_csv(index=False).encode("utf-8"),
+                                   file_name=f"jev_shadow_{blade_stamp[0]}.csv", mime="text/csv")
+                st.caption("These labels are research observations, not tested hit probabilities or automatic card changes.")
     with st.expander("Tracker columns (owner)"):
         st.write(list(df.columns))
     with st.expander("TypeSafe Jev · shadow review (owner)"):

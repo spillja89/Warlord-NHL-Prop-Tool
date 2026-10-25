@@ -81,6 +81,24 @@ class TypeSafeShadowTests(unittest.TestCase):
         self.assertEqual(result["answer"]["choice"], "update_timing")
         self.assertNotIn("test-key", json.dumps(result))
 
+    def test_batch_reviews_unique_cards_and_exports_pregame_context(self):
+        row = {"Date": "2026-10-25", "Player_ID": 123, "Player": "Example Player",
+               "Team": "STL", "Goal_Line": 0.5, "Goal_Odds_Over": 180,
+               "Fired_Moves": "[]", "Odds_Checked_UTC": "2026-10-25T15:00Z"}
+        candidate = {"row": row, "market": "Goals", "player": "Example Player",
+                     "team": "STL", "issues": ["thin sample"]}
+        mocked = {"answers": {name: {"choice": "strong", "confidence": 0.7}
+                              for name in ("opportunity", "matchup", "evidence")},
+                  "model": "jev-1.14.0"}
+        with patch.object(typesafe_shadow, "review", return_value=mocked) as call:
+            results = typesafe_shadow.review_flagged_cards([candidate, candidate], "test-key")
+        self.assertEqual(call.call_count, 1)
+        self.assertEqual(len(results), 1)
+        self.assertEqual(results[0]["Prop line"], 0.5)
+        self.assertEqual(results[0]["Opportunity"], "strong")
+        self.assertEqual(results[0]["Status"], "Reviewed")
+        self.assertNotIn("test-key", json.dumps(results))
+
 
 if __name__ == "__main__":
     unittest.main()
