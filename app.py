@@ -26,7 +26,7 @@ from season_sources import (fetch_moneypuck_skaters, fetch_moneypuck_teams,
                             slate_team_matchup_rows, team_season_rows)
 from ledger_store import append_bet as _append_cloud_bet, recent_bets as _recent_cloud_bets
 from power_play_quotes import fetch_current_pp_usage, format_ppp_book_prices, priced_ppp_quotes
-from player_availability import unavailable_mask
+from player_availability import apply_live_injury_overlay, unavailable_mask
 from position_sog import current_slate_only, fetch_position_sog, position_matchup, SOURCE_URL as POSITION_SOG_URL
 from typesafe_shadow import (review as _jev_review, review_flagged_cards as _jev_batch_review,
                              review_source_difference as _jev_source_review)
@@ -4187,6 +4187,22 @@ df = withhold_ambiguous_player_odds(df)
 
 # Apply availability to every page, including uploaded and older tracker files.
 # The engine also removes confirmed out players when creating a fresh tracker.
+@st.cache_data(ttl=600, show_spinner=False)
+def _live_slate_injuries(teams: tuple[str, ...], day: date) -> pd.DataFrame:
+    from nhl_edge import fetch_espn_injuries_for_teams
+    return fetch_espn_injuries_for_teams(set(teams), day)
+
+
+if source == "latest":
+    current_day = datetime.now(ZoneInfo("America/Chicago")).date()
+    today_rows = df["Date"].astype(str).str[:10].eq(str(current_day))
+    if today_rows.any():
+        teams_today = tuple(sorted(df.loc[today_rows, "Team"].dropna().astype(str).unique()))
+        live_reports = _live_slate_injuries(teams_today, current_day)
+        df, newly_excluded = apply_live_injury_overlay(df, live_reports, current_day)
+        if newly_excluded:
+            st.warning(f"Live injury check removed {newly_excluded} newly unavailable player(s) from the saved slate.")
+
 has_availability = "Injury_Status" in df.columns or "Available" in df.columns
 unavailable = unavailable_mask(df)
 if "Lineup_Status" in df.columns:

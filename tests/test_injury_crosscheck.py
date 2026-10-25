@@ -3,6 +3,7 @@ from datetime import date, datetime, timezone
 import pandas as pd
 
 from nhl_edge import apply_injury_dfo, combine_injury_reports, parse_espn_injuries
+from player_availability import apply_live_injury_overlay, unavailable_mask
 
 
 def _espn_payload(status="Out", season=2027):
@@ -46,3 +47,15 @@ def test_confirmed_out_beats_dfo_game_time_decision():
 def test_wrong_season_is_ignored():
     reports = parse_espn_injuries(_espn_payload(season=2026), {"MTL"}, date(2026, 10, 25))
     assert reports.empty
+
+
+def test_live_check_removes_suzuki_from_saved_slate_only():
+    reports = parse_espn_injuries(_espn_payload(), {"MTL"}, date(2026, 10, 25))
+    saved = pd.DataFrame([
+        {"Date": "2026-10-25", "Team": "MTL", "Player": "Nick Suzuki", "Injury_Status": "Healthy", "Available": True},
+        {"Date": "2026-10-24", "Team": "MTL", "Player": "Nick Suzuki", "Injury_Status": "Healthy", "Available": True},
+    ])
+    checked, newly_excluded = apply_live_injury_overlay(saved, reports, date(2026, 10, 25))
+    assert newly_excluded == 1
+    assert unavailable_mask(checked).tolist() == [True, False]
+    assert checked.loc[0, "Injury_Return"] == "2026-11-18"
