@@ -32,6 +32,9 @@ def apply_live_injury_overlay(frame: pd.DataFrame, reports: pd.DataFrame, slate_
         return frame, 0
     out = frame.copy()
     before = unavailable_mask(out)
+    for column in ("Injury_Status", "Injury_Badge", "Injury_Text", "Injury_Return"):
+        if column in out.columns:
+            out[column] = out[column].astype(object)
     current_day = out["Date"].astype(str).str[:10].eq(str(slate_date))
     teams = out["Team"].fillna("").astype(str).str.upper()
 
@@ -45,6 +48,8 @@ def apply_live_injury_overlay(frame: pd.DataFrame, reports: pd.DataFrame, slate_
         if status.casefold() not in UNAVAILABLE_STATUSES:
             continue
         matched = current_day & teams.eq(str(report.Team).upper()) & names.eq(name_key(report.Player))
+        if "Lineup_Status" in out.columns:
+            matched &= ~out["Lineup_Status"].fillna("").astype(str).eq("Dressed")
         if not matched.any():
             continue
         out.loc[matched, "Injury_Status"] = status

@@ -1355,6 +1355,21 @@ def combine_injury_reports(dfo: pd.DataFrame, espn: pd.DataFrame) -> pd.DataFram
     reports = reports.sort_values("_priority", kind="stable")
     return reports.drop_duplicates(["Team", "Player_norm"], keep="last").drop(columns="_priority").reset_index(drop=True)
 
+
+def clear_dressed_injury_reports(reports: pd.DataFrame, skaters: pd.DataFrame) -> pd.DataFrame:
+    """An official dressed lineup is stronger evidence than an injury feed."""
+    if reports.empty or "Lineup_Status" not in skaters.columns:
+        return reports
+    dressed = skaters.loc[skaters["Lineup_Status"].eq("Dressed"), ["Team", "Player"]]
+    dressed_keys = {(norm_team(row.Team), _norm_name(row.Player)) for row in dressed.itertuples(index=False)}
+    if not dressed_keys:
+        return reports
+    keep = [
+        (norm_team(row.Team), row.Player_norm) not in dressed_keys
+        for row in reports.itertuples(index=False)
+    ]
+    return reports.loc[keep].reset_index(drop=True)
+
 def merge_bdl_mainlines(df: pd.DataFrame, path: str = "data/cache/bdl_mainlines_best.json") -> pd.DataFrame:
     import json
     import pandas as pd
@@ -3581,6 +3596,7 @@ def build_tracker(today_local: date, debug: bool = False, api_key: str | None = 
         fetch_dfo_injuries_for_teams(teams_playing, debug=debug),
         fetch_espn_injuries_for_teams(teams_playing, today_local, debug=debug),
     )
+    inj_df = clear_dressed_injury_reports(inj_df, sk)
     injury_reports_count = len(inj_df)
     injury_check_utc = datetime.now(timezone.utc).isoformat(timespec="seconds")
 
