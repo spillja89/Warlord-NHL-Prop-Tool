@@ -2,10 +2,15 @@ import unittest
 
 import pandas as pd
 
-from power_play_quotes import priced_ppp_quotes, summarize_pp_usage
+from power_play_quotes import priced_ppp_quotes, summarize_pp_usage, team_pp_time_share_pct
 
 
 class PowerPlayQuotesTests(unittest.TestCase):
+    def test_team_pp_time_share_uses_team_pp_minutes(self):
+        self.assertEqual(team_pp_time_share_pct(4, 5), 80.0)
+        self.assertIsNone(team_pp_time_share_pct(4, 0))
+        self.assertIsNone(team_pp_time_share_pct(6, 5))
+
     def test_current_pp_usage_uses_only_games_before_the_slate(self):
         rows = [
             {"playerId": 8481617, "gameDate": "2026-09-29", "ppTimeOnIce": 290},
@@ -24,6 +29,7 @@ class PowerPlayQuotesTests(unittest.TestCase):
             "BDL_PPP_Odds_1": 150, "BDL_PPP_Book_1": "Book B",
             "BDL_PPP_Line_2": 1.5, "BDL_PPP_Odds_2": 650,
             "BDL_PPP_Book_2": "Book C", "PP_TOI_per_game": 3.4,
+            "Team_PP_Time_PG": 5.0,
         }, {
             "Game": "NYR@BOS", "Player": "Unpriced Skater", "Team": "NYR",
             "BDL_PPP_Line": 0.5, "BDL_PPP_Odds": None,
@@ -38,6 +44,7 @@ class PowerPlayQuotesTests(unittest.TestCase):
         self.assertEqual(half_quotes["Over odds"].tolist(), [150])
         self.assertEqual(half_quotes["Book break-even %"].tolist(), [40.0])
         self.assertEqual(half_quotes["PP unit"].tolist(), ["Unit unknown"])
+        self.assertEqual(half_quotes["Team PP time share %"].tolist(), [68.0])
 
     def test_history_and_matchup_are_labeled_without_inventing_an_edge(self):
         tracker = pd.DataFrame([{
