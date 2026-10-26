@@ -6239,16 +6239,18 @@ elif page == "Power Play":
         ppp_quotes["_matchup"] = pd.to_numeric(ppp_quotes["PP matchup /100"], errors="coerce").fillna(-1)
         ppp_quotes["_current_usage"] = pd.to_numeric(
             ppp_quotes["Current PP min/game"], errors="coerce").fillna(-1)
+        ppp_quotes["_team_pp_share"] = pd.to_numeric(
+            ppp_quotes["Team PP time share %"], errors="coerce").fillna(-1)
         ppp_quotes = ppp_quotes.sort_values(
-            ["_matchup", "PP boost", "_pp1", "_current_usage", "PP TOI/game"],
+            ["_matchup", "PP boost", "_pp1", "_team_pp_share", "_current_usage"],
             ascending=[False, False, False, False, False], kind="stable")
         ppp_quotes["PP rank"] = range(1, len(ppp_quotes) + 1)
         ppp_quotes = _sort_slate_rows(ppp_quotes, slate_sort, slate_start_by_game)
         ppp_quotes["Best feed price"] = ppp_quotes.apply(
             lambda row: f'{int(row["Over odds"]):+d} · {row["Book"]}', axis=1)
-        pp_sort_label = ("Ranked by PP context, with boost, PP1, and PP minutes breaking ties" if slate_sort == "Top ranked"
+        pp_sort_label = ("Ranked by PP context, with boost, PP1, and PP time share breaking ties" if slate_sort == "Top ranked"
                          else f"Sorted by {slate_sort.lower()}")
-        st.caption(f"{pp_sort_label}. PP context is a matchup score, not a hit probability or a tested betting edge. On-ice xG/game measures expected team goals while the player was on the power play; it is not a PPP probability. Check PP1 usage, current PP minutes, recent PPP, opponent PK, and the posted price together.")
+        st.caption(f"{pp_sort_label}. PP time share is player PP min/game divided by team PP min/game this season; it is a season-average estimate when a player missed games. PP context is a matchup score, not a hit probability or a tested betting edge. On-ice xG/game measures expected team goals while the player was on the power play; it is not a PPP probability.")
         team_options = ["All teams"] + sorted(ppp_quotes["Team"].dropna().unique().tolist())
         selected_team = st.selectbox("Team", team_options, key="pp_team")
         pp_view = (ppp_quotes if selected_team == "All teams" else
@@ -6256,16 +6258,20 @@ elif page == "Power Play":
         display_quotes = pp_view[["PP rank", "Player", "Game", "Best feed price",
                                   "PP matchup /100", "PP boost", "Current PPP L5",
                                   "Tonight PPP mean", "Tonight PPP 1+ %",
-                                  "Current PP min/game", "PP unit", "PP on-ice xG/game"]].rename(columns={
+                                  "Current PP min/game", "Team PP time share %",
+                                  "PP unit", "PP on-ice xG/game"]].rename(columns={
                                       "Best feed price": "Best price",
                                       "Current PPP L5": "PPP L5",
                                       "Current PP min/game": "PP min/game",
+                                      "Team PP time share %": "Team PP time %",
                                       "PP matchup /100": "PP context /100",
                                       "PP boost": "Boost",
                                   })
         display_quotes["Boost"] = display_quotes["Boost"].map({True: "ON", False: "—"})
         display_quotes["PP min/game"] = pd.to_numeric(
             display_quotes["PP min/game"], errors="coerce").round(1)
+        display_quotes["Team PP time %"] = pd.to_numeric(
+            display_quotes["Team PP time %"], errors="coerce").round(1)
         st.dataframe(display_quotes, hide_index=True, width="stretch")
         player_options = [f'{row.Player} · {row.Team} · {row.Game}'
                           for row in pp_view.itertuples(index=False)]
@@ -6292,8 +6298,11 @@ elif page == "Power Play":
                       f'({int(selected["Current PP games"])} games)'
                       if pd.notna(selected["Current PP min/game"]) else
                       'Current-season PP minutes unavailable')
+        share_note = (f'{selected["Team PP time share %"]:.1f}% of team PP time (season-average estimate)'
+                      if pd.notna(selected["Team PP time share %"]) else
+                      'Team PP time share unavailable')
         st.caption(f'Book break-even {selected["Book break-even %"]:.1f}% · '
-                   f'{usage_note} · {selected["PP unit"]}')
+                   f'{usage_note} · {share_note} · {selected["PP unit"]}')
         if pd.notna(selected.get("Tonight PPP 1+ %")):
             st.caption(f'Tonight research projection: {selected["Tonight PPP mean"]:.2f} expected PPP · '
                        f'{selected["Tonight PPP 1+ %"]:.1f}% for 1+ · observed-assist proxy, uncalibrated')
