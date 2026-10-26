@@ -11,6 +11,7 @@ import requests
 
 COLUMNS = ("Game", "Player", "Team", "Opponent", "PPP line", "Over odds",
            "Book", "Book break-even %", "PP unit", "PP TOI/game",
+           "Team PP time share %",
            "Opp PK xGA/60", "PP matchup /100", "PPP last 10",
            "PP on-ice xG/game", "PP shooter xG/game", "Equal-weight PP context",
            "Tonight PPP mean", "Tonight PPP 1+ %", "Tonight PPP status",
@@ -57,6 +58,18 @@ def _finite(value):
         return number if math.isfinite(number) else None
     except (TypeError, ValueError):
         return None
+
+
+def team_pp_time_share_pct(player_pp_minutes, team_pp_minutes):
+    """Player PP minutes/game divided by team PP minutes/game, as a percentage."""
+    player = _finite(player_pp_minutes)
+    team = _finite(team_pp_minutes)
+    if player is None or team is None or player < 0 or team <= 0:
+        return None
+    share = 100 * player / team
+    # Different game denominators can make a season-average ratio exceed 100%.
+    # Show unavailable instead of presenting an impossible share.
+    return round(share, 1) if share <= 100.5 else None
 
 
 def _break_even_pct(odds: float) -> float:
@@ -135,6 +148,8 @@ def priced_ppp_quotes(frame: pd.DataFrame, *, line_filter: float | None = None) 
                 "Book break-even %": _break_even_pct(odds),
                 "PP unit": _unit_label(row),
                 "PP TOI/game": _finite(row.get("PP_TOI_per_game")),
+                "Team PP time share %": team_pp_time_share_pct(
+                    row.get("PP_TOI_per_game"), row.get("Team_PP_Time_PG")),
                 "PPP last 10": _finite(row.get("PPP10_total")),
                 "Opp PK xGA/60": _finite(row.get("Opp_PK_xGA60")),
                 "PP matchup /100": _finite(row.get("PP_Matchup"))
