@@ -28,6 +28,7 @@ analyze_graded.py
 
 # local test / scratch scripts
 test_*.py
+!tests/test_team_pp_opportunities.py
 *_test.py
 *_sanity.py
 *_wombo.py

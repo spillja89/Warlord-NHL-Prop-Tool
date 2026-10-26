@@ -621,6 +621,57 @@ def _season_id_from_date(d: date) -> int:
     return int(f"{y}{y+1}")
 
 
+def fetch_team_pp_opportunities(sess: requests.Session, season_id: int,
+                                debug: bool = False) -> pd.DataFrame:
+    """Current-season NHL team PP opportunities and opponent PK exposure.
+
+    These are descriptive pregame inputs. A failed feed leaves them unavailable;
+    it must not alter the existing PP matchup score or player projections.
+    """
+    columns = ["Team", "Team_PPO_PG", "Team_PP_Time_PG",
+               "Team_PPO_GP", "Team_PKO_PG", "Team_PK_Time_PG", "Team_PKO_GP"]
+    base = "https://api.nhle.com/stats/rest/en/team"
+    params = {
+        "cayenneExp": f"seasonId={int(season_id)} and gameTypeId=2",
+        "isAggregate": "false", "isGame": "false", "limit": -1, "start": 0,
+    }
+    try:
+        lookup_response = sess.get(base, timeout=REQUEST_TIMEOUT_SEC)
+        lookup_response.raise_for_status()
+        lookup = {int(row["id"]): norm_team(row["triCode"])
+                  for row in lookup_response.json().get("data", [])
+                  if row.get("id") is not None and row.get("triCode")}
+        reports = {}
+        for report in ("powerplay", "penaltykill"):
+            response = sess.get(f"{base}/{report}", params=params,
+                                timeout=REQUEST_TIMEOUT_SEC)
+            response.raise_for_status()
+            reports[report] = pd.DataFrame(response.json().get("data", []))
+        if not lookup or any(reports[name].empty for name in reports):
+            return pd.DataFrame(columns=columns)
+        pp = reports["powerplay"].copy()
+        pk = reports["penaltykill"].copy()
+        pp["Team"] = pd.to_numeric(pp["teamId"], errors="coerce").map(lookup)
+        pk["Team"] = pd.to_numeric(pk["teamId"], errors="coerce").map(lookup)
+        pp_out = pd.DataFrame({
+            "Team": pp["Team"],
+            "Team_PPO_PG": pd.to_numeric(pp["ppOpportunitiesPerGame"], errors="coerce"),
+            "Team_PP_Time_PG": pd.to_numeric(pp["ppTimeOnIcePerGame"], errors="coerce") / 60.0,
+            "Team_PPO_GP": pd.to_numeric(pp["gamesPlayed"], errors="coerce"),
+        })
+        pk_out = pd.DataFrame({
+            "Team": pk["Team"],
+            "Team_PKO_PG": pd.to_numeric(pk["timesShorthandedPerGame"], errors="coerce"),
+            "Team_PK_Time_PG": pd.to_numeric(pk["pkTimeOnIcePerGame"], errors="coerce") / 60.0,
+            "Team_PKO_GP": pd.to_numeric(pk["gamesPlayed"], errors="coerce"),
+        })
+        return pp_out.merge(pk_out, on="Team", how="outer").dropna(subset=["Team"])
+    except Exception as exc:
+        if debug:
+            print(f"[PPO] NHL team opportunity feed unavailable: {type(exc).__name__}: {exc}")
+        return pd.DataFrame(columns=columns)
+
+
 def fetch_pp_toi_from_nhle_stats(season_id: int, debug: bool = False) -> pd.DataFrame:
     """Fetch per-skater PP TOI totals from NHL stats REST API.
 
@@ -3820,6 +3871,34 @@ def build_tracker(today_local: date, debug: bool = False, api_key: str | None = 
             for c in ["Team_PP_xGF60", "Team_PP_GF60", "PP_Score", "Team_PK_xGA60", "Team_PK_GA60", "PK_Weak", "Opp_PK_xGA60", "Opp_PK_GA60", "Opp_PK_Weak"]:
                 sk[c] = np.nan
 
+        # Opportunity volume is distinct from PP/PK efficiency per 60. Keep
+        # this research view descriptive until team-game outcomes validate it.
+        opportunity_cols = ["Team_PPO_PG", "Team_PP_Time_PG", "Team_PPO_GP",
+                            "Opp_PKO_PG", "Opp_PK_Time_PG", "Opp_PKO_GP"]
+        team_opportunities = fetch_team_pp_opportunities(
+            sess, _season_id_from_date(today_local), debug=debug)
+        if not team_opportunities.empty:
+            sk = sk.merge(team_opportunities[["Team", "Team_PPO_PG",
+                                              "Team_PP_Time_PG", "Team_PPO_GP"]],
+                          on="Team", how="left")
+            opponent_opportunities = team_opportunities[["Team", "Team_PKO_PG",
+                                                        "Team_PK_Time_PG", "Team_PKO_GP"]].rename(
+                columns={"Team": "Opp", "Team_PKO_PG": "Opp_PKO_PG",
+                         "Team_PK_Time_PG": "Opp_PK_Time_PG",
+                         "Team_PKO_GP": "Opp_PKO_GP"})
+            sk = sk.merge(opponent_opportunities, on="Opp", how="left")
+        else:
+            for column in opportunity_cols:
+                sk[column] = np.nan
+        sk["PP_PPO_Blend_PG"] = (
+            pd.to_numeric(sk["Team_PPO_PG"], errors="coerce")
+            + pd.to_numeric(sk["Opp_PKO_PG"], errors="coerce")) / 2.0
+        sk["PP_Time_Blend_PG"] = (
+            pd.to_numeric(sk["Team_PP_Time_PG"], errors="coerce")
+            + pd.to_numeric(sk["Opp_PK_Time_PG"], errors="coerce")) / 2.0
+        sk["PPO_Source"] = np.where(sk["PP_PPO_Blend_PG"].notna(),
+                                    "NHL Stats · current season", "unavailable")
+
 
         # -------------------------------------------------
 
@@ -5040,6 +5119,15 @@ def build_tracker(today_local: date, debug: bool = False, api_key: str | None = 
         "PP_iXA60_Source": sk.get("PP_iXA60_Source"),
         "Team_PP_xGF60": sk.get("Team_PP_xGF60"),
         "Team_PP_GF60": sk.get("Team_PP_GF60"),
+        "Team_PPO_PG": sk.get("Team_PPO_PG"),
+        "Team_PP_Time_PG": sk.get("Team_PP_Time_PG"),
+        "Team_PPO_GP": sk.get("Team_PPO_GP"),
+        "Opp_PKO_PG": sk.get("Opp_PKO_PG"),
+        "Opp_PK_Time_PG": sk.get("Opp_PK_Time_PG"),
+        "Opp_PKO_GP": sk.get("Opp_PKO_GP"),
+        "PP_PPO_Blend_PG": sk.get("PP_PPO_Blend_PG"),
+        "PP_Time_Blend_PG": sk.get("PP_Time_Blend_PG"),
+        "PPO_Source": sk.get("PPO_Source"),
         "Opp_PK_xGA60": sk.get("Opp_PK_xGA60"),
         "Opp_PK_GA60": sk.get("Opp_PK_GA60"),
         "PP_Matchup": sk.get("PP_Matchup"),

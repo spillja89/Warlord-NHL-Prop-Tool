@@ -6045,21 +6045,39 @@ elif page == "Power Play":
         matchups = slate_team_matchup_rows(current_teams, df_f.get("Game", pd.Series(dtype=str)).dropna())
         if matchups:
             ranks = power_play_team_ranks(current_teams)
+            tracker_team_rows = (df_f.drop_duplicates("Team").set_index("Team")
+                                 if "Team" in df_f.columns else pd.DataFrame())
             for matchup in matchups:
                 attack_rank = ranks.get(matchup["Team"], {}).get("PP attack rank")
                 pk_rank = ranks.get(matchup["Opponent"], {}).get("PK matchup rank")
                 matchup["Team PP xGF rank"] = attack_rank
                 matchup["Opp PK xGA rank"] = pk_rank
+                team_row = (tracker_team_rows.loc[matchup["Team"]]
+                            if matchup["Team"] in tracker_team_rows.index else pd.Series(dtype=object))
+                for label, column in (("Team PPO/game", "Team_PPO_PG"),
+                                      ("Team PPO GP", "Team_PPO_GP"),
+                                      ("Opp shorthanded/game", "Opp_PKO_PG"),
+                                      ("Opp PK GP", "Opp_PKO_GP"),
+                                      ("PPO blend/game", "PP_PPO_Blend_PG"),
+                                      ("Team PP min/game", "Team_PP_Time_PG"),
+                                      ("Opp PK min/game", "Opp_PK_Time_PG"),
+                                      ("PP time blend/game", "PP_Time_Blend_PG")):
+                    matchup[label] = pd.to_numeric(team_row.get(column), errors="coerce")
                 team_matchup_by_team[matchup["Team"]] = matchup
             matchup_frame = pd.DataFrame(matchups)
             with st.expander("Team PP and opponent PK numbers"):
                 rank_by = st.selectbox("Sort team matchups by", (
+                    "PPO blend/game", "Team PPO/game", "Opp shorthanded/game",
+                    "PP time blend/game",
                     "Opp PK xGA/60", "Team PP xG-G/60", "Opp PK xGA-GA/60",
                     "Team PP xGF/60", "Team PP GF/60", "Opp PK GA/60",
                     "Opp GA/GP", "Opp 5v5 xGA/60", "Opp SOG against/GP"),
                     key="pp_team_matchup_sort")
                 matchup_frame = matchup_frame.sort_values(rank_by, ascending=False, na_position="last", kind="stable")
                 st.caption(f"{season} regular season · MoneyPuck updated {team_updated}. "
+                           "PPO is captured with the saved slate from NHL Stats; PPO blend averages "
+                           "team PPO/game and opponent times shorthanded/game. "
+                           "It is research context, not a tested chance of a PP point. "
                            "xG−G shows chances created versus goals scored; early samples can swing.")
                 st.dataframe(matchup_frame, hide_index=True, width="stretch", height=320)
             with st.expander("All teams · current-season PP and defense stats"):
@@ -6074,6 +6092,8 @@ elif page == "Power Play":
     pp_health = []
     for label, column in (("Player PP time/game", "PP_TOI_per_game"),
                           ("Weighted PP assists/60 (actual)", "PP_iXA60"),
+                          ("Team PPO/game", "Team_PPO_PG"),
+                          ("Opponent times shorthanded/game", "Opp_PKO_PG"),
                           ("Team PP xGF/60", "Team_PP_xGF60"),
                           ("Opponent PK xGA/60", "Opp_PK_xGA60"),
                           ("PP drought", "Drought_PPP"),
