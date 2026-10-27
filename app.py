@@ -791,7 +791,8 @@ def _priced_pool_table(cards: list[dict]) -> pd.DataFrame:
         move = max(qualified or card["moves"], key=lambda item: (
             int(item["wins"]) / int(item["picks"]) if int(item["picks"]) else -1,
             int(item["picks"]))) if card["moves"] else None
-        featured = bool(card.get("baseline_rule") and qualified)
+        points_tier = card.get("points_current_tier")
+        featured = bool(card.get("baseline_rule") and (qualified or points_tier))
         row = {
             "Player": card["player"], "Team": card["team"], "Game": card["game"],
             "Start (CT)": card.get("time") or "",
@@ -800,6 +801,7 @@ def _priced_pool_table(cards: list[dict]) -> pd.DataFrame:
             "Line": card["line"], "Over odds": int(card["odds"]),
             "Book": card["book"] or "", "Model conf": card.get("confidence"),
             "Frozen move conf": card.get("move_confidence") if has_points else None,
+            "Current Points tier": points_tier["kind"].title() if points_tier else "",
             "Book break-even %": round(card["book_prob"] * 100, 1) if card.get("book_prob") is not None else None,
             "Matrix": card.get("matrix") or "Unknown",
             "Featured": "Yes" if featured else "",
@@ -809,7 +811,7 @@ def _priced_pool_table(cards: list[dict]) -> pd.DataFrame:
             "Later record": f'{move["later_wins"]}/{move["later_picks"]}' if move and int(move["later_picks"]) else "",
             "Later %": round(100 * int(move["later_wins"]) / int(move["later_picks"]), 1)
             if move and int(move["later_picks"]) else None,
-            "Reason": "Active roster · odds only; model history missing" if card.get("roster_watch") else "Featured" if featured else (
+            "Reason": "Active roster · odds only; model history missing" if card.get("roster_watch") else "Current-season Points screen" if points_tier else "Featured" if featured else (
                 "Below current baseline" if not card.get("baseline_rule") else
                 (card.get("move_block_reason") or "No frozen move fired") if not card["moves"] else
                 "Fired move below 50%"),
@@ -828,6 +830,7 @@ def _priced_pool_table(cards: list[dict]) -> pd.DataFrame:
                "Fired move", "Move record", "Move %", "Later record", "Later %", "Reason"]
     if has_points:
         columns.insert(columns.index("Model conf") + 1, "Frozen move conf")
+        columns.insert(columns.index("Model conf"), "Current Points tier")
     if has_goal_projection:
         columns[10:10] = ["Tonight xG · research", "Tonight 1+ % · research"]
     if has_position_data:
@@ -859,12 +862,16 @@ def _render_class_shortlist(frame: pd.DataFrame, role: str,
         st.info("No posted player line and price for this class yet.")
         return
     watch = unfeatured_baselines(priced[role])
+    if role == "Tank":
+        watch = [card for card in watch if not card.get("points_current_tier")]
     if role == "Carry":
         st.caption("Each Goal card has at least one current-season named attack. Its move record is the graded 2026–27 sample; the full priced tracker below includes players without a move.")
         st.html(render_warlords({"Carry": goal_cards}, limit=len(goal_cards),
                                 roles=("Carry",), show_hero=False))
         st.caption("Tonight research projection is a separate matchup-adjusted estimate. It is not the historical move % and does not affect Goal card selection. It is being graded before use as a betting edge.")
     elif featured[role]:
+        if role == "Tank":
+            st.caption("Points 0.5 cards use the 2026–27 Base, Heavy, and Special screens. Their dated hit rates are research results; older named move records remain in each card's fired-move list. Points 1.5 keeps its separate move tree.")
         st.html(render_warlords(featured, limit=len(featured[role]), roles=(role,), show_hero=False))
         st.caption("Tonight research projections appear beneath book break-even on cards after a fresh run. They use a separate matchup adjustment, do not change moves or ranks, and need forward grading before they can be treated as betting probabilities.")
     else:
@@ -5139,10 +5146,8 @@ if page == "⚔️ Warlords of the Night":
     priced_total = sum(len(cards) for cards in priced_boards.values())
     featured_total = sum(len(cards) for cards in featured_boards.values())
     goal_cards = goal_display_cards(priced_boards["Carry"])
-    points_baseline_cards = [
-        card for card in unfeatured_baselines(priced_boards["Tank"])
-        if card.get("line") == 0.5 and (card.get("confidence") or 0) >= 78
-    ]
+    points_tier_cards = [card for card in featured_boards["Tank"]
+                         if card.get("points_current_tier")]
     display_boards = {**featured_boards, "Carry": goal_cards}
     if slate_sort != "Top ranked":
         display_boards = _sort_slate_boards(display_boards, slate_sort, starts_by_game)
@@ -5151,8 +5156,8 @@ if page == "⚔️ Warlords of the Night":
                f"{night_df['Team'].nunique() if 'Team' in night_df else 0} teams · "
                f"{len(night_df)} roster skaters · {priced_total} priced prop entries · "
                f"{len(goal_cards)} named Goal attacks · "
-               f"{featured_total} player props have a 50%+ historical move · "
-               f"{len(points_baseline_cards)} additional Green 0.5 Points baseline candidates. "
+               f"{featured_total} featured prop cards, including current-season Points screens · "
+               f"{len(points_tier_cards)} current-season Points 0.5 tier cards. "
                "Every priced entry is in the complete slate below.")
     if display_total:
         st.html(render_warlords(display_boards, max(map(len, display_boards.values())), _load_svg_icon))
@@ -5164,29 +5169,13 @@ if page == "⚔️ Warlords of the Night":
                       else f"Cards are sorted by {slate_sort.lower()}; same-game move ranks stay intact")
         st.caption(f"{len(goal_cards)} named Goal attack cards. "
                    f"{len(featured_boards['Carry'])} goals have a 50%+ current-season move; "
-                   f"{featured_total-len(featured_boards['Carry'])} other prop entries have a 50%+ move. "
+                   f"{featured_total-len(featured_boards['Carry'])} other featured prop cards include current-season Points screens. "
                    f"{order_note}. Move histories are not forecasts.")
     else:
         st.info(f"{priced_total} priced prop entries. No player currently clears both the baseline and a 50%+ historical move; see the complete slate below.")
 
-    if points_baseline_cards:
-        st.subheader(f"🛡️ Green Points baseline · {len(points_baseline_cards)} additional candidates")
-        st.caption(
-            "Points over 0.5 · Matrix Green · current confidence 78+. "
-            "Across nine graded 2026–27 slates through October 26, this full baseline hit "
-            "51/76 (67.1%) against 60.5% average book break-even. These players do not "
-            "have a qualifying named Points move; the historical baseline rate is not "
-            "tonight's probability."
-        )
-        baseline_table = _priced_pool_table(points_baseline_cards)
-        st.dataframe(
-            baseline_table[[
-                "Player", "Team", "Game", "Start (CT)", "Line", "Over odds",
-                "Book", "Book break-even %", "Model conf", "Lineup", "Opp goalie",
-            ]],
-            hide_index=True,
-            width="stretch",
-        )
+    if points_tier_cards:
+        st.caption("Points 0.5 current-season screens through Oct 26: Base 51/76, Heavy (PP minutes/game ≥3.5) 39/52, Special (last 10 assists ≥8) 27/33. Special takes display priority when both fire. These nested records overlap and are not tonight's probabilities; older named moves remain in card details.")
 
     with st.expander(f"Complete priced slate · {priced_total} prop entries", expanded=True):
         st.caption("Every player's displayed priced prop appears here. Book break-even % comes from the displayed odds; Move % and Later % are historical results for the named rule, not forecasts. Active roster players without model history are marked odds only and have no tested move. NHL roster membership does not confirm tonight's dressed lineup.")
