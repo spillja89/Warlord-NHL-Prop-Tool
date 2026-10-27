@@ -12,6 +12,8 @@ import requests
 COLUMNS = ("Game", "Player", "Team", "Opponent", "PPP line", "Over odds",
            "Book", "Book break-even %", "PP unit", "PP TOI/game",
            "Team PP time share %",
+           "5v5 OZ starts %", "5v5 OZ starts", "5v5 DZ starts",
+           "Team EV OZ time %", "Team PP OZ time %",
            "Opp PK xGA/60", "PP matchup /100", "PPP last 10",
            "PP on-ice xG/game", "PP shooter xG/game", "Equal-weight PP context",
            "Tonight PPP mean", "Tonight PPP 1+ %", "Tonight PPP status",
@@ -150,6 +152,11 @@ def priced_ppp_quotes(frame: pd.DataFrame, *, line_filter: float | None = None) 
                 "PP TOI/game": _finite(row.get("PP_TOI_per_game")),
                 "Team PP time share %": team_pp_time_share_pct(
                     row.get("PP_TOI_per_game"), row.get("Team_PP_Time_PG")),
+                "5v5 OZ starts %": _finite(row.get("EV5_OZS_Pct")),
+                "5v5 OZ starts": _finite(row.get("EV5_OZ_Starts")),
+                "5v5 DZ starts": _finite(row.get("EV5_DZ_Starts")),
+                "Team EV OZ time %": _finite(row.get("Team_EV_OZ_Time_Pct")),
+                "Team PP OZ time %": _finite(row.get("Team_PP_OZ_Time_Pct")),
                 "PPP last 10": _finite(row.get("PPP10_total")),
                 "Opp PK xGA/60": _finite(row.get("Opp_PK_xGA60")),
                 "PP matchup /100": _finite(row.get("PP_Matchup"))
@@ -174,4 +181,3 @@ def priced_ppp_quotes(frame: pd.DataFrame, *, line_filter: float | None = None) 
         result = result.sort_values(["Game", "Player", "PPP line"],
                                     kind="stable").reset_index(drop=True)
     return result
-
