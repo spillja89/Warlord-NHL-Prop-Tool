@@ -5139,6 +5139,10 @@ if page == "⚔️ Warlords of the Night":
     priced_total = sum(len(cards) for cards in priced_boards.values())
     featured_total = sum(len(cards) for cards in featured_boards.values())
     goal_cards = goal_display_cards(priced_boards["Carry"])
+    points_baseline_cards = [
+        card for card in unfeatured_baselines(priced_boards["Tank"])
+        if card.get("line") == 0.5 and (card.get("confidence") or 0) >= 78
+    ]
     display_boards = {**featured_boards, "Carry": goal_cards}
     if slate_sort != "Top ranked":
         display_boards = _sort_slate_boards(display_boards, slate_sort, starts_by_game)
@@ -5147,7 +5151,8 @@ if page == "⚔️ Warlords of the Night":
                f"{night_df['Team'].nunique() if 'Team' in night_df else 0} teams · "
                f"{len(night_df)} roster skaters · {priced_total} priced prop entries · "
                f"{len(goal_cards)} named Goal attacks · "
-               f"{featured_total} player props have a 50%+ historical move. "
+               f"{featured_total} player props have a 50%+ historical move · "
+               f"{len(points_baseline_cards)} additional Green 0.5 Points baseline candidates. "
                "Every priced entry is in the complete slate below.")
     if display_total:
         st.html(render_warlords(display_boards, max(map(len, display_boards.values())), _load_svg_icon))
@@ -5163,6 +5168,25 @@ if page == "⚔️ Warlords of the Night":
                    f"{order_note}. Move histories are not forecasts.")
     else:
         st.info(f"{priced_total} priced prop entries. No player currently clears both the baseline and a 50%+ historical move; see the complete slate below.")
+
+    if points_baseline_cards:
+        st.subheader(f"🛡️ Green Points baseline · {len(points_baseline_cards)} additional candidates")
+        st.caption(
+            "Points over 0.5 · Matrix Green · current confidence 78+. "
+            "Across nine graded 2026–27 slates through October 26, this full baseline hit "
+            "51/76 (67.1%) against 60.5% average book break-even. These players do not "
+            "have a qualifying named Points move; the historical baseline rate is not "
+            "tonight's probability."
+        )
+        baseline_table = _priced_pool_table(points_baseline_cards)
+        st.dataframe(
+            baseline_table[[
+                "Player", "Team", "Game", "Start (CT)", "Line", "Over odds",
+                "Book", "Book break-even %", "Model conf", "Lineup", "Opp goalie",
+            ]],
+            hide_index=True,
+            width="stretch",
+        )
 
     with st.expander(f"Complete priced slate · {priced_total} prop entries", expanded=True):
         st.caption("Every player's displayed priced prop appears here. Book break-even % comes from the displayed odds; Move % and Later % are historical results for the named rule, not forecasts. Active roster players without model history are marked odds only and have no tested move. NHL roster membership does not confirm tonight's dressed lineup.")
