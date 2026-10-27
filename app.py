@@ -784,6 +784,7 @@ def _priced_pool_table(cards: list[dict]) -> pd.DataFrame:
     rows = []
     has_position_data = any(card.get("position_sog") for card in cards)
     has_goal_projection = any(card.get("market") == "Goal" for card in cards)
+    has_points = any(card.get("market") == "Points" for card in cards)
     for card in cards:
         qualified = [move for move in card["moves"] if int(move["picks"]) > 0
                      and int(move["wins"]) / int(move["picks"]) >= 0.5]
@@ -798,6 +799,7 @@ def _priced_pool_table(cards: list[dict]) -> pd.DataFrame:
             "Opp goalie": card.get("goalie_status") or "Unknown",
             "Line": card["line"], "Over odds": int(card["odds"]),
             "Book": card["book"] or "", "Model conf": card.get("confidence"),
+            "Frozen move conf": card.get("move_confidence") if has_points else None,
             "Book break-even %": round(card["book_prob"] * 100, 1) if card.get("book_prob") is not None else None,
             "Matrix": card.get("matrix") or "Unknown",
             "Featured": "Yes" if featured else "",
@@ -824,6 +826,8 @@ def _priced_pool_table(cards: list[dict]) -> pd.DataFrame:
     columns = ["Player", "Team", "Game", "Start (CT)", "Lineup", "Opp goalie", "Line", "Over odds",
                "Book", "Book break-even %", "Model conf", "Matrix", "Featured",
                "Fired move", "Move record", "Move %", "Later record", "Later %", "Reason"]
+    if has_points:
+        columns.insert(columns.index("Model conf") + 1, "Frozen move conf")
     if has_goal_projection:
         columns[10:10] = ["Tonight xG · research", "Tonight 1+ % · research"]
     if has_position_data:
@@ -871,11 +875,18 @@ def _render_class_shortlist(frame: pd.DataFrame, role: str,
     elif role == "Jungle" and position_error:
         st.caption(f"Positional SOG matchup feed unavailable ({position_error}); saved SOG cards and moves are unaffected.")
     if watch and role != "Carry":
-        with st.expander(f"Green baseline, no 50%+ move ({len(watch)})"):
-            watch_cols = ["Player", "Team", "Game", "Line", "Over odds", "Book",
-                          "Book break-even %", "Model conf", "Fired move", "Move %", "Reason"]
+        watch_cols = ["Player", "Team", "Game", "Line", "Over odds", "Book",
+                      "Book break-even %", "Model conf", "Fired move", "Move %", "Reason"]
+        if role == "Tank":
+            watch_cols.insert(watch_cols.index("Model conf") + 1, "Frozen move conf")
+            st.subheader(f"Green Points candidates · {len(watch)} without a 50%+ named move")
+            st.caption("Current Points confidence ranks these candidates. Frozen move confidence applies only to the older historical move rules. The 0.5-point Green baseline starts at 78; its early current-season results are research, not a confirmed edge.")
             st.dataframe(_priced_pool_table(watch)[watch_cols], hide_index=True,
                          use_container_width=True)
+        else:
+            with st.expander(f"Green baseline, no 50%+ move ({len(watch)})"):
+                st.dataframe(_priced_pool_table(watch)[watch_cols], hide_index=True,
+                             use_container_width=True)
     with st.expander(f"Every priced {role} player ({total})", expanded=expand_priced):
         st.dataframe(_priced_pool_table(priced[role]), hide_index=True, use_container_width=True)
 
