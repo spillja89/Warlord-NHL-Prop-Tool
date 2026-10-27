@@ -672,6 +672,67 @@ def fetch_team_pp_opportunities(sess: requests.Session, season_id: int,
         return pd.DataFrame(columns=columns)
 
 
+def fetch_team_edge_zone_time(sess: requests.Session, season_id: int,
+                              teams: List[str], debug: bool = False) -> pd.DataFrame:
+    """NHL EDGE offensive-zone time by strength for today's teams.
+
+    EDGE calls its `es` split even strength, which is not guaranteed to be
+    strictly 5-on-5. Percentages are descriptive and do not affect the model.
+    """
+    columns = ["Team", "Team_EV_OZ_Time_Pct", "Team_EV_OZ_Rank",
+               "Team_PP_OZ_Time_Pct", "Team_PP_OZ_Rank",
+               "Team_PK_DZ_Time_Pct"]
+    wanted = {norm_team(team) for team in teams if team}
+    if not wanted:
+        return pd.DataFrame(columns=columns)
+    try:
+        response = sess.get("https://api.nhle.com/stats/rest/en/team",
+                            timeout=REQUEST_TIMEOUT_SEC)
+        response.raise_for_status()
+        team_ids = {norm_team(row["triCode"]): int(row["id"])
+                    for row in response.json().get("data", [])
+                    if row.get("id") is not None and row.get("triCode")}
+    except Exception as exc:
+        if debug:
+            print(f"[EDGE OZ] team lookup unavailable: {type(exc).__name__}: {exc}")
+        return pd.DataFrame(columns=columns)
+
+    def one_team(team: str) -> dict:
+        result = {column: np.nan for column in columns}
+        result["Team"] = team
+        team_id = team_ids.get(team)
+        if team_id is None:
+            return result
+        try:
+            url = (f"https://api-web.nhle.com/v1/edge/team-zone-time-details/"
+                   f"{team_id}/{int(season_id)}/2")
+            edge = sess.get(url, headers={"Referer": "https://www.nhl.com/"},
+                            timeout=REQUEST_TIMEOUT_SEC)
+            edge.raise_for_status()
+            by_strength = {row.get("strengthCode"): row
+                           for row in edge.json().get("zoneTimeDetails", [])}
+            for code, prefix in (("es", "EV"), ("pp", "PP")):
+                row = by_strength.get(code, {})
+                value = pd.to_numeric(row.get("offensiveZonePctg"), errors="coerce")
+                if pd.notna(value) and 0 <= value <= 1:
+                    result[f"Team_{prefix}_OZ_Time_Pct"] = round(float(value) * 100, 1)
+                rank = pd.to_numeric(row.get("offensiveZoneRank"), errors="coerce")
+                if pd.notna(rank):
+                    result[f"Team_{prefix}_OZ_Rank"] = int(rank)
+            pk = by_strength.get("pk", {})
+            dz = pd.to_numeric(pk.get("defensiveZonePctg"), errors="coerce")
+            if pd.notna(dz) and 0 <= dz <= 1:
+                result["Team_PK_DZ_Time_Pct"] = round(float(dz) * 100, 1)
+        except Exception as exc:
+            if debug:
+                print(f"[EDGE OZ] {team} unavailable: {type(exc).__name__}: {exc}")
+        return result
+
+    with ThreadPoolExecutor(max_workers=min(8, len(wanted))) as pool:
+        rows = list(pool.map(one_team, sorted(wanted)))
+    return pd.DataFrame(rows, columns=columns)
+
+
 def fetch_pp_toi_from_nhle_stats(season_id: int, debug: bool = False) -> pd.DataFrame:
     """Fetch per-skater PP TOI totals from NHL stats REST API.
 
@@ -1821,6 +1882,13 @@ def normalize_skaters_5v5(df: pd.DataFrame, debug: bool = False) -> pd.DataFrame
                                 pd.to_numeric(out[col_gp], errors="coerce").replace(0, np.nan)) if col_gp else np.nan
     out["i5v5_SOG60"] = per60(pd.to_numeric(out[col_sog], errors="coerce"), out["icetime"]) if col_sog else np.nan
     out["i5v5_xG60"] = per60(pd.to_numeric(out[col_ixg], errors="coerce"), out["icetime"]) if col_ixg else np.nan
+    col_oz = find_col(out, ["I_F_oZoneShiftStarts"])
+    col_dz = find_col(out, ["I_F_dZoneShiftStarts"])
+    out["EV5_OZ_Starts"] = pd.to_numeric(out[col_oz], errors="coerce") if col_oz else np.nan
+    out["EV5_DZ_Starts"] = pd.to_numeric(out[col_dz], errors="coerce") if col_dz else np.nan
+    starts = out["EV5_OZ_Starts"] + out["EV5_DZ_Starts"]
+    out["EV5_OZS_Pct"] = (100 * out["EV5_OZ_Starts"] /
+                           starts.replace(0, np.nan)).round(1)
     if col_sog:
         sog = pd.to_numeric(out[col_sog], errors="coerce")
         team_sog = sog.groupby(out["Team"]).transform("sum").replace(0, np.nan)
@@ -1828,7 +1896,7 @@ def normalize_skaters_5v5(df: pd.DataFrame, debug: bool = False) -> pd.DataFrame
     else:
         out["Player_5v5_SOG_Share"] = np.nan
 
-    keep = ["playerId", "Team", "i5v5_points60", "i5v5_primaryAssists60", "i5v5_shotAssists60", "i5v5_iCF60", "i5v5_SOG60", "i5v5_xG60", "EV5_TOI_per_game", "Player_5v5_SOG_Share"]
+    keep = ["playerId", "Team", "i5v5_points60", "i5v5_primaryAssists60", "i5v5_shotAssists60", "i5v5_iCF60", "i5v5_SOG60", "i5v5_xG60", "EV5_TOI_per_game", "Player_5v5_SOG_Share", "EV5_OZ_Starts", "EV5_DZ_Starts", "EV5_OZS_Pct"]
     return out[keep].copy()
 
 
@@ -3899,6 +3967,20 @@ def build_tracker(today_local: date, debug: bool = False, api_key: str | None = 
         sk["PPO_Source"] = np.where(sk["PP_PPO_Blend_PG"].notna(),
                                     "NHL Stats · current season", "unavailable")
 
+        # NHL EDGE zone time is a separate observed context layer. Its `es`
+        # split is even strength, so never label it as exact 5-on-5 time.
+        edge_columns = ["Team_EV_OZ_Time_Pct", "Team_EV_OZ_Rank",
+                        "Team_PP_OZ_Time_Pct", "Team_PP_OZ_Rank",
+                        "Team_PK_DZ_Time_Pct"]
+        edge_zone = fetch_team_edge_zone_time(
+            sess, _season_id_from_date(today_local), sk["Team"].dropna().unique().tolist(),
+            debug=debug)
+        if not edge_zone.empty:
+            sk = sk.merge(edge_zone, on="Team", how="left")
+        else:
+            for column in edge_columns:
+                sk[column] = np.nan
+
 
         # -------------------------------------------------
 
@@ -5102,6 +5184,9 @@ def build_tracker(today_local: date, debug: bool = False, api_key: str | None = 
         "PP_TOI": sk.get("PP_TOI"),
         "PP_TOI_min": sk.get("PP_TOI_min"),
         "PP_TOI_per_game": sk.get("PP_TOI_per_game"),
+        "EV5_OZ_Starts": sk.get("EV5_OZ_Starts"),
+        "EV5_DZ_Starts": sk.get("EV5_DZ_Starts"),
+        "EV5_OZS_Pct": sk.get("EV5_OZS_Pct"),
         "PP_TOI_Share": sk.get("PP_TOI_Share"),
         "PP_TOI_Pct_Game": sk.get("PP_TOI_Pct_Game"),
         "PP_TOI_Pct": sk.get("PP_TOI_Pct"),
@@ -5128,6 +5213,11 @@ def build_tracker(today_local: date, debug: bool = False, api_key: str | None = 
         "PP_PPO_Blend_PG": sk.get("PP_PPO_Blend_PG"),
         "PP_Time_Blend_PG": sk.get("PP_Time_Blend_PG"),
         "PPO_Source": sk.get("PPO_Source"),
+        "Team_EV_OZ_Time_Pct": sk.get("Team_EV_OZ_Time_Pct"),
+        "Team_EV_OZ_Rank": sk.get("Team_EV_OZ_Rank"),
+        "Team_PP_OZ_Time_Pct": sk.get("Team_PP_OZ_Time_Pct"),
+        "Team_PP_OZ_Rank": sk.get("Team_PP_OZ_Rank"),
+        "Team_PK_DZ_Time_Pct": sk.get("Team_PK_DZ_Time_Pct"),
         "Opp_PK_xGA60": sk.get("Opp_PK_xGA60"),
         "Opp_PK_GA60": sk.get("Opp_PK_GA60"),
         "PP_Matchup": sk.get("PP_Matchup"),
@@ -5730,15 +5820,3 @@ def main() -> None:
 if __name__ == "__main__":
 
     main()
-
-
-
-
-
-
-
-
-
-
-
-
