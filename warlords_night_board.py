@@ -99,7 +99,7 @@ def _baseline_rule(row, market, line):
     if market == "Assists" and line == 0.5:
         return "Green + Assists 0.5"
     if market == "Points" and line in (0.5, 1.5):
-        threshold = 80 if line == 0.5 else 75
+        threshold = 78 if line == 0.5 else 75
         if _number(row.get("Conf_Points")) is not None and _number(row.get("Conf_Points")) >= threshold:
             return f"Green + Points {line:g} + Conf_Points ≥ {threshold}"
     if market == "SOG" and line in (2.5, 3.5):
@@ -221,6 +221,12 @@ def rank_priced_slate(frame: pd.DataFrame) -> dict[str, list[dict]]:
             matrix = str(_value(row, f"Matrix_{market}") or "Unknown").strip()
             move_block_reason = ("No current-season Goal attack fired"
                                  if market == "Goal" and baseline and not moves else None)
+            move_confidence = (_number(row.get("Conf_Points_Move"))
+                               if market == "Points" else None)
+            if market == "Points" and baseline and not moves and move_confidence is not None:
+                move_threshold = 80 if line == 0.5 else 75
+                if move_confidence < move_threshold:
+                    move_block_reason = f"Frozen move score below {move_threshold}"
             candidate = {
                 "player": player, "team": team,
                 "talent_tier": str(_value(row, "Talent_Tier") or "NONE").strip().upper(),
@@ -244,7 +250,8 @@ def rank_priced_slate(frame: pd.DataFrame) -> dict[str, list[dict]]:
                 row.get(f"Tonight_{market}_Version") == "2026-10-19-research-v3" else None,
                 "tonight_status": str(_value(row, f"Tonight_{market}_Status") or ""),
                 "team_pp_xgf60": _number(row.get("Team_PP_xGF60")) if market == "Assists" else None,
-                "confidence": confidence, "matrix": matrix,
+                "confidence": confidence, "move_confidence": move_confidence,
+                "matrix": matrix,
                 "baseline_rule": baseline, "baseline_only": bool(baseline and not best),
                 "move_block_reason": move_block_reason,
                 "goalie": str(_value(row, "Opp_Goalie") or ""),
