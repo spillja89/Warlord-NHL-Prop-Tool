@@ -3908,6 +3908,12 @@ def build_tracker(today_local: date, debug: bool = False, api_key: str | None = 
         teams_raw = load_moneypuck_best_effort(sess, "teams", teams_playing, today_local)
         team_stats_year = teams_raw.attrs.get("moneypuck_start_year")
         t5 = normalize_teams_5v5(teams_raw, debug=debug)
+        required_5v5 = t5.set_index("Team").reindex(sorted(teams_playing))[
+            ["opp_5v5_xGA60", "opp_5v5_HDCA60", "team_5v5_xGF60"]
+        ]
+        if required_5v5.isna().any().any():
+            missing = required_5v5.index[required_5v5.isna().any(axis=1)].tolist()
+            raise ValueError(f"MoneyPuck 5v5 team context is incomplete for {missing}")
         sk["League_5v5_xGA60"] = pd.to_numeric(
             t5.get("opp_5v5_xGA60"), errors="coerce").dropna().mean()
         team_name_col = find_col(teams_raw, ["team", "teamabbrev", "teamAbbrev", "team_abbrev"])
@@ -4207,14 +4213,9 @@ def build_tracker(today_local: date, debug: bool = False, api_key: str | None = 
         sk = sk.merge(t5_team, on="Team", how="left")
 
     except Exception as e:
-        print(f"WARNING: Opponent/team 5v5 unavailable; filling neutral. ({type(e).__name__}: {e})")
-        sk["opp_5v5_xGA60"] = np.nan
-        sk["opp_5v5_HDCA60"] = np.nan
-        sk["opp_5v5_SlotSA60"] = np.nan
-        sk["team_5v5_xGF60"] = np.nan
-        sk["team_5v5_SF60"] = np.nan
-        sk["team_5v5_SF60_pct"] = np.nan
-        sk["team_5v5_xGF60_pct"] = np.nan
+        raise RuntimeError(
+            "Current MoneyPuck team context is unavailable; the prior verified tracker was kept"
+        ) from e
 
     for c in ["team_5v5_xGF60", "team_5v5_SF60"]:
         if c not in sk.columns:
