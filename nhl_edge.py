@@ -680,6 +680,7 @@ def fetch_team_edge_zone_time(sess: requests.Session, season_id: int,
     strictly 5-on-5. Percentages are descriptive and do not affect the model.
     """
     columns = ["Team", "Team_EV_OZ_Time_Pct", "Team_EV_OZ_Rank",
+               "Team_EV_DZ_Time_Pct",
                "Team_PP_OZ_Time_Pct", "Team_PP_OZ_Rank",
                "Team_PK_DZ_Time_Pct"]
     wanted = {norm_team(team) for team in teams if team}
@@ -719,6 +720,10 @@ def fetch_team_edge_zone_time(sess: requests.Session, season_id: int,
                 rank = pd.to_numeric(row.get("offensiveZoneRank"), errors="coerce")
                 if pd.notna(rank):
                     result[f"Team_{prefix}_OZ_Rank"] = int(rank)
+            ev = by_strength.get("es", {})
+            ev_dz = pd.to_numeric(ev.get("defensiveZonePctg"), errors="coerce")
+            if pd.notna(ev_dz) and 0 <= ev_dz <= 1:
+                result["Team_EV_DZ_Time_Pct"] = round(float(ev_dz) * 100, 1)
             pk = by_strength.get("pk", {})
             dz = pd.to_numeric(pk.get("defensiveZonePctg"), errors="coerce")
             if pd.notna(dz) and 0 <= dz <= 1:
@@ -3970,15 +3975,24 @@ def build_tracker(today_local: date, debug: bool = False, api_key: str | None = 
         # NHL EDGE zone time is a separate observed context layer. Its `es`
         # split is even strength, so never label it as exact 5-on-5 time.
         edge_columns = ["Team_EV_OZ_Time_Pct", "Team_EV_OZ_Rank",
+                        "Team_EV_DZ_Time_Pct",
                         "Team_PP_OZ_Time_Pct", "Team_PP_OZ_Rank",
                         "Team_PK_DZ_Time_Pct"]
+        opponent_edge_columns = ["Opp_EV_DZ_Time_Pct", "Opp_PK_DZ_Time_Pct"]
+        zone_teams = pd.concat([sk["Team"], sk["Opp"]], ignore_index=True).dropna().unique().tolist()
         edge_zone = fetch_team_edge_zone_time(
-            sess, _season_id_from_date(today_local), sk["Team"].dropna().unique().tolist(),
+            sess, _season_id_from_date(today_local), zone_teams,
             debug=debug)
         if not edge_zone.empty:
             sk = sk.merge(edge_zone, on="Team", how="left")
+            opponent_edge = edge_zone[["Team", "Team_EV_DZ_Time_Pct",
+                                       "Team_PK_DZ_Time_Pct"]].rename(columns={
+                "Team": "Opp", "Team_EV_DZ_Time_Pct": "Opp_EV_DZ_Time_Pct",
+                "Team_PK_DZ_Time_Pct": "Opp_PK_DZ_Time_Pct",
+            })
+            sk = sk.merge(opponent_edge, on="Opp", how="left")
         else:
-            for column in edge_columns:
+            for column in edge_columns + opponent_edge_columns:
                 sk[column] = np.nan
 
 
@@ -5215,9 +5229,12 @@ def build_tracker(today_local: date, debug: bool = False, api_key: str | None = 
         "PPO_Source": sk.get("PPO_Source"),
         "Team_EV_OZ_Time_Pct": sk.get("Team_EV_OZ_Time_Pct"),
         "Team_EV_OZ_Rank": sk.get("Team_EV_OZ_Rank"),
+        "Team_EV_DZ_Time_Pct": sk.get("Team_EV_DZ_Time_Pct"),
         "Team_PP_OZ_Time_Pct": sk.get("Team_PP_OZ_Time_Pct"),
         "Team_PP_OZ_Rank": sk.get("Team_PP_OZ_Rank"),
         "Team_PK_DZ_Time_Pct": sk.get("Team_PK_DZ_Time_Pct"),
+        "Opp_EV_DZ_Time_Pct": sk.get("Opp_EV_DZ_Time_Pct"),
+        "Opp_PK_DZ_Time_Pct": sk.get("Opp_PK_DZ_Time_Pct"),
         "Opp_PK_xGA60": sk.get("Opp_PK_xGA60"),
         "Opp_PK_GA60": sk.get("Opp_PK_GA60"),
         "PP_Matchup": sk.get("PP_Matchup"),
