@@ -5742,9 +5742,12 @@ elif page == "Assists":
         "Tier_Tag",
     
         "Green",
-                 "Assists_Odds_Over",
+        "Assists_Line", "Assists_Odds_Over",
         "Assists_Book",
-        "Conf_Assists", "Matrix_Assists", "Assists_Line","iXA%",  "PP_iXA60","PPP10_total",
+        "Conf_Assists", "Matrix_Assists",
+        "Assists_mu", "Tonight_Assists_mu", "Tonight_Assists_over_pct",
+        "Tonight_Assists_Status",
+        "iXA%", "PP_iXA60", "PPP10_total",
         "i5v5_primaryAssists60", "i5v5_shotAssists60", "Assist_Volume_Source",
         "Drought_PPP",
 "PP_Matchup", "PP_TOI_Pct_Game", 
@@ -5779,6 +5782,7 @@ elif page == "Assists":
 
     # Full table (Assists)
     show_table(df_a, assists_cols, "Assists View")
+    st.caption("Assists_mu is the existing model baseline. Tonight_Assists_mu and Tonight_Assists_over_pct are separate matchup-adjusted research projections for the posted line; they are being graded and do not change moves or ranks.")
     st.caption("5v5 primary assists/60 are recorded first assists from MoneyPuck. Its current skater file has no 5v5 shot-assist field, so that column stays blank and assist volume uses NHL last-10 recorded assists when needed. These are different stats, not expected assists or predicted hit rates.")
 
 # =========================
