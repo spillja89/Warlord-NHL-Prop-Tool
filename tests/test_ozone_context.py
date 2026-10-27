@@ -22,6 +22,7 @@ class _Session:
             return _Response({"data": [{"id": 14, "triCode": "TBL"}]})
         return _Response({"zoneTimeDetails": [
             {"strengthCode": "es", "offensiveZonePctg": 0.4194166,
+             "defensiveZonePctg": 0.3914216,
              "offensiveZoneRank": 7},
             {"strengthCode": "pp", "offensiveZonePctg": 0.5686933,
              "offensiveZoneRank": 23},
@@ -34,6 +35,7 @@ class OzoneContextTests(unittest.TestCase):
         result = fetch_team_edge_zone_time(_Session(), 20262027, ["TBL"])
         row = result.iloc[0]
         self.assertEqual(row["Team_EV_OZ_Time_Pct"], 41.9)
+        self.assertEqual(row["Team_EV_DZ_Time_Pct"], 39.1)
         self.assertEqual(row["Team_PP_OZ_Time_Pct"], 56.9)
         self.assertEqual(row["Team_PP_OZ_Rank"], 23)
         self.assertEqual(row["Team_PK_DZ_Time_Pct"], 59.9)
