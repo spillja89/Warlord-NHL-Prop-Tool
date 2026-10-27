@@ -6061,7 +6061,11 @@ elif page == "Power Play":
                                       ("PPO blend/game", "PP_PPO_Blend_PG"),
                                       ("Team PP min/game", "Team_PP_Time_PG"),
                                       ("Opp PK min/game", "Opp_PK_Time_PG"),
-                                      ("PP time blend/game", "PP_Time_Blend_PG")):
+                                      ("PP time blend/game", "PP_Time_Blend_PG"),
+                                      ("Team EV OZ time %", "Team_EV_OZ_Time_Pct"),
+                                      ("Team EV OZ rank", "Team_EV_OZ_Rank"),
+                                      ("Team PP OZ time %", "Team_PP_OZ_Time_Pct"),
+                                      ("Team PP OZ rank", "Team_PP_OZ_Rank")):
                     matchup[label] = pd.to_numeric(team_row.get(column), errors="coerce")
                 team_matchup_by_team[matchup["Team"]] = matchup
             matchup_frame = pd.DataFrame(matchups)
@@ -6069,6 +6073,7 @@ elif page == "Power Play":
                 rank_by = st.selectbox("Sort team matchups by", (
                     "PPO blend/game", "Team PPO/game", "Opp shorthanded/game",
                     "PP time blend/game",
+                    "Team PP OZ time %", "Team EV OZ time %",
                     "Opp PK xGA/60", "Team PP xG-G/60", "Opp PK xGA-GA/60",
                     "Team PP xGF/60", "Team PP GF/60", "Opp PK GA/60",
                     "Opp GA/GP", "Opp 5v5 xGA/60", "Opp SOG against/GP"),
@@ -6078,6 +6083,7 @@ elif page == "Power Play":
                            "PPO is captured with the saved slate from NHL Stats; PPO blend averages "
                            "team PPO/game and opponent times shorthanded/game. "
                            "It is research context, not a tested chance of a PP point. "
+                           "NHL EDGE O-zone time is puck time in the attacking zone; its EV split is even strength, not strictly 5v5. "
                            "xG−G shows chances created versus goals scored; early samples can swing.")
                 st.dataframe(matchup_frame, hide_index=True, width="stretch", height=320)
             with st.expander("All teams · current-season PP and defense stats"):
@@ -6093,6 +6099,9 @@ elif page == "Power Play":
     for label, column in (("Player PP time/game", "PP_TOI_per_game"),
                           ("Weighted PP assists/60 (actual)", "PP_iXA60"),
                           ("Team PPO/game", "Team_PPO_PG"),
+                          ("Team EV OZ time", "Team_EV_OZ_Time_Pct"),
+                          ("Team PP OZ time", "Team_PP_OZ_Time_Pct"),
+                          ("Player 5v5 OZ starts", "EV5_OZS_Pct"),
                           ("Opponent times shorthanded/game", "Opp_PKO_PG"),
                           ("Team PP xGF/60", "Team_PP_xGF60"),
                           ("Opponent PK xGA/60", "Opp_PK_xGA60"),
@@ -6250,7 +6259,7 @@ elif page == "Power Play":
             lambda row: f'{int(row["Over odds"]):+d} · {row["Book"]}', axis=1)
         pp_sort_label = ("Ranked by PP context, with boost, PP1, and PP time share breaking ties" if slate_sort == "Top ranked"
                          else f"Sorted by {slate_sort.lower()}")
-        st.caption(f"{pp_sort_label}. PP time share is player PP min/game divided by team PP min/game this season; it is a season-average estimate when a player missed games. PP context is a matchup score, not a hit probability or a tested betting edge. On-ice xG/game measures expected team goals while the player was on the power play; it is not a PPP probability.")
+        st.caption(f"{pp_sort_label}. PP time share is player PP min/game divided by team PP min/game this season; it is a season-average estimate when a player missed games. O-zone time is NHL EDGE puck time in the attacking zone; EV includes all even-strength situations. Player 5v5 O-zone starts are shift starts from MoneyPuck, a different measure. These are observed context, not a tested PPP edge. PP context is a matchup score, not a hit probability. On-ice xG/game is not a PPP probability.")
         team_options = ["All teams"] + sorted(ppp_quotes["Team"].dropna().unique().tolist())
         selected_team = st.selectbox("Team", team_options, key="pp_team")
         pp_view = (ppp_quotes if selected_team == "All teams" else
@@ -6303,6 +6312,19 @@ elif page == "Power Play":
                       'Team PP time share unavailable')
         st.caption(f'Book break-even {selected["Book break-even %"]:.1f}% · '
                    f'{usage_note} · {share_note} · {selected["PP unit"]}')
+        zone_parts = []
+        if pd.notna(selected.get("5v5 OZ starts %")):
+            oz_starts = selected.get("5v5 OZ starts")
+            dz_starts = selected.get("5v5 DZ starts")
+            count = (f' ({int(oz_starts)} OZ / {int(oz_starts + dz_starts)} OZ+DZ starts)'
+                     if pd.notna(oz_starts) and pd.notna(dz_starts) else "")
+            zone_parts.append(f'5v5 OZ starts {selected["5v5 OZ starts %"]:.1f}%{count}')
+        for label, key in (("Team EV OZ time", "Team EV OZ time %"),
+                           ("Team PP OZ time", "Team PP OZ time %")):
+            if pd.notna(selected.get(key)):
+                zone_parts.append(f'{label} {selected[key]:.1f}%')
+        if zone_parts:
+            st.caption(" · ".join(zone_parts) + " · current season, observed")
         if pd.notna(selected.get("Tonight PPP 1+ %")):
             st.caption(f'Tonight research projection: {selected["Tonight PPP mean"]:.2f} expected PPP · '
                        f'{selected["Tonight PPP 1+ %"]:.1f}% for 1+ · observed-assist proxy, uncalibrated')
@@ -7506,4 +7528,3 @@ elif page == "Ledger":
 else:
     st.subheader("Raw CSV (all columns)")
     st.dataframe(df_f, width="stretch", hide_index=True)
-
