@@ -5533,13 +5533,13 @@ elif page == "Points":
     df_p = df_p.sort_values(["_cp"], ascending=[False]).drop(columns=["_cp"], errors="ignore")
 
     st.sidebar.subheader("Points Filters")
-    show_all = st.sidebar.checkbox("Show all players (ignore optional filters)", value=True, key="show_all_points")
-    min_conf = st.sidebar.slider("Min Conf (Points)", 0, 100, 70, 1)
+    show_all = st.sidebar.checkbox("Include all Points matrix colors", value=False, key="show_all_points_v2")
+    min_conf = st.sidebar.slider("Min Conf (Points)", 0, 100, 75, 1)
     color_pick = st.sidebar.multiselect(
         "Colors (Points)",
         ["green", "yellow", "blue", "red"],
         # Default excludes yellow (yellow was not part of the green-matrix test regime)
-        default=["green", "blue"]
+        default=["green", "yellow", "blue"]
     )
     require_matrix_green = st.sidebar.checkbox(
         "Require Matrix=Green (Points)",
@@ -5673,6 +5673,11 @@ elif page == "Points":
         pass
 
 
+    if _f["greens_only"] and "Matrix_Points" in df_p.columns:
+        df_p = df_p[df_p["Matrix_Points"].astype(str).str.strip().str.casefold() == "green"]
+        if "Color_Points" in df_p.columns:
+            df_p = df_p[df_p["Color_Points"].astype(str).str.casefold() == "green"]
+
     # --- DPS ranking + filters (Board-style; presentation only) ---
     df_p = add_best_proc_cols(df_p, 'POINTS')
     df_p = apply_dps_filters_ui(df_p, 'POINTS', key_prefix='pts')
@@ -5684,7 +5689,7 @@ elif page == "Points":
 
 
 
-    _render_class_shortlist(df_f, "Tank")
+    _render_class_shortlist(df_f, "Tank", expand_priced=False)
 
     st.markdown("---")
 
@@ -5758,7 +5763,7 @@ elif page == "Assists":
         "Conf_Assists", "Matrix_Assists",
         "Assists_mu", "Tonight_Assists_mu", "Tonight_Assists_over_pct",
         "Tonight_Assists_Status",
-        "iXA%", "PP_iXA60", "PPP10_total",
+        "iXA%", "Assist_Volume", "PP_iXA60", "PPP10_total",
         "i5v5_primaryAssists60", "i5v5_shotAssists60", "Assist_Volume_Source",
         "Drought_PPP",
 "PP_Matchup", "PP_TOI_Pct_Game", 
@@ -5774,7 +5779,7 @@ elif page == "Assists":
        
 
         
-        "iXG%", "v2_player_stability",
+        "v2_player_stability",
         "Opp_Goalie", "Opp_GP", "Opp_SV",
         "Goalie_Weak", "Opp_DefWeak",
 
