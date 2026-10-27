@@ -6054,6 +6054,8 @@ elif page == "Power Play":
                 matchup["Opp PK xGA rank"] = pk_rank
                 team_row = (tracker_team_rows.loc[matchup["Team"]]
                             if matchup["Team"] in tracker_team_rows.index else pd.Series(dtype=object))
+                opp_row = (tracker_team_rows.loc[matchup["Opponent"]]
+                           if matchup["Opponent"] in tracker_team_rows.index else pd.Series(dtype=object))
                 for label, column in (("Team PPO/game", "Team_PPO_PG"),
                                       ("Team PPO GP", "Team_PPO_GP"),
                                       ("Opp shorthanded/game", "Opp_PKO_PG"),
@@ -6065,15 +6067,24 @@ elif page == "Power Play":
                                       ("Team EV OZ time %", "Team_EV_OZ_Time_Pct"),
                                       ("Team EV OZ rank", "Team_EV_OZ_Rank"),
                                       ("Team PP OZ time %", "Team_PP_OZ_Time_Pct"),
-                                      ("Team PP OZ rank", "Team_PP_OZ_Rank")):
+                                      ("Team PP OZ rank", "Team_PP_OZ_Rank"),
+                                      ("Opp EV DZ time %", "Opp_EV_DZ_Time_Pct"),
+                                      ("Opp PK DZ time %", "Opp_PK_DZ_Time_Pct")):
                     matchup[label] = pd.to_numeric(team_row.get(column), errors="coerce")
+                if pd.isna(matchup["Opp EV DZ time %"]):
+                    matchup["Opp EV DZ time %"] = pd.to_numeric(
+                        opp_row.get("Team_EV_DZ_Time_Pct"), errors="coerce")
+                if pd.isna(matchup["Opp PK DZ time %"]):
+                    matchup["Opp PK DZ time %"] = pd.to_numeric(
+                        opp_row.get("Team_PK_DZ_Time_Pct"), errors="coerce")
                 team_matchup_by_team[matchup["Team"]] = matchup
             matchup_frame = pd.DataFrame(matchups)
             with st.expander("Team PP and opponent PK numbers"):
                 rank_by = st.selectbox("Sort team matchups by", (
                     "PPO blend/game", "Team PPO/game", "Opp shorthanded/game",
                     "PP time blend/game",
-                    "Team PP OZ time %", "Team EV OZ time %",
+                    "Team PP OZ time %", "Opp PK DZ time %",
+                    "Team EV OZ time %", "Opp EV DZ time %",
                     "Opp PK xGA/60", "Team PP xG-G/60", "Opp PK xGA-GA/60",
                     "Team PP xGF/60", "Team PP GF/60", "Opp PK GA/60",
                     "Opp GA/GP", "Opp 5v5 xGA/60", "Opp SOG against/GP"),
@@ -6083,7 +6094,9 @@ elif page == "Power Play":
                            "PPO is captured with the saved slate from NHL Stats; PPO blend averages "
                            "team PPO/game and opponent times shorthanded/game. "
                            "It is research context, not a tested chance of a PP point. "
-                           "NHL EDGE O-zone time is puck time in the attacking zone; its EV split is even strength, not strictly 5v5. "
+                           "NHL EDGE zone time pairs your team's attacking-zone time with opponent time defending in its zone. "
+                           "EV is even strength, not strictly 5v5; PP is matched with opponent PK. "
+                           "These are observed pressure measures, not tested PP-point move rates. "
                            "xG−G shows chances created versus goals scored; early samples can swing.")
                 st.dataframe(matchup_frame, hide_index=True, width="stretch", height=320)
             with st.expander("All teams · current-season PP and defense stats"):
@@ -6101,6 +6114,8 @@ elif page == "Power Play":
                           ("Team PPO/game", "Team_PPO_PG"),
                           ("Team EV OZ time", "Team_EV_OZ_Time_Pct"),
                           ("Team PP OZ time", "Team_PP_OZ_Time_Pct"),
+                          ("Opp EV DZ time", "Opp_EV_DZ_Time_Pct"),
+                          ("Opp PK DZ time", "Opp_PK_DZ_Time_Pct"),
                           ("Player 5v5 OZ starts", "EV5_OZS_Pct"),
                           ("Opponent times shorthanded/game", "Opp_PKO_PG"),
                           ("Team PP xGF/60", "Team_PP_xGF60"),
@@ -6184,7 +6199,11 @@ elif page == "Power Play":
                             ("Team PP rank", "Team PP xGF rank"),
                             ("Opp PK xGA/60 now", "Opp PK xGA/60"),
                             ("Opp PK rank", "Opp PK xGA rank"),
-                            ("Opp PK GA/60 now", "Opp PK GA/60")):
+                            ("Opp PK GA/60 now", "Opp PK GA/60"),
+                            ("Team EV OZ time now", "Team EV OZ time %"),
+                            ("Opp EV DZ time now", "Opp EV DZ time %"),
+                            ("Team PP OZ time now", "Team PP OZ time %"),
+                            ("Opp PK DZ time now", "Opp PK DZ time %")):
             ppp_quotes[column] = ppp_quotes["Team"].map(
                 lambda team: team_matchup_by_team.get(str(team).upper(), {}).get(key))
         tracker_dates = pd.to_datetime(df_f["Date"], errors="coerce").dropna()
@@ -6312,6 +6331,17 @@ elif page == "Power Play":
                       'Team PP time share unavailable')
         st.caption(f'Book break-even {selected["Book break-even %"]:.1f}% · '
                    f'{usage_note} · {share_note} · {selected["PP unit"]}')
+        ev_pressure = (f'Team EV OZ {selected["Team EV OZ time now"]:.1f}% · '
+                       f'Opp EV DZ {selected["Opp EV DZ time now"]:.1f}%'
+                       if pd.notna(selected.get("Team EV OZ time now"))
+                       and pd.notna(selected.get("Opp EV DZ time now")) else "")
+        pp_pressure = (f'Team PP OZ {selected["Team PP OZ time now"]:.1f}% · '
+                       f'Opp PK DZ {selected["Opp PK DZ time now"]:.1f}%'
+                       if pd.notna(selected.get("Team PP OZ time now"))
+                       and pd.notna(selected.get("Opp PK DZ time now")) else "")
+        if ev_pressure or pp_pressure:
+            st.caption(" | ".join(part for part in (ev_pressure, pp_pressure) if part)
+                       + " · NHL EDGE current-season zone time")
         zone_parts = []
         if pd.notna(selected.get("5v5 OZ starts %")):
             oz_starts = selected.get("5v5 OZ starts")
