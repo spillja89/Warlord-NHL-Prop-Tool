@@ -3994,6 +3994,7 @@ def show_table(df: pd.DataFrame, cols: list[str], title: str):
     st.dataframe(
         styled,
         width="stretch",
+        height=560,
         hide_index=True,
         column_config=build_column_config(df, existing),
     )
@@ -7590,4 +7591,4 @@ elif page == "Ledger":
 # =========================
 else:
     st.subheader("Raw CSV (all columns)")
-    st.dataframe(df_f, width="stretch", hide_index=True)
+    st.dataframe(df_f, width="stretch", height=620, hide_index=True)
