@@ -13,6 +13,7 @@ import pandas as pd
 from warlord_moves_2026 import fired_moves
 from player_availability import is_unavailable
 from player_form import summarize_form
+from points15_research import context as points15_research_context
 
 
 CLASSES = (
@@ -276,6 +277,7 @@ def rank_priced_slate(frame: pd.DataFrame) -> dict[str, list[dict]]:
                 "matrix": matrix,
                 "baseline_rule": baseline, "baseline_only": bool(baseline and not best),
                 "points_current_tier": current_points_tier,
+                "points15_research": points15_research_context(row) if market == "Points" and line == 1.5 else None,
                 "move_block_reason": move_block_reason,
                 "goalie": str(_value(row, "Opp_Goalie") or ""),
                 "goalie_status": str(_value(row, "Opp_Goalie_Status") or "Unknown"),
@@ -660,6 +662,29 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
             points_tier_note = (f'<div class="wn-crit-env">{_h(points_tier["rule"])} · '
                                 f'sample through Oct 26 · overlaps with other tiers</div>'
                                 if points_tier else "")
+            points_research_note = ""
+            research = card.get("points15_research") or {}
+            if role == "Tank" and card.get("line") == 1.5 and research.get("eligible"):
+                metrics = []
+                if research.get("pp_xgf60") is not None:
+                    metrics.append(f'PP on-ice xGF/60 {research["pp_xgf60"]:.1f}')
+                if research.get("attempts60") is not None:
+                    metrics.append(f'5v5 attempts/60 {research["attempts60"]:.1f}')
+                if research.get("opp_hdca60") is not None:
+                    metrics.append(f'Opp 5v5 HDCA/60 {research["opp_hdca60"]:.2f}')
+                tags = []
+                if research.get("pp_pressure"):
+                    tags.append("PP PRESSURE")
+                if research.get("shot_generator"):
+                    tags.append("5v5 SHOT GENERATOR")
+                if research.get("dual"):
+                    tags.append("DUAL PROFILE")
+                if research.get("stingy_defense"):
+                    tags.append("STINGY DEFENSE · CAUTION")
+                detail = " · ".join(metrics) if metrics else "Research metrics pending"
+                tag_text = " · ".join(tags) if tags else "NO RESEARCH TAG"
+                points_research_note = (f'<div class="wn-research">RESEARCH · {_h(tag_text)}<br>'
+                                        f'{_h(detail)} · tracking only; no card or move change</div>')
             if role == "Support" and move:
                 secondary = list(dict.fromkeys(
                     item["name"] for item in fired
@@ -726,6 +751,7 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
                 {pp_crit_note}
                 {points_power_note}
                 {points_tier_note}
+                {points_research_note}
                 {support_badges}
                 {goal_profile_note}
                 {tonight_note}
@@ -787,6 +813,7 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
       .wn-book{font-size:9px;color:var(--accent);font-weight:800;white-space:nowrap;margin-left:5px}
       .wn-book-rate{font-size:9px;color:#b9c9dc;margin-top:4px;font-weight:800;letter-spacing:.06em}
       .wn-crit-env{font-size:9px;color:#f4d47d;margin-top:4px;font-weight:800;letter-spacing:.05em}
+      .wn-research{font-size:10px;line-height:1.45;color:#b9d8ff;margin-top:5px;padding:5px 7px;border:1px solid #79afff43;border-radius:5px;background:#10213a}
       .wn-support-badges{font-size:9px;color:#b8c8e7;margin-top:4px;line-height:1.4}
       .wn-goalie{font-size:9px;color:#9fb6cb;margin-top:3px}
       .wn-goal-profile{font-size:10px;color:#e7cc8b;margin-top:4px;font-weight:700}

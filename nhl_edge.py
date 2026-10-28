@@ -36,6 +36,7 @@ import pandas as pd
 import requests
 from bs4 import BeautifulSoup
 from player_form import compact_regular_log
+from points15_research import attach_flags as attach_points15_research_flags
 from warlord_moves_2026 import VERSION as MOVE_KIT_VERSION, frozen_move_tags
 
 pd.options.display.float_format = "{:.2f}".format
@@ -5799,6 +5800,7 @@ def build_tracker(today_local: date, debug: bool = False, api_key: str | None = 
     tracker["Team_Stats_Season"] = (f"{int(team_stats_year)}-{int(team_stats_year) + 1}"
                                     if team_stats_year is not None else "Unavailable")
     tracker["Goalie_Stats_Season"] = f"{goalie_stats_year}-{goalie_stats_year + 1}"
+    tracker = attach_points15_research_flags(tracker)
 
     out_path = os.path.join(OUTPUT_DIR, f"tracker_{today_local.isoformat()}_{stamp}.csv")
     tracker.to_csv(out_path, index=False)

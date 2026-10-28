@@ -32,6 +32,7 @@ from typesafe_shadow import (review as _jev_review, review_flagged_cards as _jev
                              review_source_difference as _jev_source_review)
 from blade_check import check_slate as _check_blade
 from source_reconcile import compare_slate_sources as _compare_slate_sources
+from points15_research import context as _points15_research_context, summarize as _summarize_points15_research
 
 
 @st.cache_data(ttl=600, show_spinner=False)
@@ -1243,6 +1244,29 @@ def _render_graded_market_hud(r, market: str) -> None:
         if is_points and line == 1.5 else
         "Historical graded picks · overlapping moves · TRACK means watch on new slates"
     )
+    if is_points and line == 1.5:
+        research = _points15_research_context(r)
+        if research["eligible"]:
+            labels = []
+            if research["pp_pressure"]:
+                labels.append("PP pressure")
+            if research["shot_generator"]:
+                labels.append("5v5 shot generator")
+            if research["dual"]:
+                labels.append("dual profile")
+            if research["stingy_defense"]:
+                labels.append("stingy 5v5 defense caution")
+            measurements = []
+            for value, name, digits in (
+                (research["pp_xgf60"], "PP on-ice xGF/60", 1),
+                (research["attempts60"], "5v5 attempts/60", 1),
+                (research["opp_hdca60"], "opponent 5v5 HDCA/60", 2),
+            ):
+                if value is not None:
+                    measurements.append(f"{name} {value:.{digits}f}")
+            st.caption("1.5-point research · " + (" · ".join(labels) or "no tag") +
+                       " | " + (" · ".join(measurements) or "metrics pending") +
+                       " · tracking only; no move or card change")
     if not moves:
         st.caption("No tested move fires at this line, color, and confidence.")
         return
@@ -5685,12 +5709,11 @@ elif page == "Points":
         )
     except Exception:
         pass
-
-
     if _f["greens_only"] and "Matrix_Points" in df_p.columns:
         df_p = df_p[df_p["Matrix_Points"].astype(str).str.strip().str.casefold() == "green"]
         if "Color_Points" in df_p.columns:
             df_p = df_p[df_p["Color_Points"].astype(str).str.casefold() == "green"]
+
 
     # --- DPS ranking + filters (Board-style; presentation only) ---
     df_p = add_best_proc_cols(df_p, 'POINTS')
@@ -7296,11 +7319,28 @@ elif page == "📊 Results":
     if graded_files_for_prices:
         from price_validation import price_records, summarize_prices
         priced_frames = []
+        research_frames = []
         for price_file in graded_files_for_prices:
             try:
-                priced_frames.append(price_records(pd.read_csv(price_file, low_memory=False)))
+                graded_frame = pd.read_csv(price_file, low_memory=False)
+                priced_frames.append(price_records(graded_frame))
+                research_frames.append(graded_frame)
             except (OSError, ValueError, pd.errors.ParserError) as error:
                 st.warning(f"Could not read {price_file.name} for the price audit: {error}")
+        if research_frames:
+            research_grades = pd.concat(research_frames, ignore_index=True)
+            with st.expander("Points 1.5 · research signals versus book price", expanded=True):
+                st.caption("Green 1.5-point plays only. PP pressure and 5v5 shot-generator tags overlap; their records cannot be added together. Each price is the saved pregame price. These are observed results, not tonight's hit probabilities or named moves.")
+                discovery = _summarize_points15_research(research_grades, forward=False)
+                if not discovery.empty:
+                    st.markdown("**Current-season discovery sample · through Oct 27**")
+                    st.dataframe(discovery, width="stretch", hide_index=True)
+                forward_results = _summarize_points15_research(research_grades, forward=True)
+                st.markdown("**Forward tracking · Oct 28 onward**")
+                if forward_results.empty:
+                    st.caption("No settled Green 1.5-point prices with these research fields yet.")
+                else:
+                    st.dataframe(forward_results, width="stretch", hide_index=True)
         if priced_frames:
             priced = pd.concat(priced_frames, ignore_index=True)
             with st.expander("Forward move results versus captured book prices", expanded=True):
