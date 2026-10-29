@@ -5589,6 +5589,15 @@ def build_tracker(today_local: date, debug: bool = False, api_key: str | None = 
             tracker = merge_odds_api_props(tracker, today_local, resolved_odds_key, debug=bool(debug))
         from odds_identity import withhold_ambiguous_player_odds
         tracker = withhold_ambiguous_player_odds(tracker)
+        # Priced PP players outside the intent-based log pool still need pregame history.
+        from ppp_history_backfill import fill_missing_priced_ppp_history
+        tracker, pp_history_filled = fill_missing_priced_ppp_history(
+            tracker,
+            lambda pid: nhle_player_regular_log(sess, pid, current_season),
+            today_local.isoformat(),
+            max_workers=MAX_WORKERS,
+        )
+        print(f"[PPP history] filled {pp_history_filled} priced players outside the model log pool")
         # Persist when the odds feeds were actually checked. A copied tracker
         # gets a new filesystem mtime, which is not the quote collection time.
         tracker["Odds_Checked_UTC"] = datetime.now(timezone.utc).isoformat()
