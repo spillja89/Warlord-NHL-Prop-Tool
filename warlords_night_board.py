@@ -515,7 +515,8 @@ def render_power_play_form(card):
             return "—"
 
     tiles = (
-        ("PP context /100", f'{metric(card.get("pp_context"))} · {rank(card.get("pp_rank"))} slate'),
+        ("Player PP role", str(card.get("pp_unit") or "Unconfirmed")),
+        ("Player signals", str(card.get("pp_research") or "Data missing")),
         ("PPP L10 observed", card.get("ppp_l10") or "—"),
         ("PP-point drought", f'{int(card["ppp_drought"])} game' +
          ('' if int(card["ppp_drought"]) == 1 else 's')
@@ -558,7 +559,7 @@ def render_power_play_form(card):
       <div class="ppp-price">{_h(price)}<small>BEST FEED PRICE</small></div></div>
       {research_banner}
       <div class="ppp-matchup">{matchup}</div>
-      <div class="ppp-context-note">Current regular-season results and MoneyPuck rates · ranks among teams with available data · no tested PPP move</div>
+      <div class="ppp-context-note">Research order {rank(card.get("pp_rank"))} · PP1 is inferred from recorded usage · the team matchup flag applies to every teammate · player signals are past research, not tonight's probability</div>
       {form}</section>'''
 
 
