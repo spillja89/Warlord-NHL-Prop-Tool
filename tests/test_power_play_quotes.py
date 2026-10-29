@@ -3,10 +3,16 @@ import unittest
 import pandas as pd
 
 from power_play_quotes import (priced_ppp_quotes, summarize_pp_usage,
-                               team_pp_time_share_pct, pp_player_research_signals)
+                               team_pp_time_share_pct, pp_player_research_signals,
+                               format_pk_minutes_per_game)
 
 
 class PowerPlayQuotesTests(unittest.TestCase):
+    def test_pk_minutes_are_displayed_as_clock_time(self):
+        self.assertEqual(format_pk_minutes_per_game(4.5), "4:30")
+        self.assertEqual(format_pk_minutes_per_game(4.25), "4:15")
+        self.assertEqual(format_pk_minutes_per_game(None), "—")
+
     def test_player_research_signals_require_base_and_complete_inputs(self):
         row = {"PP_OnIce_xG_per_game": 0.6,
                "PP_Observed_Assists_per_game": 0.15,
