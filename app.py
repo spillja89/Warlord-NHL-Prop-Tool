@@ -25,9 +25,10 @@ from season_sources import (fetch_moneypuck_skaters, fetch_moneypuck_teams,
                             league_season_rows, power_play_team_ranks,
                             slate_team_matchup_rows, team_season_rows)
 from ledger_store import append_bet as _append_cloud_bet, recent_bets as _recent_cloud_bets
-from power_play_quotes import (fetch_current_pp_usage, format_ppp_book_prices,
-                               opponent_pk_seconds_per_opportunity, priced_ppp_quotes,
-                               team_pp_goal_research_flag,
+from power_play_quotes import (fetch_current_pp_usage, format_pk_minutes_per_game,
+                               format_ppp_book_prices,
+                               opponent_pk_seconds_per_opportunity,
+                               priced_ppp_quotes, team_pp_goal_research_flag,
                                team_pp_goal_research_label, team_pp_goal_research_tier)
 from player_availability import apply_live_injury_overlay, unavailable_mask
 from position_sog import current_slate_only, fetch_position_sog, position_matchup, SOURCE_URL as POSITION_SOG_URL
@@ -6228,6 +6229,7 @@ elif page == "Power Play":
     ppp_quotes = priced_ppp_quotes(df_f, line_filter=0.5)
     pp_goal_research_by_team = {}
     pp_seconds_by_team = {}
+    pp_minutes_by_team = {}
     pp_flag_by_team = {}
     pp_tier_by_team = {}
     for pp_record in df_f.to_dict("records"):
@@ -6241,6 +6243,9 @@ elif page == "Power Play":
             seconds = opponent_pk_seconds_per_opportunity(pp_record)
             if seconds is not None:
                 pp_seconds_by_team[pp_team] = seconds
+            pk_minutes = pd.to_numeric(pp_record.get("Opp_PK_Time_PG"), errors="coerce")
+            if pd.notna(pk_minutes):
+                pp_minutes_by_team[pp_team] = format_pk_minutes_per_game(pk_minutes)
             tier = team_pp_goal_research_tier(pp_record)
             if pp_team not in pp_tier_by_team or tier:
                 pp_tier_by_team[pp_team] = tier
@@ -6270,6 +6275,8 @@ elif page == "Power Play":
             lambda team: pp_goal_research_by_team.get(str(team).upper(), "PK time unavailable"))
         ppp_quotes["Opp PK sec/opportunity"] = ppp_quotes["Team"].map(
             lambda team: pp_seconds_by_team.get(str(team).upper()))
+        ppp_quotes["Opp PK time/game"] = ppp_quotes["Team"].map(
+            lambda team: pp_minutes_by_team.get(str(team).upper(), "—"))
         ppp_quotes["PP tier"] = ppp_quotes["Team"].map(
             lambda team: pp_tier_by_team.get(str(team).upper(), ""))
         ppp_quotes["PP flag"] = ppp_quotes["Team"].map(
@@ -6410,7 +6417,7 @@ elif page == "Power Play":
             pp_view = without_pp_time
         display_quotes = pp_view[["PP rank", "Player", "Game", "PP unit",
                                   "PP research signals", "PP flag",
-                                  "Opp PK sec/opportunity", "Best feed price",
+                                  "Opp PK time/game", "Opp PK sec/opportunity", "Best feed price",
                                   "PP boost", "Current PPP L5",
                                   "PPP drought (games)",
                                   "Tonight PPP mean", "Tonight PPP 1+ %",
@@ -6444,10 +6451,11 @@ elif page == "Power Play":
 
         st.dataframe(display_quotes.style.map(_pp_research_flag_color, subset=["PP flag"]),
                      hide_index=True, width="stretch")
-        st.caption("⚡ Team PP goal research marks opponents averaging ≤4:30 PK time/game. "
+        st.caption("Opp PK time/game is the opponent's pregame season average shown as minutes:seconds. "
+                   "⚡ Team PP goal research marks opponents averaging ≤4:30 PK time/game. "
                    "✨ adds ≤90 PK seconds/opportunity; 💥 marks the smaller ≤85-second watch tier. "
                    "Opportunity and PK goals-allowed tags are pregame team context; "
-                   "these are historical team-goal patterns, not a player\'s chance of a PP point. "
+                   "these are historical team-goal patterns, not a player's chance of a PP point. "
                    "Opp PK sec/opportunity is a separate team-goal research stat.")
         player_options = [f'{row.Player} · {row.Team} · {row.Game}'
                           for row in pp_view.itertuples(index=False)]
@@ -6469,6 +6477,7 @@ elif page == "Power Play":
             "opp_pk_rank": selected["Opp PK rank"],
             "opp_pk_xga60": selected["Opp PK xGA/60 now"],
             "opp_pk_ga60": selected["Opp PK GA/60 now"],
+            "opp_pk_time_pg": selected["Opp PK time/game"],
             "ppp_l10": selected["Current PPP L10"],
             "ppp_drought": selected["PPP drought (games)"],
             "team_research_flag": selected["PP flag"],
