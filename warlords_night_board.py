@@ -517,6 +517,9 @@ def render_power_play_form(card):
     tiles = (
         ("PP context /100", f'{metric(card.get("pp_context"))} · {rank(card.get("pp_rank"))} slate'),
         ("PPP L10 observed", card.get("ppp_l10") or "—"),
+        ("PP-point drought", f'{int(card["ppp_drought"])} game' +
+         ('' if int(card["ppp_drought"]) == 1 else 's')
+         if _number(card.get("ppp_drought")) is not None else "—"),
         ("Team PP xGF/60", f'{metric(card.get("team_pp_xgf60"))} · {rank(card.get("team_pp_rank"))} attack'),
         ("Opp PK xGA/60", f'{metric(card.get("opp_pk_xga60"))} · {rank(card.get("opp_pk_rank"))} allowed'),
         ("Opp PK GA/60", metric(card.get("opp_pk_ga60"))),

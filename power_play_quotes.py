@@ -15,6 +15,7 @@ COLUMNS = ("Game", "Player", "Team", "Opponent", "PPP line", "Over odds",
            "5v5 OZ starts %", "5v5 OZ starts", "5v5 DZ starts",
            "Team EV OZ time %", "Team PP OZ time %",
            "Opp PK xGA/60", "PP matchup /100", "PPP last 10",
+           "PPP drought (games)",
            "PP on-ice xG/game", "PP shooter xG/game", "Equal-weight PP context",
            "Tonight PPP mean", "Tonight PPP 1+ %", "Tonight PPP status",
            "Stats season", "Context", "Book prices")
@@ -158,6 +159,7 @@ def priced_ppp_quotes(frame: pd.DataFrame, *, line_filter: float | None = None) 
                 "Team EV OZ time %": _finite(row.get("Team_EV_OZ_Time_Pct")),
                 "Team PP OZ time %": _finite(row.get("Team_PP_OZ_Time_Pct")),
                 "PPP last 10": _finite(row.get("PPP10_total")),
+                "PPP drought (games)": _finite(row.get("Drought_PPP")),
                 "Opp PK xGA/60": _finite(row.get("Opp_PK_xGA60")),
                 "PP matchup /100": _finite(row.get("PP_Matchup"))
                 if _finite(row.get("Opp_PK_xGA60")) is not None

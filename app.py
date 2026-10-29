@@ -6342,17 +6342,21 @@ elif page == "Power Play":
                    ppp_quotes.loc[ppp_quotes["Team"].eq(selected_team)]).copy()
         display_quotes = pp_view[["PP rank", "Player", "Game", "Best feed price",
                                   "PP matchup /100", "PP boost", "Current PPP L5",
+                                  "PPP drought (games)",
                                   "Tonight PPP mean", "Tonight PPP 1+ %",
                                   "Current PP min/game", "Team PP time share %",
                                   "PP unit", "PP on-ice xG/game"]].rename(columns={
                                       "Best feed price": "Best price",
                                       "Current PPP L5": "PPP L5",
+                                      "PPP drought (games)": "PPP drought",
                                       "Current PP min/game": "PP min/game",
                                       "Team PP time share %": "Team PP time %",
                                       "PP matchup /100": "PP context /100",
                                       "PP boost": "Boost",
                                   })
         display_quotes["Boost"] = display_quotes["Boost"].map({True: "ON", False: "—"})
+        display_quotes["PPP drought"] = pd.to_numeric(
+            display_quotes["PPP drought"], errors="coerce").astype("Int64")
         display_quotes["PP min/game"] = pd.to_numeric(
             display_quotes["PP min/game"], errors="coerce").round(1)
         display_quotes["Team PP time %"] = pd.to_numeric(
@@ -6378,6 +6382,7 @@ elif page == "Power Play":
             "opp_pk_xga60": selected["Opp PK xGA/60 now"],
             "opp_pk_ga60": selected["Opp PK GA/60 now"],
             "ppp_l10": selected["Current PPP L10"],
+            "ppp_drought": selected["PPP drought (games)"],
         }))
         usage_note = (f'{selected["Current PP min/game"]:.1f} PP min/game this season '
                       f'({int(selected["Current PP games"])} games)'
@@ -6424,7 +6429,7 @@ elif page == "Power Play":
         if observed_prices:
             st.caption(f'Captured over 0.5 book prices: {observed_prices}')
         with st.expander("How to read these numbers"):
-            st.markdown("- **PP rank** orders priced players by PP context, with boost, PP1, and PP minutes breaking ties.\n- **PP context /100** blends team PP strength with opponent PK weakness. It is a matchup rating, not a predicted hit rate. **Boost** is an unvalidated usage and matchup tag.\n- **PPP L5** is the player's credited power-play points in completed regular-season games against over 0.5. It is a record, not a forecast.\n- **Tonight PPP 1+ %** is an experimental estimate from player PP involvement, PP minutes, team offense, and opponent PK. Its assist input uses actual past assists, and the estimate has not been calibrated.\n- **Book break-even %** is the hit rate required by the posted price; there is no tested PPP model rate to compare it with yet.\n- **PP min/game** is season power-play ice time per completed game from MoneyPuck, with NHL stats used when that feed is missing. **PP unit** is inferred from recorded ice time, not tonight's confirmed lineup.\n- The player card shows current-season team PP and opponent PK ranks. Both can swing early in the season; detailed stats and the assist cross-check are below.")
+            st.markdown("- **PP rank** orders priced players by PP context, with boost, PP1, and PP minutes breaking ties.\n- **PP context /100** blends team PP strength with opponent PK weakness. It is a matchup rating, not a predicted hit rate. **Boost** is an unvalidated usage and matchup tag.\n- **PPP L5** is the player's credited power-play points in completed regular-season games against over 0.5. It is a record, not a forecast.\n- **PPP drought** counts consecutive completed games without a PP point, up to the last 10. Zero means a PP point in the most recent game; one means the player missed last game. It is research context, not a board gate.\n- **Tonight PPP 1+ %** is an experimental estimate from player PP involvement, PP minutes, team offense, and opponent PK. Its assist input uses actual past assists, and the estimate has not been calibrated.\n- **Book break-even %** is the hit rate required by the posted price; there is no tested PPP model rate to compare it with yet.\n- **PP min/game** is season power-play ice time per completed game from MoneyPuck, with NHL stats used when that feed is missing. **PP unit** is inferred from recorded ice time, not tonight's confirmed lineup.\n- The player card shows current-season team PP and opponent PK ranks. Both can swing early in the season; detailed stats and the assist cross-check are below.")
 
     with st.expander("Detailed PP stats and filters"):
         unit_sel = st.multiselect("PP unit", ["PP1", "PP2", "Unconfirmed"],
