@@ -526,6 +526,13 @@ def render_power_play_form(card):
     )
     matchup = "".join(f'<div class="ppp-matchup-tile"><small>{_h(label)}</small><strong>{_h(value)}</strong></div>'
                       for label, value in tiles)
+    research_tier = str(card.get("team_research_tier") or "")
+    research_flag = str(card.get("team_research_flag") or "")
+    research_banner = (
+        f'<div class="ppp-research ppp-research--{research_tier}">'
+        f'<strong>{_h(research_flag)}</strong><small>TEAM PP-GOAL RESEARCH · PLAYER PPP STILL NEEDS ITS OWN CHECK</small></div>'
+        if research_tier in {"base", "buff", "watch"} and research_flag else ""
+    )
     return f'''<style>
       .ppp-card,.ppp-card *{{box-sizing:border-box}}
       .ppp-card{{font-family:Inter,system-ui,sans-serif;color:#edf1f8;background:#1b2739;border:1px solid #4d416e;border-left:3px solid #b692ff;border-radius:10px;padding:14px;margin:12px 0}}
@@ -534,6 +541,10 @@ def render_power_play_form(card):
       .ppp-portrait img{{width:100%;height:100%;object-fit:cover;object-position:center top}}
       .ppp-title{{min-width:0;flex:1}}.ppp-title strong{{display:block;font-size:17px;color:#fff}}.ppp-title span{{font-size:11px;color:#b9c9dc}}
       .ppp-price{{text-align:right;white-space:nowrap;color:#e9d5ff;font-size:20px;font-weight:900}}.ppp-price small{{display:block;color:#aebbd0;font-size:10px;font-weight:600}}
+      .ppp-research{{display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px;margin:8px 0;padding:8px 10px;border-radius:7px;border:1px solid #5884a1;background:#123044;color:#d1f1ff}}
+      .ppp-research strong{{font-size:12px;letter-spacing:.04em}}.ppp-research small{{font-size:9px;opacity:.85;font-weight:700}}
+      .ppp-research--buff{{border-color:#a87de4;background:#33244c;color:#f4e4ff}}
+      .ppp-research--watch{{border-color:#e1ae4f;background:#4d3617;color:#fff0c6}}
       .ppp-matchup{{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:6px;margin:10px 0}}
       .ppp-matchup-tile{{padding:8px;background:#111b2e;border:1px solid #ffffff26;border-radius:6px}}
       .ppp-matchup-tile small{{display:block;color:#afbed6;font-size:9px;text-transform:uppercase;letter-spacing:.06em}}
@@ -545,6 +556,7 @@ def render_power_play_form(card):
     </style><section class="ppp-card"><div class="ppp-head"><div class="ppp-portrait">{image}</div>
       <div class="ppp-title"><strong>{_h(card.get("player") or "Player")}</strong><span>{_h(card.get("game") or "")} · Over 0.5 power-play points · {_h(card.get("book") or "Book pending")}</span></div>
       <div class="ppp-price">{_h(price)}<small>BEST FEED PRICE</small></div></div>
+      {research_banner}
       <div class="ppp-matchup">{matchup}</div>
       <div class="ppp-context-note">Current regular-season results and MoneyPuck rates · ranks among teams with available data · no tested PPP move</div>
       {form}</section>'''

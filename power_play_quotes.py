@@ -104,6 +104,28 @@ def opponent_pk_seconds_per_opportunity(row):
     return round(60 * pk_minutes / opportunities, 1)
 
 
+def team_pp_goal_research_tier(row) -> str:
+    """Visual team PP-goal research tier; does not affect player rankings."""
+    pk_minutes = _finite(row.get("Opp_PK_Time_PG"))
+    if pk_minutes is None or pk_minutes > 4.5:
+        return ""
+    opportunities = _finite(row.get("Opp_PKO_PG"))
+    seconds = (60 * pk_minutes / opportunities
+               if opportunities is not None and opportunities > 0 else None)
+    if seconds is not None and seconds <= 85:
+        return "watch"
+    if seconds is not None and seconds <= 90:
+        return "buff"
+    return "base"
+
+
+def team_pp_goal_research_flag(row) -> str:
+    """Compact badge for the team-scoring matchup on player research rows."""
+    return {"watch": "💥 PK BUFF · ≤85s WATCH",
+            "buff": "✨ PK BUFF · ≤90s",
+            "base": "⚡ PK MATCHUP · ≤4:30"}.get(team_pp_goal_research_tier(row), "—")
+
+
 def _break_even_pct(odds: float) -> float:
     return round(100 * (100 / (odds + 100) if odds > 0 else -odds / (-odds + 100)), 1)
 

@@ -27,7 +27,8 @@ from season_sources import (fetch_moneypuck_skaters, fetch_moneypuck_teams,
 from ledger_store import append_bet as _append_cloud_bet, recent_bets as _recent_cloud_bets
 from power_play_quotes import (fetch_current_pp_usage, format_ppp_book_prices,
                                opponent_pk_seconds_per_opportunity, priced_ppp_quotes,
-                               team_pp_goal_research_label)
+                               team_pp_goal_research_flag,
+                               team_pp_goal_research_label, team_pp_goal_research_tier)
 from player_availability import apply_live_injury_overlay, unavailable_mask
 from position_sog import current_slate_only, fetch_position_sog, position_matchup, SOURCE_URL as POSITION_SOG_URL
 from typesafe_shadow import (review as _jev_review, review_flagged_cards as _jev_batch_review,
@@ -6139,9 +6140,10 @@ elif page == "Power Play":
                         opp_row.get("Team_PK_DZ_Time_Pct"), errors="coerce")
                 matchup["Team PP goal research"] = team_pp_goal_research_label(team_row)
                 matchup["Opp PK sec/opportunity"] = opponent_pk_seconds_per_opportunity(team_row)
+                matchup["PP flag"] = team_pp_goal_research_flag(team_row)
                 team_matchup_by_team[matchup["Team"]] = matchup
             matchup_frame = pd.DataFrame(matchups)
-            front_cols = [column for column in ("Game", "Team", "Opponent", "Team PP goal research",
+            front_cols = [column for column in ("Game", "Team", "Opponent", "PP flag", "Team PP goal research",
                                                 "Opp PK sec/opportunity")
                           if column in matchup_frame.columns]
             matchup_frame = matchup_frame[front_cols + [column for column in matchup_frame.columns
@@ -6161,6 +6163,7 @@ elif page == "Power Play":
                            "PPO is captured with the saved slate from NHL Stats; PPO blend averages "
                            "team PPO/game and opponent times shorthanded/game. "
                            "The team PP goal research tag marks opponent PK time ≤4:30; "
+                           "the visual buff adds ≤90 PK seconds/opportunity, with ≤85 marked as a smaller watch tier. "
                            "PPO ≥3.25 and opponent shorthanded ≥2.75 add research flags; "
                            "PK goals allowed ≥0.9/game is a smaller subset of the shorthanded flag. "
                            "These describe past team PP-goal results, not tonight\'s player PPP chance. "
@@ -6225,6 +6228,8 @@ elif page == "Power Play":
     ppp_quotes = priced_ppp_quotes(df_f, line_filter=0.5)
     pp_goal_research_by_team = {}
     pp_seconds_by_team = {}
+    pp_flag_by_team = {}
+    pp_tier_by_team = {}
     for pp_record in df_f.to_dict("records"):
         pp_team = str(pp_record.get("Team") or "").upper()
         if pp_team:
@@ -6236,6 +6241,10 @@ elif page == "Power Play":
             seconds = opponent_pk_seconds_per_opportunity(pp_record)
             if seconds is not None:
                 pp_seconds_by_team[pp_team] = seconds
+            tier = team_pp_goal_research_tier(pp_record)
+            if pp_team not in pp_tier_by_team or tier:
+                pp_tier_by_team[pp_team] = tier
+                pp_flag_by_team[pp_team] = team_pp_goal_research_flag(pp_record)
     st.subheader(f"Priced power-play players · {len(ppp_quotes)}")
     if source == "latest":
         checked_raw = df_f.iloc[0].get("Odds_Checked_UTC") if not df_f.empty else None
@@ -6261,6 +6270,10 @@ elif page == "Power Play":
             lambda team: pp_goal_research_by_team.get(str(team).upper(), "PK time unavailable"))
         ppp_quotes["Opp PK sec/opportunity"] = ppp_quotes["Team"].map(
             lambda team: pp_seconds_by_team.get(str(team).upper()))
+        ppp_quotes["PP tier"] = ppp_quotes["Team"].map(
+            lambda team: pp_tier_by_team.get(str(team).upper(), ""))
+        ppp_quotes["PP flag"] = ppp_quotes["Team"].map(
+            lambda team: pp_flag_by_team.get(str(team).upper(), "—"))
         current_form = {}
         for record in df_f.to_dict("records"):
             key = (str(record.get("Team") or "").casefold(),
@@ -6372,7 +6385,7 @@ elif page == "Power Play":
         selected_team = st.selectbox("Team", team_options, key="pp_team")
         pp_view = (ppp_quotes if selected_team == "All teams" else
                    ppp_quotes.loc[ppp_quotes["Team"].eq(selected_team)]).copy()
-        display_quotes = pp_view[["PP rank", "Player", "Game", "Team PP goal research",
+        display_quotes = pp_view[["PP rank", "PP flag", "Player", "Game",
                                   "Opp PK sec/opportunity", "Best feed price",
                                   "PP matchup /100", "PP boost", "Current PPP L5",
                                   "PPP drought (games)",
@@ -6394,8 +6407,20 @@ elif page == "Power Play":
             display_quotes["PP min/game"], errors="coerce").round(1)
         display_quotes["Team PP time %"] = pd.to_numeric(
             display_quotes["Team PP time %"], errors="coerce").round(1)
-        st.dataframe(display_quotes, hide_index=True, width="stretch")
+        def _pp_research_flag_color(value):
+            flag = str(value)
+            if "WATCH" in flag:
+                return "background-color:#633c10;color:#fff0bd;font-weight:800"
+            if "BUFF" in flag:
+                return "background-color:#42305f;color:#f2deff;font-weight:800"
+            if "MATCHUP" in flag:
+                return "background-color:#193d53;color:#c9efff;font-weight:800"
+            return ""
+
+        st.dataframe(display_quotes.style.map(_pp_research_flag_color, subset=["PP flag"]),
+                     hide_index=True, width="stretch")
         st.caption("⚡ Team PP goal research marks opponents averaging ≤4:30 PK time/game. "
+                   "✨ adds ≤90 PK seconds/opportunity; 💥 marks the smaller ≤85-second watch tier. "
                    "Opportunity and PK goals-allowed tags are pregame team context; "
                    "these are historical team-goal patterns, not a player\'s chance of a PP point. "
                    "Opp PK sec/opportunity is a separate team-goal research stat.")
@@ -6420,6 +6445,8 @@ elif page == "Power Play":
             "opp_pk_ga60": selected["Opp PK GA/60 now"],
             "ppp_l10": selected["Current PPP L10"],
             "ppp_drought": selected["PPP drought (games)"],
+            "team_research_flag": selected["PP flag"],
+            "team_research_tier": selected["PP tier"],
         }))
         usage_note = (f'{selected["Current PP min/game"]:.1f} PP min/game this season '
                       f'({int(selected["Current PP games"])} games)'
