@@ -17,6 +17,7 @@ COLUMNS = ("Game", "Player", "Team", "Opponent", "PPP line", "Over odds",
            "Opp PK xGA/60", "PP matchup /100", "PPP last 10",
            "PPP drought (games)",
            "PP on-ice xG/game", "PP shooter xG/game", "Equal-weight PP context",
+           "PP research signals", "PP research count", "PP research eligible",
            "Tonight PPP mean", "Tonight PPP 1+ %", "Tonight PPP status",
            "Stats season", "Context", "Book prices")
 
@@ -61,6 +62,26 @@ def _finite(value):
         return number if math.isfinite(number) else None
     except (TypeError, ValueError):
         return None
+
+
+def pp_player_research_signals(row):
+    """Historical PPP research profile; never a probability or board gate."""
+    on_ice_xg = _finite(row.get("PP_OnIce_xG_per_game"))
+    if on_ice_xg is None:
+        return "Data missing", -1, False
+    if on_ice_xg < 0.55:
+        return "Below 0.55 base", -1, False
+    inputs = (
+        (_finite(row.get("PP_Observed_Assists_per_game")), 0.15, ">="),
+        (_finite(row.get("PP_ActualPoints60")), 4.5, ">="),
+        (_finite(row.get("PPP10_total")), 4, ">="),
+        (_finite(row.get("Drought_PPP")), 1, "<="),
+    )
+    if any(value is None for value, _, _ in inputs):
+        return "Data missing", -1, True
+    count = sum(value >= cutoff if direction == ">=" else value <= cutoff
+                for value, cutoff, direction in inputs)
+    return f"{count}/4", count, True
 
 
 def team_pp_time_share_pct(player_pp_minutes, team_pp_minutes):
@@ -195,6 +216,7 @@ def priced_ppp_quotes(frame: pd.DataFrame, *, line_filter: float | None = None) 
                 continue
             book = str(row.get(f"BDL_PPP_Book{suffix}") or "").strip()
             key = (team.casefold(), player.casefold(), line)
+            research_label, research_count, research_eligible = pp_player_research_signals(row)
             candidate = {
                 "Game": str(row.get("Game") or ""), "Player": player,
                 "Team": team, "Opponent": str(row.get("Opp") or ""),
@@ -218,6 +240,9 @@ def priced_ppp_quotes(frame: pd.DataFrame, *, line_filter: float | None = None) 
                 "PP on-ice xG/game": _finite(row.get("PP_OnIce_xG_per_game")),
                 "PP shooter xG/game": _finite(row.get("PP_iXG_per_game")),
                 "Equal-weight PP context": _finite(row.get("PP_Matchup_Equal")),
+                "PP research signals": research_label,
+                "PP research count": research_count,
+                "PP research eligible": research_eligible,
                 "Tonight PPP mean": _finite(row.get("Tonight_PPP_mu")) if
                 row.get("Tonight_PPP_Version") == "2026-10-19-research-v3" else None,
                 "Tonight PPP 1+ %": _finite(row.get("Tonight_PPP_1plus_pct")) if
