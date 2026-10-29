@@ -6415,7 +6415,7 @@ elif page == "Power Play":
         if pp_view.empty:
             st.info("No priced players with recorded PP ice time in this team view. Check the separate list above.")
             pp_view = without_pp_time
-        display_quotes = pp_view[["PP rank", "Player", "PP shooter xG/game",
+        display_quotes = pp_view[["PP rank", "Player", "PP on-ice xG/game",
                                   "Best feed price", "Game", "PP unit",
                                   "Current PP min/game", "PP research signals", "PP flag",
                                   "Team PP xGF/60 now", "Opp PK xGA/60 now",
@@ -6424,7 +6424,7 @@ elif page == "Power Play":
                                   "PPP drought (games)",
                                   "Tonight PPP mean", "Tonight PPP 1+ %",
                                   "Team PP time share %",
-                                  "PP on-ice xG/game"]].rename(columns={
+                                  "PP shooter xG/game"]].rename(columns={
                                       "PP rank": "Research order",
                                       "PP shooter xG/game": "PP iXG/game",
                                       "PP research signals": "Player signals",
@@ -6456,7 +6456,8 @@ elif page == "Power Play":
 
         st.dataframe(display_quotes.style.map(_pp_research_flag_color, subset=["PP flag"]),
                      hide_index=True, width="stretch")
-        st.caption("PP iXG/game is the player's observed individual power-play expected goals per game. "
+        st.caption("PP on-ice xG/game is the team's expected goals while that player is on the ice, per game. "
+                   "PP iXG/game is the player's own observed power-play expected goals per game. "
                    "Team PP xGF/60 and Opp PK xGA/60 describe the current-season matchup shared by teammates. "
                    "Opp PK time/game is the opponent's pregame season average shown as minutes:seconds. "
                    "⚡ Team PP goal research marks opponents averaging ≤4:30 PK time/game. "
@@ -6480,6 +6481,7 @@ elif page == "Power Play":
             "pp_rank": selected["PP rank"],
             "pp_unit": selected["PP unit"],
             "pp_research": selected["PP research signals"],
+            "pp_onice_xg_game": selected["PP on-ice xG/game"],
             "pp_ixg_game": selected["PP shooter xG/game"],
             "team_pp_xgf60": selected["Team PP xGF/60 now"],
             "opp_pk_rank": selected["Opp PK rank"],
