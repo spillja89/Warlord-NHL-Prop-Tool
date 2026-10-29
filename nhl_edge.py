@@ -630,7 +630,8 @@ def fetch_team_pp_opportunities(sess: requests.Session, season_id: int,
     it must not alter the existing PP matchup score or player projections.
     """
     columns = ["Team", "Team_PPO_PG", "Team_PP_Time_PG",
-               "Team_PPO_GP", "Team_PKO_PG", "Team_PK_Time_PG", "Team_PKO_GP"]
+               "Team_PPO_GP", "Team_PKO_PG", "Team_PK_Time_PG",
+               "Team_PK_GA_PG", "Team_PKO_GP"]
     base = "https://api.nhle.com/stats/rest/en/team"
     params = {
         "cayenneExp": f"seasonId={int(season_id)} and gameTypeId=2",
@@ -660,11 +661,20 @@ def fetch_team_pp_opportunities(sess: requests.Session, season_id: int,
             "Team_PP_Time_PG": pd.to_numeric(pp["ppTimeOnIcePerGame"], errors="coerce") / 60.0,
             "Team_PPO_GP": pd.to_numeric(pp["gamesPlayed"], errors="coerce"),
         })
+        pk_games = pd.to_numeric(pk["gamesPlayed"], errors="coerce")
+        pk_ga_reported = pd.to_numeric(
+            pk.get("ppGoalsAgainstPerGame", pd.Series(np.nan, index=pk.index)),
+            errors="coerce")
+        pk_ga_total = pd.to_numeric(
+            pk.get("ppGoalsAgainst", pd.Series(np.nan, index=pk.index)),
+            errors="coerce")
+        pk_ga_per_game = (pk_ga_total / pk_games.replace(0, np.nan)).fillna(pk_ga_reported)
         pk_out = pd.DataFrame({
             "Team": pk["Team"],
             "Team_PKO_PG": pd.to_numeric(pk["timesShorthandedPerGame"], errors="coerce"),
             "Team_PK_Time_PG": pd.to_numeric(pk["pkTimeOnIcePerGame"], errors="coerce") / 60.0,
-            "Team_PKO_GP": pd.to_numeric(pk["gamesPlayed"], errors="coerce"),
+            "Team_PK_GA_PG": pk_ga_per_game,
+            "Team_PKO_GP": pk_games,
         })
         return pp_out.merge(pk_out, on="Team", how="outer").dropna(subset=["Team"])
     except Exception as exc:
@@ -3954,7 +3964,7 @@ def build_tracker(today_local: date, debug: bool = False, api_key: str | None = 
         # Opportunity volume is distinct from PP/PK efficiency per 60. Keep
         # this research view descriptive until team-game outcomes validate it.
         opportunity_cols = ["Team_PPO_PG", "Team_PP_Time_PG", "Team_PPO_GP",
-                            "Opp_PKO_PG", "Opp_PK_Time_PG", "Opp_PKO_GP"]
+                            "Opp_PKO_PG", "Opp_PK_Time_PG", "Opp_PK_GA_PG", "Opp_PKO_GP"]
         team_opportunities = fetch_team_pp_opportunities(
             sess, _season_id_from_date(today_local), debug=debug)
         if not team_opportunities.empty:
@@ -3962,9 +3972,11 @@ def build_tracker(today_local: date, debug: bool = False, api_key: str | None = 
                                               "Team_PP_Time_PG", "Team_PPO_GP"]],
                           on="Team", how="left")
             opponent_opportunities = team_opportunities[["Team", "Team_PKO_PG",
-                                                        "Team_PK_Time_PG", "Team_PKO_GP"]].rename(
+                                                        "Team_PK_Time_PG", "Team_PK_GA_PG",
+                                                        "Team_PKO_GP"]].rename(
                 columns={"Team": "Opp", "Team_PKO_PG": "Opp_PKO_PG",
                          "Team_PK_Time_PG": "Opp_PK_Time_PG",
+                         "Team_PK_GA_PG": "Opp_PK_GA_PG",
                          "Team_PKO_GP": "Opp_PKO_GP"})
             sk = sk.merge(opponent_opportunities, on="Opp", how="left")
         else:
@@ -5225,6 +5237,7 @@ def build_tracker(today_local: date, debug: bool = False, api_key: str | None = 
         "Team_PPO_GP": sk.get("Team_PPO_GP"),
         "Opp_PKO_PG": sk.get("Opp_PKO_PG"),
         "Opp_PK_Time_PG": sk.get("Opp_PK_Time_PG"),
+        "Opp_PK_GA_PG": sk.get("Opp_PK_GA_PG"),
         "Opp_PKO_GP": sk.get("Opp_PKO_GP"),
         "PP_PPO_Blend_PG": sk.get("PP_PPO_Blend_PG"),
         "PP_Time_Blend_PG": sk.get("PP_Time_Blend_PG"),

@@ -75,6 +75,35 @@ def team_pp_time_share_pct(player_pp_minutes, team_pp_minutes):
     return round(share, 1) if share <= 100.5 else None
 
 
+def team_pp_goal_research_label(row) -> str:
+    """Descriptive team PP-goal research tags; never a player PPP forecast."""
+    pk_minutes = _finite(row.get("Opp_PK_Time_PG"))
+    if pk_minutes is None:
+        return "PK time unavailable"
+    if pk_minutes > 4.5:
+        return "—"
+    parts = ["⚡ PK ≤4:30"]
+    team_ppo = _finite(row.get("Team_PPO_PG"))
+    opp_pko = _finite(row.get("Opp_PKO_PG"))
+    opp_pk_ga = _finite(row.get("Opp_PK_GA_PG"))
+    if team_ppo is not None and team_ppo >= 3.25:
+        parts.append("Team PPO ≥3.25")
+    if opp_pko is not None and opp_pko >= 2.75:
+        parts.append("Opp PKO ≥2.75")
+        if opp_pk_ga is not None and opp_pk_ga >= 0.9:
+            parts.append("PK GA ≥0.9")
+    return " · ".join(parts)
+
+
+def opponent_pk_seconds_per_opportunity(row):
+    """Observed opponent PK seconds divided by times shorthanded, pregame."""
+    pk_minutes = _finite(row.get("Opp_PK_Time_PG"))
+    opportunities = _finite(row.get("Opp_PKO_PG"))
+    if pk_minutes is None or opportunities is None or pk_minutes < 0 or opportunities <= 0:
+        return None
+    return round(60 * pk_minutes / opportunities, 1)
+
+
 def _break_even_pct(odds: float) -> float:
     return round(100 * (100 / (odds + 100) if odds > 0 else -odds / (-odds + 100)), 1)
 
