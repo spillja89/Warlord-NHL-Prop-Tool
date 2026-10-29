@@ -125,6 +125,15 @@ def opponent_pk_seconds_per_opportunity(row):
     return round(60 * pk_minutes / opportunities, 1)
 
 
+def format_pk_minutes_per_game(value):
+    """Show a pregame average in clock notation, such as 4.5 minutes as 4:30."""
+    minutes = _finite(value)
+    if minutes is None or minutes < 0:
+        return "—"
+    seconds = round(minutes * 60)
+    return f"{seconds // 60}:{seconds % 60:02d}"
+
+
 def team_pp_goal_research_tier(row) -> str:
     """Visual team PP-goal research tier; does not affect player rankings."""
     pk_minutes = _finite(row.get("Opp_PK_Time_PG"))
