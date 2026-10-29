@@ -525,8 +525,9 @@ def render_power_play_form(card):
 
     tiles = (
         ("Player PP role", str(card.get("pp_unit") or "Unconfirmed")),
-        ("Player PP iXG/game", precise_metric(card.get("pp_ixg_game"))),
+        ("PP on-ice xG/game", precise_metric(card.get("pp_onice_xg_game"))),
         ("Player signals", str(card.get("pp_research") or "Data missing")),
+        ("Player PP iXG/game", precise_metric(card.get("pp_ixg_game"))),
         ("PPP L10 observed", card.get("ppp_l10") or "—"),
         ("PP-point drought", f'{int(card["ppp_drought"])} game' +
          ('' if int(card["ppp_drought"]) == 1 else 's')
