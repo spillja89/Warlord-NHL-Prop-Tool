@@ -6415,17 +6415,22 @@ elif page == "Power Play":
         if pp_view.empty:
             st.info("No priced players with recorded PP ice time in this team view. Check the separate list above.")
             pp_view = without_pp_time
-        display_quotes = pp_view[["PP rank", "Player", "Game", "PP unit",
-                                  "PP research signals", "PP flag",
-                                  "Opp PK time/game", "Opp PK sec/opportunity", "Best feed price",
+        display_quotes = pp_view[["PP rank", "Player", "PP shooter xG/game",
+                                  "Best feed price", "Game", "PP unit",
+                                  "Current PP min/game", "PP research signals", "PP flag",
+                                  "Team PP xGF/60 now", "Opp PK xGA/60 now",
+                                  "Opp PK time/game", "Opp PK sec/opportunity",
                                   "PP boost", "Current PPP L5",
                                   "PPP drought (games)",
                                   "Tonight PPP mean", "Tonight PPP 1+ %",
-                                  "Current PP min/game", "Team PP time share %",
+                                  "Team PP time share %",
                                   "PP on-ice xG/game"]].rename(columns={
                                       "PP rank": "Research order",
+                                      "PP shooter xG/game": "PP iXG/game",
                                       "PP research signals": "Player signals",
                                       "Best feed price": "Best price",
+                                      "Team PP xGF/60 now": "Team PP xGF/60",
+                                      "Opp PK xGA/60 now": "Opp PK xGA/60",
                                       "Current PPP L5": "PPP L5",
                                       "PPP drought (games)": "PPP drought",
                                       "Current PP min/game": "PP min/game",
@@ -6451,7 +6456,9 @@ elif page == "Power Play":
 
         st.dataframe(display_quotes.style.map(_pp_research_flag_color, subset=["PP flag"]),
                      hide_index=True, width="stretch")
-        st.caption("Opp PK time/game is the opponent's pregame season average shown as minutes:seconds. "
+        st.caption("PP iXG/game is the player's observed individual power-play expected goals per game. "
+                   "Team PP xGF/60 and Opp PK xGA/60 describe the current-season matchup shared by teammates. "
+                   "Opp PK time/game is the opponent's pregame season average shown as minutes:seconds. "
                    "⚡ Team PP goal research marks opponents averaging ≤4:30 PK time/game. "
                    "✨ adds ≤90 PK seconds/opportunity; 💥 marks the smaller ≤85-second watch tier. "
                    "Opportunity and PK goals-allowed tags are pregame team context; "
@@ -6473,6 +6480,7 @@ elif page == "Power Play":
             "pp_rank": selected["PP rank"],
             "pp_unit": selected["PP unit"],
             "pp_research": selected["PP research signals"],
+            "pp_ixg_game": selected["PP shooter xG/game"],
             "team_pp_xgf60": selected["Team PP xGF/60 now"],
             "opp_pk_rank": selected["Opp PK rank"],
             "opp_pk_xga60": selected["Opp PK xGA/60 now"],
@@ -6520,10 +6528,7 @@ elif page == "Power Play":
             st.caption(f'Tonight research projection: {selected["Tonight PPP mean"]:.2f} expected PPP · '
                        f'{selected["Tonight PPP 1+ %"]:.1f}% for 1+ · observed-assist proxy, uncalibrated')
         if pd.notna(selected.get("PP on-ice xG/game")):
-            st.caption(f'Observed PP opportunity: {selected["PP on-ice xG/game"]:.2f} team xG/game while on ice · '
-                       f'{selected["PP shooter xG/game"]:.2f} individual xG/game'
-                       if pd.notna(selected.get("PP shooter xG/game")) else
-                       f'Observed PP opportunity: {selected["PP on-ice xG/game"]:.2f} team xG/game while on ice')
+            st.caption(f'Observed PP opportunity: {selected["PP on-ice xG/game"]:.2f} team xG/game while on ice')
         observed_prices = format_ppp_book_prices(selected.get("Book prices"))
         if observed_prices:
             st.caption(f'Captured over 0.5 book prices: {observed_prices}')
