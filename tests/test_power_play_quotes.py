@@ -2,10 +2,24 @@ import unittest
 
 import pandas as pd
 
-from power_play_quotes import priced_ppp_quotes, summarize_pp_usage, team_pp_time_share_pct
+from power_play_quotes import (priced_ppp_quotes, summarize_pp_usage,
+                               team_pp_time_share_pct, pp_player_research_signals)
 
 
 class PowerPlayQuotesTests(unittest.TestCase):
+    def test_player_research_signals_require_base_and_complete_inputs(self):
+        row = {"PP_OnIce_xG_per_game": 0.6,
+               "PP_Observed_Assists_per_game": 0.15,
+               "PP_ActualPoints60": 4.5, "PPP10_total": 4,
+               "Drought_PPP": 1}
+        self.assertEqual(pp_player_research_signals(row), ("4/4", 4, True))
+        row["Drought_PPP"] = 2
+        self.assertEqual(pp_player_research_signals(row), ("3/4", 3, True))
+        row["Drought_PPP"] = None
+        self.assertEqual(pp_player_research_signals(row), ("Data missing", -1, True))
+        row["PP_OnIce_xG_per_game"] = 0.54
+        self.assertEqual(pp_player_research_signals(row), ("Below 0.55 base", -1, False))
+
     def test_team_pp_time_share_uses_team_pp_minutes(self):
         self.assertEqual(team_pp_time_share_pct(4, 5), 80.0)
         self.assertIsNone(team_pp_time_share_pct(4, 0))
