@@ -492,6 +492,56 @@ def _form_html(card, *, expanded=False):
             f'<div class="wn-form-strip">{strip}</div></details>')
 
 
+def render_power_play_quotes_table(rows, signals_by_team):
+    """Readable PP scouting rows with a vertical team-signal stack per player."""
+    def cell(value):
+        if value is None or pd.isna(value):
+            return "—"
+        return _h(value)
+
+    body = []
+    for row in rows:
+        team = str(row.get("Team") or "").upper()
+        signals = signals_by_team.get(team, [])
+        stack = "".join(
+            f'<div class="pp-signal">{ "+ " if index else ""}{_h(signal)}</div>'
+            for index, signal in enumerate(signals)
+        ) or '<div class="pp-signal">—</div>'
+        onice = _number(row.get("PP on-ice xG/game"))
+        onice_text = f"{onice:.3f}" if onice is not None else "—"
+        pp_time = _number(row.get("Current PP min/game"))
+        pp_time_text = f"{pp_time:.1f}" if pp_time is not None else "—"
+        body.append(
+            '<tr>'
+            f'<td>{cell(row.get("PP rank"))}</td>'
+            f'<td class="pp-player">{cell(row.get("Player"))}</td>'
+            f'<td>{cell(row.get("Best feed price"))}</td>'
+            f'<td>{cell(row.get("Game"))}</td>'
+            f'<td>{onice_text}</td>'
+            f'<td class="pp-signals">{stack}</td>'
+            f'<td>{cell(row.get("PP research signals"))}</td>'
+            f'<td>{cell(row.get("PP unit"))}</td>'
+            f'<td>{pp_time_text}</td>'
+            '</tr>'
+        )
+    return '''<style>
+      .pp-scout-wrap{max-height:650px;overflow:auto;border:1px solid #d7dce4;border-radius:8px;margin:8px 0 12px}
+      .pp-scout{border-collapse:separate;border-spacing:0;width:100%;min-width:1050px;font:12px Inter,system-ui,sans-serif;color:#1c2a3b}
+      .pp-scout th,.pp-scout td{padding:7px 9px;border-bottom:1px solid #dce1e8;text-align:left;vertical-align:top;background:#fff}
+      .pp-scout thead th{position:sticky;top:0;z-index:2;background:#eef2f7;white-space:nowrap;font-weight:700}
+      .pp-scout .pp-player{position:sticky;left:0;z-index:1;background:#fff;font-weight:700;min-width:145px}
+      .pp-scout thead .pp-player{z-index:3;background:#eef2f7}
+      .pp-scout .pp-signals{min-width:260px;max-width:340px;white-space:normal;line-height:1.35}
+      .pp-scout .pp-signal+ .pp-signal{margin-top:3px}
+      .pp-scout tbody tr:nth-child(even) td{background:#f8fafc}
+      .pp-scout tbody tr:nth-child(even) .pp-player{background:#f8fafc}
+    </style><div class="pp-scout-wrap"><table class="pp-scout"><thead><tr>
+      <th>Rank</th><th class="pp-player">Player</th><th>Best price</th><th>Game</th>
+      <th>PP on-ice xG/g</th><th>Team PP matchup signals</th><th>Player signals</th>
+      <th>PP unit</th><th>PP min/g</th></tr></thead><tbody>''' + "".join(body) + '</tbody></table></div>'
+
+
+
 def render_power_play_form(card):
     """Show the same dated player form card on the separate PPP scouting page."""
     portrait = _character_uri("Support")
@@ -542,8 +592,8 @@ def render_power_play_form(card):
     research_signals = card.get("team_research_signals") or []
     research_banner = (
         '<div class="ppp-research"><small>ALL MATCHING TEAM PP-GOAL SIGNALS · 2026–27 THROUGH OCT 29</small>'
-        + "".join(f'<strong class="ppp-research-item">{_h(signal)}</strong>'
-                  for signal in research_signals)
+        + "".join(f'<strong class="ppp-research-item">{ "+ " if index else ""}{_h(signal)}</strong>'
+                  for index, signal in enumerate(research_signals))
         + '<small>Overlapping team-game records; not this player’s PPP chance.</small></div>'
         if research_signals else
         '<div class="ppp-research"><small>No saved team PP-goal matchup signal for this opponent.</small></div>'
@@ -558,7 +608,7 @@ def render_power_play_form(card):
       .ppp-price{{text-align:right;white-space:nowrap;color:#e9d5ff;font-size:20px;font-weight:900}}.ppp-price small{{display:block;color:#aebbd0;font-size:10px;font-weight:600}}
       .ppp-research{{display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px;margin:8px 0;padding:8px 10px;border-radius:7px;border:1px solid #5884a1;background:#123044;color:#d1f1ff}}
       .ppp-research strong{{font-size:12px;letter-spacing:.04em}}.ppp-research small{{font-size:9px;opacity:.85;font-weight:700}}
-      .ppp-research-item{{display:block;width:100%;padding:4px 0;border-top:1px solid #ffffff2b}}
+      .ppp-research-item{{display:block;width:100%;padding:3px 0;border-top:1px solid #ffffff2b}}
       .ppp-research--buff{{border-color:#a87de4;background:#33244c;color:#f4e4ff}}
       .ppp-research--watch{{border-color:#e1ae4f;background:#4d3617;color:#fff0c6}}
       .ppp-matchup{{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:6px;margin:10px 0}}
