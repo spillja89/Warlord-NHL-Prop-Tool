@@ -156,6 +156,34 @@ def team_pp_goal_research_flag(row) -> str:
             "base": "⚡ PK MATCHUP · ≤4:30"}.get(team_pp_goal_research_tier(row), "—")
 
 
+def team_pp_goal_research_signals(row) -> list[str]:
+    """All matching team PP-goal research signals, frozen through Oct 29, 2026.
+
+    Records count team games with at least one PP goal. They are not player
+    power-play-point rates or probabilities for the next game.
+    """
+    pk_minutes = _finite(row.get("Opp_PK_Time_PG"))
+    if pk_minutes is None or pk_minutes > 4.5:
+        return []
+    signals = ["⚡ PK ≤4:30 · 47/66 (71.2%)"]
+    pk_seconds = opponent_pk_seconds_per_opportunity(row)
+    if pk_seconds is not None and pk_seconds <= 90:
+        signals.append("✨ PK ≤90s/opportunity · 17/21 (81.0%)")
+    if pk_seconds is not None and pk_seconds <= 85:
+        signals.append("💥 PK ≤85s/opportunity · 13/15 (86.7%)")
+    team_ppo = _finite(row.get("Team_PPO_PG"))
+    opp_pko = _finite(row.get("Opp_PKO_PG"))
+    opp_pk_ga = _finite(row.get("Opp_PK_GA_PG"))
+    if team_ppo is not None and team_ppo >= 3.25:
+        signals.append("Team PPO ≥3.25/game · 28/36 (77.8%)")
+    if opp_pko is not None and opp_pko >= 2.75:
+        signals.append("Opp PKO ≥2.75/game · 20/25 (80.0%)")
+        if opp_pk_ga is not None and opp_pk_ga >= 0.9:
+            signals.append("Opp PK GA ≥0.9/game · 12/14 (85.7%)")
+    return signals
+
+
+
 def _break_even_pct(odds: float) -> float:
     return round(100 * (100 / (odds + 100) if odds > 0 else -odds / (-odds + 100)), 1)
 
