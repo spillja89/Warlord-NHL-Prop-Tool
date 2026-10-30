@@ -539,12 +539,14 @@ def render_power_play_form(card):
     )
     matchup = "".join(f'<div class="ppp-matchup-tile"><small>{_h(label)}</small><strong>{_h(value)}</strong></div>'
                       for label, value in tiles)
-    research_tier = str(card.get("team_research_tier") or "")
-    research_flag = str(card.get("team_research_flag") or "")
+    research_signals = card.get("team_research_signals") or []
     research_banner = (
-        f'<div class="ppp-research ppp-research--{research_tier}">'
-        f'<strong>{_h(research_flag)}</strong><small>TEAM PP-GOAL RESEARCH · PLAYER PPP STILL NEEDS ITS OWN CHECK</small></div>'
-        if research_tier in {"base", "buff", "watch"} and research_flag else ""
+        '<div class="ppp-research"><small>ALL MATCHING TEAM PP-GOAL SIGNALS · 2026–27 THROUGH OCT 29</small>'
+        + "".join(f'<strong class="ppp-research-item">{_h(signal)}</strong>'
+                  for signal in research_signals)
+        + '<small>Overlapping team-game records; not this player’s PPP chance.</small></div>'
+        if research_signals else
+        '<div class="ppp-research"><small>No saved team PP-goal matchup signal for this opponent.</small></div>'
     )
     return f'''<style>
       .ppp-card,.ppp-card *{{box-sizing:border-box}}
@@ -556,6 +558,7 @@ def render_power_play_form(card):
       .ppp-price{{text-align:right;white-space:nowrap;color:#e9d5ff;font-size:20px;font-weight:900}}.ppp-price small{{display:block;color:#aebbd0;font-size:10px;font-weight:600}}
       .ppp-research{{display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px;margin:8px 0;padding:8px 10px;border-radius:7px;border:1px solid #5884a1;background:#123044;color:#d1f1ff}}
       .ppp-research strong{{font-size:12px;letter-spacing:.04em}}.ppp-research small{{font-size:9px;opacity:.85;font-weight:700}}
+      .ppp-research-item{{display:block;width:100%;padding:4px 0;border-top:1px solid #ffffff2b}}
       .ppp-research--buff{{border-color:#a87de4;background:#33244c;color:#f4e4ff}}
       .ppp-research--watch{{border-color:#e1ae4f;background:#4d3617;color:#fff0c6}}
       .ppp-matchup{{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:6px;margin:10px 0}}
