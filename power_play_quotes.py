@@ -184,6 +184,27 @@ def team_pp_goal_research_signals(row) -> list[str]:
 
 
 
+def team_pp_goal_research_compact(row) -> str:
+    """Short, horizontal summary for the priced-player table."""
+    labels = team_pp_goal_research_signals(row)
+    short = []
+    for label in labels:
+        if label.startswith("⚡"):
+            short.append("⚡71%")
+        elif label.startswith("✨"):
+            short.append("✨81%")
+        elif label.startswith("💥"):
+            short.append("💥87%")
+        elif label.startswith("Team PPO"):
+            short.append("PPO78%")
+        elif label.startswith("Opp PKO"):
+            short.append("PKO80%")
+        elif label.startswith("Opp PK GA"):
+            short.append("GA86%")
+    return " + ".join(short) if short else "—"
+
+
+
 def _break_even_pct(odds: float) -> float:
     return round(100 * (100 / (odds + 100) if odds > 0 else -odds / (-odds + 100)), 1)
 
