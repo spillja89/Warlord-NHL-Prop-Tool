@@ -6229,6 +6229,10 @@ elif page == "Power Play":
         df_f["PP_Unit"] = ""
 
     ppp_quotes = priced_ppp_quotes(df_f, line_filter=0.5)
+    show_pp2 = st.toggle("Show PP2 players", value=False, key="pp_show_pp2")
+    hidden_pp2 = int(ppp_quotes["PP unit"].eq("PP2").sum()) if not ppp_quotes.empty else 0
+    if not show_pp2 and hidden_pp2:
+        ppp_quotes = ppp_quotes.loc[~ppp_quotes["PP unit"].eq("PP2")].copy()
     pp_goal_research_by_team = {}
     pp_seconds_by_team = {}
     pp_minutes_by_team = {}
@@ -6257,6 +6261,8 @@ elif page == "Power Play":
                 pp_tier_by_team[pp_team] = tier
                 pp_flag_by_team[pp_team] = team_pp_goal_research_flag(pp_record)
     st.subheader(f"Priced power-play players · {len(ppp_quotes)}")
+    if hidden_pp2 and not show_pp2:
+        st.caption(f"{hidden_pp2} PP2 players hidden. Turn on Show PP2 players to inspect them.")
     if source == "latest":
         checked_raw = df_f.iloc[0].get("Odds_Checked_UTC") if not df_f.empty else None
         pp_checked = pd.to_datetime(checked_raw, utc=True, errors="coerce")
@@ -6275,7 +6281,7 @@ elif page == "Power Play":
         if returned_books and "BetMGM" not in returned_books:
             st.warning("BetMGM power-play quotes were not returned for this slate. A better price in the BetMGM app will not appear in the feed's best price.")
     if ppp_quotes.empty:
-        st.info("No over 0.5 power play point prices are in this tracker yet. Refresh after books post them.")
+        st.info("No matching over 0.5 power-play-point prices are in this view. Check the PP2 switch or refresh after books post them.")
     else:
         ppp_quotes["Team PP goal research"] = ppp_quotes["Team"].map(
             lambda team: pp_goal_research_by_team.get(str(team).upper(), "PK time unavailable"))
@@ -6550,8 +6556,10 @@ elif page == "Power Play":
             st.markdown("- **Research order** separates players with recorded PP ice time, then puts inferred PP1 first, 3.25+ saved PP minutes/game next, followed by the four player signals and PP time share. It is a scouting order, not a calibrated hit probability.\n- **Player signals** counts four historical research conditions after PP on-ice xG/game ≥0.55. Missing data remains ungraded; 4/4 was 31/59 on seven settled slate dates, against 33.5% average book break-even. That past result is not tonight's chance.\n- **Team matchup flag** marks the opponent PK research condition. Teammates share it; player PP role and signals separate them. **Boost** is an unvalidated usage and matchup tag.\n- **PPP L5** is the player's credited power-play points in completed regular-season games against over 0.5. It is a record, not a forecast.\n- **PPP drought** counts consecutive completed games without a PP point, up to the last 10. Zero means a PP point in the most recent game; one means the player missed last game.\n- **Tonight PPP 1+ %** is an experimental, uncalibrated estimate. **Book break-even %** is the rate required by the posted price.\n- **PP min/game** is season power-play ice time per completed game. **PP unit** is inferred from recorded ice time, not tonight's confirmed lineup.")
 
     with st.expander("Detailed PP stats and filters"):
-        unit_sel = st.multiselect("PP unit", ["PP1", "PP2", "Unconfirmed"],
-                                  default=["PP1", "PP2", "Unconfirmed"], key="pp_unit_sel")
+        unit_options = ["PP1", "Unconfirmed"] + (["PP2"] if show_pp2 else [])
+        unit_sel = st.multiselect("PP unit", unit_options,
+                                  default=unit_options,
+                                  key=f"pp_unit_sel_{'all' if show_pp2 else 'no_pp2'}")
         min_pp_toi = st.slider("Min PP TOI / game (stats season)", 0.0, 10.0, 1.0, 0.25, key="pp_min_toi")
         min_ppp_drought = st.slider("Min PPP drought (games)", 0, 12, 0, 1, key="pp_min_ppp_drought")
         tier_opts = ["A", "B", "C"] if "PP_Tier" in df_f.columns else []
