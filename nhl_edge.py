@@ -1299,6 +1299,9 @@ def _find_injury_table(soup: BeautifulSoup) -> Any:
             best = tb
     return best if best_score >= 2 else None
 
+_DFO_LINE_COMBO_HTML: Dict[str, str] = {}
+
+
 def fetch_dfo_injuries_for_team(team_abbr: str, debug: bool = False) -> List[Dict[str, Any]]:
     team_abbr = norm_team(team_abbr)
     slug = DFO_TEAM_ABBR_TO_SLUG.get(team_abbr)
@@ -1308,6 +1311,7 @@ def fetch_dfo_injuries_for_team(team_abbr: str, debug: bool = False) -> List[Dic
     url = f"https://www.dailyfaceoff.com/teams/{slug}/line-combinations"
     try:
         html = http_get_text(http_session(), url)
+        _DFO_LINE_COMBO_HTML[team_abbr] = html
     except Exception as e:
         if debug:
             print(f"[DFO INJ] fetch failed {team_abbr}: {type(e).__name__}: {e}")
@@ -1923,6 +1927,42 @@ def normalize_skaters_5v5(df: pd.DataFrame, debug: bool = False) -> pd.DataFrame
 # ============================
 # MoneyPuck normalize: skaters (POWER PLAY 5v4)
 # ============================
+def reported_dfo_pp_units(team_abbr: str, player_names: set[str], debug: bool = False) -> dict[str, int]:
+    """Read projected PP units; return nothing when the page cannot be verified."""
+    team_abbr = norm_team(team_abbr)
+    slug = DFO_TEAM_ABBR_TO_SLUG.get(team_abbr)
+    if not slug:
+        return {}
+    try:
+        html = _DFO_LINE_COMBO_HTML.get(team_abbr)
+        if not html:
+            html = http_get_text(http_session(),
+                                 f"https://www.dailyfaceoff.com/teams/{slug}/line-combinations")
+        lines = [line.strip() for line in BeautifulSoup(html, "html.parser")
+                 .get_text("\n", strip=True).splitlines() if line.strip()]
+        first = lines.index("1st Powerplay Unit")
+        second = lines.index("2nd Powerplay Unit", first + 1)
+        end = next((i for i in range(second + 1, len(lines))
+                    if lines[i] in {"1st Penalty Kill Unit", "Injuries", "Goalies"}), len(lines))
+        known = {_norm_name(name) for name in player_names}
+        pp1 = {_norm_name(name) for name in lines[first + 1:second]}
+        pp2 = {_norm_name(name) for name in lines[second + 1:end]}
+        pp1 &= known
+        pp2 &= known
+        # Partial or changed HTML must never replace the measured usage tags.
+        if len(pp1) < 4 or len(pp2) < 3 or pp1 & pp2:
+            return {}
+        return {**{name: 2 for name in pp1}, **{name: 1 for name in pp2}}
+    except (ValueError, TypeError, KeyError) as exc:
+        if debug:
+            print(f"[DFO PP] lineup unavailable for {team_abbr}: {exc}")
+        return {}
+    except Exception as exc:
+        if debug:
+            print(f"[DFO PP] fetch failed for {team_abbr}: {type(exc).__name__}: {exc}")
+        return {}
+
+
 def normalize_skaters_pp(df: pd.DataFrame, debug: bool = False) -> pd.DataFrame:
     """Return per-player PP usage + PP expected offense proxies using MoneyPuck situation=5on4.
 
@@ -3831,6 +3871,17 @@ def build_tracker(today_local: date, debug: bool = False, api_key: str | None = 
         moved_ids = set(sk.loc[sk["Team_Changed"], "playerId"].dropna().astype(int))
         skpp.loc[skpp["playerId"].isin(moved_ids), "PP_Role"] = np.nan
         sk = sk.merge(skpp, on=["playerId", "Team"], how="left")
+        # Season-total PP minutes lag players returning from injury. Prefer a
+        # complete current projected unit when DailyFaceoff reports one.
+        for team, team_rows in sk.groupby("Team"):
+            reported = reported_dfo_pp_units(
+                team, set(team_rows["Player"].dropna().astype(str)), debug=debug)
+            if not reported:
+                continue
+            normalized_names = sk["Player"].astype(str).map(_norm_name)
+            for player_name, role in reported.items():
+                match = sk["Team"].eq(team) & normalized_names.eq(player_name)
+                sk.loc[match, "PP_Role"] = role
     except Exception as e:
         if debug:
             print(f"WARNING: PP skaters unavailable; continuing neutral. ({type(e).__name__}: {e})")
