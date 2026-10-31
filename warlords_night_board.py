@@ -493,7 +493,7 @@ def _form_html(card, *, expanded=False):
 
 
 def render_power_play_quotes_table(rows, signals_by_team):
-    """Full PP scouting table with a vertical team-signal stack per player."""
+    """Full PP scouting table with clickable, typed column sorting."""
     def cell(value):
         if value is None or pd.isna(value):
             return "—"
@@ -502,6 +502,39 @@ def render_power_play_quotes_table(rows, signals_by_team):
     def decimal(value, digits=1):
         number = _number(value)
         return f"{number:.{digits}f}" if number is not None else "—"
+
+    def sort_value(label, row, signals):
+        key = next((field for title, field, _ in columns if title == label), None)
+        if label == "Team PP matchup signals":
+            return str(len(signals))
+        if label == "Player signals":
+            value = row.get("PP research count")
+        elif label == "Best price":
+            value = str(row.get("Best feed price") or "").split(" · ", 1)[0]
+        elif label in ("PPP L5", "PPP L10", "PPP season"):
+            value = str(row.get(key) or "")
+            try:
+                numerator, denominator = value.split(" · ", 1)[0].split("/", 1)
+                return str(int(numerator) / int(denominator))
+            except (ValueError, ZeroDivisionError):
+                return ""
+        elif label == "Opp PK time/g":
+            value = str(row.get(key) or "")
+            try:
+                minutes, seconds = value.split(":", 1)
+                return str(int(minutes) * 60 + int(seconds))
+            except ValueError:
+                return ""
+        elif label == "Boost":
+            return "1" if row.get(key) else "0"
+        else:
+            value = row.get(key)
+        number = _number(value)
+        if label not in ("Player", "Team", "Game", "PP unit", "Assists cross-check") and number is not None:
+            return str(number)
+        if value is None or pd.isna(value):
+            return ""
+        return str(value).casefold()
 
     columns = (
         ("Rank", "PP rank", cell),
@@ -535,18 +568,22 @@ def render_power_play_quotes_table(rows, signals_by_team):
         team = str(row.get("Team") or "").upper()
         signals = signals_by_team.get(team, [])
         stack = "".join(
-            f'<div class="pp-signal">{ "+ " if index else ""}{_h(signal)}</div>'
+            f'<div class="pp-signal pp-signal--move">{ "+ " if index else ""}{_h(signal)}</div>'
             for index, signal in enumerate(signals)
         ) or '<div class="pp-signal">—</div>'
         cells = []
         for label, key, render in columns:
             css = ' class="pp-player"' if label == "Player" else ' class="pp-signals"' if key is None else ""
             content = stack if key is None else render(row.get(key))
-            cells.append(f"<td{css}>{content}</td>")
+            if label == "Player signals" and row.get("PP research count"):
+                content = f'<span class="pp-player-move">{content}</span>'
+            cells.append(f'<td{css} data-sort="{_h(sort_value(label, row, signals))}">{content}</td>')
         body.append("<tr>" + "".join(cells) + "</tr>")
     headings = "".join(
-        f'<th class="pp-player">{_h(label)}</th>' if label == "Player"
-        else f'<th>{_h(label)}</th>' for label, _, _ in columns
+        f'<th scope="col" aria-sort="none"{" class=\"pp-player\"" if label == "Player" else ""}>'
+        f'<button type="button" class="pp-sort" data-kind="{ "text" if label in ("Player", "Team", "Game", "PP unit", "Assists cross-check") else "number" }">'
+        f'{_h(label)} <span class="pp-sort-arrow" aria-hidden="true">↕</span></button></th>'
+        for label, _, _ in columns
     )
     return '''<style>
       .pp-scout-wrap{max-height:650px;overflow:auto;border:1px solid #d7dce4;border-radius:8px;margin:8px 0 12px}
@@ -557,9 +594,49 @@ def render_power_play_quotes_table(rows, signals_by_team):
       .pp-scout thead .pp-player{z-index:3;background:#eef2f7}
       .pp-scout .pp-signals{min-width:260px;max-width:340px;white-space:normal;line-height:1.35}
       .pp-scout .pp-signal+ .pp-signal{margin-top:3px}
+      .pp-scout .pp-sort{border:0;background:none;padding:0;color:inherit;font:inherit;font-weight:700;cursor:pointer;text-align:left;white-space:nowrap}
+      .pp-scout .pp-sort:hover,.pp-scout .pp-sort:focus-visible{color:#186598;text-decoration:underline}
+      .pp-scout .pp-sort-arrow{color:#668399;margin-left:2px}
+      .pp-scout .pp-signal--move{font-weight:800;color:#08749a;animation:ppMovePulse 2.4s ease-in-out infinite}
+      .pp-scout .pp-player-move{display:inline-block;font-weight:800;color:#7a3caf;animation:ppMovePulse 2.4s ease-in-out infinite}
+      @keyframes ppMovePulse{0%,100%{filter:brightness(1);text-shadow:none}50%{filter:brightness(1.35);text-shadow:0 0 9px currentColor}}
+      @media(prefers-reduced-motion:reduce){.pp-scout .pp-signal--move,.pp-scout .pp-player-move{animation:none}}
       .pp-scout tbody tr:nth-child(even) td{background:#f8fafc}
       .pp-scout tbody tr:nth-child(even) .pp-player{background:#f8fafc}
-    </style><div class="pp-scout-wrap"><table class="pp-scout"><thead><tr>''' + headings + '</tr></thead><tbody>' + "".join(body) + '</tbody></table></div>'
+    </style><div class="pp-scout-root"><div class="pp-scout-wrap"><table class="pp-scout"><thead><tr>''' + headings + '</tr></thead><tbody>' + "".join(body) + '''</tbody></table></div>
+    <script>
+    (() => {
+      const root = document.currentScript.parentElement;
+      const table = root.querySelector('.pp-scout');
+      const tbody = table.tBodies[0];
+      const headers = [...table.tHead.rows[0].cells];
+      headers.forEach((header, column) => {
+        header.querySelector('button').addEventListener('click', () => {
+          const ascending = header.getAttribute('aria-sort') !== 'ascending';
+          const kind = header.querySelector('button').dataset.kind;
+          const rows = [...tbody.rows];
+          rows.sort((a, b) => {
+            const left = a.cells[column].dataset.sort;
+            const right = b.cells[column].dataset.sort;
+            if (!left) return right ? 1 : 0;
+            if (!right) return -1;
+            const comparison = kind === 'number'
+              ? Number(left) - Number(right)
+              : left.localeCompare(right, undefined, {numeric: true});
+            return (ascending ? comparison : -comparison) ||
+              Number(a.cells[0].dataset.sort) - Number(b.cells[0].dataset.sort);
+          });
+          tbody.append(...rows);
+          headers.forEach(item => {
+            item.setAttribute('aria-sort', 'none');
+            item.querySelector('.pp-sort-arrow').textContent = '↕';
+          });
+          header.setAttribute('aria-sort', ascending ? 'ascending' : 'descending');
+          header.querySelector('.pp-sort-arrow').textContent = ascending ? '↑' : '↓';
+        });
+      });
+    })();
+    </script></div>'''
 
 
 def render_power_play_form(card):
