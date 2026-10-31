@@ -493,11 +493,42 @@ def _form_html(card, *, expanded=False):
 
 
 def render_power_play_quotes_table(rows, signals_by_team):
-    """Readable PP scouting rows with a vertical team-signal stack per player."""
+    """Full PP scouting table with a vertical team-signal stack per player."""
     def cell(value):
         if value is None or pd.isna(value):
             return "—"
         return _h(value)
+
+    def decimal(value, digits=1):
+        number = _number(value)
+        return f"{number:.{digits}f}" if number is not None else "—"
+
+    columns = (
+        ("Rank", "PP rank", cell),
+        ("Player", "Player", cell),
+        ("Team", "Team", cell),
+        ("Game", "Game", cell),
+        ("Best price", "Best feed price", cell),
+        ("PP on-ice xG/g", "PP on-ice xG/game", lambda value: decimal(value, 3)),
+        ("Team PP matchup signals", None, None),
+        ("Player signals", "PP research signals", cell),
+        ("PP unit", "PP unit", cell),
+        ("PP min/g", "Current PP min/game", decimal),
+        ("Team PP time %", "Team PP time share %", decimal),
+        ("Player PP iXG/g", "PP shooter xG/game", lambda value: decimal(value, 3)),
+        ("PPP L5", "Current PPP L5", cell),
+        ("PPP L10", "Current PPP L10", cell),
+        ("PPP season", "Current PPP season", cell),
+        ("PPP drought", "PPP drought (games)", cell),
+        ("Tonight PPP mean", "Tonight PPP mean", lambda value: decimal(value, 3)),
+        ("Tonight PPP 1+ %", "Tonight PPP 1+ %", decimal),
+        ("Team PP xGF/60", "Team PP xGF/60 now", lambda value: decimal(value, 2)),
+        ("Opp PK xGA/60", "Opp PK xGA/60 now", lambda value: decimal(value, 2)),
+        ("Opp PK time/g", "Opp PK time/game", cell),
+        ("Opp PK sec/opp", "Opp PK sec/opportunity", decimal),
+        ("Boost", "PP boost", lambda value: "ON" if value else "—"),
+        ("Assists cross-check", "Assists cross-check", cell),
+    )
 
     body = []
     for row in rows:
@@ -507,26 +538,19 @@ def render_power_play_quotes_table(rows, signals_by_team):
             f'<div class="pp-signal">{ "+ " if index else ""}{_h(signal)}</div>'
             for index, signal in enumerate(signals)
         ) or '<div class="pp-signal">—</div>'
-        onice = _number(row.get("PP on-ice xG/game"))
-        onice_text = f"{onice:.3f}" if onice is not None else "—"
-        pp_time = _number(row.get("Current PP min/game"))
-        pp_time_text = f"{pp_time:.1f}" if pp_time is not None else "—"
-        body.append(
-            '<tr>'
-            f'<td>{cell(row.get("PP rank"))}</td>'
-            f'<td class="pp-player">{cell(row.get("Player"))}</td>'
-            f'<td>{cell(row.get("Best feed price"))}</td>'
-            f'<td>{cell(row.get("Game"))}</td>'
-            f'<td>{onice_text}</td>'
-            f'<td class="pp-signals">{stack}</td>'
-            f'<td>{cell(row.get("PP research signals"))}</td>'
-            f'<td>{cell(row.get("PP unit"))}</td>'
-            f'<td>{pp_time_text}</td>'
-            '</tr>'
-        )
+        cells = []
+        for label, key, render in columns:
+            css = ' class="pp-player"' if label == "Player" else ' class="pp-signals"' if key is None else ""
+            content = stack if key is None else render(row.get(key))
+            cells.append(f"<td{css}>{content}</td>")
+        body.append("<tr>" + "".join(cells) + "</tr>")
+    headings = "".join(
+        f'<th class="pp-player">{_h(label)}</th>' if label == "Player"
+        else f'<th>{_h(label)}</th>' for label, _, _ in columns
+    )
     return '''<style>
       .pp-scout-wrap{max-height:650px;overflow:auto;border:1px solid #d7dce4;border-radius:8px;margin:8px 0 12px}
-      .pp-scout{border-collapse:separate;border-spacing:0;width:100%;min-width:1050px;font:12px Inter,system-ui,sans-serif;color:#1c2a3b}
+      .pp-scout{border-collapse:separate;border-spacing:0;width:max-content;min-width:100%;font:12px Inter,system-ui,sans-serif;color:#1c2a3b}
       .pp-scout th,.pp-scout td{padding:7px 9px;border-bottom:1px solid #dce1e8;text-align:left;vertical-align:top;background:#fff}
       .pp-scout thead th{position:sticky;top:0;z-index:2;background:#eef2f7;white-space:nowrap;font-weight:700}
       .pp-scout .pp-player{position:sticky;left:0;z-index:1;background:#fff;font-weight:700;min-width:145px}
@@ -535,11 +559,7 @@ def render_power_play_quotes_table(rows, signals_by_team):
       .pp-scout .pp-signal+ .pp-signal{margin-top:3px}
       .pp-scout tbody tr:nth-child(even) td{background:#f8fafc}
       .pp-scout tbody tr:nth-child(even) .pp-player{background:#f8fafc}
-    </style><div class="pp-scout-wrap"><table class="pp-scout"><thead><tr>
-      <th>Rank</th><th class="pp-player">Player</th><th>Best price</th><th>Game</th>
-      <th>PP on-ice xG/g</th><th>Team PP matchup signals</th><th>Player signals</th>
-      <th>PP unit</th><th>PP min/g</th></tr></thead><tbody>''' + "".join(body) + '</tbody></table></div>'
-
+    </style><div class="pp-scout-wrap"><table class="pp-scout"><thead><tr>''' + headings + '</tr></thead><tbody>' + "".join(body) + '</tbody></table></div>'
 
 
 def render_power_play_form(card):
