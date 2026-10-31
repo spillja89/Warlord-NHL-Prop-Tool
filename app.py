@@ -4229,6 +4229,39 @@ if df.columns.duplicated().any():
     st.warning(f"Duplicate columns detected and removed: {dupes}")
     df = df.loc[:, ~df.columns.duplicated()].copy()
 
+# Goalie confirmations can arrive after the saved model run. Refresh the
+# displayed status independently, but only for the same named goalie; a
+# changed starter requires a new model run for the matchup inputs.
+@st.cache_data(ttl=300, show_spinner=False)
+def _current_goalie_reports(day: date) -> dict:
+    try:
+        from nhl_edge import fetch_dailyfaceoff_starters
+        return fetch_dailyfaceoff_starters(day)
+    except Exception:
+        return {}
+
+
+if source == "latest" and {"Date", "Opp", "Opp_Goalie", "Opp_Goalie_Status"}.issubset(df.columns):
+    today_ct = datetime.now(ZoneInfo("America/Chicago")).date()
+    if df["Date"].astype(str).eq(today_ct.isoformat()).any():
+        live_goalies = _current_goalie_reports(today_ct)
+        confirmed_now = 0
+        for team, report in live_goalies.items():
+            goalie = str(report.get("goalie") or "").strip().casefold()
+            status = str(report.get("status") or "").strip()
+            if not goalie or status.casefold() not in {"confirmed", "likely", "expected"}:
+                continue
+            same_goalie = (df["Opp"].astype(str).eq(team)
+                           & df["Opp_Goalie"].astype(str).str.strip().str.casefold().eq(goalie))
+            if same_goalie.any():
+                old = df.loc[same_goalie, "Opp_Goalie_Status"].astype(str)
+                if status.casefold() == "confirmed" and not old.str.casefold().eq("confirmed").all():
+                    confirmed_now += 1
+                df.loc[same_goalie, "Opp_Goalie_Status"] = status
+        if confirmed_now:
+            st.caption(f"{confirmed_now} goalie confirmation(s) updated from DailyFaceoff. "
+                       "Saved matchup calculations still use the goalie from the model run.")
+
 # Older saved trackers may contain name-only quotes assigned to two different
 # teammates with the same name. Keep those quotes off both player cards.
 from odds_identity import withhold_ambiguous_player_odds
@@ -4802,7 +4835,7 @@ if source == "latest" and not df.empty and "StartTimeUTC" in df.columns:
                                  now_utc + pd.Timedelta(minutes=90)).any()
     if close_games:
         stale_checks = []
-        for field, label in (("Injury_Check_UTC", "injury"), ("Goalie_Check_UTC", "goalie")):
+        for field, label in (("Injury_Check_UTC", "injury"), ("Goalie_Check_UTC", "goalie matchup")):
             checked = pd.to_datetime(df.iloc[0].get(field), utc=True, errors="coerce")
             if pd.isna(checked) or now_utc - checked > pd.Timedelta(minutes=30):
                 stale_checks.append(label)
