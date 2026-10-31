@@ -6418,37 +6418,6 @@ elif page == "Power Play":
         st.caption(f"{pp_sort_label}. PP1 is inferred from recorded usage, not tonight's confirmed unit. The four player signals require PP on-ice xG/game ≥0.55 and count observed PP assists/game ≥0.15, actual PP points/60 ≥4.5, PPP L10 ≥4, and PPP drought ≤1. Missing inputs stay ungraded. The team matchup flag is shared by teammates; this research order is not a predicted PPP chance.")
         team_options = ["All teams"] + sorted(ppp_quotes["Team"].dropna().unique().tolist())
         selected_team = st.selectbox("Team", team_options, key="pp_team")
-        pp_sort_columns = {
-            "Research order": "PP rank",
-            "Player": "Player",
-            "Team": "Team",
-            "Game": "Game",
-            "Best price": "Over odds",
-            "PP on-ice xG/game": "PP on-ice xG/game",
-            "Player PP iXG/game": "PP shooter xG/game",
-            "Player signals": "PP research count",
-            "Team matchup signals": "PP matchup stack",
-            "PP unit": "PP unit",
-            "PP min/game": "Current PP min/game",
-            "Team PP time %": "Team PP time share %",
-            "PPP L5 hit rate": "Current PPP L5",
-            "PPP L10 hit rate": "Current PPP L10",
-            "PPP season hit rate": "Current PPP season",
-            "PPP drought": "PPP drought (games)",
-            "Tonight PPP mean": "Tonight PPP mean",
-            "Tonight PPP 1+ %": "Tonight PPP 1+ %",
-            "Team PP xGF/60": "Team PP xGF/60 now",
-            "Opp PK xGA/60": "Opp PK xGA/60 now",
-            "Opp PK time/game": "Opp PK time/game",
-            "Opp PK sec/opportunity": "Opp PK sec/opportunity",
-            "Boost": "PP boost",
-            "Assists cross-check": "Assists cross-check",
-        }
-        sort_col, direction_col = st.columns([2, 1])
-        with sort_col:
-            pp_table_sort = st.selectbox("Sort power-play players", list(pp_sort_columns), key="pp_table_sort")
-        with direction_col:
-            pp_table_direction = st.selectbox("Order", ["Highest first", "Lowest first"], key="pp_table_direction")
         team_quotes = (ppp_quotes if selected_team == "All teams" else
                        ppp_quotes.loc[ppp_quotes["Team"].eq(selected_team)]).copy()
         pp_view = team_quotes.loc[team_quotes["_has_pp_time"]].copy()
@@ -6463,28 +6432,6 @@ elif page == "Power Play":
         if pp_view.empty:
             st.info("No priced players with recorded PP ice time in this team view. Check the separate list above.")
             pp_view = without_pp_time
-        if pp_table_sort != "Research order" and not pp_view.empty:
-            sort_field = pp_sort_columns[pp_table_sort]
-            if pp_table_sort == "Team matchup signals":
-                sort_values = pp_view["Team"].map(
-                    lambda team: len(pp_signals_by_team.get(str(team).upper(), [])))
-            elif pp_table_sort in ("PPP L5 hit rate", "PPP L10 hit rate", "PPP season hit rate"):
-                sort_values = pd.to_numeric(
-                    pp_view[sort_field].str.extract(r"·\s*(\d+)%")[0], errors="coerce")
-            elif pp_table_sort == "Opp PK time/game":
-                pieces = pp_view[sort_field].str.extract(r"^(\d+):(\d{2})$")
-                sort_values = pd.to_numeric(pieces[0], errors="coerce") * 60 + pd.to_numeric(pieces[1], errors="coerce")
-            elif pp_table_sort in ("Player", "Team", "Game", "PP unit", "Assists cross-check"):
-                sort_values = pp_view[sort_field].fillna("").astype(str).str.casefold()
-            elif pp_table_sort == "Boost":
-                sort_values = pp_view[sort_field].astype(int)
-            else:
-                sort_values = pd.to_numeric(pp_view[sort_field], errors="coerce")
-            pp_view = (pp_view.assign(_table_sort=sort_values)
-                       .sort_values(["_table_sort", "PP rank"],
-                                    ascending=[pp_table_direction == "Lowest first", True],
-                                    na_position="last", kind="stable")
-                       .drop(columns="_table_sort"))
         display_quotes = pp_view[["PP rank", "Player", "PP on-ice xG/game",
                                   "PP matchup stack",
                                   "Best feed price", "Game", "PP unit",
@@ -6529,7 +6476,9 @@ elif page == "Power Play":
                 return "background-color:#193d53;color:#c9efff;font-weight:800"
             return ""
 
-        st.html(render_power_play_quotes_table(pp_view.to_dict("records"), pp_signals_by_team))
+        st.caption("Click any column heading to sort low to high; click again to reverse it.")
+        st.html(render_power_play_quotes_table(pp_view.to_dict("records"), pp_signals_by_team),
+                unsafe_allow_javascript=True)
         with st.expander("Detailed sortable PP columns"):
             st.dataframe(display_quotes.style.map(_pp_research_flag_color, subset=["PP matchup stack"]),
                          hide_index=True, width="stretch")
