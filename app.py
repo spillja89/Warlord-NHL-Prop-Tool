@@ -4246,6 +4246,7 @@ if source == "latest" and {"Date", "Opp", "Opp_Goalie", "Opp_Goalie_Status"}.iss
     if df["Date"].astype(str).eq(today_ct.isoformat()).any():
         live_goalies = _current_goalie_reports(today_ct)
         confirmed_now = 0
+        changed_starters = []
         for team, report in live_goalies.items():
             goalie = str(report.get("goalie") or "").strip().casefold()
             status = str(report.get("status") or "").strip()
@@ -4258,9 +4259,15 @@ if source == "latest" and {"Date", "Opp", "Opp_Goalie", "Opp_Goalie_Status"}.iss
                 if status.casefold() == "confirmed" and not old.str.casefold().eq("confirmed").all():
                     confirmed_now += 1
                 df.loc[same_goalie, "Opp_Goalie_Status"] = status
+            elif df["Opp"].astype(str).eq(team).any():
+                changed_starters.append(team)
         if confirmed_now:
             st.caption(f"{confirmed_now} goalie confirmation(s) updated from DailyFaceoff. "
                        "Saved matchup calculations still use the goalie from the model run.")
+        if changed_starters:
+            st.warning("A different goalie is now reported for "
+                       + ", ".join(sorted(changed_starters))
+                       + ". Run / Refresh slate to recalculate those matchups.")
 
 # Older saved trackers may contain name-only quotes assigned to two different
 # teammates with the same name. Keep those quotes off both player cards.
