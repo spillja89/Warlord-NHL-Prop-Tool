@@ -13,6 +13,23 @@ from warlords_night_board import (baseline_audit, featured_warlords,
 
 
 class BoardBaselineTests(unittest.TestCase):
+    def test_sog_featured_screen_uses_separate_line_cutoffs(self):
+        rows = pd.DataFrame([
+            {"Player": "Two Point Five", "Team": "BOS", "SOG_Line": 2.5,
+             "SOG_Odds_Over": 110, "Matrix_SOG": "Green", "Conf_SOG": 75},
+            {"Player": "Three Point Five Watch", "Team": "CAR", "SOG_Line": 3.5,
+             "SOG_Odds_Over": 130, "Matrix_SOG": "Green", "Conf_SOG": 85},
+            {"Player": "Three Point Five Ready", "Team": "FLA", "SOG_Line": 3.5,
+             "SOG_Odds_Over": 130, "Matrix_SOG": "Green", "Conf_SOG": 86},
+        ])
+        cards = {card["player"]: card for card in rank_priced_slate(rows)["Jungle"]}
+        self.assertEqual(cards["Two Point Five"]["baseline_rule"],
+                         "Green + SOG 2.5 + Conf_SOG ≥ 75")
+        self.assertIsNone(cards["Three Point Five Watch"]["baseline_rule"])
+        self.assertEqual(cards["Three Point Five Ready"]["baseline_rule"],
+                         "Green + SOG 3.5 + Conf_SOG ≥ 86")
+        self.assertEqual(len(cards), 3)
+
     def test_injury_feed_returns_matches_and_blocks_out_players(self):
         reports = {
             "BOS": [{"Team": "BOS", "Player": "Out Player", "Status": "out",

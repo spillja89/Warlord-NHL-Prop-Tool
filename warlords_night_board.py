@@ -104,8 +104,9 @@ def _baseline_rule(row, market, line):
         if _number(row.get("Conf_Points")) is not None and _number(row.get("Conf_Points")) >= threshold:
             return f"Green + Points {line:g} + Conf_Points ≥ {threshold}"
     if market == "SOG" and line in (2.5, 3.5):
-        if _number(row.get("Conf_SOG")) is not None and _number(row.get("Conf_SOG")) >= 75:
-            return f"Green + SOG {line:g} + Conf_SOG ≥ 75"
+        threshold = 75 if line == 2.5 else 86
+        if _number(row.get("Conf_SOG")) is not None and _number(row.get("Conf_SOG")) >= threshold:
+            return f"Green + SOG {line:g} + Conf_SOG ≥ {threshold}"
     return None
 
 
