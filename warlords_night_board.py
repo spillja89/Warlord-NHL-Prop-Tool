@@ -579,12 +579,15 @@ def render_power_play_quotes_table(rows, signals_by_team):
                 content = f'<span class="pp-player-move">{content}</span>'
             cells.append(f'<td{css} data-sort="{_h(sort_value(label, row, signals))}">{content}</td>')
         body.append("<tr>" + "".join(cells) + "</tr>")
-    headings = "".join(
-        f'<th scope="col" aria-sort="none"{" class=\"pp-player\"" if label == "Player" else ""}>'
-        f'<button type="button" class="pp-sort" data-kind="{ "text" if label in ("Player", "Team", "Game", "PP unit", "Assists cross-check") else "number" }">'
-        f'{_h(label)} <span class="pp-sort-arrow" aria-hidden="true">↕</span></button></th>'
-        for label, _, _ in columns
-    )
+    headings = []
+    for label, _, _ in columns:
+        css = ' class="pp-player"' if label == "Player" else ""
+        kind = "text" if label in ("Player", "Team", "Game", "PP unit", "Assists cross-check") else "number"
+        headings.append(
+            f'<th scope="col" aria-sort="none"{css}>'
+            f'<button type="button" class="pp-sort" data-kind="{kind}">'
+            f'{_h(label)} <span class="pp-sort-arrow" aria-hidden="true">↕</span></button></th>'
+        )
     return '''<style>
       .pp-scout-wrap{max-height:650px;overflow:auto;border:1px solid #d7dce4;border-radius:8px;margin:8px 0 12px}
       .pp-scout{border-collapse:separate;border-spacing:0;width:max-content;min-width:100%;font:12px Inter,system-ui,sans-serif;color:#1c2a3b}
@@ -597,13 +600,13 @@ def render_power_play_quotes_table(rows, signals_by_team):
       .pp-scout .pp-sort{border:0;background:none;padding:0;color:inherit;font:inherit;font-weight:700;cursor:pointer;text-align:left;white-space:nowrap}
       .pp-scout .pp-sort:hover,.pp-scout .pp-sort:focus-visible{color:#186598;text-decoration:underline}
       .pp-scout .pp-sort-arrow{color:#668399;margin-left:2px}
-      .pp-scout .pp-signal--move{font-weight:800;color:#08749a;animation:ppMovePulse 2.4s ease-in-out infinite}
-      .pp-scout .pp-player-move{display:inline-block;font-weight:800;color:#7a3caf;animation:ppMovePulse 2.4s ease-in-out infinite}
-      @keyframes ppMovePulse{0%,100%{filter:brightness(1);text-shadow:none}50%{filter:brightness(1.35);text-shadow:0 0 9px currentColor}}
+      .pp-scout .pp-signal--move{padding:3px 5px;border-left:3px solid #22a9d7;border-radius:3px;background:#e9f7fd;font-weight:800;color:#075f87;animation:ppMovePulse 2.4s ease-in-out infinite}
+      .pp-scout .pp-player-move{display:inline-block;padding:3px 5px;border-radius:4px;background:#f3e9ff;font-weight:800;color:#7030a1;animation:ppMovePulse 2.4s ease-in-out infinite}
+      @keyframes ppMovePulse{0%,100%{filter:brightness(1);box-shadow:0 0 0 transparent}50%{filter:brightness(1.25);box-shadow:0 0 9px currentColor}}
       @media(prefers-reduced-motion:reduce){.pp-scout .pp-signal--move,.pp-scout .pp-player-move{animation:none}}
       .pp-scout tbody tr:nth-child(even) td{background:#f8fafc}
       .pp-scout tbody tr:nth-child(even) .pp-player{background:#f8fafc}
-    </style><div class="pp-scout-root"><div class="pp-scout-wrap"><table class="pp-scout"><thead><tr>''' + headings + '</tr></thead><tbody>' + "".join(body) + '''</tbody></table></div>
+    </style><div class="pp-scout-root"><div class="pp-scout-wrap"><table class="pp-scout"><thead><tr>''' + "".join(headings) + '</tr></thead><tbody>' + "".join(body) + '''</tbody></table></div>
     <script>
     (() => {
       const root = document.currentScript.parentElement;
