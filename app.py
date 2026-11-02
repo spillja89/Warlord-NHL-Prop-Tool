@@ -4799,6 +4799,12 @@ with right:
         st.caption(f"Date: **{df['Date'].iloc[0]}**")
     st.caption(f"Rows: **{len(df)}**")
 
+goal_conf_version = str(df["Goal_Conf_Version"].iloc[0]).strip() if not df.empty and "Goal_Conf_Version" in df.columns else ""
+if goal_conf_version == "profile-2026-27-v1":
+    st.caption("Goal confidence: **NEW 2026–27 profile · 82% individual xG + 18% ice time**")
+else:
+    st.caption("Goal confidence: **prior score in this saved tracker** · Run / Refresh after the update loads for the new profile.")
+
 if source == "latest":
     checked_raw = df.iloc[0].get("Odds_Checked_UTC") if not df.empty else None
     checked = pd.to_datetime(checked_raw, utc=True, errors="coerce")
