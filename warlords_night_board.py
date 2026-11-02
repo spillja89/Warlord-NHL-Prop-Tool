@@ -95,8 +95,11 @@ def _baseline_rule(row, market, line):
     matrix = str(row.get(f"Matrix_{market}", "")).strip().casefold()
     if matrix not in {"green", "🟢"}:
         return None
-    if market == "Goal" and line == 0.5 and _number(row.get("Conf_Goal")) is not None:
-        return "Green + Goal 0.5 + Conf_Goal ≥ 85" if _number(row.get("Conf_Goal")) >= 85 else None
+    if market == "Goal" and line == 0.5:
+        move_conf = _number(row.get("Conf_Goal_Move"))
+        if move_conf is None:
+            move_conf = _number(row.get("Conf_Goal"))
+        return "Green + Goal 0.5 + legacy Goal move score ≥ 85" if move_conf is not None and move_conf >= 85 else None
     if market == "Assists" and line == 0.5:
         return "Green + Assists 0.5"
     if market == "Points" and line in (0.5, 1.5):

@@ -10,7 +10,7 @@ import math
 
 
 GOAL_KIT_VERSION = "goal-2026-27-current-v1"
-ENTRY = "Goal 0.5 + Matrix_Goal Green + Conf_Goal >= 85"
+ENTRY = "Goal 0.5 + Matrix_Goal Green + legacy Goal move score >= 85"
 
 # (name, tier, icon, added pregame cutoffs, graded wins, graded plays)
 RULES = (
@@ -68,8 +68,11 @@ def goals_moves(row):
     line = _number(row, "Goal_Line")
     if line is None:
         line = _number(row, "ATG_Line")
+    move_conf = _number(row, "Conf_Goal_Move")
+    if move_conf is None:
+        move_conf = _number(row, "Conf_Goal")  # historical tracker compatibility
     if (line != .5 or str(row.get("Matrix_Goal", "")).strip().casefold() != "green"
-            or (_number(row, "Conf_Goal") or 0) < 85):
+            or (move_conf or 0) < 85):
         return []
     moves = []
     for name, kind, icon, checks, wins, picks in RULES:

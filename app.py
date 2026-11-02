@@ -701,7 +701,7 @@ _ROLE_INFO = {
 # One description is reused by the prop headers, move gate, and Ledger.
 # Fired counts always come from warlord_moves_2026, never from this copy.
 _CLASS_RULES = {
-    "GOALS": {"role": "Carry", "market": "Goal", "entry": "Matrix_Goal Green · Goal 0.5 · Conf_Goal ≥ 85", "note": "Warlord cards require a current-season named Goal attack. The full priced tracker remains below."},
+    "GOALS": {"role": "Carry", "market": "Goal", "entry": "Matrix_Goal Green · Goal 0.5 · legacy Goal move score ≥ 85", "note": "Warlord cards require a current-season named Goal attack. The full priced tracker remains below."},
     "ASSISTS": {"role": "Support", "market": "Assists", "entry": "Matrix_Assists Green · Assists 0.5 · Conf_Assists ≥ 81 · iXA% ≥ 95", "note": "The PP Specials gain a Crit tier when team PP xGF/60 reaches 8.3."},
     "POINTS": {"role": "Tank", "market": "Points", "entry": "Matrix_Points Green · Points 0.5 with Conf_Points ≥ 80, or Points 1.5 with Conf_Points ≥ 75", "note": "The 0.5 and 1.5 lines have separate move trees."},
     "SOG": {"role": "Jungle", "market": "SOG", "entry": "Matrix_SOG Green · 2.5: Conf_SOG ≥ 75 · 3.5: Conf_SOG ≥ 86", "note": "The 3.5 shortlist uses a current-season confidence screen; older move records keep their original rules."},
@@ -1734,7 +1734,7 @@ def _render_why_it_fires_rich(mkt: str, r, tags: str = "") -> None:
         # Stance (locked): Line=0.5, Matrix=Green, Conf>=80 (EV ignored)
         line = _safe_float(r.get("Goal_Line", None), 0.0) or 0.0
         mat = str(r.get("Matrix_Goal", "") or "").strip().lower()
-        conf = _safe_float(r.get("Conf_Goal", None), None)
+        conf = _safe_float(r.get("Conf_Goal_Move", r.get("Conf_Goal")), None)
 
         stance_ok = bool(line == 0.5 and mat.startswith("g") and (conf is not None and conf >= 80))
 
@@ -3193,7 +3193,7 @@ def style_df(df: pd.DataFrame, cols: list[str]) -> "pd.io.formats.style.Styler":
         #   Points: 70+ green
         #   SOG:    75+ green
         #   Assists:80+ green
-        #   Goals:  85+ green
+        #   Goals:  93+ green on the current-season player profile scale
         # Yellow = (green - 10). Red otherwise.
         try:
             tg = float(thr_green)
@@ -3264,7 +3264,7 @@ def style_df(df: pd.DataFrame, cols: list[str]) -> "pd.io.formats.style.Styler":
         "Conf_Points": 70,
         "Conf_SOG": 75,
         "Conf_Assists": 80,
-        "Conf_Goal": 80,
+        "Conf_Goal": 93,
         "Best_Conf": 80,
     }
     for c, thr in conf_thr.items():
@@ -4501,7 +4501,7 @@ df["Goal_ProofCount"] = goal_proofs.sum(axis=1)
 needed_g = np.where(is_star_g, 2, 3)
 
 df["Green_Goal"] = (
-    (safe_num(df, "Conf_Goal", 0) >= thr_g)
+    (safe_num(df, "Conf_Goal_Move" if "Conf_Goal_Move" in df.columns else "Conf_Goal", 0) >= thr_g)
     & (safe_str(df, "Matrix_Goal", "").str.strip().str.lower() == "green")
     & (df["Goal_ProofCount"] >= needed_g)
 )

@@ -4956,6 +4956,15 @@ def build_tracker(today_local: date, debug: bool = False, api_key: str | None = 
     sk.loc[gf_fail, "Matrix_Points"] = "FAIL_GF"
     sk.loc[gf_fail, "Matrix_Assists"] = "FAIL_GF"
 
+    # Keep the original Goal score for frozen move rules. Goal confidence now
+    # measures the player scoring profile; injury/drought and opponent context
+    # remain separate from that player ranking.
+    sk["Conf_Goal_Move"] = sk["Conf_Goal"].copy()
+    sk["Conf_Goal"] = (
+        0.82 * pd.to_numeric(sk["iXG_pct"], errors="coerce").fillna(50.0)
+        + 0.18 * pd.to_numeric(sk["TOI_Pct"], errors="coerce").fillna(50.0)
+    ).clip(0, 100).round().astype(int)
+
     # -------------------------
     # 🗡️ Assists dagger (PP facilitation edge)
     # Ensure this is computed AFTER PP columns are populated.
@@ -5239,6 +5248,8 @@ def build_tracker(today_local: date, debug: bool = False, api_key: str | None = 
         "Conf_Points_Move": sk.get("Conf_Points_Move"),
         "Conf_SOG": sk.get("Conf_SOG"),
         "Conf_Goal": sk.get("Conf_Goal"),
+        "Conf_Goal_Move": sk.get("Conf_Goal_Move"),
+        "Goal_Conf_Version": "profile-2026-27-v1",
         "Conf_Assists": sk.get("Conf_Assists"),
 
         "Best_Market": sk.get("Best_Market"),
@@ -5447,7 +5458,7 @@ def build_tracker(today_local: date, debug: bool = False, api_key: str | None = 
     tracker["Goal_ProofCount"] = goal_proofs.sum(axis=1)
 
     # ---- HARD CONFIDENCE GATE ----
-    conf_gate_goal = (tracker["Conf_Goal"] >= 77)
+    conf_gate_goal = (tracker["Conf_Goal_Move"] >= 77)
 
     # ---- EARNED GOAL PLAY ----
     goal_earned = conf_gate_goal & (tracker["Goal_ProofCount"] >= 3)

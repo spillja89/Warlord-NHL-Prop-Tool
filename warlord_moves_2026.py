@@ -252,8 +252,12 @@ legacy_assists_moves = _assists_mapped_moves
 
 
 def fired_moves(row: Mapping[str, Any]) -> dict[str, list[dict[str, Any]]]:
-    return {"Points": points_moves(row), "Assists": assists_moves(row),
-            "SOG": sog_moves(row), "Goal": goals_moves(row)}
+    # Existing cross-market rules were graded with the original Goal score.
+    legacy_row = dict(row)
+    if row.get("Conf_Goal_Move") is not None:
+        legacy_row["Conf_Goal"] = row["Conf_Goal_Move"]
+    return {"Points": points_moves(legacy_row), "Assists": assists_moves(legacy_row),
+            "SOG": sog_moves(legacy_row), "Goal": goals_moves(row)}
 
 
 def frozen_move_tags(row: Mapping[str, Any]) -> list[dict[str, str]]:
