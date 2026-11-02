@@ -96,10 +96,9 @@ def _baseline_rule(row, market, line):
     if matrix not in {"green", "🟢"}:
         return None
     if market == "Goal" and line == 0.5:
-        move_conf = _number(row.get("Conf_Goal_Move"))
-        if move_conf is None:
-            move_conf = _number(row.get("Conf_Goal"))
-        return "Green + Goal 0.5 + legacy Goal move score ≥ 85" if move_conf is not None and move_conf >= 85 else None
+        return ("Green + Goal 0.5 + Goal profile ≥ 93 + last-five xG/game ≥ 0.55"
+                if any(move["name"] == "Base Attack" for move in fired_moves(row)["Goal"])
+                else None)
     if market == "Assists" and line == 0.5:
         return "Green + Assists 0.5"
     if market == "Points" and line in (0.5, 1.5):
@@ -356,6 +355,7 @@ def goal_display_cards(cards: list[dict]) -> list[dict]:
         if not card.get("baseline_rule"):
             continue
         attacks = [move for move in card.get("moves", [])
+                   if not move.get("matchup_buff")
                    if int(move["picks"]) > 0 and int(move["wins"]) / int(move["picks"]) >= .5]
         if attacks:
             eligible.append({**card, "move": max(attacks, key=_move_rank)})
@@ -1028,4 +1028,5 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
       <div class="wn-hero-foot">{_h(hero_foot)} · HISTORICAL MOVE RATE IS NOT A FORECAST</div></div>"""
     board_class = "wn-board" if show_hero else "wn-board wn-board--compact"
     return styles + f'<div class="{board_class}">' + (hero if show_hero else "") + '<div class="wn-grid">' + ''.join(lanes) + '</div></div>'
+
 

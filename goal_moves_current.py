@@ -1,7 +1,8 @@
-"""2026-27 regular-season Goal attacks selected from graded pregame trackers.
+"""Current-season Goal profile attacks from saved pregame tracker decisions.
 
-Records are retrospectively selected hit rates, never tonight probabilities.
-Each rule uses the same saved inputs and exact cutoff as the research replay.
+The records below are searched, in-sample hit counts, not calibrated chances.
+The defensive matchup is a separate buff and requires labeled 2026-27 team
+stats. Player attacks never depend on that buff.
 """
 
 from __future__ import annotations
@@ -9,50 +10,42 @@ from __future__ import annotations
 import math
 
 
-GOAL_KIT_VERSION = "goal-2026-27-current-v1"
-ENTRY = "Goal 0.5 + Matrix_Goal Green + legacy Goal move score >= 85"
+GOAL_KIT_VERSION = "goal-2026-27-profile-v2"
+ENTRY = "Goal 0.5 + Matrix_Goal Green + Goal profile >= 93 + last-five xG/game >= 0.55"
 
-# (name, tier, icon, added pregame cutoffs, graded wins, graded plays)
+# Name, tier, icon, added checks, wins, plays. Every check is applied after ENTRY.
+# Plays can fire in multiple routes; their records must not be added together.
 RULES = (
-    ("Base Attack", "BASE ATTACK", "base.svg", (("TOI_per_game", 19), ("Conf_SOG", 80)), 60, 116),
-    ("Shooter's Command", "SPECIAL ATTACK", "fenrir_claw.svg", (("TOI_per_game", 19), ("Conf_SOG", 80), ("TOI_Pct", 88), ("Player_5v5_SOG_Share", 15), ("Goal_mu", .45)), 17, 21),
-    ("Power Finisher", "SPECIAL ATTACK", "fury.svg", (("TOI_per_game", 19), ("Conf_SOG", 80), ("TOI_Pct", 88), ("PP_iXG60", 1.6), ("Goal_mu", .45)), 23, 31),
-    ("Star Pressure", "HEAVY ATTACK", "smash.svg", (("TOI_Pct", 84), ("StarScore", 88)), 46, 82),
-    ("Power Shooter", "HEAVY ATTACK", "fury.svg", (("TOI_Pct", 84), ("PP_iXG60", 1.2)), 44, 77),
-    ("Scorer's Form", "HEAVY ATTACK", "fenrir_claw.svg", (("TalentMult", 1.2), ("Pregame_G_L5_per_game", .4), ("TOI_per_game", 19)), 41, 73),
-    ("Star Scorer", "HEAVY ATTACK", "smash.svg", (("TOI_Pct", 84), ("StarScore", 88), ("Pregame_G_L5_per_game", .6)), 33, 51),
-    ("Power Shot", "HEAVY ATTACK", "fury.svg", (("TOI_Pct", 84), ("PP_iXG60", 1.2), ("Goal_mu", .5)), 22, 32),
-    ("Scorer's Threat", "HEAVY ATTACK", "fenrir_claw.svg", (("TalentMult", 1.2), ("Pregame_G_L5_per_game", .4), ("TOI_per_game", 19), ("Pregame_xG_L5_per_game", .55)), 19, 29),
-    ("Team Scoring Surge", "SPECIAL ATTACK", "smash.svg", (("TOI_Pct", 84), ("StarScore", 88), ("Pregame_G_L5_per_game", .6), ("Team_GF_Avg_L5", 3.2)), 26, 37),
-    ("Shotmaker", "SPECIAL ATTACK", "armor_shred.svg", (("Points_mu", 1.25), ("Avg5_SOG", 3.4)), 36, 60),
-    ("Expected Finisher", "SPECIAL ATTACK", "fenrir_claw.svg", (("Points_mu", 1.25), ("Pregame_xG_L5_per_game", .55)), 25, 38),
-    ("Ice Time Finisher", "SPECIAL ATTACK", "smash.svg", (("TOI_per_game", 21), ("Goal_mu", .45)), 26, 38),
-    ("Shotmaker Strike", "SPECIAL ATTACK", "armor_shred.svg", (("Points_mu", 1.25), ("Avg5_SOG", 3.4), ("Goal_mu", .45)), 30, 45),
-    ("Expected Shot Barrage", "SPECIAL ATTACK", "fenrir_claw.svg", (("Points_mu", 1.25), ("Pregame_xG_L5_per_game", .55), ("L10_S", 19)), 21, 29),
-    ("Power Play Finisher", "SPECIAL ATTACK", "fury.svg", (("TOI_per_game", 21), ("Goal_mu", .45), ("PP_iXG60", 1.6)), 24, 32),
-    ("FOR VALHALLA!", "ULTIMATE ATTACK", "valhalla.svg", (("Points_mu", 1.25), ("Avg5_SOG", 3.4), ("Goal_mu", .45), ("Opp_PK_xGA60", 6)), 26, 34),
+    ("Base Attack", "BASE ATTACK", "base.svg", (), 43, 85),
+    ("Creator Fade", "HEAVY ATTACK", "fenrir_claw.svg", (("L20_A", "<=", 8),), 42, 77),
+    ("Star Pressure", "HEAVY ATTACK", "smash.svg", (("StarScore", ">=", 84.5),), 40, 74),
+    ("Shot Control", "HEAVY ATTACK", "armor_shred.svg", (("L10_S", "<=", 38),), 40, 73),
+    ("Drought Strike", "SPECIAL ATTACK", "fury.svg", (("Drought_G", ">=", 1),), 22, 36),
+    ("Measured Intent", "SPECIAL ATTACK", "armor_shred.svg", (("ShotIntent_Pct", "<=", 91.1),), 23, 35),
+    ("Creator's Cut", "SPECIAL ATTACK", "fenrir_claw.svg",
+     (("L20_A", "<=", 8), ("ShotIntent_Pct", "<=", 91.1)), 22, 32),
+    ("Star Shot Strike", "SPECIAL ATTACK", "smash.svg",
+     (("StarScore", ">=", 84.5), ("L20_S", "<=", 31)), 27, 39),
+    ("Volume Rebound", "SPECIAL ATTACK", "fury.svg",
+     (("L10_S", "<=", 38), ("Drought_G", ">=", 1)), 19, 26),
 )
 
-# Old card name accounted for by each new rule. NEW means a genuinely new
-# branch. Historical records are never carried across this name map.
+# This is an additional context signal, not an entry gate or a player goal chance.
+DEFENSE_BUFF = ("Defense Breach", "MATCHUP BUFF", "armor_shred.svg",
+                (("v2_defense_vulnerability", ">=", 51.5),), 21, 35)
+
+# Descriptive migration map only; old hit records are never transferred.
 REPLACES = {
     "Base Attack": "Base Attack",
-    "Shooter's Command": "NEW",
-    "Power Finisher": "NEW",
-    "Star Pressure": "Press the Attack",
-    "Power Shooter": "Fury Shredder",
-    "Scorer's Form": "Finisher Strike",
-    "Star Scorer": "Enraged Finisher",
-    "Power Shot": "Bloodlust",
-    "Scorer's Threat": "Enraged Fury Shredder",
-    "Team Scoring Surge": "Bloodlusted Surge",
-    "Shotmaker": "Open Lanes Assault",
-    "Expected Finisher": "Warlord Smash Attack",
-    "Ice Time Finisher": "Berserker Aggression",
-    "Shotmaker Strike": "Warlord Smash Attack (Crit)",
-    "Expected Shot Barrage": "NEW",
-    "Power Play Finisher": "Tyr’s Wrath Unleashed",
-    "FOR VALHALLA!": "FOR VALHALLA!",
+    "Creator Fade": "Scorer's Form",
+    "Star Pressure": "Star Pressure",
+    "Shot Control": "Shotmaker",
+    "Drought Strike": "Scorer's Threat",
+    "Measured Intent": "NEW",
+    "Creator's Cut": "Expected Finisher",
+    "Star Shot Strike": "Star Scorer",
+    "Volume Rebound": "Expected Shot Barrage",
+    "Defense Breach": "NEW",
 }
 
 
@@ -64,28 +57,48 @@ def _number(row, key):
         return None
 
 
+def _passes(row, checks):
+    for field, comparison, cutoff in checks:
+        value = _number(row, field)
+        if value is None or not (value >= cutoff if comparison == ">=" else value <= cutoff):
+            return False
+    return True
+
+
+def _move(spec, *, buff=False):
+    name, kind, icon, checks, wins, picks = spec
+    condition = " + ".join(f"{field} {comparison} {cutoff:g}"
+                           for field, comparison, cutoff in checks)
+    if buff:
+        condition = "verified 2026-27 team stats + " + condition
+    rule = ENTRY + (" + " + condition if condition else "")
+    return {"name": name, "research_name": name, "kind": kind, "icon": icon,
+            "condition": condition or ENTRY, "rule": rule, "wins": wins,
+            "picks": picks, "later_wins": 0, "later_picks": 0,
+            "crit": False, "experimental": False, "sample_season": "2026-27",
+            "sample_through": "2026-10-31", "replaces": REPLACES[name],
+            "kit_version": GOAL_KIT_VERSION, "matchup_buff": buff}
+
+
 def goals_moves(row):
+    """Apply the same player and source gates used in the research cohort."""
     line = _number(row, "Goal_Line")
     if line is None:
         line = _number(row, "ATG_Line")
-    move_conf = _number(row, "Conf_Goal_Move")
-    if move_conf is None:
-        move_conf = _number(row, "Conf_Goal")  # historical tracker compatibility
+    ixg = _number(row, "iXG%")
+    if ixg is None:
+        ixg = _number(row, "iXG_pct")
+    toi = _number(row, "TOI_Pct")
+    profile = round(.82 * ixg + .18 * toi) if ixg is not None and toi is not None else None
+    recent_xg = _number(row, "Pregame_xG_L5_per_game")
     if (line != .5 or str(row.get("Matrix_Goal", "")).strip().casefold() != "green"
-            or (move_conf or 0) < 85):
+            or profile is None or profile < 93 or recent_xg is None or recent_xg < .55
+            or str(row.get("Model_Stats_Season", "")) != "2026-2027"
+            or str(row.get("Form_Season", "")) != "2026-27"):
         return []
-    moves = []
-    for name, kind, icon, checks, wins, picks in RULES:
-        if all((_number(row, field) is not None and _number(row, field) >= cutoff)
-               for field, cutoff in checks):
-            condition = " + ".join(f"{field} >= {cutoff:g}" for field, cutoff in checks)
-            display_name = REPLACES[name] if REPLACES[name] != "NEW" else name
-            moves.append({"name": display_name, "research_name": name,
-                          "kind": kind, "condition": condition,
-                          "rule": ENTRY + " + " + condition,
-                          "wins": wins, "picks": picks, "later_wins": 0,
-                          "later_picks": 0, "icon": icon, "crit": False,
-                          "experimental": False, "sample_season": "2026-27",
-                          "replaces": REPLACES[name],
-                          "kit_version": GOAL_KIT_VERSION})
+    moves = [_move(spec) for spec in RULES if _passes(row, spec[3])]
+    if (str(row.get("Team_Stats_Season", "")) == "2026-2027"
+            and _passes(row, DEFENSE_BUFF[3])):
+        moves.append(_move(DEFENSE_BUFF, buff=True))
     return moves
+

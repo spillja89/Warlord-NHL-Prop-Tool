@@ -701,7 +701,7 @@ _ROLE_INFO = {
 # One description is reused by the prop headers, move gate, and Ledger.
 # Fired counts always come from warlord_moves_2026, never from this copy.
 _CLASS_RULES = {
-    "GOALS": {"role": "Carry", "market": "Goal", "entry": "Matrix_Goal Green · Goal 0.5 · legacy Goal move score ≥ 85", "note": "Warlord cards require a current-season named Goal attack. The full priced tracker remains below."},
+    "GOALS": {"role": "Carry", "market": "Goal", "entry": "Matrix_Goal Green · Goal 0.5 · Goal profile ≥ 93 · last-five xG/game ≥ 0.55", "note": "Player attacks can fire without a matchup buff. The full priced tracker remains below."},
     "ASSISTS": {"role": "Support", "market": "Assists", "entry": "Matrix_Assists Green · Assists 0.5 · Conf_Assists ≥ 81 · iXA% ≥ 95", "note": "The PP Specials gain a Crit tier when team PP xGF/60 reaches 8.3."},
     "POINTS": {"role": "Tank", "market": "Points", "entry": "Matrix_Points Green · Points 0.5 with Conf_Points ≥ 80, or Points 1.5 with Conf_Points ≥ 75", "note": "The 0.5 and 1.5 lines have separate move trees."},
     "SOG": {"role": "Jungle", "market": "SOG", "entry": "Matrix_SOG Green · 2.5: Conf_SOG ≥ 75 · 3.5: Conf_SOG ≥ 86", "note": "The 3.5 shortlist uses a current-season confidence screen; older move records keep their original rules."},
@@ -1661,7 +1661,7 @@ def _render_goals_combat_hud(r) -> None:
     if not moves:
         st.caption("No current-season named Goal attack fires on this row.")
         return
-    for kind in ("BASE ATTACK", "HEAVY ATTACK", "SPECIAL ATTACK", "ULTIMATE ATTACK"):
+    for kind in ("BASE ATTACK", "HEAVY ATTACK", "SPECIAL ATTACK", "ULTIMATE ATTACK", "MATCHUP BUFF"):
         active = [move for move in moves if move["kind"] == kind]
         if not active:
             continue
@@ -4440,9 +4440,9 @@ def _green_conf_threshold(market: str, slate_games: int) -> int:
     if m.upper() in ("GOALS (0.5)", "GOAL 1+", "ATG", "ANYTIME GOAL"):
         m = "Goal"
 
-    # Hard floor: GOALS earned-green starts at 85 (fixed, not slate-size dependent)
+    # Goal profile entry uses the current-season 93-point player screen.
     if m == "Goal":
-        return 85
+        return 93
     if slate_games >= 8:
         return {"SOG": 75, "Points": 70, "Goal": 80, "Assists": 80}[m]
     elif slate_games >= 5:
@@ -4501,9 +4501,12 @@ df["Goal_ProofCount"] = goal_proofs.sum(axis=1)
 needed_g = np.where(is_star_g, 2, 3)
 
 df["Green_Goal"] = (
-    (safe_num(df, "Conf_Goal_Move" if "Conf_Goal_Move" in df.columns else "Conf_Goal", 0) >= thr_g)
+    (safe_num(df, "Conf_Goal", 0) >= thr_g)
     & (safe_str(df, "Matrix_Goal", "").str.strip().str.lower() == "green")
-    & (df["Goal_ProofCount"] >= needed_g)
+    & (safe_num(df, "Pregame_xG_L5_per_game", 0) >= .55)
+    & (safe_num(df, "Goal_Line", 0) == .5)
+    & (safe_str(df, "Model_Stats_Season", "") == "2026-2027")
+    & (safe_str(df, "Form_Season", "") == "2026-27")
 )
 
 # optional: debug why
@@ -6043,7 +6046,7 @@ elif page == "GOALS (0.5)":
 
     st.sidebar.subheader("Goal Filters")
     show_all = st.sidebar.checkbox("Show all players (ignore optional filters)", value=True)
-    min_conf = st.sidebar.slider("Min Goal Conf", 0, 100, 85, 1)
+    min_conf = st.sidebar.slider("Min Goal Conf", 0, 100, 93, 1)
     color_pick = st.sidebar.multiselect(
         "Colors (Goal)",
         ["green", "yellow", "blue", "red"],
@@ -6077,7 +6080,7 @@ elif page == "GOALS (0.5)":
         "Tonight_Goal_EV_factor", "Tonight_Goal_PK_factor", "Tonight_Goal_Goalie_factor",
         "Opp_PK_xGA60", "Opp_SOG_Against_L50", "opp_5v5_HDCA60",
         "TOI_per_game", "TOI_Pct", "PP_TOI_Pct", "StarScore", "Conf_SOG", "TalentMult", "Points_mu",
-        "PP_iXG60", "Player_5v5_SOG_Share", "Pregame_G_L5_per_game", "Pregame_xG_L5_per_game", "L10_S",
+        "PP_iXG60", "Player_5v5_SOG_Share", "Pregame_G_L5_per_game", "Pregame_xG_L5_per_game", "L10_S", "L20_S", "L20_A",
         "Opp_SOG_Against_L10",
         "iXG%",
         "Opp_DefWeak",
@@ -6088,6 +6091,7 @@ elif page == "GOALS (0.5)":
         "ShotIntent",
         "ShotIntent_Pct",
         "Drought_G", "Best_Drought",
+        "v2_defense_vulnerability", "Team_Stats_Season",
 
         # --- GOALIE / CONTEXT ---
         "Opp_Goalie", "Opp_Goalie_Status", "Opp_GP", "Opp_Goalie_Shots_Faced", "Opp_SV", "Opp_GAA", "Goalie_Weak",
@@ -6105,7 +6109,7 @@ elif page == "GOALS (0.5)":
     df_g["EV_Signal"] = [build_ev_signal(gg, ee, pp) for gg, ee, pp in zip(g, e, p if hasattr(p, "__iter__") else [p]*len(df_g))]
 
     df_g["LOCK"] = [build_lock_badge(gg, ee) for gg, ee in zip(g, e)]
-    _f = render_market_filter_bar(default_min_conf=85, key_prefix="goal")
+    _f = render_market_filter_bar(default_min_conf=93, key_prefix="goal")
 
     try:
         df_g = apply_market_filters(
@@ -7821,3 +7825,4 @@ elif page == "Ledger":
 else:
     st.subheader("Raw CSV (all columns)")
     st.dataframe(df_f, width="stretch", height=620, hide_index=True)
+
