@@ -347,7 +347,7 @@ def unfeatured_baselines(cards: list[dict]) -> list[dict]:
 
 
 def goal_display_cards(cards: list[dict]) -> list[dict]:
-    """Show priced Green Goal players; keep researched attacks distinct."""
+    """Show priced Goal players only when a named player attack fires."""
     eligible = []
     for card in cards:
         if not card.get("baseline_rule"):
@@ -355,11 +355,12 @@ def goal_display_cards(cards: list[dict]) -> list[dict]:
         attacks = [move for move in card.get("moves", [])
                    if not move.get("matchup_buff")
                    if int(move["picks"]) > 0]
-        eligible.append({**card, "move": max(attacks, key=_move_rank) if attacks else None,
-                         "baseline_only": not attacks})
+        if not attacks:
+            continue
+        eligible.append({**card, "move": max(attacks, key=_move_rank),
+                         "baseline_only": False})
     return sorted(eligible, key=lambda card: (
-        card["move"] is not None,
-        _move_rank(card["move"]) if card["move"] else (-1, -1, -1),
+        _move_rank(card["move"]),
         card.get("confidence") or -1, card["player"].casefold()), reverse=True)
 
 

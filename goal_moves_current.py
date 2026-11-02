@@ -10,8 +10,8 @@ from __future__ import annotations
 import math
 
 
-GOAL_KIT_VERSION = "goal-2026-27-profile-v3"
-ENTRY = "Goal 0.5 + Matrix_Goal Green + last-five xG/game >= 0.55"
+GOAL_KIT_VERSION = "goal-2026-27-profile-v4"
+ENTRY = "Goal 0.5 + Matrix_Goal Green + last-five xG/game >= 0.50"
 
 # Name, tier, icon, added checks, wins, plays. Every check is applied after ENTRY.
 # Plays can fire in multiple routes; their records must not be added together.
@@ -26,7 +26,7 @@ RULES = (
      (("L20_A", "<=", 8), ("ShotIntent_Pct", "<=", 91.1)), 22, 32),
     ("Star Shot Strike", "SPECIAL ATTACK", "smash.svg",
      (("StarScore", ">=", 84.5), ("L20_S", "<=", 31)), 27, 39),
-    ("Volume Rebound", "SPECIAL ATTACK", "fury.svg",
+    ("Reaper's Return", "SPECIAL ATTACK", "fury.svg",
      (("L10_S", "<=", 38), ("Drought_G", ">=", 1)), 19, 26),
 )
 
@@ -43,7 +43,22 @@ LEVELS = {
     "Measured Intent": ((None, "I", 26, 43), (89, "II", 26, 40)),
     "Creator's Cut": ((None, "I", 25, 40), (89, "II", 25, 37)),
     "Star Shot Strike": ((None, "I", 28, 43), (93, "II", 27, 39)),
-    "Volume Rebound": ((None, "I", 20, 33), (89, "II", 20, 31), (93, "III", 19, 26)),
+    "Reaper's Return": ((None, "I", 20, 33), (89, "II", 20, 31), (93, "III", 19, 26)),
+}
+
+# The same pregame cohort with a broader 0.50 xG entry. All 0.50–0.54
+# marginal groups returned positive flat-stake units at their saved prices,
+# but these remain in-sample records rather than expected profit tonight.
+BASE_LEVELS = {
+    "Base Attack": {"I": (67, 150), "II": (65, 141), "III": (57, 120)},
+    "Creator Fade": {"I": (62, 133), "II": (60, 124), "III": (52, 103)},
+    "Star Pressure": {"I": (56, 113)},
+    "Shot Control": {"I": (64, 134), "II": (62, 125), "III": (54, 104)},
+    "Drought Strike": {"I": (34, 66), "II": (32, 60), "III": (29, 51)},
+    "Measured Intent": {"I": (40, 73), "II": (38, 65)},
+    "Creator's Cut": {"I": (35, 64), "II": (33, 56)},
+    "Star Shot Strike": {"I": (37, 63), "II": (34, 55)},
+    "Reaper's Return": {"I": (31, 53), "II": (29, 47), "III": (26, 38)},
 }
 
 # This is an additional context signal, not an entry gate or a player goal chance.
@@ -60,7 +75,7 @@ REPLACES = {
     "Measured Intent": "NEW",
     "Creator's Cut": "Expected Finisher",
     "Star Shot Strike": "Star Scorer",
-    "Volume Rebound": "Expected Shot Barrage",
+    "Reaper's Return": "Expected Shot Barrage",
     "Defense Breach": "NEW",
 }
 
@@ -81,22 +96,36 @@ def _passes(row, checks):
     return True
 
 
-def _move(spec, *, buff=False, level=None):
+def goal_profile_score(row):
+    """Rounded profile used to award Goal attack levels."""
+    ixg = _number(row, "iXG%")
+    if ixg is None:
+        ixg = _number(row, "iXG_pct")
+    toi = _number(row, "TOI_Pct")
+    return round(.82 * ixg + .18 * toi) if ixg is not None and toi is not None else None
+
+
+def _move(spec, *, buff=False, level=None, xg_boost=False):
     name, kind, icon, checks, wins, picks = spec
     profile_cutoff = None
     if level is not None:
         profile_cutoff, label, wins, picks = level
+        if not xg_boost:
+            wins, picks = BASE_LEVELS[name][label]
     conditions = ([f"Goal profile >= {profile_cutoff:g}"]
                   if profile_cutoff is not None else [])
     conditions += [f"{field} {comparison} {cutoff:g}"
                    for field, comparison, cutoff in checks]
     condition = " + ".join(conditions)
     if buff:
-        condition = "verified 2026-27 team stats + Goal profile >= 93 + " + condition
+        condition = "last-five xG/game >= 0.55 + verified 2026-27 team stats + Goal profile >= 93 + " + condition
+    elif xg_boost:
+        condition = "last-five xG/game >= 0.55" + (" + " + condition if condition else "")
     rule = ENTRY + (" + " + condition if condition else "")
-    return {"name": f"{name} {label}" if level is not None else name,
+    return {"name": f"{name} {label}{' · xG+' if xg_boost else ''}" if level is not None else name,
             "research_name": name, "level": label if level is not None else None,
-            "profile_cutoff": profile_cutoff, "kind": kind, "icon": icon,
+            "profile_cutoff": profile_cutoff, "xg_boost": xg_boost,
+            "kind": kind, "icon": icon,
             "condition": condition or ENTRY, "rule": rule, "wins": wins,
             "picks": picks, "later_wins": 0, "later_picks": 0,
             "crit": False, "experimental": False, "sample_season": "2026-27",
@@ -109,14 +138,10 @@ def goals_moves(row):
     line = _number(row, "Goal_Line")
     if line is None:
         line = _number(row, "ATG_Line")
-    ixg = _number(row, "iXG%")
-    if ixg is None:
-        ixg = _number(row, "iXG_pct")
-    toi = _number(row, "TOI_Pct")
-    profile = round(.82 * ixg + .18 * toi) if ixg is not None and toi is not None else None
+    profile = goal_profile_score(row)
     recent_xg = _number(row, "Pregame_xG_L5_per_game")
     if (line != .5 or str(row.get("Matrix_Goal", "")).strip().casefold() != "green"
-            or profile is None or recent_xg is None or recent_xg < .55
+            or profile is None or recent_xg is None or recent_xg < .50
             or str(row.get("Model_Stats_Season", "")) != "2026-2027"
             or str(row.get("Form_Season", "")) != "2026-27"):
         return []
@@ -125,8 +150,9 @@ def goals_moves(row):
         if _passes(row, spec[3]):
             level = next(candidate for candidate in reversed(LEVELS[spec[0]])
                          if candidate[0] is None or profile >= candidate[0])
-            moves.append(_move(spec, level=level))
-    if (profile >= 93 and str(row.get("Team_Stats_Season", "")) == "2026-2027"
+            moves.append(_move(spec, level=level, xg_boost=recent_xg >= .55))
+    if (recent_xg >= .55 and profile >= 93
+            and str(row.get("Team_Stats_Season", "")) == "2026-2027"
             and _passes(row, DEFENSE_BUFF[3])):
         moves.append(_move(DEFENSE_BUFF, buff=True))
     return moves

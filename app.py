@@ -17,6 +17,7 @@ import streamlit as st
 from published_output import fetch_grade_file, fetch_tracker, is_newer_tracker, list_grade_files, local_matches_sha, save_if_changed
 from warlord_moves_2026 import VERSION as MOVE_KIT_VERSION
 from warlord_moves_2026 import best_move, points_moves, sog_moves, goals_moves as _goals_carry_moves, assists_moves as _assists_mapped_moves
+from goal_moves_current import goal_profile_score
 from warlords_night_board import CLASSES, baseline_audit, rank_warlords, rank_priced_slate, featured_warlords, unfeatured_baselines, goal_display_cards, render_warlords, render_power_play_form, render_power_play_quotes_table, _character_uri
 from player_form import compact_regular_log, summarize_form
 from current_season_stats import current_season_rows, season_for_day
@@ -701,7 +702,7 @@ _ROLE_INFO = {
 # One description is reused by the prop headers, move gate, and Ledger.
 # Fired counts always come from warlord_moves_2026, never from this copy.
 _CLASS_RULES = {
-    "GOALS": {"role": "Carry", "market": "Goal", "entry": "Matrix_Goal Green · Goal 0.5", "note": "Named player attacks also require last-five xG/game ≥ 0.55. Goal confidence upgrades the moves where it separated the saved results. The full priced tracker remains below."},
+    "GOALS": {"role": "Carry", "market": "Goal", "entry": "Matrix_Goal Green · Goal 0.5", "note": "Named player attacks require last-five xG/game ≥ 0.50; 0.55+ gains the xG+ record. Goal profile can upgrade the move level. The full priced tracker remains below."},
     "ASSISTS": {"role": "Support", "market": "Assists", "entry": "Matrix_Assists Green · Assists 0.5 · Conf_Assists ≥ 81 · iXA% ≥ 95", "note": "The PP Specials gain a Crit tier when team PP xGF/60 reaches 8.3."},
     "POINTS": {"role": "Tank", "market": "Points", "entry": "Matrix_Points Green · Points 0.5 with Conf_Points ≥ 80, or Points 1.5 with Conf_Points ≥ 75", "note": "The 0.5 and 1.5 lines have separate move trees."},
     "SOG": {"role": "Jungle", "market": "SOG", "entry": "Matrix_SOG Green · 2.5: Conf_SOG ≥ 75 · 3.5: Conf_SOG ≥ 86", "note": "The 3.5 shortlist uses a current-season confidence screen; older move records keep their original rules."},
@@ -863,7 +864,7 @@ def _render_class_shortlist(frame: pd.DataFrame, role: str,
     goal_cards = goal_display_cards(priced[role]) if role == "Carry" else []
     if goal_cards and slate_sort != "Top ranked":
         goal_cards = _sort_slate_boards({"Carry": goal_cards}, slate_sort, starts_by_game)["Carry"]
-    st.subheader(f"{role} · {len(goal_cards)} Green Goal cards of {total} priced players"
+    st.subheader(f"{role} · {len(goal_cards)} Goal attack cards of {total} priced players"
                  if role == "Carry" else f"{role} · {len(featured[role])} featured of {total} priced players")
     if total == 0:
         st.info("No posted player line and price for this class yet.")
@@ -872,7 +873,7 @@ def _render_class_shortlist(frame: pd.DataFrame, role: str,
     if role == "Tank":
         watch = [card for card in watch if not card.get("points_current_tier")]
     if role == "Carry":
-        st.caption("Green Goal 0.5 players appear here. Player conditions plus last-five xG/game ≥0.55 fire level I attacks; Goal profile can upgrade a move to II or III. Each card shows the record for the level earned. Green Candidates have no tested move record.")
+        st.caption("Goal 0.5 players appear here when a named attack fires. Last-five xG/game ≥0.50 unlocks attack I; 0.55+ earns the xG+ record, and Goal profile can upgrade the move to II or III. Other priced players remain in the tracker.")
         st.html(render_warlords({"Carry": goal_cards}, limit=len(goal_cards),
                                 roles=("Carry",), show_hero=False))
         st.caption("Tonight research projection is a separate matchup-adjusted estimate. It is not the historical move % and does not affect Goal card selection. It is being graded before use as a betting edge.")
@@ -2578,6 +2579,10 @@ COLUMN_WIDTHS = {
 
 # Column tooltips (market engines & key signals)
 COLUMN_HELP = {
+    "Pregame_xG_L5_per_game": "Expected goals per game across the player's last five completed games before this slate. Goal attacks require at least 0.50; 0.55+ earns the stronger xG+ record.",
+    "Goal_Profile": "Rounded Goal attack profile: 82% individual xG rank plus 18% ice-time share. It upgrades qualifying attacks; it does not replace their player rules.",
+    "Goal_Attack": "Highest-ranked current-season Goal attack fired by this player's saved pregame stats. A blank means no attack fired.",
+    "Goal_Attack_Record": "Goals/plays for the displayed attack level in the saved 2026-27 research sample. This is not tonight's probability.",
     # Assists
     "PP_PROOF": "PP Proof combines PP usage, observed assist production, and matchup. It is a heuristic, not an expected-assists model.",
     "iXA%": "Legacy name: percentile of observed assists (primary + secondary) among available skaters. The current MoneyPuck feed has no expected-assists field; totals also depend on games played.",
@@ -2601,6 +2606,10 @@ COLUMN_HELP = {
     "REG_DROUGHT": "🎰 Jackpot badge when Points engine is READY and Drought_P ≥ 2 (amplifier; not a gate).",
 }
 COLUMN_LABELS = {
+    "Pregame_xG_L5_per_game": "L5 xG/game",
+    "Goal_Profile": "Goal profile",
+    "Goal_Attack": "Goal attack",
+    "Goal_Attack_Record": "Attack record",
     "iXA%": "Observed assist rank %",
     "PP_iXA60": "Weighted PP assists/60",
     "PP_Points60": "PP involvement proxy/60",
@@ -2609,13 +2618,16 @@ COLUMN_LABELS = {
     "Exp_A_10_Gap_Basis": "Assist gap basis/10",
     "Reg_Gap_A10": "Assist pace gap/10",
 }
-def build_column_config(df: pd.DataFrame, cols: list[str]) -> dict:
+def build_column_config(df: pd.DataFrame, cols: list[str], *, fit_headers: bool = False) -> dict:
     cfg = {}
 
     for c in cols:
         width = COLUMN_WIDTHS.get(c, "small")
         help_txt = COLUMN_HELP.get(c)
         label = COLUMN_LABELS.get(c, c)
+        if fit_headers:
+            minimum = 160 if width == "medium" else 100
+            width = max(minimum, min(320, 24 + 8 * len(label)))
 
         if c not in df.columns:
             cfg[c] = st.column_config.TextColumn(label=label, width=width, help=help_txt)
@@ -4026,7 +4038,7 @@ def show_table(df: pd.DataFrame, cols: list[str], title: str):
         width="stretch",
         height=560,
         hide_index=True,
-        column_config=build_column_config(df, existing),
+        column_config=build_column_config(df, existing, fit_headers=True),
     )
 
 
@@ -5233,7 +5245,7 @@ if page == "⚔️ Warlords of the Night":
     st.caption(f"Current view: {night_df['Game'].nunique() if 'Game' in night_df else 0} games · "
                f"{night_df['Team'].nunique() if 'Team' in night_df else 0} teams · "
                f"{len(night_df)} roster skaters · {priced_total} priced prop entries · "
-               f"{len(goal_cards)} Green Goal cards ({sum(card['move'] is not None for card in goal_cards)} named attacks) · "
+               f"{len(goal_cards)} named Goal attack cards · "
                f"{featured_total} featured prop cards, including current-season Points screens · "
                f"{len(points_tier_cards)} current-season Points 0.5 tier cards. "
                "Every priced entry is in the complete slate below.")
@@ -5246,11 +5258,10 @@ if page == "⚔️ Warlords of the Night":
         order_note = ("Goal cards rank by their strongest fired current-season attack" if slate_sort == "Top ranked"
                       else f"Cards are sorted by {slate_sort.lower()}; same-game move ranks stay intact")
         st.caption(f"{len(goal_cards)} named Goal attack cards. "
-                   f"{len(featured_boards['Carry'])} goals have a 50%+ current-season move; "
                    f"{featured_total-len(featured_boards['Carry'])} other featured prop cards include current-season Points screens. "
                    f"{order_note}. Move histories are not forecasts.")
     else:
-        st.info(f"{priced_total} priced prop entries. No player currently clears both the baseline and a 50%+ historical move; see the complete slate below.")
+        st.info(f"{priced_total} priced prop entries. No named attack fires for this slate; see the complete slate below.")
 
     if points_tier_cards:
         st.caption("Points 0.5 current-season screens through Oct 26: Base 51/76, Heavy (PP minutes/game ≥3.5) 39/52, Special (last 10 assists ≥8) 27/33. Special takes display priority when both fire. These nested records overlap and are not tonight's probabilities; older named moves remain in card details.")
@@ -6041,6 +6052,15 @@ elif page == "GOALS (0.5)":
     df_g = df_g.sort_values(["_goal_conf"], ascending=[False]).drop(columns=["_goal_conf"], errors="ignore")
     df_g["Green"] = to_bool_series(column_or(df_g, "Green_Goal", False)).map(lambda x: "🟢" if x else "")
     goal_tracker = df_g.copy()
+    goal_tracker["Goal_Profile"] = [goal_profile_score(row) for _, row in goal_tracker.iterrows()]
+    goal_tracker_moves = [_goals_carry_moves(row) for _, row in goal_tracker.iterrows()]
+    goal_tracker_best = [max((move for move in moves if not move.get("matchup_buff")),
+                             key=lambda move: (move["wins"] / move["picks"], move["picks"]),
+                             default=None) for moves in goal_tracker_moves]
+    goal_tracker["Goal_Attack"] = [move["name"] if move else "—" for move in goal_tracker_best]
+    goal_tracker["Goal_Attack_Record"] = [
+        f"{move['wins']}/{move['picks']} · {100 * move['wins'] / move['picks']:.1f}%" if move else "—"
+        for move in goal_tracker_best]
 
     st.sidebar.subheader("Goal Filters")
     show_all = st.sidebar.checkbox("Show all players (ignore optional filters)", value=True)
@@ -6061,6 +6081,7 @@ elif page == "GOALS (0.5)":
         "Game",
         "Player", "Pos",
         "Tier_Tag",
+        "Goal_Attack", "Goal_Attack_Record", "Pregame_xG_L5_per_game", "Goal_Profile",
 
         # --- LINE / ODDS FIRST (bet slip view) ---
         "Goal_Line",
@@ -6078,7 +6099,7 @@ elif page == "GOALS (0.5)":
         "Tonight_Goal_EV_factor", "Tonight_Goal_PK_factor", "Tonight_Goal_Goalie_factor",
         "Opp_PK_xGA60", "Opp_SOG_Against_L50", "opp_5v5_HDCA60",
         "TOI_per_game", "TOI_Pct", "PP_TOI_Pct", "StarScore", "Conf_SOG", "TalentMult", "Points_mu",
-        "PP_iXG60", "Player_5v5_SOG_Share", "Pregame_G_L5_per_game", "Pregame_xG_L5_per_game", "L10_S", "L20_S", "L20_A",
+        "PP_iXG60", "Player_5v5_SOG_Share", "Pregame_G_L5_per_game", "L10_S", "L20_S", "L20_A",
         "Opp_SOG_Against_L10",
         "iXG%",
         "Opp_DefWeak",
@@ -6134,6 +6155,7 @@ elif page == "GOALS (0.5)":
 
     st.markdown("---")
 
+    st.caption("Goal attacks require pregame L5 xG/game ≥0.50; 0.55+ earns the xG+ record. Goal profile can also upgrade the level. Attack records are past results, not tonight's probabilities.")
     show_table(goal_tracker, goal_cols, f"Goal tracker · {len(goal_tracker)} skaters")
 
 
