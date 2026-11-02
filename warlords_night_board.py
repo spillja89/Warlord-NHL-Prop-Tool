@@ -1029,4 +1029,3 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
     board_class = "wn-board" if show_hero else "wn-board wn-board--compact"
     return styles + f'<div class="{board_class}">' + (hero if show_hero else "") + '<div class="wn-grid">' + ''.join(lanes) + '</div></div>'
 
-

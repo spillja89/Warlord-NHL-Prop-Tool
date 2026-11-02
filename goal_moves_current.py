@@ -101,4 +101,3 @@ def goals_moves(row):
             and _passes(row, DEFENSE_BUFF[3])):
         moves.append(_move(DEFENSE_BUFF, buff=True))
     return moves
-
