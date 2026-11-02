@@ -10,7 +10,7 @@ from __future__ import annotations
 import math
 
 
-GOAL_KIT_VERSION = "goal-2026-27-star-v5"
+GOAL_KIT_VERSION = "goal-2026-27-three-paths-v6"
 ENTRY = "Goal 0.5 + Matrix_Goal Green + last-five xG/game >= 0.50"
 
 # Name, tier, icon, added checks, wins, plays. Every check is applied after ENTRY.
@@ -162,10 +162,11 @@ def xg_goals_moves(row):
 
 
 def goals_moves(row):
-    """Independent xG and StarScore entry routes share one Goal display engine."""
+    """Independent xG, StarScore/drought and StarScore/TOI20 Goal paths."""
     from goal_star_moves import star_goals_moves
+    from goal_toi_moves import toi_goals_moves
 
-    return xg_goals_moves(row) + star_goals_moves(row)
+    return xg_goals_moves(row) + star_goals_moves(row) + toi_goals_moves(row)
 
 
 def goal_move_summary(moves):

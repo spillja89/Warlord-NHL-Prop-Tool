@@ -702,7 +702,7 @@ _ROLE_INFO = {
 # One description is reused by the prop headers, move gate, and Ledger.
 # Fired counts always come from warlord_moves_2026, never from this copy.
 _CLASS_RULES = {
-    "GOALS": {"role": "Carry", "market": "Goal", "entry": "Matrix_Goal Green · Goal 0.5", "note": "StarScore attacks: StarScore ≥84.5, goal drought ≥1 and TOI rank ≥81. Goal confidence ≥93 adds level II. The separate xG route uses L5 xG/game ≥0.50. All fired attacks, crits and buffs appear in the tracker."},
+    "GOALS": {"role": "Carry", "market": "Goal", "entry": "Matrix_Goal Green · Goal 0.5", "note": "Three Goal paths: xG, StarScore/goal drought, and StarScore/TOI20. Star Barrage uses StarScore ≥84.5 + TOI/game ≥20 + L10 shots ≤39. PPP drought ≥1/≥2 adds the highest Runic Barrage level. All fired attacks, crits and buffs appear in the tracker."},
     "ASSISTS": {"role": "Support", "market": "Assists", "entry": "Matrix_Assists Green · Assists 0.5 · Conf_Assists ≥ 81 · iXA% ≥ 95", "note": "The PP Specials gain a Crit tier when team PP xGF/60 reaches 8.3."},
     "POINTS": {"role": "Tank", "market": "Points", "entry": "Matrix_Points Green · Points 0.5 with Conf_Points ≥ 80, or Points 1.5 with Conf_Points ≥ 75", "note": "The 0.5 and 1.5 lines have separate move trees."},
     "SOG": {"role": "Jungle", "market": "SOG", "entry": "Matrix_SOG Green · 2.5: Conf_SOG ≥ 75 · 3.5: Conf_SOG ≥ 86", "note": "The 3.5 shortlist uses a current-season confidence screen; older move records keep their original rules."},
@@ -873,7 +873,7 @@ def _render_class_shortlist(frame: pd.DataFrame, role: str,
     if role == "Tank":
         watch = [card for card in watch if not card.get("points_current_tier")]
     if role == "Carry":
-        st.caption("StarScore kit: StarScore ≥84.5 + goal drought ≥1 + TOI rank ≥81; no xG requirement. Goal confidence ≥93 unlocks Drought Strike II. Specials and crits add their own player conditions; matchup buffs enhance each qualifying special. The separate xG route remains available. Scouting Targets have no fired attack or move record.")
+        st.caption("Goal kit v6 · Three paths: xG; StarScore + goal drought; StarScore + TOI20. Star Barrage needs StarScore ≥84.5, TOI/game ≥20 and L10 shots ≤39, with no goal-drought, confidence or recent-xG gate. PPP drought adds Runic Barrage I at ≥1 or II at ≥2; only the highest level is shown. Attacks and matchup buffs keep separate records. Scouting Targets have no fired attack.")
         st.html(render_warlords({"Carry": goal_cards}, limit=len(goal_cards),
                                 roles=("Carry",), show_hero=False))
         st.caption("Tonight research projection is a separate matchup-adjusted estimate. It is not the historical move % and does not affect Goal card selection. It is being graded before use as a betting edge.")
@@ -2589,6 +2589,7 @@ COLUMN_HELP = {
     "Goal_All_Attacks": "Every player attack that fires, each with its own historical record. These samples overlap and must not be added together.",
     "Goal_Crits": "Every fired Goal crit, evaluated directly from the StarScore/drought/TOI81 parent. No confidence or recent-xG gate is inherited.",
     "Goal_Buffs": "Every fired environment buff with its parent special and exact historical record. Buffs require current-season team stats and never act as player entry gates.",
+    "Drought_PPP": "Consecutive completed games without a credited power-play point. On the StarScore/TOI20 path, ≥1 unlocks Runic Barrage I and ≥2 unlocks II. Only the highest level displays; its record is the complete historical ≥ threshold sample.",
     # Assists
     "PP_PROOF": "PP Proof combines PP usage, observed assist production, and matchup. It is a heuristic, not an expected-assists model.",
     "iXA%": "Legacy name: percentile of observed assists (primary + secondary) among available skaters. The current MoneyPuck feed has no expected-assists field; totals also depend on games played.",
@@ -2623,6 +2624,7 @@ COLUMN_LABELS = {
     "StarScore": "Star score",
     "TOI_Pct": "TOI rank %",
     "Drought_G": "Goal drought",
+    "Drought_PPP": "PPP drought",
     "iXA%": "Observed assist rank %",
     "PP_iXA60": "Weighted PP assists/60",
     "PP_Points60": "PP involvement proxy/60",
@@ -6094,7 +6096,7 @@ elif page == "GOALS (0.5)":
         "Player", "Pos",
         "Tier_Tag",
         "Goal_Attack", "Goal_Attack_Record", "Goal_All_Attacks", "Goal_Crits", "Goal_Buffs",
-        "Goal_Attack_Sample_BE", "StarScore", "Drought_G", "TOI_Pct", "Goal_Profile",
+        "Goal_Attack_Sample_BE", "StarScore", "Drought_G", "Drought_PPP", "TOI_Pct", "TOI_per_game", "Goal_Profile",
         "L10_S", "ShotIntent", "Points_mu", "ShotIntent_Pct", "Avg5_SOG", "L10_G",
         "team_5v5_SF60", "Opp_PK_GA60", "Team_PP_xGF60", "Pregame_xG_L5_per_game",
 
@@ -6171,7 +6173,7 @@ elif page == "GOALS (0.5)":
     st.markdown("---")
 
     goal_cols = list(dict.fromkeys(goal_cols))
-    st.caption("Goal kit v5 · StarScore/drought attacks need no recent-xG gate. All attacks, crits and parent-specific matchup buffs are listed separately. The xG route has its own conditions. Records are overlapping past results through Oct 31, not tonight's probabilities.")
+    st.caption("Goal kit v6 · Three independent paths: xG, StarScore/goal drought, and StarScore/TOI20. Star Barrage has no recent-xG or goal-drought gate. Runic Barrage shows the highest PPP-drought level only. Each record uses its complete historical threshold sample, not today's probability. All attacks, crits and buffs appear separately.")
     show_table(goal_tracker, goal_cols, f"Goal tracker · {len(goal_tracker)} skaters")
 
 

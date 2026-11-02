@@ -188,7 +188,7 @@ def rank_warlords(frame: pd.DataFrame) -> dict[str, list[dict]]:
                 "tonight_goal_pct": _number(row.get("Tonight_Goal_1plus_pct")) if market == "Goal" else None,
                 "tonight_goal_status": str(_value(row, "Tonight_Goal_Status") or "") if market == "Goal" else "",
                 "goal_profile": {field: _number(row.get(field)) for field in
-                                 ("iXG%", "StarScore", "Drought_G", "TOI_Pct", "ShotIntent", "ShotIntent_Pct", "Avg5_SOG", "L10_G", "L10_S", "TOI_per_game", "Goal_mu", "Points_mu")}
+                                 ("iXG%", "StarScore", "Drought_G", "Drought_PPP", "TOI_Pct", "ShotIntent", "ShotIntent_Pct", "Avg5_SOG", "L10_G", "L10_S", "TOI_per_game", "Goal_mu", "Points_mu")}
                                 if market == "Goal" else None,
                 "tonight_mu": _number(row.get(f"Tonight_{market}_mu")) if
                 row.get(f"Tonight_{market}_Version") == "2026-10-19-research-v3" else None,
@@ -268,7 +268,7 @@ def rank_priced_slate(frame: pd.DataFrame) -> dict[str, list[dict]]:
                 "tonight_goal_pct": _number(row.get("Tonight_Goal_1plus_pct")) if market == "Goal" else None,
                 "tonight_goal_status": str(_value(row, "Tonight_Goal_Status") or "") if market == "Goal" else "",
                 "goal_profile": {field: _number(row.get(field)) for field in
-                                 ("iXG%", "StarScore", "Drought_G", "TOI_Pct", "ShotIntent", "ShotIntent_Pct", "Avg5_SOG", "L10_G", "L10_S", "TOI_per_game", "Goal_mu", "Points_mu")}
+                                 ("iXG%", "StarScore", "Drought_G", "Drought_PPP", "TOI_Pct", "ShotIntent", "ShotIntent_Pct", "Avg5_SOG", "L10_G", "L10_S", "TOI_per_game", "Goal_mu", "Points_mu")}
                                 if market == "Goal" else None,
                 "tonight_mu": _number(row.get(f"Tonight_{market}_mu")) if
                 row.get(f"Tonight_{market}_Version") == "2026-10-19-research-v3" else None,
@@ -809,6 +809,7 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
             profile_parts = []
             for field, label, fmt in (("StarScore", "star score", ".1f"),
                                       ("Drought_G", "goal drought", ".0f"),
+                                      ("Drought_PPP", "PPP drought", ".0f"),
                                       ("TOI_Pct", "TOI rank", ".1f"),
                                       ("iXG%", "iXG rank", ".0f"),
                                       ("ShotIntent", "shot intent", ".1f"),
@@ -853,7 +854,7 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
             if role == "Carry":
                 signal_rows = []
                 for signal in fired:
-                    if signal.get("route_family") != "star_drought":
+                    if signal.get("route_family") not in {"star_drought", "star_toi20"}:
                         continue
                     signal_pct = 100 * signal["wins"] / signal["picks"]
                     signal_be = signal.get("sample_book_be_pct")
