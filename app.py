@@ -701,7 +701,7 @@ _ROLE_INFO = {
 # One description is reused by the prop headers, move gate, and Ledger.
 # Fired counts always come from warlord_moves_2026, never from this copy.
 _CLASS_RULES = {
-    "GOALS": {"role": "Carry", "market": "Goal", "entry": "Matrix_Goal Green · Goal 0.5", "note": "Named player attacks additionally require Goal profile ≥ 93 and last-five xG/game ≥ 0.55. The full priced tracker remains below."},
+    "GOALS": {"role": "Carry", "market": "Goal", "entry": "Matrix_Goal Green · Goal 0.5", "note": "Named player attacks also require last-five xG/game ≥ 0.55. Goal confidence upgrades the moves where it separated the saved results. The full priced tracker remains below."},
     "ASSISTS": {"role": "Support", "market": "Assists", "entry": "Matrix_Assists Green · Assists 0.5 · Conf_Assists ≥ 81 · iXA% ≥ 95", "note": "The PP Specials gain a Crit tier when team PP xGF/60 reaches 8.3."},
     "POINTS": {"role": "Tank", "market": "Points", "entry": "Matrix_Points Green · Points 0.5 with Conf_Points ≥ 80, or Points 1.5 with Conf_Points ≥ 75", "note": "The 0.5 and 1.5 lines have separate move trees."},
     "SOG": {"role": "Jungle", "market": "SOG", "entry": "Matrix_SOG Green · 2.5: Conf_SOG ≥ 75 · 3.5: Conf_SOG ≥ 86", "note": "The 3.5 shortlist uses a current-season confidence screen; older move records keep their original rules."},
@@ -872,7 +872,7 @@ def _render_class_shortlist(frame: pd.DataFrame, role: str,
     if role == "Tank":
         watch = [card for card in watch if not card.get("points_current_tier")]
     if role == "Carry":
-        st.caption("Green Goal 0.5 players appear here as candidates. Base Attack fires only with Goal profile ≥93 and last-five xG/game ≥0.55; its 43/85 record belongs to that move. Green Candidates have no tested move record.")
+        st.caption("Green Goal 0.5 players appear here. Player conditions plus last-five xG/game ≥0.55 fire level I attacks; Goal profile can upgrade a move to II or III. Each card shows the record for the level earned. Green Candidates have no tested move record.")
         st.html(render_warlords({"Carry": goal_cards}, limit=len(goal_cards),
                                 roles=("Carry",), show_hero=False))
         st.caption("Tonight research projection is a separate matchup-adjusted estimate. It is not the historical move % and does not affect Goal card selection. It is being graded before use as a betting edge.")

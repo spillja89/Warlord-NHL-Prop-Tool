@@ -354,7 +354,7 @@ def goal_display_cards(cards: list[dict]) -> list[dict]:
             continue
         attacks = [move for move in card.get("moves", [])
                    if not move.get("matchup_buff")
-                   if int(move["picks"]) > 0 and int(move["wins"]) / int(move["picks"]) >= .5]
+                   if int(move["picks"]) > 0]
         eligible.append({**card, "move": max(attacks, key=_move_rank) if attacks else None,
                          "baseline_only": not attacks})
     return sorted(eligible, key=lambda card: (
