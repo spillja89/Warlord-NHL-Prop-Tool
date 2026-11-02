@@ -864,7 +864,7 @@ def _render_class_shortlist(frame: pd.DataFrame, role: str,
     goal_cards = goal_display_cards(priced[role]) if role == "Carry" else []
     if goal_cards and slate_sort != "Top ranked":
         goal_cards = _sort_slate_boards({"Carry": goal_cards}, slate_sort, starts_by_game)["Carry"]
-    st.subheader(f"{role} · {len(goal_cards)} Goal attack cards of {total} priced players"
+    st.subheader(f"{role} · {sum(card['move'] is not None for card in goal_cards)} named attacks · {len(goal_cards)} Goal cards of {total} priced players"
                  if role == "Carry" else f"{role} · {len(featured[role])} featured of {total} priced players")
     if total == 0:
         st.info("No posted player line and price for this class yet.")
@@ -873,7 +873,7 @@ def _render_class_shortlist(frame: pd.DataFrame, role: str,
     if role == "Tank":
         watch = [card for card in watch if not card.get("points_current_tier")]
     if role == "Carry":
-        st.caption("Goal 0.5 players appear here when a named attack fires. Last-five xG/game ≥0.50 unlocks attack I; 0.55+ earns the xG+ record, and Goal profile can upgrade the move to II or III. Other priced players remain in the tracker.")
+        st.caption("Named Goal attacks appear first. Scouting Targets have a Green Goal 0.5 baseline but no named attack; they show no move record. Last-five xG/game ≥0.50 unlocks attack I; 0.55+ earns the xG+ record. Goal profile can upgrade a move to II or III.")
         st.html(render_warlords({"Carry": goal_cards}, limit=len(goal_cards),
                                 roles=("Carry",), show_hero=False))
         st.caption("Tonight research projection is a separate matchup-adjusted estimate. It is not the historical move % and does not affect Goal card selection. It is being graded before use as a betting edge.")
@@ -5245,7 +5245,8 @@ if page == "⚔️ Warlords of the Night":
     st.caption(f"Current view: {night_df['Game'].nunique() if 'Game' in night_df else 0} games · "
                f"{night_df['Team'].nunique() if 'Team' in night_df else 0} teams · "
                f"{len(night_df)} roster skaters · {priced_total} priced prop entries · "
-               f"{len(goal_cards)} named Goal attack cards · "
+               f"{sum(card['move'] is not None for card in goal_cards)} named Goal attacks · "
+               f"{len(goal_cards)} total Goal cards · "
                f"{featured_total} featured prop cards, including current-season Points screens · "
                f"{len(points_tier_cards)} current-season Points 0.5 tier cards. "
                "Every priced entry is in the complete slate below.")
@@ -5257,7 +5258,8 @@ if page == "⚔️ Warlords of the Night":
             st.caption(f"Positional SOG matchup feed unavailable ({_position_error}); saved cards and moves are unaffected.")
         order_note = ("Goal cards rank by their strongest fired current-season attack" if slate_sort == "Top ranked"
                       else f"Cards are sorted by {slate_sort.lower()}; same-game move ranks stay intact")
-        st.caption(f"{len(goal_cards)} named Goal attack cards. "
+        st.caption(f"{sum(card['move'] is not None for card in goal_cards)} named Goal attacks and "
+                   f"{sum(card['move'] is None for card in goal_cards)} Scouting Targets. "
                    f"{featured_total-len(featured_boards['Carry'])} other featured prop cards include current-season Points screens. "
                    f"{order_note}. Move histories are not forecasts.")
     else:
