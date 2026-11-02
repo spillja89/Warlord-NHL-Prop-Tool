@@ -771,7 +771,8 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
                                      if move else (0, 0))
             pct = 100 * wins / picks if picks else 0
             late_pct = 100 * late_wins / late_picks if late_picks else 0
-            status = (("ELITE GOAL WATCH" if card.get("goal_candidate") and card.get("talent_tier") == "ELITE" else
+            status = (("GREEN CANDIDATE" if role == "Carry" else
+                       "ELITE GOAL WATCH" if card.get("goal_candidate") and card.get("talent_tier") == "ELITE" else
                        "STAR GOAL WATCH" if card.get("goal_candidate") and card.get("talent_tier") == "STAR" else
                        "BASELINE" if "confidence" in card else "BASELINE ONLY") if baseline_only
                       else "OPEN POOL" if not move else
@@ -908,7 +909,8 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
             later_note = (f"MOVE {wins}/{picks}" +
                           (f" · MAR 15+ {late_wins}/{late_picks} ({late_pct:.1f}%)" if late_picks else
                            " · GOAL RECORD WITHOUT POINTS GATE" if card.get("goal_candidate") else "")
-                          if picks else "No tested move · posted line" if "confidence" in card
+                          if picks else "No Goal attack fired · posted line" if role == "Carry" else
+                          "No tested move · posted line" if "confidence" in card
                           else "Baseline screen · no upgraded move")
             if points_tier:
                 later_note = f'CURRENT SCREEN {wins}/{picks}'
@@ -920,11 +922,14 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
             if points_tier:
                 record_label = "2026–27 REG SCREEN"
             record_html = (f'<div class="wn-record"><strong>{pct:.1f}%</strong><span>{wins}/{picks}</span><em>{record_label}</em></div>'
-                           if picks else '<div class="wn-record"><strong>BASE</strong><em>SCREEN ONLY</em></div>')
+                           if picks else '<div class="wn-record"><strong>GREEN</strong><em>NO GOAL ATTACK</em></div>'
+                           if role == "Carry" else '<div class="wn-record"><strong>BASE</strong><em>SCREEN ONLY</em></div>')
             details_html = (f'<details class="wn-details"><summary>Full fired move list ({len(fired)})</summary>'
                             f'<div class="wn-move-list">{"".join(move_rows)}</div></details>' if fired else
                             f'<div class="wn-details">{_h((points_tier or {}).get("rule") or card.get("move_block_reason") or card.get("baseline_rule") or (move or {}).get("rule") or "No tested move fired")}</div>')
-            move_name = move["name"] if move else ("Green Baseline" if baseline_only else "Scouting pool")
+            move_name = move["name"] if move else (
+                "Green Candidate" if role == "Carry" and baseline_only else
+                "Green Baseline" if baseline_only else "Scouting pool")
             units.append(f"""<article class="wn-unit{tier_class}">
               {name_backdrop}
               <div class="wn-portrait" aria-hidden="true">{portrait}</div>

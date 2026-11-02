@@ -872,7 +872,7 @@ def _render_class_shortlist(frame: pd.DataFrame, role: str,
     if role == "Tank":
         watch = [card for card in watch if not card.get("points_current_tier")]
     if role == "Carry":
-        st.caption("Green Goal 0.5 players appear here. Named attacks keep their stricter tested rules and show their 2026–27 record; Green Baseline cards have no tested move record.")
+        st.caption("Green Goal 0.5 players appear here as candidates. Base Attack fires only with Goal profile ≥93 and last-five xG/game ≥0.55; its 43/85 record belongs to that move. Green Candidates have no tested move record.")
         st.html(render_warlords({"Carry": goal_cards}, limit=len(goal_cards),
                                 roles=("Carry",), show_hero=False))
         st.caption("Tonight research projection is a separate matchup-adjusted estimate. It is not the historical move % and does not affect Goal card selection. It is being graded before use as a betting edge.")
