@@ -10,7 +10,7 @@ from __future__ import annotations
 import math
 
 
-GOAL_KIT_VERSION = "goal-2026-27-profile-v4"
+GOAL_KIT_VERSION = "goal-2026-27-star-v5"
 ENTRY = "Goal 0.5 + Matrix_Goal Green + last-five xG/game >= 0.50"
 
 # Name, tier, icon, added checks, wins, plays. Every check is applied after ENTRY.
@@ -122,7 +122,10 @@ def _move(spec, *, buff=False, level=None, xg_boost=False):
     elif xg_boost:
         condition = "last-five xG/game >= 0.55" + (" + " + condition if condition else "")
     rule = ENTRY + (" + " + condition if condition else "")
-    return {"name": f"{name} {label}{' · xG+' if xg_boost else ''}" if level is not None else name,
+    display_name = f"{name} {label}{' · xG+' if xg_boost else ''}" if level is not None else name
+    if name in {"Drought Strike", "Reaper's Return"}:
+        display_name += " · xG route"
+    return {"name": display_name, "route_family": "xg", "market": "Goal",
             "research_name": name, "level": label if level is not None else None,
             "profile_cutoff": profile_cutoff, "xg_boost": xg_boost,
             "kind": kind, "icon": icon,
@@ -133,7 +136,7 @@ def _move(spec, *, buff=False, level=None, xg_boost=False):
             "kit_version": GOAL_KIT_VERSION, "matchup_buff": buff}
 
 
-def goals_moves(row):
+def xg_goals_moves(row):
     """Apply the same player and source gates used in the research cohort."""
     line = _number(row, "Goal_Line")
     if line is None:
@@ -156,3 +159,27 @@ def goals_moves(row):
             and _passes(row, DEFENSE_BUFF[3])):
         moves.append(_move(DEFENSE_BUFF, buff=True))
     return moves
+
+
+def goals_moves(row):
+    """Independent xG and StarScore entry routes share one Goal display engine."""
+    from goal_star_moves import star_goals_moves
+
+    return xg_goals_moves(row) + star_goals_moves(row)
+
+
+def goal_move_summary(moves):
+    """Shared tracker summary; environment records never replace player attacks."""
+    attacks = sorted((move for move in moves if not move.get("matchup_buff")),
+                     key=lambda move: (move["wins"] / move["picks"], move["picks"]), reverse=True)
+    best = attacks[0] if attacks else None
+    def record(move):
+        return f"{move['wins']}/{move['picks']} · {100 * move['wins'] / move['picks']:.1f}%"
+    def entries(items):
+        return "\n".join(f"{move['name']} · {record(move)}" for move in items) or "—"
+    return {"Goal_Attack": best["name"] if best else "—",
+            "Goal_Attack_Record": record(best) if best else "—",
+            "Goal_Attack_Sample_BE": best.get("sample_book_be_pct") if best else None,
+            "Goal_All_Attacks": entries(attacks),
+            "Goal_Crits": entries(move for move in attacks if move.get("crit")),
+            "Goal_Buffs": entries(move for move in moves if move.get("matchup_buff"))}

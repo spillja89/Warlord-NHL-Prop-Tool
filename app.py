@@ -17,7 +17,7 @@ import streamlit as st
 from published_output import fetch_grade_file, fetch_tracker, is_newer_tracker, list_grade_files, local_matches_sha, save_if_changed
 from warlord_moves_2026 import VERSION as MOVE_KIT_VERSION
 from warlord_moves_2026 import best_move, points_moves, sog_moves, goals_moves as _goals_carry_moves, assists_moves as _assists_mapped_moves
-from goal_moves_current import goal_profile_score
+from goal_moves_current import goal_profile_score, goal_move_summary
 from warlords_night_board import CLASSES, baseline_audit, rank_warlords, rank_priced_slate, featured_warlords, unfeatured_baselines, goal_display_cards, render_warlords, render_power_play_form, render_power_play_quotes_table, _character_uri
 from player_form import compact_regular_log, summarize_form
 from current_season_stats import current_season_rows, season_for_day
@@ -702,7 +702,7 @@ _ROLE_INFO = {
 # One description is reused by the prop headers, move gate, and Ledger.
 # Fired counts always come from warlord_moves_2026, never from this copy.
 _CLASS_RULES = {
-    "GOALS": {"role": "Carry", "market": "Goal", "entry": "Matrix_Goal Green · Goal 0.5", "note": "Named player attacks require last-five xG/game ≥ 0.50; 0.55+ gains the xG+ record. Goal profile can upgrade the move level. The full priced tracker remains below."},
+    "GOALS": {"role": "Carry", "market": "Goal", "entry": "Matrix_Goal Green · Goal 0.5", "note": "StarScore attacks: StarScore ≥84.5, goal drought ≥1 and TOI rank ≥81. Goal confidence ≥93 adds level II. The separate xG route uses L5 xG/game ≥0.50. All fired attacks, crits and buffs appear in the tracker."},
     "ASSISTS": {"role": "Support", "market": "Assists", "entry": "Matrix_Assists Green · Assists 0.5 · Conf_Assists ≥ 81 · iXA% ≥ 95", "note": "The PP Specials gain a Crit tier when team PP xGF/60 reaches 8.3."},
     "POINTS": {"role": "Tank", "market": "Points", "entry": "Matrix_Points Green · Points 0.5 with Conf_Points ≥ 80, or Points 1.5 with Conf_Points ≥ 75", "note": "The 0.5 and 1.5 lines have separate move trees."},
     "SOG": {"role": "Jungle", "market": "SOG", "entry": "Matrix_SOG Green · 2.5: Conf_SOG ≥ 75 · 3.5: Conf_SOG ≥ 86", "note": "The 3.5 shortlist uses a current-season confidence screen; older move records keep their original rules."},
@@ -873,7 +873,7 @@ def _render_class_shortlist(frame: pd.DataFrame, role: str,
     if role == "Tank":
         watch = [card for card in watch if not card.get("points_current_tier")]
     if role == "Carry":
-        st.caption("Named Goal attacks appear first. Scouting Targets have a Green Goal 0.5 baseline but no named attack; they show no move record. Last-five xG/game ≥0.50 unlocks attack I; 0.55+ earns the xG+ record. Goal profile can upgrade a move to II or III.")
+        st.caption("StarScore kit: StarScore ≥84.5 + goal drought ≥1 + TOI rank ≥81; no xG requirement. Goal confidence ≥93 unlocks Drought Strike II. Specials and crits add their own player conditions; matchup buffs enhance each qualifying special. The separate xG route remains available. Scouting Targets have no fired attack or move record.")
         st.html(render_warlords({"Carry": goal_cards}, limit=len(goal_cards),
                                 roles=("Carry",), show_hero=False))
         st.caption("Tonight research projection is a separate matchup-adjusted estimate. It is not the historical move % and does not affect Goal card selection. It is being graded before use as a betting edge.")
@@ -1205,7 +1205,9 @@ def _probe_goals_best(r: dict) -> dict | None:
     moves = _goals_carry_moves(r)
     if not moves:
         return None
-    ranked = [move for move in moves if not move["experimental"]]
+    ranked = [move for move in moves if not move["experimental"] and not move.get("matchup_buff")]
+    if not ranked:
+        return None
     best = max(ranked, key=lambda m: (_adj_win(100*m["wins"]/m["picks"], m["picks"], k=20), m["picks"]))
     win = 100 * best["wins"] / best["picks"]
     return {"title": best["name"], "win": win, "n": best["picks"],
@@ -1662,7 +1664,7 @@ def _render_goals_combat_hud(r) -> None:
     if not moves:
         st.caption("No current-season named Goal attack fires on this row.")
         return
-    for kind in ("BASE ATTACK", "HEAVY ATTACK", "SPECIAL ATTACK", "ULTIMATE ATTACK", "MATCHUP BUFF"):
+    for kind in ("BASE ATTACK", "HEAVY ATTACK", "SPECIAL ATTACK", "CRIT", "ULTIMATE ATTACK", "MATCHUP BUFF"):
         active = [move for move in moves if move["kind"] == kind]
         if not active:
             continue
@@ -2579,10 +2581,14 @@ COLUMN_WIDTHS = {
 
 # Column tooltips (market engines & key signals)
 COLUMN_HELP = {
-    "Pregame_xG_L5_per_game": "Expected goals per game across the player's last five completed games before this slate. Goal attacks require at least 0.50; 0.55+ earns the stronger xG+ record.",
-    "Goal_Profile": "Rounded Goal attack profile: 82% individual xG rank plus 18% ice-time share. It upgrades qualifying attacks; it does not replace their player rules.",
+    "Pregame_xG_L5_per_game": "Expected goals per game across the player's last five completed games. The xG attack route requires 0.50 (0.55 earns xG+). The StarScore/drought route has no recent-xG requirement.",
+    "Goal_Profile": "Rounded Goal confidence: 82% individual xG rank plus 18% TOI rank. In the StarScore kit, 93+ upgrades Drought Strike to level II; it is not an entry gate.",
     "Goal_Attack": "Highest-ranked current-season Goal attack fired by this player's saved pregame stats. A blank means no attack fired.",
     "Goal_Attack_Record": "Goals/plays for the displayed attack level in the saved 2026-27 research sample. This is not tonight's probability.",
+    "Goal_Attack_Sample_BE": "Mean posted-price break-even percentage in the selected attack's historical sample. Compare separately with today's price; this is not a predicted edge.",
+    "Goal_All_Attacks": "Every player attack that fires, each with its own historical record. These samples overlap and must not be added together.",
+    "Goal_Crits": "Every fired Goal crit, evaluated directly from the StarScore/drought/TOI81 parent. No confidence or recent-xG gate is inherited.",
+    "Goal_Buffs": "Every fired environment buff with its parent special and exact historical record. Buffs require current-season team stats and never act as player entry gates.",
     # Assists
     "PP_PROOF": "PP Proof combines PP usage, observed assist production, and matchup. It is a heuristic, not an expected-assists model.",
     "iXA%": "Legacy name: percentile of observed assists (primary + secondary) among available skaters. The current MoneyPuck feed has no expected-assists field; totals also depend on games played.",
@@ -2610,6 +2616,13 @@ COLUMN_LABELS = {
     "Goal_Profile": "Goal profile",
     "Goal_Attack": "Goal attack",
     "Goal_Attack_Record": "Attack record",
+    "Goal_Attack_Sample_BE": "Attack sample BE %",
+    "Goal_All_Attacks": "All Goal attacks",
+    "Goal_Crits": "Goal crits",
+    "Goal_Buffs": "All Goal buffs",
+    "StarScore": "Star score",
+    "TOI_Pct": "TOI rank %",
+    "Drought_G": "Goal drought",
     "iXA%": "Observed assist rank %",
     "PP_iXA60": "Weighted PP assists/60",
     "PP_Points60": "PP involvement proxy/60",
@@ -6056,13 +6069,10 @@ elif page == "GOALS (0.5)":
     goal_tracker = df_g.copy()
     goal_tracker["Goal_Profile"] = [goal_profile_score(row) for _, row in goal_tracker.iterrows()]
     goal_tracker_moves = [_goals_carry_moves(row) for _, row in goal_tracker.iterrows()]
-    goal_tracker_best = [max((move for move in moves if not move.get("matchup_buff")),
-                             key=lambda move: (move["wins"] / move["picks"], move["picks"]),
-                             default=None) for moves in goal_tracker_moves]
-    goal_tracker["Goal_Attack"] = [move["name"] if move else "—" for move in goal_tracker_best]
-    goal_tracker["Goal_Attack_Record"] = [
-        f"{move['wins']}/{move['picks']} · {100 * move['wins'] / move['picks']:.1f}%" if move else "—"
-        for move in goal_tracker_best]
+    goal_tracker_summaries = [goal_move_summary(moves) for moves in goal_tracker_moves]
+    for column in ("Goal_Attack", "Goal_Attack_Record", "Goal_Attack_Sample_BE",
+                   "Goal_All_Attacks", "Goal_Crits", "Goal_Buffs"):
+        goal_tracker[column] = [summary[column] for summary in goal_tracker_summaries]
 
     st.sidebar.subheader("Goal Filters")
     show_all = st.sidebar.checkbox("Show all players (ignore optional filters)", value=True)
@@ -6083,7 +6093,10 @@ elif page == "GOALS (0.5)":
         "Game",
         "Player", "Pos",
         "Tier_Tag",
-        "Goal_Attack", "Goal_Attack_Record", "Pregame_xG_L5_per_game", "Goal_Profile",
+        "Goal_Attack", "Goal_Attack_Record", "Goal_All_Attacks", "Goal_Crits", "Goal_Buffs",
+        "Goal_Attack_Sample_BE", "StarScore", "Drought_G", "TOI_Pct", "Goal_Profile",
+        "L10_S", "ShotIntent", "Points_mu", "ShotIntent_Pct", "Avg5_SOG", "L10_G",
+        "team_5v5_SF60", "Opp_PK_GA60", "Team_PP_xGF60", "Pregame_xG_L5_per_game",
 
         # --- LINE / ODDS FIRST (bet slip view) ---
         "Goal_Line",
@@ -6157,7 +6170,8 @@ elif page == "GOALS (0.5)":
 
     st.markdown("---")
 
-    st.caption("Goal attacks require pregame L5 xG/game ≥0.50; 0.55+ earns the xG+ record. Goal profile can also upgrade the level. Attack records are past results, not tonight's probabilities.")
+    goal_cols = list(dict.fromkeys(goal_cols))
+    st.caption("Goal kit v5 · StarScore/drought attacks need no recent-xG gate. All attacks, crits and parent-specific matchup buffs are listed separately. The xG route has its own conditions. Records are overlapping past results through Oct 31, not tonight's probabilities.")
     show_table(goal_tracker, goal_cols, f"Goal tracker · {len(goal_tracker)} skaters")
 
 

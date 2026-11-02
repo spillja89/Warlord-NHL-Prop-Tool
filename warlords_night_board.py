@@ -83,6 +83,8 @@ def _price_comparison(row, market, line, odds):
 def _move_rank(move):
     wins, picks = int(move["wins"]), int(move["picks"])
     later_wins, later_picks = int(move["later_wins"]), int(move["later_picks"])
+    if move.get("matchup_buff"):
+        return (-1, picks, wins / picks if picks else -1)
     if move.get("market") == "Assists":
         tier = {"CONTEXT": 0, "STANCE": 1, "VOLUME": 2,
                 "SPECIAL": 3, "CRIT": 4}.get(move["kind"], 0)
@@ -186,7 +188,7 @@ def rank_warlords(frame: pd.DataFrame) -> dict[str, list[dict]]:
                 "tonight_goal_pct": _number(row.get("Tonight_Goal_1plus_pct")) if market == "Goal" else None,
                 "tonight_goal_status": str(_value(row, "Tonight_Goal_Status") or "") if market == "Goal" else "",
                 "goal_profile": {field: _number(row.get(field)) for field in
-                                 ("iXG%", "ShotIntent", "L10_G", "L10_S", "TOI_per_game", "Goal_mu")}
+                                 ("iXG%", "StarScore", "Drought_G", "TOI_Pct", "ShotIntent", "ShotIntent_Pct", "Avg5_SOG", "L10_G", "L10_S", "TOI_per_game", "Goal_mu", "Points_mu")}
                                 if market == "Goal" else None,
                 "tonight_mu": _number(row.get(f"Tonight_{market}_mu")) if
                 row.get(f"Tonight_{market}_Version") == "2026-10-19-research-v3" else None,
@@ -266,7 +268,7 @@ def rank_priced_slate(frame: pd.DataFrame) -> dict[str, list[dict]]:
                 "tonight_goal_pct": _number(row.get("Tonight_Goal_1plus_pct")) if market == "Goal" else None,
                 "tonight_goal_status": str(_value(row, "Tonight_Goal_Status") or "") if market == "Goal" else "",
                 "goal_profile": {field: _number(row.get(field)) for field in
-                                 ("iXG%", "ShotIntent", "L10_G", "L10_S", "TOI_per_game", "Goal_mu")}
+                                 ("iXG%", "StarScore", "Drought_G", "TOI_Pct", "ShotIntent", "ShotIntent_Pct", "Avg5_SOG", "L10_G", "L10_S", "TOI_per_game", "Goal_mu", "Points_mu")}
                                 if market == "Goal" else None,
                 "tonight_mu": _number(row.get(f"Tonight_{market}_mu")) if
                 row.get(f"Tonight_{market}_Version") == "2026-10-19-research-v3" else None,
@@ -325,6 +327,7 @@ def featured_warlords(boards: dict[str, list[dict]]) -> dict[str, list[dict]]:
                 selected.append({**card, "move": card["points_current_tier"]})
                 continue
             qualifying = [move for move in card["moves"] if move["kind"] != "CONTEXT"
+                          and not move.get("matchup_buff")
                           and int(move["picks"]) > 0
                           and int(move["wins"]) / int(move["picks"]) >= 0.5]
             if not qualifying:
@@ -758,7 +761,8 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
             points_tier = card.get("points_current_tier") if role == "Tank" else None
             tier_badge = ""
             tier_class = ""
-            if role == "Support" and move and move["kind"] == "CRIT":
+            if move and ((role == "Support" and move["kind"] == "CRIT") or
+                         (role == "Carry" and move.get("crit"))):
                 tier_badge = '<span class="wn-tier wn-tier--s">CRIT</span>'
                 tier_class = " wn-unit--crit"
             if points_tier:
@@ -803,12 +807,16 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
                             if tonight_xg is not None and tonight_pct is not None else "")
             profile = card.get("goal_profile") or {}
             profile_parts = []
-            for field, label, fmt in (("iXG%", "iXG rank", ".0f"),
+            for field, label, fmt in (("StarScore", "star score", ".1f"),
+                                      ("Drought_G", "goal drought", ".0f"),
+                                      ("TOI_Pct", "TOI rank", ".1f"),
+                                      ("iXG%", "iXG rank", ".0f"),
                                       ("ShotIntent", "shot intent", ".1f"),
                                       ("L10_S", "L10 shots", ".0f"),
                                       ("L10_G", "L10 goals", ".0f"),
                                       ("TOI_per_game", "TOI/game", ".1f"),
-                                      ("Goal_mu", "model goal μ", ".2f")):
+                                      ("Goal_mu", "model goal μ", ".2f"),
+                                      ("Points_mu", "points μ", ".2f")):
                 value = _number(profile.get(field))
                 if value is not None:
                     profile_parts.append(f"{label} {value:{fmt}}")
@@ -841,6 +849,23 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
                              f'· #{positional["rank"]} most · {positional["gp"]} GP</div>'
                              if positional else "")
             fired = card.get("moves") or ([] if not move or baseline_only else [move])
+            goal_signals = ""
+            if role == "Carry":
+                signal_rows = []
+                for signal in fired:
+                    if signal.get("route_family") != "star_drought":
+                        continue
+                    signal_pct = 100 * signal["wins"] / signal["picks"]
+                    signal_be = signal.get("sample_book_be_pct")
+                    be_note = f" · sample BE {signal_be:.1f}%" if signal_be is not None else ""
+                    css = "buff" if signal.get("matchup_buff") else "crit" if signal.get("crit") else "attack"
+                    prefix = "+ " if signal.get("matchup_buff") else "✦ " if signal.get("crit") else ""
+                    signal_rows.append(
+                        f'<div class="wn-goal-signal wn-goal-signal--{css}">'
+                        f'<strong>{_h(prefix + signal["name"])}</strong>'
+                        f'<span>{signal["wins"]}/{signal["picks"]} · {signal_pct:.1f}%{be_note}</span></div>')
+                if signal_rows:
+                    goal_signals = '<div class="wn-goal-signals">' + ''.join(signal_rows) + '</div>'
             support_badges = ""
             pp_crit_note = ""
             points_power_note = ('<div class="wn-support-badges">Enhancement: Blade Impale (Power Tier)</div>'
@@ -901,6 +926,9 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
                 later_text = (f"Mar 15+ {fired_late_wins}/{fired_late_picks} · {fired_late_pct:.1f}%"
                               if fired_late_picks else "2026–27 regular season"
                               if fired_move.get("sample_season") == "2026-27" else "No separate later sample")
+                if fired_move.get("sample_book_be_pct") is not None:
+                    later_text += (f' · sample BE {fired_move["sample_book_be_pct"]:.1f}%'
+                                   f' · {fired_move["sample_players"]} players · {fired_move["sample_dates"]} slate dates')
                 move_rows.append(f'''<div class="wn-move-entry">
                   <div class="wn-move-title"><strong>{_h(fired_move["name"])}</strong><em>{_h(fired_label)}</em></div>
                   <div class="wn-move-record">{fired_wins}/{fired_picks} · {fired_pct:.1f}% <span>{later_text}</span></div>
@@ -943,6 +971,7 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
                 {points_tier_note}
                 {points_research_note}
                 {support_badges}
+                {goal_signals}
                 {goal_profile_note}
                 {tonight_note}
                 {position_note}
@@ -1007,6 +1036,14 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
       .wn-support-badges{font-size:9px;color:#b8c8e7;margin-top:4px;line-height:1.4}
       .wn-goalie{font-size:9px;color:#9fb6cb;margin-top:3px}
       .wn-goal-profile{font-size:10px;color:#e7cc8b;margin-top:4px;font-weight:700}
+      .wn-goal-signals{display:grid;gap:4px;margin-top:7px}
+      .wn-goal-signal{display:flex;flex-wrap:wrap;justify-content:space-between;gap:2px 8px;padding:5px 7px;border:1px solid #ffffff23;border-radius:5px;font-size:10px;overflow-wrap:anywhere;background:#101c30}
+      .wn-goal-signal strong{color:#ead6ac}.wn-goal-signal span{color:#bdcde1}
+      .wn-goal-signal--buff{border-color:#59bcb46b;background:#14313c}.wn-goal-signal--buff strong{color:#a8f3dc}
+      .wn-goal-signal--crit{border-color:#f4bf55aa;background:#49331e}.wn-goal-signal--crit strong{color:#ffe09b}
+      .wn-lane--carry .wn-unit--crit{animation:wn-goal-glow 3s ease-in-out infinite}
+      @keyframes wn-goal-glow{0%,100%{box-shadow:inset 0 0 0 1px #f4bf5540}50%{box-shadow:inset 0 0 0 1px #f4bf55aa,0 0 12px #f4bf5530}}
+      @media(prefers-reduced-motion:reduce){.wn-lane--carry .wn-unit--crit{animation:none}}
       .wn-position-sog{font-size:10px;color:#9edac1;margin-top:5px}.wn-position-sog b{color:#e6fff3}
       .wn-record{position:relative;z-index:1;text-align:right;flex:none;min-width:66px;display:flex;flex-direction:column;line-height:1.1}.wn-record strong{font-size:21px;color:#fff}.wn-record span{color:var(--accent);font-size:12px;font-weight:900;margin-top:3px}.wn-record em{font-style:normal;color:#8092a9;font-size:8px;letter-spacing:.08em;margin-top:3px}
       .wn-details{position:relative;z-index:1;flex:0 0 100%;font-size:10px;color:#aebbd0;border-top:1px solid #ffffff14;padding-top:5px}.wn-details summary{cursor:pointer;color:var(--accent);font-weight:700}.wn-move-list{max-height:320px;overflow:auto;display:grid;gap:6px;margin-top:8px;padding-right:3px}
