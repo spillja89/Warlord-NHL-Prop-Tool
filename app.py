@@ -701,7 +701,7 @@ _ROLE_INFO = {
 # One description is reused by the prop headers, move gate, and Ledger.
 # Fired counts always come from warlord_moves_2026, never from this copy.
 _CLASS_RULES = {
-    "GOALS": {"role": "Carry", "market": "Goal", "entry": "Matrix_Goal Green · Goal 0.5 · Goal profile ≥ 93 · last-five xG/game ≥ 0.55", "note": "Player attacks can fire without a matchup buff. The full priced tracker remains below."},
+    "GOALS": {"role": "Carry", "market": "Goal", "entry": "Matrix_Goal Green · Goal 0.5", "note": "Named player attacks additionally require Goal profile ≥ 93 and last-five xG/game ≥ 0.55. The full priced tracker remains below."},
     "ASSISTS": {"role": "Support", "market": "Assists", "entry": "Matrix_Assists Green · Assists 0.5 · Conf_Assists ≥ 81 · iXA% ≥ 95", "note": "The PP Specials gain a Crit tier when team PP xGF/60 reaches 8.3."},
     "POINTS": {"role": "Tank", "market": "Points", "entry": "Matrix_Points Green · Points 0.5 with Conf_Points ≥ 80, or Points 1.5 with Conf_Points ≥ 75", "note": "The 0.5 and 1.5 lines have separate move trees."},
     "SOG": {"role": "Jungle", "market": "SOG", "entry": "Matrix_SOG Green · 2.5: Conf_SOG ≥ 75 · 3.5: Conf_SOG ≥ 86", "note": "The 3.5 shortlist uses a current-season confidence screen; older move records keep their original rules."},
@@ -863,7 +863,7 @@ def _render_class_shortlist(frame: pd.DataFrame, role: str,
     goal_cards = goal_display_cards(priced[role]) if role == "Carry" else []
     if goal_cards and slate_sort != "Top ranked":
         goal_cards = _sort_slate_boards({"Carry": goal_cards}, slate_sort, starts_by_game)["Carry"]
-    st.subheader(f"{role} · {len(goal_cards)} named Goal attacks of {total} priced players"
+    st.subheader(f"{role} · {len(goal_cards)} Green Goal cards of {total} priced players"
                  if role == "Carry" else f"{role} · {len(featured[role])} featured of {total} priced players")
     if total == 0:
         st.info("No posted player line and price for this class yet.")
@@ -872,7 +872,7 @@ def _render_class_shortlist(frame: pd.DataFrame, role: str,
     if role == "Tank":
         watch = [card for card in watch if not card.get("points_current_tier")]
     if role == "Carry":
-        st.caption("Each Goal card has at least one current-season named attack. Its move record is the graded 2026–27 sample; the full priced tracker below includes players without a move.")
+        st.caption("Green Goal 0.5 players appear here. Named attacks keep their stricter tested rules and show their 2026–27 record; Green Baseline cards have no tested move record.")
         st.html(render_warlords({"Carry": goal_cards}, limit=len(goal_cards),
                                 roles=("Carry",), show_hero=False))
         st.caption("Tonight research projection is a separate matchup-adjusted estimate. It is not the historical move % and does not affect Goal card selection. It is being graded before use as a betting edge.")
@@ -4501,10 +4501,8 @@ df["Goal_ProofCount"] = goal_proofs.sum(axis=1)
 needed_g = np.where(is_star_g, 2, 3)
 
 df["Green_Goal"] = (
-    (safe_num(df, "Conf_Goal", 0) >= thr_g)
-    & (safe_str(df, "Matrix_Goal", "").str.strip().str.lower() == "green")
-    & (safe_num(df, "Pregame_xG_L5_per_game", 0) >= .55)
-    & (safe_num(df, "Goal_Line", 0) == .5)
+    (safe_str(df, "Matrix_Goal", "").str.strip().str.lower() == "green")
+    & ((safe_num(df, "Goal_Line", 0) == .5) | (safe_num(df, "ATG_Line", 0) == .5))
     & (safe_str(df, "Model_Stats_Season", "") == "2026-2027")
     & (safe_str(df, "Form_Season", "") == "2026-27")
 )
@@ -5235,7 +5233,7 @@ if page == "⚔️ Warlords of the Night":
     st.caption(f"Current view: {night_df['Game'].nunique() if 'Game' in night_df else 0} games · "
                f"{night_df['Team'].nunique() if 'Team' in night_df else 0} teams · "
                f"{len(night_df)} roster skaters · {priced_total} priced prop entries · "
-               f"{len(goal_cards)} named Goal attacks · "
+               f"{len(goal_cards)} Green Goal cards ({sum(card['move'] is not None for card in goal_cards)} named attacks) · "
                f"{featured_total} featured prop cards, including current-season Points screens · "
                f"{len(points_tier_cards)} current-season Points 0.5 tier cards. "
                "Every priced entry is in the complete slate below.")
@@ -6046,7 +6044,7 @@ elif page == "GOALS (0.5)":
 
     st.sidebar.subheader("Goal Filters")
     show_all = st.sidebar.checkbox("Show all players (ignore optional filters)", value=True)
-    min_conf = st.sidebar.slider("Min Goal Conf", 0, 100, 93, 1)
+    min_conf = st.sidebar.slider("Min Goal Conf", 0, 100, 0, 1)
     color_pick = st.sidebar.multiselect(
         "Colors (Goal)",
         ["green", "yellow", "blue", "red"],
@@ -6109,7 +6107,7 @@ elif page == "GOALS (0.5)":
     df_g["EV_Signal"] = [build_ev_signal(gg, ee, pp) for gg, ee, pp in zip(g, e, p if hasattr(p, "__iter__") else [p]*len(df_g))]
 
     df_g["LOCK"] = [build_lock_badge(gg, ee) for gg, ee in zip(g, e)]
-    _f = render_market_filter_bar(default_min_conf=93, key_prefix="goal")
+    _f = render_market_filter_bar(default_min_conf=0, key_prefix="goal")
 
     try:
         df_g = apply_market_filters(

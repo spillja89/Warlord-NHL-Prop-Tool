@@ -96,9 +96,7 @@ def _baseline_rule(row, market, line):
     if matrix not in {"green", "🟢"}:
         return None
     if market == "Goal" and line == 0.5:
-        return ("Green + Goal 0.5 + Goal profile ≥ 93 + last-five xG/game ≥ 0.55"
-                if any(move["name"] == "Base Attack" for move in fired_moves(row)["Goal"])
-                else None)
+        return "Green + Goal 0.5"
     if market == "Assists" and line == 0.5:
         return "Green + Assists 0.5"
     if market == "Points" and line in (0.5, 1.5):
@@ -349,7 +347,7 @@ def unfeatured_baselines(cards: list[dict]) -> list[dict]:
 
 
 def goal_display_cards(cards: list[dict]) -> list[dict]:
-    """Only named current-season Goal attacks reach the Warlord cards."""
+    """Show priced Green Goal players; keep researched attacks distinct."""
     eligible = []
     for card in cards:
         if not card.get("baseline_rule"):
@@ -357,10 +355,12 @@ def goal_display_cards(cards: list[dict]) -> list[dict]:
         attacks = [move for move in card.get("moves", [])
                    if not move.get("matchup_buff")
                    if int(move["picks"]) > 0 and int(move["wins"]) / int(move["picks"]) >= .5]
-        if attacks:
-            eligible.append({**card, "move": max(attacks, key=_move_rank)})
-    return sorted(eligible, key=lambda card: (_move_rank(card["move"]),
-                  card.get("confidence") or -1, card["player"].casefold()), reverse=True)
+        eligible.append({**card, "move": max(attacks, key=_move_rank) if attacks else None,
+                         "baseline_only": not attacks})
+    return sorted(eligible, key=lambda card: (
+        card["move"] is not None,
+        _move_rank(card["move"]) if card["move"] else (-1, -1, -1),
+        card.get("confidence") or -1, card["player"].casefold()), reverse=True)
 
 
 def baseline_audit(frame: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
