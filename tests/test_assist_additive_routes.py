@@ -30,14 +30,19 @@ class AdditiveAssistTests(unittest.TestCase):
               PP_iXA60=4, PP_TOI_per_game=4, TOI_per_game=23, Team_PP_xGF60=9,
               Assists_mu=1.2, Drought_G=2)
         old=existing_assists_moves(r)
-        expected={"Staff (Green Stance)":(137,238),"Arcane Channel I":(106,172),
-                  "Runic Infusion":(70,105),"Rune Conduit":(50,75),"Odin's Vigil":(47,69),
-                  "Runic Infusion Crit":(29,41),"Rune Conduit Crit":(20,25),
-                  "Odin's Vigil Crit":(20,24),"High Assist μ":(100,163),"Arcane Rebound":(66,100)}
+        expected={"Staff (Green Stance)":(124,215),"Arcane Channel I":(90,148),
+                  "Runic Infusion":(65,109),"Rune Conduit":(66,112),"Odin's Vigil":(45,66),
+                  "Runic Infusion Crit":(46,73),"Rune Conduit Crit":(32,52),
+                  "Odin's Vigil Crit":(31,39),"High Assist μ":(115,195),"Arcane Rebound":(64,96)}
         self.assertEqual({m['name']:(m['wins'],m['picks']) for m in old}, expected)
         combined=assists_moves(r)
         self.assertEqual([m for m in combined if m['kit_version']!=VERSION],old)
         self.assertEqual(len({m['name'] for m in combined}),len(combined))
+        vigil=next(m for m in old if m['name']=="Odin's Vigil Crit")
+        self.assertEqual(vigil['original_record'],{'wins':20,'picks':24,'players':7})
+        self.assertEqual(assist_display_tier(vigil)['label'],'CRIT I')
+        for name in ('Runic Infusion Crit','Rune Conduit Crit'):
+            self.assertEqual(assist_display_tier(next(m for m in old if m['name']==name))['label'],'PP UPGRADE')
 
     def test_environment_requires_current_source_and_real_values(self):
         for changes in [{'Team_Stats_Season':'2025-2026'}, {'Team_PP_GF60':None},
@@ -95,6 +100,31 @@ class AdditiveAssistTests(unittest.TestCase):
         new=next(m for m in new_assists_moves(row()) if m['name']=='Runic Resonance II')
         self.assertEqual(assist_display_tier(new)['label'],'CRIT II')
         self.assertGreater(_move_rank(new),_move_rank(old))
+
+    def test_route_portraits_and_fallback(self):
+        from warlords_night_board import _character_uri, _support_variant
+        gorilla=_character_uri('Support')
+        orangutan=_character_uri('Support','Runesmith')
+        chimp=_character_uri('Support','Stormcaller')
+        self.assertTrue(gorilla.startswith('data:image/webp;base64,'))
+        self.assertEqual(len({gorilla,orangutan,chimp}),3)
+        self.assertEqual(_character_uri('Support','Unknown'),gorilla)
+        self.assertEqual(_support_variant({'name':'Runic Infusion Crit'}),'Runesmith')
+        self.assertEqual(_support_variant({'name':'Rune Conduit'}),'Stormcaller')
+        self.assertEqual(_support_variant({'name':"Odin's Vigil Crit"}),'Arcanist')
+        self.assertEqual(_character_uri('Support','Oracle + Runesmith'),orangutan)
+
+    def test_header_clock_modes_and_safe_text(self):
+        from warlord_header import render_header
+        for state, label in [('pre','STRIKES IN'),('live','SLATE LIVE'),('post','NEXT STRIKE')]:
+            html=render_header(state=state,timer='05:52:37',strike_label='Strike at 6:00 PM CT',status='<unsafe>')
+            self.assertIn(label,html)
+            self.assertIn('05:52:37',html)
+            self.assertIn('&lt;unsafe&gt;',html)
+            self.assertEqual(html.count('<header '),1)
+            self.assertEqual(html.count('<h1 '),1)
+            self.assertIn('max-width:640px',html)
+            self.assertNotIn('<img',html)
 
 
 if __name__=='__main__':unittest.main()

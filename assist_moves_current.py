@@ -7,6 +7,7 @@ record below counts a player-game once inside that move's own historical set.
 from __future__ import annotations
 
 import math
+from assist_retest_records_2026 import RETEST_RECORDS, RETEST_FROM, RETEST_THROUGH
 
 
 ASSIST_KIT_VERSION = "assist-2026-27-pp-crits-v1"
@@ -27,13 +28,21 @@ def _at_least(row, key, cutoff):
 
 
 def _move(name, kind, icon, rule, wins, picks, unique_players):
-    return {
+    move = {
         "name": name, "kind": kind, "icon": icon, "rule": rule,
         "wins": wins, "picks": picks, "later_wins": 0, "later_picks": 0,
         "unique_players": unique_players, "market": "Assists",
         "sample_season": "2026-27", "kit_version": ASSIST_KIT_VERSION,
         "track": False,
     }
+    if name in RETEST_RECORDS:
+        move['original_record'] = {'wins': wins, 'picks': picks, 'players': unique_players}
+        move.update(RETEST_RECORDS[name])
+        move['unique_players'] = move['sample_players']
+        move['sample_from'] = RETEST_FROM
+        move['sample_through'] = RETEST_THROUGH
+        move['record_version'] = 'unchanged-rules-retest-2026-11-03'
+    return move
 
 
 def existing_assists_moves(row):

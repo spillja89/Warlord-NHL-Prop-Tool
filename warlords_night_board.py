@@ -735,13 +735,33 @@ def render_power_play_form(card):
       {form}</section>'''
 
 
-@lru_cache(maxsize=4)
-def _character_uri(role: str) -> str:
+@lru_cache(maxsize=16)
+def _character_uri(role: str, variant: str = "") -> str:
     """Inline small artwork so class cards render behind Cloud's app proxy."""
     image = Path(__file__).parent / "static" / "characters" / f"{role.lower()}-gorilla-v2.webp"
+    if role == "Support" and variant in {"Runesmith", "Oracle + Runesmith", "Stormcaller"}:
+        filename = ("support-chimp-stormcaller-v1.webp" if variant == "Stormcaller"
+                    else "support-orangutan-runesmith-v1.webp")
+        candidate = image.parent / filename
+        if candidate.is_file():
+            image = candidate
     if not image.is_file():
         return ""
     return "data:image/webp;base64," + base64.b64encode(image.read_bytes()).decode("ascii")
+
+
+def _support_variant(move):
+    """Cosmetic route identity only; no effect on move eligibility."""
+    if not move:
+        return "Arcanist"
+    if move.get("route_variant"):
+        return move["route_variant"]
+    name = move.get("name", "")
+    if name.startswith("Runic Infusion"):
+        return "Runesmith"
+    if name.startswith("Rune Conduit"):
+        return "Stormcaller"
+    return "Arcanist"
 
 
 def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=None,
@@ -762,11 +782,15 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
             tier_badge = ""
             tier_class = ""
             support_tier = assist_display_tier(move) if role == "Support" and move else None
+            if role == "Support":
+                character_uri = _character_uri(role, _support_variant(move))
             if move and ((role == "Support" and support_tier["crit"]) or
                          (role == "Carry" and move.get("crit"))):
                 tier_label = support_tier["label"] if support_tier else "CRIT"
                 tier_badge = f'<span class="wn-tier wn-tier--s">{tier_label}</span>'
                 tier_class = " wn-unit--crit"
+                if support_tier:
+                    tier_class += " wn-support-crit-ii" if support_tier["label"] == "CRIT II" else " wn-support-crit-i"
             if points_tier:
                 tier_style = {"SPECIAL": "s", "HEAVY": "a", "BASE": "b"}[points_tier["kind"]]
                 tier_badge = f'<span class="wn-tier wn-tier--{tier_style}">{points_tier["kind"]}</span>'
@@ -797,12 +821,15 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
             portrait = (f'<img src="{character_uri}" alt="" />' if character_uri else symbol)
             route_style = ""
             support_route_note = ""
-            if role == "Support" and move and move.get("route_variant"):
-                route_style = f' style="--accent:{_h(move["route_accent"])}"'
+            if role == "Support" and move:
+                variant = _support_variant(move)
+                accent = move.get("route_accent") or {"Runesmith":"#79afff", "Stormcaller":"#63e1cf"}.get(variant, "#b692ff")
+                route_style = f' style="--accent:{_h(accent)}"'
                 route_labels = list(dict.fromkeys(
                     item["route_variant"] for item in card.get("moves", []) if item.get("route_variant")))
-                support_route_note = (f'<div class="wn-support-route"><b>{_h(move["route_variant"])}</b>'
-                                      f' · {_h(move.get("level_label", move["kind"]))}'
+                animal = "Orangutan" if variant in {"Runesmith", "Oracle + Runesmith"} else "Chimp" if variant == "Stormcaller" else "Gorilla"
+                support_route_note = (f'<div class="wn-support-route"><b>{_h(animal + " · " + variant)}</b>'
+                                      f' · {_h(support_tier["label"])}'
                                       f'<span>Routes: {_h(" · ".join(route_labels))}</span></div>')
             name_backdrop = (f'<img class="wn-unit-ghost" src="{character_uri}" alt="" aria-hidden="true" />'
                              if character_uri else "")
@@ -930,6 +957,8 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
                 later_text = (f"Mar 15+ {fired_late_wins}/{fired_late_picks} · {fired_late_pct:.1f}%"
                               if fired_late_picks else "2026–27 regular season"
                               if fired_move.get("sample_season") == "2026-27" else "No separate later sample")
+                if fired_move.get("sample_from") and fired_move.get("sample_through"):
+                    later_text += f' · {fired_move["sample_from"]} through {fired_move["sample_through"]}'
                 if fired_move.get("sample_book_be_pct") is not None:
                     later_text += (f' · sample BE {fired_move["sample_book_be_pct"]:.1f}%'
                                    f' · {fired_move["sample_players"]} players · {fired_move["sample_dates"]} slate dates')
@@ -1046,8 +1075,12 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
       .wn-support-route{font-size:10px;color:var(--accent);margin-top:5px;font-weight:800}
       .wn-support-route span{display:block;font-size:9px;font-weight:500;color:#b8c8e7;margin-top:2px}
       .wn-lane--support .wn-unit--crit{animation:wn-support-glow 3s ease-in-out infinite}
+      .wn-lane--support .wn-portrait{width:64px;height:64px;overflow:hidden;border-color:var(--accent)}
+      .wn-support-crit-i .wn-portrait{box-shadow:0 0 14px #79afff88;border:2px solid #9cd4ff}
+      .wn-support-crit-ii .wn-portrait{box-shadow:0 0 20px #f4bf55aa;border:2px solid #f4bf55}
       @keyframes wn-support-glow{50%{box-shadow:0 0 15px #f4bf554d,inset 0 0 0 1px #f4bf5566}}
       @media(prefers-reduced-motion:reduce){.wn-lane--support .wn-unit--crit{animation:none}}
+      @media(max-width:540px){.wn-lane--support .wn-portrait{width:50px;height:50px}}
       .wn-goalie{font-size:9px;color:#9fb6cb;margin-top:3px}
       .wn-goal-profile{font-size:10px;color:#e7cc8b;margin-top:4px;font-weight:700}
       .wn-goal-signals{display:grid;gap:4px;margin-top:7px}
@@ -1084,6 +1117,5 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
       <div class="wn-hero-foot">{_h(hero_foot)} · HISTORICAL MOVE RATE IS NOT A FORECAST</div></div>"""
     board_class = "wn-board" if show_hero else "wn-board wn-board--compact"
     return styles + f'<div class="{board_class}">' + (hero if show_hero else "") + '<div class="wn-grid">' + ''.join(lanes) + '</div></div>'
-
 
 

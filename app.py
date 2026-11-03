@@ -2835,33 +2835,34 @@ def render_vengeance_banner():
     if "vengeance_completed_for" not in st.session_state:
         st.session_state.vengeance_completed_for = ""  # key like YYYY-MM-DD@HH:MM
 
-    # Controls row (compact)
-    c1, c2, c3, c4 = st.columns([2.2, 1.1, 1.1, 1.1], gap="small")
-    with c1:
-        st.session_state.vengeance_preset = st.selectbox(
-            "Tonight's strike",
-            list(presets.keys()),
-            index=list(presets.keys()).index(st.session_state.vengeance_preset) if st.session_state.vengeance_preset in presets else 0,
-            label_visibility="collapsed",
-        )
-    # Determine target hour/minute
-    if st.session_state.vengeance_preset == "Custom…":
-        with c2:
-            st.session_state.vengeance_custom_h = st.number_input("Hr", min_value=0, max_value=23, value=int(st.session_state.vengeance_custom_h), step=1, label_visibility="collapsed")
-        with c3:
-            st.session_state.vengeance_custom_m = st.number_input("Min", min_value=0, max_value=59, value=int(st.session_state.vengeance_custom_m), step=1, label_visibility="collapsed")
-        target_h, target_m = int(st.session_state.vengeance_custom_h), int(st.session_state.vengeance_custom_m)
-    else:
-        hm = presets.get(st.session_state.vengeance_preset) or (18, 0)
-        target_h, target_m = hm
-        with c2:
-            st.markdown(f"<span class='vengeance-pill'>Strike: {target_h%12 or 12}:{target_m:02d} {'PM' if target_h>=12 else 'AM'} CT</span>", unsafe_allow_html=True)
-        with c3:
-            st.markdown(f"<span class='vengeance-pill'>TZ: CT</span>", unsafe_allow_html=True)
+    with st.expander("Strike settings", expanded=False):
+        # Controls row (compact)
+        c1, c2, c3, c4 = st.columns([2.2, 1.1, 1.1, 1.1], gap="small")
+        with c1:
+            st.session_state.vengeance_preset = st.selectbox(
+                "Tonight's strike",
+                list(presets.keys()),
+                index=list(presets.keys()).index(st.session_state.vengeance_preset) if st.session_state.vengeance_preset in presets else 0,
+                label_visibility="collapsed",
+            )
+        # Determine target hour/minute
+        if st.session_state.vengeance_preset == "Custom…":
+            with c2:
+                st.session_state.vengeance_custom_h = st.number_input("Hr", min_value=0, max_value=23, value=int(st.session_state.vengeance_custom_h), step=1, label_visibility="collapsed")
+            with c3:
+                st.session_state.vengeance_custom_m = st.number_input("Min", min_value=0, max_value=59, value=int(st.session_state.vengeance_custom_m), step=1, label_visibility="collapsed")
+            target_h, target_m = int(st.session_state.vengeance_custom_h), int(st.session_state.vengeance_custom_m)
+        else:
+            hm = presets.get(st.session_state.vengeance_preset) or (18, 0)
+            target_h, target_m = hm
+            with c2:
+                st.markdown(f"<span class='vengeance-pill'>Strike: {target_h%12 or 12}:{target_m:02d} {'PM' if target_h>=12 else 'AM'} CT</span>", unsafe_allow_html=True)
+            with c3:
+                st.markdown(f"<span class='vengeance-pill'>TZ: CT</span>", unsafe_allow_html=True)
 
-    with c4:
-        if st.button("🔄", help="Refresh the clock"):
-            st.rerun()
+        with c4:
+            if st.button("🔄", help="Refresh the clock"):
+                st.rerun()
 
     # Refresh only the banner every second; a full app rerun would repeat the
     # model/odds views and make the countdown appear frozen between reruns.
@@ -2893,20 +2894,11 @@ def render_vengeance_banner():
             right_timer = f"NEXT {_fmt_hms(math.ceil((next_dt - clock_now).total_seconds()))}"
             pill, wrap_class, action_line = "REVIEW: ACTIVE", "vengeance-wrap vengeance-post", "Post-mortem underway."
 
-        left, right = st.columns([3.2, 1.2], gap="small")
-        with left:
-            st.markdown(
-                f"""<div class="{wrap_class}">
-                  <div class="vengeance-kicker">{kicker}</div>
-                  <div class="vengeance-head">{head}</div>
-                  <div class="vengeance-sub">{sub} <span style="opacity:.7">•</span> {action_line} <span style="opacity:.7">•</span> <span class="vengeance-pill">{pill}</span></div>
-                </div>""", unsafe_allow_html=True)
-        with right:
-            st.markdown(
-                f"""<div class="{wrap_class}" style="display:flex; flex-direction:column; justify-content:center;">
-                  <div class="vengeance-timer">{right_timer}</div>
-                  <div style="text-align:right; margin-top:6px; opacity:.85; font-size:12px;">Strike key: {strike_key}</div>
-                </div>""", unsafe_allow_html=True)
+        from warlord_header import render_header
+        st.markdown(render_header(
+            state=state, timer=right_timer.split(" ")[-1],
+            strike_label=sub, status=kicker,
+        ), unsafe_allow_html=True)
 
         if state == "live":
             b1, b2 = st.columns([1, 5])
@@ -4068,30 +4060,6 @@ def show_table(df: pd.DataFrame, cols: list[str], title: str):
 # =========================
 inject_vengeance_css()
 render_vengeance_banner()
-
-st.title("⚔️The Warlord's NHL Prop Tool⚔️")
-st.markdown(
-    """
-    <div style="
-        padding: 14px 16px;
-        border-radius: 14px;
-        font-weight: 800;
-        font-size: 22px;
-        text-align: center;
-        letter-spacing: 0.5px;
-        background: #b30000;
-        color: white;
-        box-shadow: 0 6px 18px rgba(0,0,0,0.18);
-        margin-bottom: 12px;
-    ">
-        As winter ends, the war begins.
-        Weapons forged by the gods. Warlords prepare to wage war on the books.
-        Vengeance is coming — cook the books!
-     
-    </div>
-    """,
-    unsafe_allow_html=True
-)
 
 # -------------------------
 # Data source (no more forced uploads)
