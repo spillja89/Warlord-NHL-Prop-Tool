@@ -772,6 +772,9 @@ def _render_class_header(mkt: str, frame: pd.DataFrame) -> None:
                    else f"Posted lines sorted by {slate_sort.lower()} · same-game ranks retained")
     portrait = _character_uri(role)
     art = f'<img src="{portrait}" alt="" aria-hidden="true" />' if portrait else ""
+    if role == 'Support':
+        from warlords_night_board import _support_roster_art
+        art = _support_roster_art()
     st.html(f"""<style>
       .wl-prop-hero{{position:relative;isolation:isolate;overflow:hidden;min-height:150px;padding:22px 230px 20px 24px;
         border:1px solid #334761;border-radius:16px;background:linear-gradient(110deg,#111b2b,#243149);color:#f8fafc}}
@@ -781,9 +784,15 @@ def _render_class_header(mkt: str, frame: pd.DataFrame) -> None:
       .wl-prop-hero h2{{font-size:31px;line-height:1.1;margin:6px 0;color:#fff}}
       .wl-prop-hero p{{margin:8px 0;color:#dce5f2;font-size:14px}}
       .wl-prop-meta{{font-size:12px;color:#a9c7ec;font-weight:800;letter-spacing:.04em}}
+      .wl-prop-hero--support{{padding-right:400px;min-height:172px}}
+      .wl-prop-hero--support .wn-support-roster{{position:absolute;z-index:-1;right:0;top:0;height:100%;width:380px;display:flex;opacity:.8;pointer-events:none;mask-image:linear-gradient(90deg,transparent,#000 16%)}}
+      .wl-prop-hero--support .wn-support-roster img{{position:static;width:33.333%;height:100%;object-fit:cover;object-position:center 18%;opacity:1;mask-image:none}}
       @media(max-width:650px){{.wl-prop-hero{{padding:19px 120px 18px 17px;min-height:145px}}
-        .wl-prop-hero h2{{font-size:24px}}.wl-prop-hero img{{right:-55px;height:205px;opacity:.28}}}}
-    </style><section class="wl-prop-hero">{art}<div class="wl-prop-kicker">WARLORD CLASS · {escape(mk)}</div>
+        .wl-prop-hero h2{{font-size:24px}}.wl-prop-hero img{{right:-55px;height:205px;opacity:.28}}
+        .wl-prop-hero--support{{padding:19px 17px}}
+        .wl-prop-hero--support .wn-support-roster{{position:relative;float:right;z-index:0;width:145px;height:110px;margin:0 0 10px 12px;mask-image:none;opacity:1;border-radius:8px;overflow:hidden}}
+        .wl-prop-hero--support .wn-support-roster img{{height:100%;opacity:1}}}}
+    </style><section class="wl-prop-hero{' wl-prop-hero--support' if role == 'Support' else ''}">{art}<div class="wl-prop-kicker">WARLORD CLASS · {escape(mk)}</div>
       <h2>{escape(role)} · {escape(mk)}</h2><p>{escape(order_label)} · tested moves shown when fired</p>
       <div class="wl-prop-meta">{escape(slate_label)} · {len(cards)} PRICED PLAYERS · {moves} ACTIVE MOVE TAGS</div></section>""")
 

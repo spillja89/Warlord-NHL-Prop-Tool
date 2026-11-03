@@ -818,6 +818,18 @@ def _support_variant(move):
     return "Arcanist"
 
 
+def _support_roster_art():
+    """The three approved Support characters, for Support class banners only."""
+    portraits = []
+    for variant, label in [('Arcanist', 'Gorilla Arcanist'),
+                           ('Runesmith', 'Pearl-eyed orangutan Runesmith'),
+                           ('Stormcaller', 'Lightning-crowned chimp Stormcaller')]:
+        uri = _character_uri('Support', variant)
+        if uri:
+            portraits.append(f'<img src="{uri}" alt="{_h(label)}" />')
+    return '<div class="wn-support-roster">' + ''.join(portraits) + '</div>'
+
+
 def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=None,
                     roles: tuple[str, ...] | None = None, show_hero: bool = True) -> str:
     """Compact, escaped HTML for the raid board or selected class lanes."""
@@ -1078,6 +1090,8 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
             units = ['<div class="wn-empty">No featured move for this class on this slate. '
                      'Check the complete priced slate below for all posted lines.</div>']
         backdrop = f'<img class="wn-gorilla" src="{character_uri}" alt="" />' if character_uri else ""
+        if role == 'Support':
+            backdrop = _support_roster_art()
         count_label = "FEATURED" if cards and "confidence" in cards[0] else "PRICED"
         lane_subtitle = ("GOAL ✦ 2026–27 MOVE % ✦ BOOK BREAK-EVEN % FROM POSTED ODDS"
                          if role == "Carry" else
@@ -1104,6 +1118,8 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
       .wn-lane{min-width:0;background:#111a2a;border:1px solid #38435a;border-radius:14px;overflow:hidden;box-shadow:0 8px 28px #1018282e}
       .wn-lane-head{position:relative;isolation:isolate;display:flex;align-items:center;gap:12px;min-height:96px;padding:16px;background:linear-gradient(100deg,color-mix(in srgb,var(--accent) 23%,#111a2a),#111a2a 82%);border-bottom:1px solid #ffffff16;overflow:hidden}
       .wn-gorilla{position:absolute;z-index:-1;right:8px;top:0;height:230px;width:auto;opacity:.34;pointer-events:none;mask-image:linear-gradient(90deg,transparent,#000 35%)}
+      .wn-lane--support .wn-support-roster{position:absolute;z-index:-1;right:0;top:0;height:100%;width:66%;display:flex;opacity:.55;pointer-events:none;mask-image:linear-gradient(90deg,transparent,#000 24%)}
+      .wn-lane--support .wn-support-roster img{width:33.333%;height:100%;object-fit:cover;object-position:center 20%}
       .wn-class-icon{width:42px;height:42px;flex:none;display:grid;place-items:center;border:1px solid color-mix(in srgb,var(--accent) 50%,transparent);border-radius:9px;background:#0a1425e8;font-size:25px}
       .wn-class-icon svg{width:29px;height:29px;max-width:29px;max-height:29px;fill:var(--accent)}
       .wn-class-text{flex:1}.wn-kicker{font-size:10px;text-transform:uppercase;letter-spacing:.15em;color:#c5c6d3}.wn-class-text h2{font-size:23px;line-height:1;margin:3px 0 0;color:var(--accent);font-weight:950}
