@@ -28,6 +28,35 @@ def matches(row, field, op, cutoff):
     return n is not None and (n >= cutoff if op == ">=" else n <= cutoff)
 
 
+def assist_display_tier(move):
+    """Shared old/new presentation tiers; no eligibility or record changes."""
+    picks = number(move.get("picks")) or 0
+    wins = number(move.get("wins")) or 0
+    kind = move.get("kind", "")
+    if kind == "CONTEXT":
+        return {"label": "CONTEXT", "priority": 0, "crit": False}
+    if kind == "STANCE":
+        return {"label": "STANCE", "priority": 1, "crit": False}
+    if picks < 30:
+        return {"label": "MONITOR", "priority": 2, "crit": False}
+    rate = wins / picks if picks else 0
+    if rate >= .8:
+        return {"label": "CRIT II", "priority": 7, "crit": True}
+    if rate >= .75:
+        return {"label": "CRIT I", "priority": 6, "crit": True}
+    label = "PP UPGRADE" if kind == "CRIT" else move.get("level_label", kind)
+    return {"label": label, "priority": min(move.get("display_priority", 3), 4), "crit": False}
+
+
+def assist_display_name(move):
+    """Preserve the saved identity in details; label non-Crit upgrades clearly."""
+    name = move["name"]
+    if move.get("kind") == "CRIT" and not assist_display_tier(move)["crit"]:
+        if name.endswith(" Crit"):
+            return name[:-5] + " · PP Upgrade"
+    return name
+
+
 def new_assists_moves(row):
     """Evaluate approved profiles without inheriting the old 81/95 gate."""
     line = number(row.get("Assists_Line"))

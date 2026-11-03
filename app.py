@@ -789,6 +789,7 @@ def _render_class_header(mkt: str, frame: pd.DataFrame) -> None:
 
 
 def _priced_pool_table(cards: list[dict]) -> pd.DataFrame:
+    from assist_routes_2026 import assist_display_tier, assist_display_name
     rows = []
     has_position_data = any(card.get("position_sog") for card in cards)
     has_goal_projection = any(card.get("market") == "Goal" for card in cards)
@@ -799,6 +800,11 @@ def _priced_pool_table(cards: list[dict]) -> pd.DataFrame:
         move = max(qualified or card["moves"], key=lambda item: (
             int(item["wins"]) / int(item["picks"]) if int(item["picks"]) else -1,
             int(item["picks"]))) if card["moves"] else None
+        if card.get("market") == "Assists" and card["moves"]:
+            move = max(card["moves"], key=lambda item: (
+                assist_display_tier(item)["priority"],
+                int(item["wins"]) / int(item["picks"]) if int(item["picks"]) else -1,
+                int(item["picks"])))
         points_tier = card.get("points_current_tier")
         featured = bool(card.get("baseline_rule") and (qualified or points_tier))
         row = {
@@ -813,7 +819,7 @@ def _priced_pool_table(cards: list[dict]) -> pd.DataFrame:
             "Book break-even %": round(card["book_prob"] * 100, 1) if card.get("book_prob") is not None else None,
             "Matrix": card.get("matrix") or "Unknown",
             "Featured": "Yes" if featured else "",
-            "Fired move": move["name"] if move else "",
+            "Fired move": (assist_display_name(move) if card.get("market") == "Assists" else move["name"]) if move else "",
             "Move record": f'{move["wins"]}/{move["picks"]}' if move else "",
             "Move %": round(100 * int(move["wins"]) / int(move["picks"]), 1) if move else None,
             "Later record": f'{move["later_wins"]}/{move["later_picks"]}' if move and int(move["later_picks"]) else "",
@@ -1188,15 +1194,15 @@ def _probe_points_best(r: dict) -> dict | None:
 
 def _probe_assists_best(r: dict) -> dict | None:
     """Use the current Support tier for both cards and sorting."""
+    from assist_routes_2026 import assist_display_tier, assist_display_name
     moves = [m for m in _assists_mapped_moves(r) if m["kind"] != "CONTEXT"]
     if not moves:
         return None
-    tier = {"STANCE": 1, "VOLUME": 2, "SPECIAL": 3, "CRIT": 7}
-    move = max(moves, key=lambda m: (m.get("display_priority", tier.get(m["kind"], 0)),
+    move = max(moves, key=lambda m: (assist_display_tier(m)["priority"],
                                      _adj_win(100*m["wins"]/m["picks"], m["picks"], k=20),
                                      m["picks"]))
     win = 100.0 * move["wins"] / move["picks"]
-    return {"title": move["name"], "win": win, "n": move["picks"],
+    return {"title": assist_display_name(move), "win": win, "n": move["picks"],
             "adj": _adj_win(win, move["picks"], k=20)}
 
 
@@ -7863,3 +7869,4 @@ elif page == "Ledger":
 else:
     st.subheader("Raw CSV (all columns)")
     st.dataframe(df_f, width="stretch", height=620, hide_index=True)
+

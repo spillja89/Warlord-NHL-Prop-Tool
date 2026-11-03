@@ -1,7 +1,7 @@
 import unittest
 import pandas as pd
 from assist_moves_current import assists_moves, existing_assists_moves
-from assist_routes_2026 import new_assists_moves, VERSION
+from assist_routes_2026 import new_assists_moves, VERSION, assist_display_tier, assist_display_name
 from warlords_night_board import rank_priced_slate, featured_warlords, render_warlords
 
 
@@ -76,7 +76,25 @@ class AdditiveAssistTests(unittest.TestCase):
         self.assertNotIn('CRIT GATE 8.3',html)
         legacy=row(Conf_Assists=90, **{'iXA%':99},Model_Stats_Season='2025-2026',PP_iXA60=4,Team_PP_xGF60=9)
         legacy_html=render_warlords(featured_warlords(rank_priced_slate(pd.DataFrame([legacy]))),roles=('Support',))
-        self.assertIn('CRIT GATE 8.3',legacy_html)
+        self.assertIn('PP UPGRADE GATE 8.3',legacy_html)
+        self.assertIn('PP UPGRADE',legacy_html)
+
+    def test_shared_display_tiers_and_volume_floor(self):
+        cases=[(24,30,'CRIT II'),(23,30,'CRIT I'),(22,30,'PP UPGRADE'),
+               (24,29,'MONITOR'),(80,100,'CRIT II'),(75,100,'CRIT I'),(74,100,'PP UPGRADE')]
+        for wins,picks,label in cases:
+            move={'name':'Legacy Crit','kind':'CRIT','wins':wins,'picks':picks}
+            before=move.copy()
+            self.assertEqual(assist_display_tier(move)['label'],label)
+            self.assertEqual(move,before)
+        self.assertEqual(assist_display_name({'name':'Legacy Crit','kind':'CRIT','wins':70,'picks':100}), 'Legacy · PP Upgrade')
+
+    def test_new_enhanced_move_displays_crit_and_outranks_old_low_rate_crit(self):
+        from warlords_night_board import _move_rank
+        old={'name':'Old Crit','kind':'CRIT','market':'Assists','wins':29,'picks':41,'later_wins':0,'later_picks':0}
+        new=next(m for m in new_assists_moves(row()) if m['name']=='Runic Resonance II')
+        self.assertEqual(assist_display_tier(new)['label'],'CRIT II')
+        self.assertGreater(_move_rank(new),_move_rank(old))
 
 
 if __name__=='__main__':unittest.main()

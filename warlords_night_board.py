@@ -14,6 +14,7 @@ from warlord_moves_2026 import fired_moves
 from player_availability import is_unavailable
 from player_form import summarize_form
 from points15_research import context as points15_research_context
+from assist_routes_2026 import assist_display_tier, assist_display_name
 
 
 CLASSES = (
@@ -86,8 +87,7 @@ def _move_rank(move):
     if move.get("matchup_buff"):
         return (-1, picks, wins / picks if picks else -1)
     if move.get("market") == "Assists":
-        tier = move.get("display_priority", {"CONTEXT": 0, "STANCE": 1, "VOLUME": 2,
-                "SPECIAL": 3, "CRIT": 7}.get(move["kind"], 0))
+        tier = assist_display_tier(move)["priority"]
         return (tier, wins / picks if picks else -1, picks)
     return (wins / picks if picks else -1, picks,
             later_wins / later_picks if later_picks else -1)
@@ -761,9 +761,11 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
             points_tier = card.get("points_current_tier") if role == "Tank" else None
             tier_badge = ""
             tier_class = ""
-            if move and ((role == "Support" and move["kind"] == "CRIT") or
+            support_tier = assist_display_tier(move) if role == "Support" and move else None
+            if move and ((role == "Support" and support_tier["crit"]) or
                          (role == "Carry" and move.get("crit"))):
-                tier_badge = '<span class="wn-tier wn-tier--s">CRIT</span>'
+                tier_label = support_tier["label"] if support_tier else "CRIT"
+                tier_badge = f'<span class="wn-tier wn-tier--s">{tier_label}</span>'
                 tier_class = " wn-unit--crit"
             if points_tier:
                 tier_style = {"SPECIAL": "s", "HEAVY": "a", "BASE": "b"}[points_tier["kind"]]
@@ -785,6 +787,8 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
                       or move["kind"] == "LAB CRIT" else move["kind"])
             if points_tier:
                 status = f'{points_tier["kind"]} · EARLY 2026–27 SCREEN'
+            if support_tier:
+                status = support_tier["label"]
             sample = " · SMALL SAMPLE" if 0 < picks < 30 else ""
             line = f"OVER {card['line']:g} {market.upper()}" if card["line"] is not None else market.upper()
             matchup = card["game"] or card["team"]
@@ -915,12 +919,12 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
                     support_badges = (f'<div class="wn-support-badges">Also: '
                                       f'{_h(" · ".join(secondary[:4]))}</div>')
                 pp_rate = _number(card.get("team_pp_xgf60"))
-                if move["kind"] == "CRIT" and move.get("environment_enhanced"):
+                if support_tier["crit"] and move.get("environment_enhanced"):
                     pp_crit_note = ('<div class="wn-crit-env">TEAM PP ACTUAL GF/60 ≥5.7'
-                                    ' + OPP 5v5 HDCA/60 ≤2.2 · BOTH PLAYER ROUTES REQUIRED</div>')
+                                    ' + OPP 5v5 HDCA/60 ≤2.2 · ENVIRONMENT UPGRADE</div>')
                 elif move["kind"] == "CRIT" and pp_rate is not None:
                     pp_crit_note = (f'<div class="wn-crit-env">TEAM PP xGF/60 '
-                                    f'{pp_rate:.2f} · CRIT GATE 8.3</div>')
+                                    f'{pp_rate:.2f} · PP UPGRADE GATE 8.3</div>')
             move_rows = []
             for fired_move in fired:
                 fired_wins, fired_picks = int(fired_move["wins"]), int(fired_move["picks"])
@@ -936,6 +940,8 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
                                          .replace("iXA%", "observed assist rank %"))
                 fired_label = ("TRACK" if fired_move.get("track") else
                                "LAB" if fired_move.get("experimental") else fired_move["kind"])
+                if role == "Support" and not fired_move.get("track"):
+                    fired_label = assist_display_tier(fired_move)["label"]
                 later_text = (f"Mar 15+ {fired_late_wins}/{fired_late_picks} · {fired_late_pct:.1f}%"
                               if fired_late_picks else "2026–27 regular season"
                               if fired_move.get("sample_season") == "2026-27" else "No separate later sample")
@@ -971,6 +977,8 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
             move_name = move["name"] if move else (
                 "Scouting Target" if role == "Carry" and baseline_only else
                 "Green Baseline" if baseline_only else "Scouting pool")
+            if role == "Support" and move:
+                move_name = assist_display_name(move)
             units.append(f"""<article class="wn-unit{tier_class}"{route_style}>
               {name_backdrop}
               <div class="wn-portrait" aria-hidden="true">{portrait}</div>
@@ -1005,6 +1013,8 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
                          if role == "Carry" else
                          "POINTS ✦ CURRENT-SEASON SCREEN % ✦ BOOK BREAK-EVEN %" if role == "Tank" else
                          f"{market.upper()} ✦ HISTORICAL MOVE % ✦ BOOK BREAK-EVEN % FROM POSTED ODDS")
+        if role == "Support":
+            lane_subtitle += " · CRIT I 75–79.9% · CRIT II 80%+ · MINIMUM 30 PLAYS; SMALLER SAMPLES MONITOR"
         lanes.append(f"""<section class="wn-lane wn-lane--{role.lower()}" style="--accent:{color}">
           <header class="wn-lane-head">{backdrop}<div class="wn-class-icon" aria-hidden="true">{class_icon}</div>
             <div class="wn-class-text"><span class="wn-kicker">{_h(descriptions[role])}</span><h2>{_h(role)}</h2></div>
