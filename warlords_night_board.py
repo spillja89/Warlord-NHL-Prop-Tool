@@ -863,23 +863,8 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
                              f'· #{positional["rank"]} most · {positional["gp"]} GP</div>'
                              if positional else "")
             fired = card.get("moves") or ([] if not move or baseline_only else [move])
+            # Keep secondary Goal attacks in the full move list below.
             goal_signals = ""
-            if role == "Carry":
-                signal_rows = []
-                for signal in fired:
-                    if signal.get("route_family") not in {"star_drought", "star_toi20"}:
-                        continue
-                    signal_pct = 100 * signal["wins"] / signal["picks"]
-                    signal_be = signal.get("sample_book_be_pct")
-                    be_note = f" · sample BE {signal_be:.1f}%" if signal_be is not None else ""
-                    css = "buff" if signal.get("matchup_buff") else "crit" if signal.get("crit") else "attack"
-                    prefix = "+ " if signal.get("matchup_buff") else "✦ " if signal.get("crit") else ""
-                    signal_rows.append(
-                        f'<div class="wn-goal-signal wn-goal-signal--{css}">'
-                        f'<strong>{_h(prefix + signal["name"])}</strong>'
-                        f'<span>{signal["wins"]}/{signal["picks"]} · {signal_pct:.1f}%{be_note}</span></div>')
-                if signal_rows:
-                    goal_signals = '<div class="wn-goal-signals">' + ''.join(signal_rows) + '</div>'
             support_badges = ""
             pp_crit_note = ""
             points_power_note = ('<div class="wn-support-badges">Enhancement: Blade Impale (Power Tier)</div>'
@@ -1099,5 +1084,6 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
       <div class="wn-hero-foot">{_h(hero_foot)} · HISTORICAL MOVE RATE IS NOT A FORECAST</div></div>"""
     board_class = "wn-board" if show_hero else "wn-board wn-board--compact"
     return styles + f'<div class="{board_class}">' + (hero if show_hero else "") + '<div class="wn-grid">' + ''.join(lanes) + '</div></div>'
+
 
 
