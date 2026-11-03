@@ -2895,10 +2895,10 @@ def render_vengeance_banner():
             pill, wrap_class, action_line = "REVIEW: ACTIVE", "vengeance-wrap vengeance-post", "Post-mortem underway."
 
         from warlord_header import render_header
-        st.markdown(render_header(
+        st.html(render_header(
             state=state, timer=right_timer.split(" ")[-1],
             strike_label=sub, status=kicker,
-        ), unsafe_allow_html=True)
+        ))
 
         if state == "live":
             b1, b2 = st.columns([1, 5])
