@@ -125,6 +125,8 @@ class AdditiveAssistTests(unittest.TestCase):
             self.assertEqual(html.count('<h1 '),1)
             self.assertIn('max-width:640px',html)
             self.assertNotIn('<img',html)
+            self.assertFalse(any(line.startswith('    ') for line in html.splitlines()))
 
 
 if __name__=='__main__':unittest.main()
+

@@ -4,7 +4,7 @@ from html import escape
 
 def render_header(*, state, timer, strike_label, status):
     phase = {'pre':'STRIKES IN', 'live':'SLATE LIVE', 'post':'NEXT STRIKE'}[state]
-    return f'''<style>
+    markup = f'''<style>
     .wv-masthead{{position:relative;isolation:isolate;overflow:hidden;display:grid;grid-template-columns:minmax(0,1fr) 310px;gap:24px;padding:30px 34px 25px;margin:8px 0 23px;border:1px solid #a994635e;border-radius:6px 24px 6px 24px;background:radial-gradient(ellipse at 73% 0%,#49317777,transparent 58%),linear-gradient(115deg,#0b1120,#182136 62%,#101626);color:#f6f1e7;box-shadow:0 12px 28px #10152530,inset 0 1px #e3c77e55}}
     .wv-masthead::before{{content:"";position:absolute;inset:7px;pointer-events:none;border:1px solid #e2c47826;border-radius:3px 18px 3px 18px;z-index:-1}}
     .wv-masthead::after{{content:"";position:absolute;left:34px;right:34px;bottom:0;height:2px;background:linear-gradient(90deg,transparent,#e5c674,#a481eb,#63e1cf,transparent)}}
@@ -26,3 +26,7 @@ def render_header(*, state, timer, strike_label, status):
     <div class="wv-command"><div class="wv-phase">{phase}</div>
     <div class="wv-clock">{escape(timer)}</div><div class="wv-strike">{escape(strike_label)} · Central time</div>
     <div><span class="wv-status">{escape(status)}</span></div></div></header>'''
+    # Streamlit parses Markdown before HTML: four leading spaces create a
+    # visible code block, even inside this otherwise valid HTML fragment.
+    return '\n'.join(line.lstrip() for line in markup.splitlines())
+
