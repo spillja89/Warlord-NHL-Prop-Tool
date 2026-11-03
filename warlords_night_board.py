@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import math
+import re
 import base64
 from functools import lru_cache
 from html import escape
@@ -39,6 +40,57 @@ def _value(row, *keys):
         if value is not None and not pd.isna(value) and str(value).strip():
             return value
     return None
+
+
+def _assist_card_context(row):
+    from power_play_quotes import _unit_label, team_pp_time_share_pct
+    fields = ('TOI_per_game', 'PP_TOI_per_game', 'Assists_mu', 'iXA%',
+              'Goal_mu', 'i5v5_primaryAssists60', 'PPP10_total', 'L10_S',
+              'Player_SOG_Share_Proxy', 'Player_5v5_SOG_Share',
+              'Team_PP_GF60', 'Team_PP_xGF60', 'opp_5v5_HDCA60', 'Opp_PK_xGA60')
+    result = {field: _number(row.get(field)) for field in fields}
+    result['unit'] = _unit_label(row)
+    result['team_pp_share'] = team_pp_time_share_pct(row.get('PP_TOI_per_game'), row.get('Team_PP_Time_PG'))
+    return result
+
+
+def _render_assist_facts(card, move):
+    values = card.get('assist_context') or {}
+    def metric(field, digits=2, suffix=''):
+        value = _number(values.get(field))
+        return f'{value:.{digits}f}{suffix}' if value is not None else '—'
+    usage = (f'TOI <b>{metric("TOI_per_game", 1)} min/g</b> · '
+             f'PP <b>{metric("PP_TOI_per_game", 1)} min/g</b><br>'
+             f'Recorded unit <b>{_h(values.get("unit") or "Unit unknown")}</b> · '
+             f'Team PP time <b>{metric("team_pp_share", 1, "%")}</b>')
+    profile = (f'Assist μ <b>{metric("Assists_mu")}</b> · '
+               f'Observed assist rank <b>{metric("iXA%", 0)}</b>')
+    rule = (move or {}).get('rule', '')
+    checks = []
+    for field, label in [('Goal_mu','Goal μ'), ('i5v5_primaryAssists60','5v5 primary A/60'),
+                         ('PPP10_total','PPP L10'), ('L10_S','Shots L10'),
+                         ('Player_SOG_Share_Proxy','Shot-share proxy'),
+                         ('Player_5v5_SOG_Share','5v5 shot share')]:
+        if field in rule:
+            checks.append(f'{label} <b>{metric(field)}</b>')
+    if checks:
+        profile += '<br>' + ' · '.join(checks)
+    environment=[]
+    for field,label in [('Team_PP_GF60','Team PP actual GF/60'),
+                        ('Team_PP_xGF60','Team PP xGF/60'),
+                        ('opp_5v5_HDCA60','Opp 5v5 HDCA/60')]:
+        match=re.search(re.escape(field)+r'\s*(>=|<=)\s*([0-9.]+)',rule)
+        if match:
+            op='≥' if match[1]=='>=' else '≤'
+            environment.append(f'{label} <b>{metric(field)}</b> <span>({op}{match[2]})</span>')
+    sample_be=_number((move or {}).get('sample_book_be_pct'))
+    sample=(f'<div class="wn-assist-sample">MOVE SAMPLE AVG BOOK BE <b>{sample_be:.1f}%</b></div>'
+            if sample_be is not None else '')
+    env=('<div class="wn-assist-fact"><small>MATCHUP · VALUE / CUTOFF</small>'
+         + '<br>'.join(environment) + '</div>') if environment else ''
+    return (f'{sample}<div class="wn-assist-facts">'
+            f'<div class="wn-assist-fact"><small>ICE TIME &amp; ROLE</small>{usage}</div>'
+            f'<div class="wn-assist-fact"><small>PLAYER PROFILE · SAVED MODEL</small>{profile}</div>{env}</div>')
 
 
 def _line_price(row, market):
@@ -196,6 +248,7 @@ def rank_warlords(frame: pd.DataFrame) -> dict[str, list[dict]]:
                 row.get(f"Tonight_{market}_Version") == "2026-10-19-research-v3" else None,
                 "tonight_status": str(_value(row, f"Tonight_{market}_Status") or ""),
                 "team_pp_xgf60": _number(row.get("Team_PP_xGF60")) if market == "Assists" else None,
+                "assist_context": _assist_card_context(row) if market == "Assists" else None,
                 "goalie": str(_value(row, "Opp_Goalie") or ""),
                 "goalie_gp": _number(_value(row, "Opp_GP")),
                 "goalie_status": str(_value(row, "Opp_Goalie_Status") or "Unknown"),
@@ -276,6 +329,7 @@ def rank_priced_slate(frame: pd.DataFrame) -> dict[str, list[dict]]:
                 row.get(f"Tonight_{market}_Version") == "2026-10-19-research-v3" else None,
                 "tonight_status": str(_value(row, f"Tonight_{market}_Status") or ""),
                 "team_pp_xgf60": _number(row.get("Team_PP_xGF60")) if market == "Assists" else None,
+                "assist_context": _assist_card_context(row) if market == "Assists" else None,
                 "confidence": confidence, "move_confidence": move_confidence,
                 "matrix": matrix,
                 "baseline_rule": baseline, "baseline_only": bool(baseline and not best),
@@ -893,6 +947,7 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
             # Keep secondary Goal attacks in the full move list below.
             goal_signals = ""
             support_badges = ""
+            assist_facts = _render_assist_facts(card, move) if role == "Support" else ""
             pp_crit_note = ""
             points_power_note = ('<div class="wn-support-badges">Enhancement: Blade Impale (Power Tier)</div>'
                                  if role == "Tank" and card.get("points_power_tier") else "")
@@ -1003,6 +1058,7 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
                 <div class="wn-unit-foot"><span>{_h(line)} <b>{_h(price)}</b>{book_note}</span><span>{_h(later_note)}{confidence_note}</span></div>
                 {book_rate_note}
                 {pp_crit_note}
+                {assist_facts}
                 {points_power_note}
                 {points_tier_note}
                 {points_research_note}
@@ -1075,12 +1131,24 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
       .wn-support-route{font-size:10px;color:var(--accent);margin-top:5px;font-weight:800}
       .wn-support-route span{display:block;font-size:9px;font-weight:500;color:#b8c8e7;margin-top:2px}
       .wn-lane--support .wn-unit--crit{animation:wn-support-glow 3s ease-in-out infinite}
-      .wn-lane--support .wn-portrait{width:64px;height:64px;overflow:hidden;border-color:var(--accent)}
+      .wn-lane--support .wn-unit{align-items:flex-start;padding:14px;gap:10px 16px}
+      .wn-lane--support .wn-unit-ghost{display:none}
+      .wn-lane--support .wn-unit-body{order:0}
+      .wn-lane--support .wn-portrait{order:2;width:160px;height:190px;overflow:hidden;border-color:var(--accent)}
+      .wn-lane--support .wn-form,.wn-lane--support .wn-form-empty,.wn-lane--support .wn-details{order:4}
+      .wn-lane--support .wn-unit-head strong{font-size:16px}
+      .wn-lane--support .wn-unit-foot,.wn-lane--support .wn-goalie{font-size:10px;line-height:1.5}
+      .wn-lane--support .wn-record{order:1;padding-top:5px}
+      .wn-assist-facts{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,205px),1fr));gap:7px;margin:8px 0}
+      .wn-assist-fact{font-size:11px;line-height:1.65;border:1px solid #ffffff19;border-radius:6px;padding:8px 10px;background:#0e192b9e;color:#bfcee0;overflow-wrap:anywhere}
+      .wn-assist-fact small{display:block;font-size:8px;letter-spacing:.10em;color:var(--accent);font-weight:800;margin-bottom:3px}
+      .wn-assist-fact b{color:#f3f5fa}.wn-assist-fact span{color:#a0b1c9}
+      .wn-assist-sample{font-size:9px;color:#a8b8ce;margin-top:4px}.wn-assist-sample b{color:#d7e5f5}
       .wn-support-crit-i .wn-portrait{box-shadow:0 0 14px #79afff88;border:2px solid #9cd4ff}
       .wn-support-crit-ii .wn-portrait{box-shadow:0 0 20px #f4bf55aa;border:2px solid #f4bf55}
       @keyframes wn-support-glow{50%{box-shadow:0 0 15px #f4bf554d,inset 0 0 0 1px #f4bf5566}}
       @media(prefers-reduced-motion:reduce){.wn-lane--support .wn-unit--crit{animation:none}}
-      @media(max-width:540px){.wn-lane--support .wn-portrait{width:50px;height:50px}}
+      @media(max-width:650px){.wn-lane--support .wn-portrait{order:1;width:92px;height:120px}.wn-lane--support .wn-unit{gap:8px;padding:10px}.wn-lane--support .wn-record{order:3;flex-basis:100%;text-align:left;flex-direction:row;gap:8px;align-items:center}.wn-lane--support .wn-unit-head{white-space:normal;flex-wrap:wrap}.wn-lane--support .wn-unit-head strong{font-size:14px}}
       .wn-goalie{font-size:9px;color:#9fb6cb;margin-top:3px}
       .wn-goal-profile{font-size:10px;color:#e7cc8b;margin-top:4px;font-weight:700}
       .wn-goal-signals{display:grid;gap:4px;margin-top:7px}

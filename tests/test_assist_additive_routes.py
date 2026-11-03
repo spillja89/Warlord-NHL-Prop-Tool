@@ -114,6 +114,23 @@ class AdditiveAssistTests(unittest.TestCase):
         self.assertEqual(_support_variant({'name':"Odin's Vigil Crit"}),'Arcanist')
         self.assertEqual(_character_uri('Support','Oracle + Runesmith'),orangutan)
 
+    def test_actual_assist_values_reach_card_without_inventing_missing_data(self):
+        r=row(TOI_per_game=24.8,PP_TOI_per_game=4,Team_PP_Time_PG=6,
+              PP_Role=2,Assists_mu=1.27,Team_PP_GF60=7.12,opp_5v5_HDCA60=1.94)
+        board=featured_warlords(rank_priced_slate(pd.DataFrame([r])))
+        html=render_warlords(board,roles=('Support',))
+        for value in ('24.8 min/g','4.0 min/g','66.7%','PP1','1.27','7.12','1.94',
+                      'MATCHUP · VALUE / CUTOFF','MOVE SAMPLE AVG BOOK BE','ICE TIME &amp; ROLE'):
+            self.assertIn(value,html)
+        from warlords_night_board import _assist_card_context, _render_assist_facts
+        missing=_assist_card_context({})
+        facts=_render_assist_facts({'assist_context':missing},None)
+        self.assertIn('Unit unknown',facts)
+        self.assertIn('—',facts)
+        self.assertNotIn('0.0 min/g',facts)
+        changed=_assist_card_context(dict(r,Team_Changed=True))
+        self.assertEqual(changed['unit'],'New team · verify unit')
+
     def test_header_clock_modes_and_safe_text(self):
         from warlord_header import render_header
         for state, label in [('pre','STRIKES IN'),('live','SLATE LIVE'),('post','NEXT STRIKE')]:
@@ -129,4 +146,3 @@ class AdditiveAssistTests(unittest.TestCase):
 
 
 if __name__=='__main__':unittest.main()
-
