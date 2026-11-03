@@ -36,7 +36,7 @@ def _move(name, kind, icon, rule, wins, picks, unique_players):
     }
 
 
-def assists_moves(row):
+def existing_assists_moves(row):
     """Return the live Assist tier and its supporting fired routes."""
     line = _number(row, "Assists_Line")
     if line is None:
@@ -81,3 +81,10 @@ def assists_moves(row):
         moves.append(_move("Arcane Rebound", "CONTEXT", "stars.svg",
                            ENTRY + " + Drought_G >= 2", 66, 100, 44))
     return moves
+
+
+def assists_moves(row):
+    """Preserve the existing kit and add independently gated November routes."""
+    from assist_routes_2026 import new_assists_moves
+    return existing_assists_moves(row) + new_assists_moves(row)
+

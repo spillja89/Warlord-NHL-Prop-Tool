@@ -703,7 +703,7 @@ _ROLE_INFO = {
 # Fired counts always come from warlord_moves_2026, never from this copy.
 _CLASS_RULES = {
     "GOALS": {"role": "Carry", "market": "Goal", "entry": "Matrix_Goal Green · Goal 0.5", "note": "Three Goal paths: xG, StarScore/goal drought, and StarScore/TOI20. Star Barrage uses StarScore ≥84.5 + TOI/game ≥20 + L10 shots ≤39. PPP drought ≥1/≥2 adds the highest Runic Barrage level. All fired attacks, crits and buffs appear in the tracker."},
-    "ASSISTS": {"role": "Support", "market": "Assists", "entry": "Matrix_Assists Green · Assists 0.5 · Conf_Assists ≥ 81 · iXA% ≥ 95", "note": "The PP Specials gain a Crit tier when team PP xGF/60 reaches 8.3."},
+    "ASSISTS": {"role": "Support", "market": "Assists", "entry": "Existing moves: Conf ≥81 · assist rank ≥95. New routes: Conf ≥80 · assist rank ≥94. Both require Green · Assists 0.5.", "note": "Existing moves remain active. New facilitator, PP and shot-share routes have separate records and enhanced levels. The new Crit requires both player routes plus team PP actual GF/60 ≥5.7 and opponent 5v5 HDCA/60 ≤2.2."},
     "POINTS": {"role": "Tank", "market": "Points", "entry": "Matrix_Points Green · Points 0.5 with Conf_Points ≥ 80, or Points 1.5 with Conf_Points ≥ 75", "note": "The 0.5 and 1.5 lines have separate move trees."},
     "SOG": {"role": "Jungle", "market": "SOG", "entry": "Matrix_SOG Green · 2.5: Conf_SOG ≥ 75 · 3.5: Conf_SOG ≥ 86", "note": "The 3.5 shortlist uses a current-season confidence screen; older move records keep their original rules."},
 }
@@ -1191,8 +1191,8 @@ def _probe_assists_best(r: dict) -> dict | None:
     moves = [m for m in _assists_mapped_moves(r) if m["kind"] != "CONTEXT"]
     if not moves:
         return None
-    tier = {"STANCE": 1, "VOLUME": 2, "SPECIAL": 3, "CRIT": 4}
-    move = max(moves, key=lambda m: (tier.get(m["kind"], 0),
+    tier = {"STANCE": 1, "VOLUME": 2, "SPECIAL": 3, "CRIT": 7}
+    move = max(moves, key=lambda m: (m.get("display_priority", tier.get(m["kind"], 0)),
                                      _adj_win(100*m["wins"]/m["picks"], m["picks"], k=20),
                                      m["picks"]))
     win = 100.0 * move["wins"] / move["picks"]
