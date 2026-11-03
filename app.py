@@ -4210,7 +4210,10 @@ else:
                 st.cache_data.clear()
             except Exception as e:
                 st.error(f"Model run failed: {e}")
-                st.stop()
+                if latest_path is None or not os.path.isfile(str(latest_path)):
+                    st.stop()
+                st.warning("Refresh failed. Showing the last saved board; prices and "
+                           "statistics retain their saved timestamps.")
 
     source = "latest"
     if latest_path is None or not os.path.exists(str(latest_path)):

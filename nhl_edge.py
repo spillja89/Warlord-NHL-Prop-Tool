@@ -889,12 +889,35 @@ def moneypuck_url(kind: str, y: int) -> str:
     return f"https://moneypuck.com/moneypuck/playerData/seasonSummary/{y}/regular/{kind}.csv"
 
 def load_moneypuck_csv(sess: requests.Session, url: str) -> pd.DataFrame:
-    txt = http_get_text(sess, url)
-    if not txt.strip():
-        raise RuntimeError(f"Empty CSV from {url}")
-    df = pd.read_csv(StringIO(txt))
-    df.columns = df.columns.str.strip()
-    return df
+    # requests consumes the body before returning. A chunked transfer can fail
+    # after HTTP 200, so status-code retries alone do not handle this failure.
+    # Retry the complete download AND parse; never retain a partial dataframe.
+    for attempt in range(3):
+        try:
+            txt = http_get_text(sess, url)
+            if not txt.strip():
+                raise pd.errors.EmptyDataError(f"Empty CSV from {url}")
+            if txt.lstrip().startswith('<'):
+                raise pd.errors.ParserError(f"Expected CSV, received an HTML response from {url}")
+            df = pd.read_csv(StringIO(txt))
+            df.columns = df.columns.str.strip()
+            if df.empty:
+                raise pd.errors.EmptyDataError(f"CSV has no data rows: {url}")
+            return df
+        except (requests.exceptions.RequestException, pd.errors.ParserError,
+                pd.errors.EmptyDataError) as error:
+            response = getattr(error, 'response', None)
+            status = getattr(response, 'status_code', None)
+            if (isinstance(error, requests.exceptions.HTTPError)
+                    and status is not None and status < 500
+                    and status not in {408, 429}):
+                raise
+            if attempt == 2:
+                raise
+            delay = (0.5, 1.5)[attempt]
+            print(f"[MoneyPuck] interrupted/invalid CSV; retry {attempt + 2}/3 "
+                  f"in {delay:g}s: {type(error).__name__} ({url})")
+            time.sleep(delay)
 
 CURRENT_SEASON_CUTOVER = date(2026, 10, 13)
 
@@ -5924,3 +5947,4 @@ def main() -> None:
 if __name__ == "__main__":
 
     main()
+
