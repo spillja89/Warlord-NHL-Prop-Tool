@@ -12,6 +12,7 @@ from pathlib import Path
 import pandas as pd
 
 from warlord_moves_2026 import fired_moves
+from sog_moves_current import is_current_sog25, sog_base_eligible, pk_duration_seconds
 from player_availability import is_unavailable
 from player_form import summarize_form
 from points15_research import context as points15_research_context
@@ -93,6 +94,29 @@ def _render_assist_facts(card, move):
             f'<div class="wn-assist-fact"><small>PLAYER PROFILE · SAVED MODEL</small>{profile}</div>{env}</div>')
 
 
+def _render_sog_facts(card, move):
+    if not move or not move.get("sog_current"):
+        return ""
+    values = card.get("sog_context") or {}
+    def metric(field, digits=1):
+        value = _number(values.get(field))
+        return f"{value:.{digits}f}" if value is not None else "—"
+    conf = _number(card.get("confidence"))
+    conf_label = f"{conf:.0f}" if conf is not None else "—"
+    seconds = _number(values.get("pk_seconds"))
+    duration = f"{seconds:.2f}s" if seconds is not None else "Unavailable"
+    buff = any(item.get("matchup_buff") for item in card.get("moves", []))
+    state = "PARALYSIS ACTIVE" if buff else "PK duration unavailable" if seconds is None else "Outside PK buff"
+    sample = _number(move.get("sample_book_be_pct"))
+    sample_note = f'<div class="wn-assist-sample">MOVE SAMPLE AVG BOOK BE <b>{sample:.1f}%</b></div>' if sample is not None else ""
+    buff_note = ('<div class="wn-crit-env">+ PARALYSIS · opponent PK ≤104s/opportunity · 28/40 · 70.0%</div>' if buff else "")
+    return (sample_note + '<div class="wn-assist-facts">'
+      f'<div class="wn-assist-fact"><small>SHOT PROFILE V2</small>Confidence <b>{conf_label}</b> · base ≥67 · stronger ≥71<br>TOI <b>{metric("TOI_per_game")} min/g</b> · rank {metric("TOI_Pct")}</div>'
+      f'<div class="wn-assist-fact"><small>SHOT SHARE &amp; MATCHUP</small>5v5 team shot share <b>{metric("Player_5v5_SOG_Share")}%</b><br>Opponent L10 SOG allowed <b>{metric("Opp_SOG_Against_L10")}/g</b></div>'
+      f'<div class="wn-assist-fact"><small>PK DURATION · VALUE / CUTOFF</small>Opponent <b>{duration}</b> · cutoff ≤104s/opportunity<br>{state}</div>'
+      '</div>' + buff_note)
+
+
 def _line_price(row, market):
     prefix = {"Goal": ("Goal", "ATG"), "Points": ("Points",),
               "Assists": ("Assists",), "SOG": ("SOG",)}[market]
@@ -157,6 +181,8 @@ def _baseline_rule(row, market, line):
         threshold = 78 if line == 0.5 else 75
         if _number(row.get("Conf_Points")) is not None and _number(row.get("Conf_Points")) >= threshold:
             return f"Green + Points {line:g} + Conf_Points ≥ {threshold}"
+    if market == "SOG" and line == 2.5 and is_current_sog25(row):
+        return "Green + SOG2.5 + Shot Profile v2 confidence ≥67" if sog_base_eligible(row) else None
     if market == "SOG" and line in (2.5, 3.5):
         threshold = 75 if line == 2.5 else 86
         move_conf = _number(row.get("Conf_SOG_Move", row.get("Conf_SOG")))
@@ -251,6 +277,9 @@ def rank_warlords(frame: pd.DataFrame) -> dict[str, list[dict]]:
                 "tonight_status": str(_value(row, f"Tonight_{market}_Status") or ""),
                 "team_pp_xgf60": _number(row.get("Team_PP_xGF60")) if market == "Assists" else None,
                 "assist_context": _assist_card_context(row) if market == "Assists" else None,
+                "sog_context": {**{key:_number(row.get(key)) for key in
+                    ("TOI_Pct", "TOI_per_game", "Player_5v5_SOG_Share", "Opp_SOG_Against_L10")},
+                    "pk_seconds":pk_duration_seconds(row)} if market == "SOG" else None,
                 "goalie": str(_value(row, "Opp_Goalie") or ""),
                 "goalie_gp": _number(_value(row, "Opp_GP")),
                 "goalie_status": str(_value(row, "Opp_Goalie_Status") or "Unknown"),
@@ -332,6 +361,9 @@ def rank_priced_slate(frame: pd.DataFrame) -> dict[str, list[dict]]:
                 "tonight_status": str(_value(row, f"Tonight_{market}_Status") or ""),
                 "team_pp_xgf60": _number(row.get("Team_PP_xGF60")) if market == "Assists" else None,
                 "assist_context": _assist_card_context(row) if market == "Assists" else None,
+                "sog_context": {**{key:_number(row.get(key)) for key in
+                    ("TOI_Pct", "TOI_per_game", "Player_5v5_SOG_Share", "Opp_SOG_Against_L10")},
+                    "pk_seconds":pk_duration_seconds(row)} if market == "SOG" else None,
                 "confidence": confidence, "move_confidence": move_confidence,
                 "matrix": matrix,
                 "baseline_rule": baseline, "baseline_only": bool(baseline and not best),
@@ -859,6 +891,11 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
                 tier_class = " wn-unit--crit"
                 if support_tier:
                     tier_class += " wn-support-crit-ii" if support_tier["label"] == "CRIT II" else " wn-support-crit-i"
+            if role == "Jungle" and move and move.get("sog_current"):
+                tier_label = "EMPOWERED" if move.get("empowered") else move["kind"]
+                tier_badge = f'<span class="wn-tier wn-tier--s">{tier_label}</span>'
+                if move.get("empowered"):
+                    tier_class = " wn-unit--crit"
             if points_tier:
                 tier_style = {"SPECIAL": "s", "HEAVY": "a", "BASE": "b"}[points_tier["kind"]]
                 tier_badge = f'<span class="wn-tier wn-tier--{tier_style}">{points_tier["kind"]}</span>'
@@ -881,6 +918,8 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
                 status = f'{points_tier["kind"]} · EARLY 2026–27 SCREEN'
             if support_tier:
                 status = support_tier["label"]
+            if role == "Jungle" and move and move.get("empowered"):
+                status = "EMPOWERED"
             sample = " · SMALL SAMPLE" if 0 < picks < 30 else ""
             line = f"OVER {card['line']:g} {market.upper()}" if card["line"] is not None else market.upper()
             matchup = card["game"] or card["team"]
@@ -962,6 +1001,7 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
             goal_signals = ""
             support_badges = ""
             assist_facts = _render_assist_facts(card, move) if role == "Support" else ""
+            sog_facts = _render_sog_facts(card, move) if role == "Jungle" else ""
             pp_crit_note = ""
             points_power_note = ('<div class="wn-support-badges">Enhancement: Blade Impale (Power Tier)</div>'
                                  if role == "Tank" and card.get("points_power_tier") else "")
@@ -1073,6 +1113,7 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
                 {book_rate_note}
                 {pp_crit_note}
                 {assist_facts}
+                {sog_facts}
                 {points_power_note}
                 {points_tier_note}
                 {points_research_note}
@@ -1099,6 +1140,8 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
                          if role == "Carry" else
                          "POINTS ✦ CURRENT-SEASON SCREEN % ✦ BOOK BREAK-EVEN %" if role == "Tank" else
                          f"{market.upper()} ✦ HISTORICAL MOVE % ✦ BOOK BREAK-EVEN % FROM POSTED ODDS")
+        if role == "Jungle" and any((card.get("move") or {}).get("sog_current") for card in cards):
+            lane_subtitle = "SOG2.5 ✦ 2026–27 MOVE % ✦ BASE67 · STRONGER71 · PK BUFF ≤104s/OPPORTUNITY"
         if role == "Support":
             lane_subtitle += " · CRIT I 75–79.9% · CRIT II 80%+ · MINIMUM 30 PLAYS; SMALLER SAMPLES MONITOR"
         lanes.append(f"""<section class="wn-lane wn-lane--{role.lower()}" style="--accent:{color}">

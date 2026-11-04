@@ -16,6 +16,7 @@ import streamlit as st
 
 from published_output import fetch_grade_file, fetch_tracker, is_newer_tracker, list_grade_files, local_matches_sha, save_if_changed
 from warlord_moves_2026 import VERSION as MOVE_KIT_VERSION
+from sog_moves_current import is_current_sog25, sog_base_eligible
 from warlord_moves_2026 import best_move, points_moves, sog_moves, goals_moves as _goals_carry_moves, assists_moves as _assists_mapped_moves
 from goal_moves_current import goal_profile_score, goal_move_summary
 from warlords_night_board import CLASSES, baseline_audit, rank_warlords, rank_priced_slate, featured_warlords, unfeatured_baselines, goal_display_cards, render_warlords, render_power_play_form, render_power_play_quotes_table, _character_uri
@@ -705,7 +706,7 @@ _CLASS_RULES = {
     "GOALS": {"role": "Carry", "market": "Goal", "entry": "Matrix_Goal Green · Goal 0.5", "note": "Three Goal paths: xG, StarScore/goal drought, and StarScore/TOI20. Star Barrage uses StarScore ≥84.5 + TOI/game ≥20 + L10 shots ≤39. PPP drought ≥1/≥2 adds the highest Runic Barrage level. All fired attacks, crits and buffs appear in the tracker."},
     "ASSISTS": {"role": "Support", "market": "Assists", "entry": "Existing moves: Conf ≥81 · assist rank ≥95. New routes: Conf ≥80 · assist rank ≥94. Both require Green · Assists 0.5.", "note": "Existing moves remain active. New facilitator, PP and shot-share routes have separate records and enhanced levels. The new Crit requires both player routes plus team PP actual GF/60 ≥5.7 and opponent 5v5 HDCA/60 ≤2.2."},
     "POINTS": {"role": "Tank", "market": "Points", "entry": "Matrix_Points Green · Points 0.5 with Conf_Points ≥ 80, or Points 1.5 with Conf_Points ≥ 75", "note": "The 0.5 and 1.5 lines have separate move trees."},
-    "SOG": {"role": "Jungle", "market": "SOG", "entry": "Matrix_SOG Green · historical move gates use original confidence", "note": "Shot Profile v2 ranks role, 5v5 team shot share and opponent shot volume, plus the existing drought bonus. Existing moves retain their original score and records while new cutoffs are researched."},
+    "SOG": {"role": "Jungle", "market": "SOG", "entry": "SOG2.5 · Green · confidence ≥67 base · ≥71 stronger · opponent PK ≤104s/opportunity buff", "note": "Berserker Swipe → Berserker’s Rage. Paralysis adds the PK-duration buff; both upgrades unlock Assassin’s Overdrive. Current-season records: October13–November3. Existing3.5 rules retain their original inputs."},
 }
 
 
@@ -803,6 +804,7 @@ def _priced_pool_table(cards: list[dict]) -> pd.DataFrame:
     has_position_data = any(card.get("position_sog") for card in cards)
     has_goal_projection = any(card.get("market") == "Goal" for card in cards)
     has_points = any(card.get("market") == "Points" for card in cards)
+    has_sog = any(card.get("market") == "SOG" for card in cards)
     for card in cards:
         qualified = [move for move in card["moves"] if int(move["picks"]) > 0
                      and int(move["wins"]) / int(move["picks"]) >= 0.5]
@@ -814,6 +816,9 @@ def _priced_pool_table(cards: list[dict]) -> pd.DataFrame:
                 assist_display_tier(item)["priority"],
                 int(item["wins"]) / int(item["picks"]) if int(item["picks"]) else -1,
                 int(item["picks"])))
+        if card.get("market") == "SOG" and any(item.get("sog_current") for item in card["moves"]):
+            attacks = [item for item in card["moves"] if not item.get("matchup_buff")]
+            move = max(attacks, key=lambda item: int(item["wins"]) / int(item["picks"])) if attacks else None
         points_tier = card.get("points_current_tier")
         featured = bool(card.get("baseline_rule") and (qualified or points_tier))
         row = {
@@ -847,6 +852,11 @@ def _priced_pool_table(cards: list[dict]) -> pd.DataFrame:
             row["Opp SOG vs position/GP"] = matchup["shots_per_game"] if matchup else None
             row["Opp position rank"] = matchup["rank"] if matchup else None
             row["Opp position GP"] = matchup["gp"] if matchup else None
+        if has_sog:
+            context = card.get("sog_context") or {}
+            row["PK sec/opportunity"] = context.get("pk_seconds")
+            row["SOG buff"] = "Paralysis · PK ≤104s" if any(item.get("sog_current") and item.get("matchup_buff") for item in card["moves"]) else ""
+            row["Move sample BE %"] = move.get("sample_book_be_pct") if move else None
         rows.append(row)
     columns = ["Player", "Team", "Game", "Start (CT)", "Lineup", "Opp goalie", "Line", "Over odds",
                "Book", "Book break-even %", "Model conf", "Matrix", "Featured",
@@ -854,6 +864,8 @@ def _priced_pool_table(cards: list[dict]) -> pd.DataFrame:
     if has_points:
         columns.insert(columns.index("Model conf") + 1, "Frozen move conf")
         columns.insert(columns.index("Model conf"), "Current Points tier")
+    if has_sog:
+        columns[columns.index("Fired move"):columns.index("Fired move")] = ["PK sec/opportunity", "SOG buff", "Move sample BE %"]
     if has_goal_projection:
         columns[10:10] = ["Tonight xG · research", "Tonight 1+ % · research"]
     if has_position_data:
@@ -2628,6 +2640,13 @@ COLUMN_HELP = {
     "REG_DROUGHT": "🎰 Jackpot badge when Points engine is READY and Drought_P ≥ 2 (amplifier; not a gate).",
 }
 COLUMN_LABELS = {
+    "SOG_Attack": "SOG attack",
+    "SOG_Buff": "SOG buff",
+    "SOG_Move_Record": "Move record",
+    "SOG_Move_Pct": "Move %",
+    "SOG_Sample_BE_Pct": "Move sample BE %",
+    "Opp_PK_Seconds_Per_Opportunity": "Opp PK sec/opportunity",
+    "Opp_PK_Duration_Source": "PK duration source",
     "Pregame_xG_L5_per_game": "L5 xG/game",
     "Goal_Profile": "Goal profile",
     "Goal_Attack": "Goal attack",
@@ -4564,6 +4583,11 @@ df["Green_SOG"] = (
 
 
 
+# Current2.5 kit uses exactly the approved Green + confidence67 baseline.
+_sog25_current = df.apply(is_current_sog25, axis=1)
+_sog25_eligible = df.apply(sog_base_eligible, axis=1)
+df.loc[_sog25_current, "Green_SOG"] = _sog25_eligible.loc[_sog25_current]
+
 # Make SOG usable everywhere (market views + smash picks)
 df["Plays_SOG"] = df["Green_SOG"].fillna(False)
 
@@ -4701,6 +4725,7 @@ mask = df["Green_Points"].fillna(False)
 df.loc[mask, "Points_Why"] = df.loc[mask].apply(_points_why, axis=1)
 
 df["Color_SOG"] = safe_num(df, "Conf_SOG_Move" if "Conf_SOG_Move" in df else "Conf_SOG", 0).apply(_tier_color) if "Conf_SOG" in df.columns else "red"
+df.loc[_sog25_current, "Color_SOG"] = np.where(_sog25_eligible.loc[_sog25_current], "green", "yellow")
 df["Color_Points"] = safe_num(df, "Conf_Points", 0).apply(_tier_color) if "Conf_Points" in df.columns else "red"
 df["Color_Goal"] = safe_num(df, "Conf_Goal", 0).apply(_tier_color) if "Conf_Goal" in df.columns else "red"
 
@@ -5913,7 +5938,7 @@ elif page == "SOG":
     _render_class_header("SOG", df_f)
 
     if "Conf_SOG_Version" in df_f and df_f["Conf_SOG_Version"].eq("sog-profile-v2-2026-11-04").any():
-        st.caption("SOG confidence · Shot Profile v2 · 55% ice-time rank + 15% normalized 5v5 team shot share + 30% normalized opponent L10 shots allowed + tier-specific drought bonus. Profile ranking, not hit probability. Existing move records retain their original confidence gates.")
+        st.caption("SOG2.5 Jungle kit · Swipe: Green + confidence67 · Rage: confidence71 · Paralysis: opponent PK duration ≤104s/opportunity · Overdrive: Rage + Paralysis. Current-season research records through November3; profile confidence is not hit probability.")
     else:
         st.caption("This saved tracker predates Shot Profile v2. Run / Refresh slate calculates the new SOG confidence.")
 
@@ -5954,6 +5979,8 @@ elif page == "SOG":
        "Green",
               
        "Conf_SOG", "Matrix_SOG",
+       "SOG_Attack", "SOG_Buff", "SOG_Move_Record", "SOG_Move_Pct", "SOG_Sample_BE_Pct",
+       "Opp_PK_Seconds_Per_Opportunity", "Opp_PK_Duration_Source",
 
         # --- EV / Odds ---
         "SOG_Line",

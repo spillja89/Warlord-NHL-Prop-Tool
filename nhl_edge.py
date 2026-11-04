@@ -623,7 +623,7 @@ def _season_id_from_date(d: date) -> int:
 
 
 def fetch_team_pp_opportunities(sess: requests.Session, season_id: int,
-                                debug: bool = False) -> pd.DataFrame:
+                                debug: bool = False, before_day: Optional[date] = None) -> pd.DataFrame:
     """Current-season NHL team PP opportunities and opponent PK exposure.
 
     These are descriptive pregame inputs. A failed feed leaves them unavailable;
@@ -637,6 +637,8 @@ def fetch_team_pp_opportunities(sess: requests.Session, season_id: int,
         "cayenneExp": f"seasonId={int(season_id)} and gameTypeId=2",
         "isAggregate": "false", "isGame": "false", "limit": -1, "start": 0,
     }
+    if before_day is not None:
+        params["isGame"] = "true"
     try:
         lookup_response = sess.get(base, timeout=REQUEST_TIMEOUT_SEC)
         lookup_response.raise_for_status()
@@ -648,13 +650,37 @@ def fetch_team_pp_opportunities(sess: requests.Session, season_id: int,
             response = sess.get(f"{base}/{report}", params=params,
                                 timeout=REQUEST_TIMEOUT_SEC)
             response.raise_for_status()
-            reports[report] = pd.DataFrame(response.json().get("data", []))
+            payload = response.json()
+            rows = payload.get("data", [])
+            if before_day is not None and int(payload.get("total", len(rows))) > len(rows):
+                raise ValueError("Incomplete NHL team-game opportunity report")
+            reports[report] = pd.DataFrame(rows)
         if not lookup or any(reports[name].empty for name in reports):
             return pd.DataFrame(columns=columns)
         pp = reports["powerplay"].copy()
         pk = reports["penaltykill"].copy()
         pp["Team"] = pd.to_numeric(pp["teamId"], errors="coerce").map(lookup)
         pk["Team"] = pd.to_numeric(pk["teamId"], errors="coerce").map(lookup)
+        if before_day is not None:
+            # Aggregate raw earlier games exactly, matching the approved replay.
+            # Per-game report time is seconds; never average rounded ratios.
+            for frame in (pp, pk):
+                frame.drop(frame.loc[frame["gameDate"].astype(str).str[:10].ge(before_day.isoformat())].index, inplace=True)
+                if frame.duplicated(["teamId", "gameId"]).any():
+                    raise ValueError("Duplicate team-game opportunity rows")
+            if pp.empty or pk.empty:
+                return pd.DataFrame(columns=columns)
+            pa = pp.groupby("Team").agg(gp=("gameId", "nunique"),
+                opportunities=("ppOpportunities", "sum"), seconds=("ppTimeOnIcePerGame", "sum"))
+            ka = pk.groupby("Team").agg(gp=("gameId", "nunique"),
+                opportunities=("timesShorthanded", "sum"), seconds=("pkTimeOnIcePerGame", "sum"),
+                goals=("ppGoalsAgainst", "sum"))
+            po = pd.DataFrame({"Team_PPO_PG":pa.opportunities/pa.gp,
+                "Team_PP_Time_PG":pa.seconds/pa.gp/60, "Team_PPO_GP":pa.gp}).reset_index()
+            ko = pd.DataFrame({"Team_PKO_PG":ka.opportunities/ka.gp,
+                "Team_PK_Time_PG":ka.seconds/ka.gp/60, "Team_PK_GA_PG":ka.goals/ka.gp,
+                "Team_PKO_GP":ka.gp}).reset_index()
+            return po.merge(ko, on="Team", how="outer").dropna(subset=["Team"])
         pp_out = pd.DataFrame({
             "Team": pp["Team"],
             "Team_PPO_PG": pd.to_numeric(pp["ppOpportunitiesPerGame"], errors="coerce"),
@@ -4040,7 +4066,7 @@ def build_tracker(today_local: date, debug: bool = False, api_key: str | None = 
         opportunity_cols = ["Team_PPO_PG", "Team_PP_Time_PG", "Team_PPO_GP",
                             "Opp_PKO_PG", "Opp_PK_Time_PG", "Opp_PK_GA_PG", "Opp_PKO_GP"]
         team_opportunities = fetch_team_pp_opportunities(
-            sess, _season_id_from_date(today_local), debug=debug)
+            sess, _season_id_from_date(today_local), debug=debug, before_day=today_local)
         if not team_opportunities.empty:
             sk = sk.merge(team_opportunities[["Team", "Team_PPO_PG",
                                               "Team_PP_Time_PG", "Team_PPO_GP"]],
@@ -5895,10 +5921,17 @@ def build_tracker(today_local: date, debug: bool = False, api_key: str | None = 
     tracker = tracker.loc[tracker["Lineup_Status"].ne("Not dressed")].copy()
     tracker["Lineup_Excluded_Count"] = lineup_excluded
 
-    # Versioned SOG profile ranking. Historical moves keep the exact confidence
-    # they were graded against; research selects the new move cutoffs separately.
+    # Publish source provenance before evaluating or freezing any current kit.
+    tracker["Model_Stats_Season"] = tracker["Model_Stats_Season"].fillna(f"{sk_stats_year}-{sk_stats_year + 1}") if "Model_Stats_Season" in tracker else f"{sk_stats_year}-{sk_stats_year + 1}"
+    tracker["Team_Stats_Season"] = (f"{int(team_stats_year)}-{int(team_stats_year) + 1}"
+                                    if team_stats_year is not None else "Unavailable")
+    tracker["Goalie_Stats_Season"] = f"{goalie_stats_year}-{goalie_stats_year + 1}"
+
+    # Score and annotate the current2.5 Jungle kit before freezing its moves.
     from sog_confidence import apply_sog_confidence
     tracker = apply_sog_confidence(tracker)
+    from sog_moves_current import attach_sog_route_context
+    tracker = attach_sog_route_context(tracker)
 
     # Freeze the displayed move rules with the pregame tracker. The grader
     # reads these tags instead of applying future code to an old slate.
@@ -5908,10 +5941,6 @@ def build_tracker(today_local: date, debug: bool = False, api_key: str | None = 
         json.dumps(frozen_move_tags(row), ensure_ascii=False, separators=(",", ":")),
         axis=1,
     )
-    tracker["Model_Stats_Season"] = tracker["Model_Stats_Season"].fillna(f"{sk_stats_year}-{sk_stats_year + 1}") if "Model_Stats_Season" in tracker else f"{sk_stats_year}-{sk_stats_year + 1}"
-    tracker["Team_Stats_Season"] = (f"{int(team_stats_year)}-{int(team_stats_year) + 1}"
-                                    if team_stats_year is not None else "Unavailable")
-    tracker["Goalie_Stats_Season"] = f"{goalie_stats_year}-{goalie_stats_year + 1}"
     tracker = attach_points15_research_flags(tracker)
 
     out_path = os.path.join(OUTPUT_DIR, f"tracker_{today_local.isoformat()}_{stamp}.csv")

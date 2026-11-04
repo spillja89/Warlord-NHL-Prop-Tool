@@ -130,6 +130,13 @@ def points_moves(row: Mapping[str, Any]) -> list[dict[str, Any]]:
 
 
 def sog_moves(row: Mapping[str, Any]) -> list[dict[str, Any]]:
+    from sog_moves_current import is_current_sog25, sog_moves as current_sog_moves
+    if is_current_sog25(row):
+        return current_sog_moves(row)
+    return legacy_sog_moves(row)
+
+
+def legacy_sog_moves(row: Mapping[str, Any]) -> list[dict[str, Any]]:
     """Only exact 2.5 or 3.5 SOG lines with Green and Conf_SOG >= 75."""
     line = _number(row, "SOG_Line")
     if line not in (2.5, 3.5) or not _green(row, "SOG") or not _at_least(_number(row, "Conf_SOG"), 75):
