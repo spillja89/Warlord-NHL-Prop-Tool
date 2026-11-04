@@ -17,6 +17,7 @@ import streamlit as st
 from published_output import fetch_grade_file, fetch_tracker, is_newer_tracker, list_grade_files, local_matches_sha, save_if_changed
 from warlord_moves_2026 import VERSION as MOVE_KIT_VERSION
 from sog_moves_current import is_current_sog25, sog_base_eligible
+from sog_confidence import sog_confidence_color, sog_confidence_style
 from warlord_moves_2026 import best_move, points_moves, sog_moves, goals_moves as _goals_carry_moves, assists_moves as _assists_mapped_moves
 from goal_moves_current import goal_profile_score, goal_move_summary
 from warlords_night_board import CLASSES, baseline_audit, rank_warlords, rank_priced_slate, featured_warlords, unfeatured_baselines, goal_display_cards, render_warlords, render_power_play_form, render_power_play_quotes_table, _character_uri
@@ -3244,7 +3245,7 @@ def style_df(df: pd.DataFrame, cols: list[str]) -> "pd.io.formats.style.Styler":
     def _conf_style_for(thr_green: float):
         # Per-market confidence thresholds (UI only):
         #   Points: 70+ green
-        #   SOG:    75+ green
+        #   SOG:    67+ green (handled by the shared display-only helper)
         #   Assists:80+ green
         #   Goals:  93+ green on the current-season player profile scale
         # Yellow = (green - 10). Red otherwise.
@@ -3315,7 +3316,6 @@ def style_df(df: pd.DataFrame, cols: list[str]) -> "pd.io.formats.style.Styler":
     # Per-market Conf coloring (keeps each market's own green threshold)
     conf_thr = {
         "Conf_Points": 70,
-        "Conf_SOG": 75,
         "Conf_Assists": 80,
         "Conf_Goal": 93,
         "Best_Conf": 80,
@@ -3323,6 +3323,9 @@ def style_df(df: pd.DataFrame, cols: list[str]) -> "pd.io.formats.style.Styler":
     for c, thr in conf_thr.items():
         if c in view.columns:
             sty = sty.map(_conf_style_for(thr), subset=[c])
+
+    if "Conf_SOG" in view.columns:
+        sty = sty.map(sog_confidence_style, subset=["Conf_SOG"])
 
     for c in [c for c in view.columns if c.endswith("EVpct_over")]:
         sty = sty.map(ev_style, subset=[c])
@@ -4724,8 +4727,8 @@ df["Points_Why"] = ""
 mask = df["Green_Points"].fillna(False)
 df.loc[mask, "Points_Why"] = df.loc[mask].apply(_points_why, axis=1)
 
-df["Color_SOG"] = safe_num(df, "Conf_SOG_Move" if "Conf_SOG_Move" in df else "Conf_SOG", 0).apply(_tier_color) if "Conf_SOG" in df.columns else "red"
-df.loc[_sog25_current, "Color_SOG"] = np.where(_sog25_eligible.loc[_sog25_current], "green", "yellow")
+# Confidence colors reflect the displayed score only, never Matrix_SOG or move eligibility.
+df["Color_SOG"] = column_or(df, "Conf_SOG", np.nan).apply(sog_confidence_color)
 df["Color_Points"] = safe_num(df, "Conf_Points", 0).apply(_tier_color) if "Conf_Points" in df.columns else "red"
 df["Color_Goal"] = safe_num(df, "Conf_Goal", 0).apply(_tier_color) if "Conf_Goal" in df.columns else "red"
 
@@ -5942,13 +5945,15 @@ elif page == "SOG":
     else:
         st.caption("This saved tracker predates Shot Profile v2. Run / Refresh slate calculates the new SOG confidence.")
 
+    st.caption("Confidence color: 67+ green, 57–66 yellow, below57 red. Matrix color is the separate shot-profile signal; green confidence alone does not fire a move.")
+
     df_s = df_f.copy()
     df_s["_cs"] = safe_num(df_s, "Conf_SOG", 0)
     df_s = df_s.sort_values(["_cs"], ascending=[False]).drop(columns=["_cs"], errors="ignore")
 
     st.sidebar.subheader("SOG Filters")
     show_all = st.sidebar.checkbox("Show all players (ignore optional filters)", value=True, key="show_all_sog")
-    min_conf = st.sidebar.slider("Min Conf (SOG)", 0, 100, 75, 1)
+    min_conf = st.sidebar.slider("Min Conf (SOG)", 0, 100, 67, 1)
     color_pick = st.sidebar.multiselect(
         "Colors (SOG)",
         ["green", "yellow", "blue", "red"],
@@ -7882,3 +7887,4 @@ elif page == "Ledger":
 else:
     st.subheader("Raw CSV (all columns)")
     st.dataframe(df_f, width="stretch", height=620, hide_index=True)
+

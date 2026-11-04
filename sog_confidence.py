@@ -70,3 +70,25 @@ def apply_sog_confidence(frame):
     out["Conf_SOG"] = pd.Series(values, index=out.index, dtype="Float64")
     out["Conf_SOG_Version"] = VERSION
     return out
+
+
+
+# Display-only bands. Matrix status and move rules remain separate.
+SOG_CONFIDENCE_GREEN = 67
+
+
+def sog_confidence_color(value):
+    score = _number(value)
+    if score is None:
+        return ""
+    if score >= SOG_CONFIDENCE_GREEN:
+        return "green"
+    if score >= SOG_CONFIDENCE_GREEN - 10:
+        return "yellow"
+    return "red"
+
+
+def sog_confidence_style(value):
+    color = sog_confidence_color(value)
+    background = {"green": "#1f7a1f", "yellow": "#b38f00", "red": "#8b1a1a"}.get(color)
+    return f"background-color:{background};color:white;font-weight:700;" if background else ""
