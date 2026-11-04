@@ -705,7 +705,7 @@ _CLASS_RULES = {
     "GOALS": {"role": "Carry", "market": "Goal", "entry": "Matrix_Goal Green · Goal 0.5", "note": "Three Goal paths: xG, StarScore/goal drought, and StarScore/TOI20. Star Barrage uses StarScore ≥84.5 + TOI/game ≥20 + L10 shots ≤39. PPP drought ≥1/≥2 adds the highest Runic Barrage level. All fired attacks, crits and buffs appear in the tracker."},
     "ASSISTS": {"role": "Support", "market": "Assists", "entry": "Existing moves: Conf ≥81 · assist rank ≥95. New routes: Conf ≥80 · assist rank ≥94. Both require Green · Assists 0.5.", "note": "Existing moves remain active. New facilitator, PP and shot-share routes have separate records and enhanced levels. The new Crit requires both player routes plus team PP actual GF/60 ≥5.7 and opponent 5v5 HDCA/60 ≤2.2."},
     "POINTS": {"role": "Tank", "market": "Points", "entry": "Matrix_Points Green · Points 0.5 with Conf_Points ≥ 80, or Points 1.5 with Conf_Points ≥ 75", "note": "The 0.5 and 1.5 lines have separate move trees."},
-    "SOG": {"role": "Jungle", "market": "SOG", "entry": "Matrix_SOG Green · 2.5: Conf_SOG ≥ 75 · 3.5: Conf_SOG ≥ 86", "note": "The 3.5 shortlist uses a current-season confidence screen; older move records keep their original rules."},
+    "SOG": {"role": "Jungle", "market": "SOG", "entry": "Matrix_SOG Green · historical move gates use original confidence", "note": "Shot Profile v2 ranks role, 5v5 team shot share and opponent shot volume, plus the existing drought bonus. Existing moves retain their original score and records while new cutoffs are researched."},
 }
 
 
@@ -4553,7 +4553,7 @@ sog_regression_proof = (
 )
 
 df["Green_SOG"] = (
-    (safe_num(df, "Conf_SOG", 0) >= thr_s)
+    (safe_num(df, "Conf_SOG_Move" if "Conf_SOG_Move" in df else "Conf_SOG", 0) >= thr_s)
     & (safe_str(df, "Matrix_SOG", "").str.strip().str.lower() == "green")
     & (
         (safe_num(df, "ShotIntent_Pct", 0) >= 90)
@@ -4700,7 +4700,7 @@ df["Points_Why"] = ""
 mask = df["Green_Points"].fillna(False)
 df.loc[mask, "Points_Why"] = df.loc[mask].apply(_points_why, axis=1)
 
-df["Color_SOG"] = safe_num(df, "Conf_SOG", 0).apply(_tier_color) if "Conf_SOG" in df.columns else "red"
+df["Color_SOG"] = safe_num(df, "Conf_SOG_Move" if "Conf_SOG_Move" in df else "Conf_SOG", 0).apply(_tier_color) if "Conf_SOG" in df.columns else "red"
 df["Color_Points"] = safe_num(df, "Conf_Points", 0).apply(_tier_color) if "Conf_Points" in df.columns else "red"
 df["Color_Goal"] = safe_num(df, "Conf_Goal", 0).apply(_tier_color) if "Conf_Goal" in df.columns else "red"
 
@@ -5912,6 +5912,11 @@ elif page == "SOG":
 
     _render_class_header("SOG", df_f)
 
+    if "Conf_SOG_Version" in df_f and df_f["Conf_SOG_Version"].eq("sog-profile-v2-2026-11-04").any():
+        st.caption("SOG confidence · Shot Profile v2 · 55% ice-time rank + 15% normalized 5v5 team shot share + 30% normalized opponent L10 shots allowed + tier-specific drought bonus. Profile ranking, not hit probability. Existing move records retain their original confidence gates.")
+    else:
+        st.caption("This saved tracker predates Shot Profile v2. Run / Refresh slate calculates the new SOG confidence.")
+
     df_s = df_f.copy()
     df_s["_cs"] = safe_num(df_s, "Conf_SOG", 0)
     df_s = df_s.sort_values(["_cs"], ascending=[False]).drop(columns=["_cs"], errors="ignore")
@@ -5957,7 +5962,8 @@ elif page == "SOG":
         "Opp SOG vs position/GP", "Opp SOG position rank", "Opp position GP",
         "SOG_Opportunity_Matchup", "SOG_Opportunity_Coverage",
         "L20_Rate_SOG", "L40_Rate_SOG",
-        "Opp_SOG_Against_L50", "opp_5v5_xGA60", "Player_5v5_SOG_Share",
+        "Opp_SOG_Against_L10", "TOI_Pct", "TOI_per_game", "Player_5v5_SOG_Share",
+        "Opp_SOG_Against_L50", "opp_5v5_xGA60",
         "Drought_SOG", "Best_Drought",
         "Med10_SOG", "Avg5_SOG", "ShotIntent", "ShotIntent_Pct",
         "Reg_Heat_S", "Reg_Gap_S10", "Exp_S_10", "L10_S",
@@ -7849,4 +7855,3 @@ elif page == "Ledger":
 else:
     st.subheader("Raw CSV (all columns)")
     st.dataframe(df_f, width="stretch", height=620, hide_index=True)
-

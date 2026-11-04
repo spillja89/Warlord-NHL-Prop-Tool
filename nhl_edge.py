@@ -3033,7 +3033,7 @@ def matrix_assists_v1(
         return "Green"
 
     return "Yellow"
-def conf_sog(
+def legacy_conf_sog(
     ixg_pct: float,
     shot_intent_pct: float,
     shot_intent: float,
@@ -4714,7 +4714,7 @@ def build_tracker(today_local: date, debug: bool = False, api_key: str | None = 
     
     # Confidence (base)
     sk["Conf_SOG"] = sk.apply(
-        lambda r: conf_sog(
+        lambda r: legacy_conf_sog(
             ixg_pct=float(r.get("iXG_pct", 50)),
             shot_intent_pct=float(r.get("ShotIntent_Pct", 50)),
             shot_intent=float(r.get("ShotIntent", 0))
@@ -5895,6 +5895,11 @@ def build_tracker(today_local: date, debug: bool = False, api_key: str | None = 
     tracker = tracker.loc[tracker["Lineup_Status"].ne("Not dressed")].copy()
     tracker["Lineup_Excluded_Count"] = lineup_excluded
 
+    # Versioned SOG profile ranking. Historical moves keep the exact confidence
+    # they were graded against; research selects the new move cutoffs separately.
+    from sog_confidence import apply_sog_confidence
+    tracker = apply_sog_confidence(tracker)
+
     # Freeze the displayed move rules with the pregame tracker. The grader
     # reads these tags instead of applying future code to an old slate.
     tracker["Move_Kit_Version"] = MOVE_KIT_VERSION
@@ -5947,4 +5952,3 @@ def main() -> None:
 if __name__ == "__main__":
 
     main()
-

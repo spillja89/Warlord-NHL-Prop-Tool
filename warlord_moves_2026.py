@@ -16,6 +16,10 @@ VERSION = "2026-10-23-assist-current-v1"
 
 
 def _number(row: Mapping[str, Any], key: str) -> float | None:
+    # Existing rules/records retain their original SOG scale after the profile
+    # rebuild. Do not silently apply a legacy75/80 gate to the new score.
+    if key == "Conf_SOG" and "Conf_SOG_Move" in row:
+        key = "Conf_SOG_Move"
     try:
         value = float(str(row.get(key, "")).strip().replace("%", ""))
         return value if math.isfinite(value) else None
@@ -274,4 +278,3 @@ def frozen_move_tags(row: Mapping[str, Any]) -> list[dict[str, str]]:
                 "kit_version": move.get("kit_version", VERSION),
             }.items()})
     return tags
-

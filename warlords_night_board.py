@@ -159,8 +159,10 @@ def _baseline_rule(row, market, line):
             return f"Green + Points {line:g} + Conf_Points ≥ {threshold}"
     if market == "SOG" and line in (2.5, 3.5):
         threshold = 75 if line == 2.5 else 86
-        if _number(row.get("Conf_SOG")) is not None and _number(row.get("Conf_SOG")) >= threshold:
-            return f"Green + SOG {line:g} + Conf_SOG ≥ {threshold}"
+        move_conf = _number(row.get("Conf_SOG_Move", row.get("Conf_SOG")))
+        if move_conf is not None and move_conf >= threshold:
+            label = "Original SOG confidence" if "Conf_SOG_Move" in row else "Conf_SOG"
+            return f"Green + SOG {line:g} + {label} ≥ {threshold}"
     return None
 
 
@@ -1201,5 +1203,3 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
       <div class="wn-hero-foot">{_h(hero_foot)} · HISTORICAL MOVE RATE IS NOT A FORECAST</div></div>"""
     board_class = "wn-board" if show_hero else "wn-board wn-board--compact"
     return styles + f'<div class="{board_class}">' + (hero if show_hero else "") + '<div class="wn-grid">' + ''.join(lanes) + '</div></div>'
-
-
