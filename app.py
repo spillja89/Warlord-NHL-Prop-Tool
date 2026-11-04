@@ -18,6 +18,7 @@ from published_output import fetch_grade_file, fetch_tracker, is_newer_tracker, 
 from warlord_moves_2026 import VERSION as MOVE_KIT_VERSION
 from sog_moves_current import is_current_sog25, sog_base_eligible
 from sog_confidence import sog_confidence_color, sog_confidence_style
+from sog_matrix import VERSION as SOG_MATRIX_VERSION
 from warlord_moves_2026 import best_move, points_moves, sog_moves, goals_moves as _goals_carry_moves, assists_moves as _assists_mapped_moves
 from goal_moves_current import goal_profile_score, goal_move_summary
 from warlords_night_board import CLASSES, baseline_audit, rank_warlords, rank_priced_slate, featured_warlords, unfeatured_baselines, goal_display_cards, render_warlords, render_power_play_form, render_power_play_quotes_table, _character_uri
@@ -707,7 +708,7 @@ _CLASS_RULES = {
     "GOALS": {"role": "Carry", "market": "Goal", "entry": "Matrix_Goal Green · Goal 0.5", "note": "Three Goal paths: xG, StarScore/goal drought, and StarScore/TOI20. Star Barrage uses StarScore ≥84.5 + TOI/game ≥20 + L10 shots ≤39. PPP drought ≥1/≥2 adds the highest Runic Barrage level. All fired attacks, crits and buffs appear in the tracker."},
     "ASSISTS": {"role": "Support", "market": "Assists", "entry": "Existing moves: Conf ≥81 · assist rank ≥95. New routes: Conf ≥80 · assist rank ≥94. Both require Green · Assists 0.5.", "note": "Existing moves remain active. New facilitator, PP and shot-share routes have separate records and enhanced levels. The new Crit requires both player routes plus team PP actual GF/60 ≥5.7 and opponent 5v5 HDCA/60 ≤2.2."},
     "POINTS": {"role": "Tank", "market": "Points", "entry": "Matrix_Points Green · Points 0.5 with Conf_Points ≥ 80, or Points 1.5 with Conf_Points ≥ 75", "note": "The 0.5 and 1.5 lines have separate move trees."},
-    "SOG": {"role": "Jungle", "market": "SOG", "entry": "SOG2.5 · Green · confidence ≥67 base · ≥71 stronger · opponent PK ≤104s/opportunity buff", "note": "Berserker Swipe → Berserker’s Rage. Paralysis adds the PK-duration buff; both upgrades unlock Assassin’s Overdrive. Current-season records: October13–November3. Existing3.5 rules retain their original inputs."},
+    "SOG": {"role": "Jungle", "market": "SOG", "entry": "SOG2.5 · Green · confidence ≥67 base · ≥71 stronger · opponent PK ≤104s/opportunity buff", "note": "Berserker Swipe → Berserker’s Rage. Paralysis adds the PK-duration buff; both upgrades unlock Assassin’s Overdrive. Current-season records: October13–November3. Green retains the original profile/Elite paths and adds remaining shot checks with iXG ≥60. Existing3.5 rules retain their original inputs."},
 }
 
 
@@ -2518,6 +2519,7 @@ COLUMN_WIDTHS = {
     # core decision columns
     "Matrix_Points": "small",
     "Matrix_SOG": "small",
+    "Matrix_SOG_Route": "medium",
     "Matrix_Goal": "small",
     "Matrix_Assists": "small",
 
@@ -5946,6 +5948,10 @@ elif page == "SOG":
         st.caption("This saved tracker predates Shot Profile v2. Run / Refresh slate calculates the new SOG confidence.")
 
     st.caption("Confidence color: 67+ green, 57–66 yellow, below57 red. Matrix color is the separate shot-profile signal; green confidence alone does not fire a move.")
+    if "Matrix_SOG_Version" in df_f and df_f["Matrix_SOG_Version"].eq(SOG_MATRIX_VERSION).any():
+        st.caption("Shot Green v2 · original Green/Elite paths retained + shot-profile lane with iXG ≥60. All remaining matrix checks stay in place; move records use this broader group.")
+    else:
+        st.caption("Saved shot matrix uses the earlier gate. Run / Refresh slate to calculate Green v2 and its updated move records.")
 
     df_s = df_f.copy()
     df_s["_cs"] = safe_num(df_s, "Conf_SOG", 0)
@@ -5983,7 +5989,7 @@ elif page == "SOG":
        
        "Green",
               
-       "Conf_SOG", "Matrix_SOG",
+       "Conf_SOG", "Matrix_SOG", "Matrix_SOG_Route",
        "SOG_Attack", "SOG_Buff", "SOG_Move_Record", "SOG_Move_Pct", "SOG_Sample_BE_Pct",
        "Opp_PK_Seconds_Per_Opportunity", "Opp_PK_Duration_Source",
 

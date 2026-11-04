@@ -109,9 +109,17 @@ def _render_sog_facts(card, move):
     state = "PARALYSIS ACTIVE" if buff else "PK duration unavailable" if seconds is None else "Outside PK buff"
     sample = _number(move.get("sample_book_be_pct"))
     sample_note = f'<div class="wn-assist-sample">MOVE SAMPLE AVG BOOK BE <b>{sample:.1f}%</b></div>' if sample is not None else ""
-    buff_note = ('<div class="wn-crit-env">+ PARALYSIS · opponent PK ≤104s/opportunity · 28/40 · 70.0%</div>' if buff else "")
+    buff_move = next((item for item in card.get("moves", []) if item.get("matchup_buff")), None)
+    buff_note = ""
+    if buff_move and buff_move.get("picks"):
+        bw, bn = int(buff_move["wins"]), int(buff_move["picks"])
+        buff_note = f'<div class="wn-crit-env">+ PARALYSIS · opponent PK ≤104s/opportunity · {bw}/{bn} · {100*bw/bn:.1f}%</div>'
+    route = str(values.get("green_route") or "")
+    route_note = f'<br>Green: {escape(route)}' if route else ""
+    if route == "Shot profile · iXG60":
+        route_note += f' · iXG <b>{metric("iXG%")}</b> ≥60'
     return (sample_note + '<div class="wn-assist-facts">'
-      f'<div class="wn-assist-fact"><small>SHOT PROFILE V2</small>Confidence <b>{conf_label}</b> · base ≥67 · stronger ≥71<br>TOI <b>{metric("TOI_per_game")} min/g</b> · rank {metric("TOI_Pct")}</div>'
+      f'<div class="wn-assist-fact"><small>SHOT PROFILE V2</small>Confidence <b>{conf_label}</b> · base ≥67 · stronger ≥71<br>TOI <b>{metric("TOI_per_game")} min/g</b> · rank {metric("TOI_Pct")}{route_note}</div>'
       f'<div class="wn-assist-fact"><small>SHOT SHARE &amp; MATCHUP</small>5v5 team shot share <b>{metric("Player_5v5_SOG_Share")}%</b><br>Opponent L10 SOG allowed <b>{metric("Opp_SOG_Against_L10")}/g</b></div>'
       f'<div class="wn-assist-fact"><small>PK DURATION · VALUE / CUTOFF</small>Opponent <b>{duration}</b> · cutoff ≤104s/opportunity<br>{state}</div>'
       '</div>' + buff_note)
@@ -278,7 +286,8 @@ def rank_warlords(frame: pd.DataFrame) -> dict[str, list[dict]]:
                 "team_pp_xgf60": _number(row.get("Team_PP_xGF60")) if market == "Assists" else None,
                 "assist_context": _assist_card_context(row) if market == "Assists" else None,
                 "sog_context": {**{key:_number(row.get(key)) for key in
-                    ("TOI_Pct", "TOI_per_game", "Player_5v5_SOG_Share", "Opp_SOG_Against_L10")},
+                    ("TOI_Pct", "TOI_per_game", "Player_5v5_SOG_Share", "Opp_SOG_Against_L10", "iXG%")},
+                    "green_route":str(row.get("Matrix_SOG_Route", "") or ""),
                     "pk_seconds":pk_duration_seconds(row)} if market == "SOG" else None,
                 "goalie": str(_value(row, "Opp_Goalie") or ""),
                 "goalie_gp": _number(_value(row, "Opp_GP")),
@@ -362,7 +371,8 @@ def rank_priced_slate(frame: pd.DataFrame) -> dict[str, list[dict]]:
                 "team_pp_xgf60": _number(row.get("Team_PP_xGF60")) if market == "Assists" else None,
                 "assist_context": _assist_card_context(row) if market == "Assists" else None,
                 "sog_context": {**{key:_number(row.get(key)) for key in
-                    ("TOI_Pct", "TOI_per_game", "Player_5v5_SOG_Share", "Opp_SOG_Against_L10")},
+                    ("TOI_Pct", "TOI_per_game", "Player_5v5_SOG_Share", "Opp_SOG_Against_L10", "iXG%")},
+                    "green_route":str(row.get("Matrix_SOG_Route", "") or ""),
                     "pk_seconds":pk_duration_seconds(row)} if market == "SOG" else None,
                 "confidence": confidence, "move_confidence": move_confidence,
                 "matrix": matrix,
@@ -1246,3 +1256,4 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
       <div class="wn-hero-foot">{_h(hero_foot)} · HISTORICAL MOVE RATE IS NOT A FORECAST</div></div>"""
     board_class = "wn-board" if show_hero else "wn-board wn-board--compact"
     return styles + f'<div class="{board_class}">' + (hero if show_hero else "") + '<div class="wn-grid">' + ''.join(lanes) + '</div></div>'
+

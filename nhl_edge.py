@@ -5930,8 +5930,13 @@ def build_tracker(today_local: date, debug: bool = False, api_key: str | None = 
     # Score and annotate the current2.5 Jungle kit before freezing its moves.
     from sog_confidence import apply_sog_confidence
     tracker = apply_sog_confidence(tracker)
+    from sog_matrix import apply_sog25_green
+    tracker = apply_sog25_green(tracker, matrix_sog)
     from sog_moves_current import attach_sog_route_context
     tracker = attach_sog_route_context(tracker)
+    _sog25_current = pd.to_numeric(tracker["SOG_Line"],errors="coerce").eq(2.5)
+    tracker.loc[_sog25_current,"Plays_SOG"] = tracker.loc[_sog25_current,"SOG_Attack"].ne("")
+    tracker.loc[_sog25_current,"SOG_Why"] = tracker.loc[_sog25_current,"SOG_Attack"]
 
     # Freeze the displayed move rules with the pregame tracker. The grader
     # reads these tags instead of applying future code to an old slate.
@@ -5981,3 +5986,4 @@ def main() -> None:
 if __name__ == "__main__":
 
     main()
+

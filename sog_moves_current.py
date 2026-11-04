@@ -4,7 +4,10 @@ import math
 
 from sog_confidence import VERSION as CONFIDENCE_VERSION
 
-VERSION = "2026-11-04-sog25-current-v1"
+from sog_matrix import VERSION as MATRIX_VERSION
+
+LEGACY_VERSION = "2026-11-04-sog25-current-v1"
+VERSION = "2026-11-04-sog25-green60-v2"
 SOURCE = "NHL Stats · current season"
 
 
@@ -49,26 +52,37 @@ def _move(name, kind, icon, rule, wins, picks, be, players, dates, **extra):
       "sample_book_be_pct":be,"sample_players":players,"sample_dates":dates,**extra}
 
 
+LEGACY_RECORDS = {'Berserker Swipe': [31, 52, 51.21717476347496, 15, 19], 'Berserker’s Rage': [27, 37, 51.50987491351554, 13, 18], 'Paralysis': [28, 40, 51.3778968767278, 14, 17], 'Assassin’s Overdrive': [24, 31, 52.044069416904534, 13, 16]}
+CURRENT_RECORDS = {'Berserker Swipe': [50, 84, 50.11407533326924, 24, 20], 'Berserker’s Rage': [46, 69, 50.03122626223179, 22, 20], 'Paralysis': [42, 64, 50.19089625954928, 21, 18], 'Assassin’s Overdrive': [38, 55, 50.372138863019664, 20, 18]}
+
+
+def version_for(row):
+    return VERSION if row.get("Matrix_SOG_Version") == MATRIX_VERSION else LEGACY_VERSION
+
+
 def sog_moves(row):
     if not sog_base_eligible(row):
         return []
+    version = version_for(row)
+    records = CURRENT_RECORDS if version == VERSION else LEGACY_RECORDS
     base = "SOG2.5 + Matrix_SOG Green + Conf_SOG >=67 (Shot Profile v2)"
-    moves = [_move("Berserker Swipe","BASE","sog_basic_swipe.svg",base,
-                   31,52,51.21717476347496,15,19)]
+    if version == VERSION:
+        base += " · Green: original profile/Elite OR remaining shot checks + iXG% >=60"
+    def move(name, kind, icon, rule, **extra):
+        return _move(name,kind,icon,rule,*records[name],kit_version=version,**extra)
+    moves = [move("Berserker Swipe","BASE","sog_basic_swipe.svg",base)]
     stronger = _num(row.get("Conf_SOG")) >= 71
     seconds = pk_duration_seconds(row)
     buff = seconds is not None and seconds <= 104
     if stronger:
-        moves.append(_move("Berserker’s Rage","HEAVY","sog_berserkers_rage.svg",
-          base+" + Conf_SOG >=71",27,37,51.50987491351554,13,18))
+        moves.append(move("Berserker’s Rage","HEAVY","sog_berserkers_rage.svg",
+            base+" + Conf_SOG >=71"))
     if buff:
-        moves.append(_move("Paralysis","ENV","sog_env_paralysis.svg",
-          base+" + opponent PK seconds/opportunity <=104",28,40,51.3778968767278,14,17,
-          matchup_buff=True))
+        moves.append(move("Paralysis","ENV","sog_env_paralysis.svg",
+            base+" + opponent PK seconds/opportunity <=104",matchup_buff=True))
     if stronger and buff:
-        moves.append(_move("Assassin’s Overdrive","SPECIAL","sog_assassins_overdrive.svg",
-          base+" + Conf_SOG >=71 + opponent PK seconds/opportunity <=104",
-          24,31,52.044069416904534,13,16,empowered=True))
+        moves.append(move("Assassin’s Overdrive","SPECIAL","sog_assassins_overdrive.svg",
+            base+" + Conf_SOG >=71 + opponent PK seconds/opportunity <=104",empowered=True))
     return moves
 
 
@@ -87,5 +101,5 @@ def attach_sog_route_context(frame):
     out["SOG_Move_Record"] = [f'{m["wins"]}/{m["picks"]}' if m else "" for m in attacks]
     out["SOG_Move_Pct"] = [100*m["wins"]/m["picks"] if m else None for m in attacks]
     out["SOG_Sample_BE_Pct"] = [m["sample_book_be_pct"] if m else None for m in attacks]
-    out["SOG_Move_Kit_Version"] = VERSION
+    out["SOG_Move_Kit_Version"] = [version_for(row) for row in rows]
     return out

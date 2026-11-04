@@ -4,7 +4,7 @@ from pathlib import Path
 import pandas as pd
 
 from sog_confidence import VERSION as CONF_VERSION
-from sog_moves_current import (VERSION, SOURCE, sog_moves, pk_duration_seconds,
+from sog_moves_current import (LEGACY_VERSION, SOURCE, sog_moves, pk_duration_seconds,
                                attach_sog_route_context)
 from warlord_moves_2026 import sog_moves as live_sog_moves, legacy_sog_moves, frozen_move_tags
 from warlords_night_board import rank_priced_slate, featured_warlords, render_warlords
@@ -79,7 +79,7 @@ class CurrentSOGKitTests(unittest.TestCase):
     def test_versioned_frozen_moves_and_legacy_35(self):
         tags=[m for m in frozen_move_tags(row(Conf_SOG=71)) if m['market']=='SOG']
         self.assertEqual(len(tags),4)
-        self.assertTrue(all(m['kit_version']==VERSION for m in tags))
+        self.assertTrue(all(m['kit_version']==LEGACY_VERSION for m in tags))
         r=row(SOG_Line=3.5,Conf_SOG_Move=90)
         self.assertEqual(live_sog_moves(r),legacy_sog_moves(r))
         self.assertTrue(all(not m.get('sog_current') for m in live_sog_moves(r)))
@@ -91,7 +91,7 @@ class CurrentSOGKitTests(unittest.TestCase):
         end=source.index('    tracker = attach_points15_research_flags',start)
         r=row();r.pop('Model_Stats_Season');r['Roster_Watch']=False
         namespace=dict(tracker=pd.DataFrame([r]),sk_stats_year=2026,team_stats_year=2026,
-                       goalie_stats_year=2026,MOVE_KIT_VERSION='test',frozen_move_tags=frozen_move_tags,json=json)
+                       goalie_stats_year=2026,MOVE_KIT_VERSION='test',frozen_move_tags=frozen_move_tags,json=json,pd=pd,matrix_sog=lambda *a,**k: 'Red')
         exec(textwrap.dedent(source[start:end]),namespace)
         out=namespace['tracker']
         tags=[m for m in json.loads(out.Fired_Moves.iloc[0]) if m['market']=='SOG']
