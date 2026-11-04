@@ -157,7 +157,7 @@ def team_pp_goal_research_flag(row) -> str:
 
 
 def team_pp_goal_research_signals(row) -> list[str]:
-    """All matching team PP-goal research signals, frozen through Oct 29, 2026.
+    """All matching team PP-goal research signals, replayed through Nov 3, 2026.
 
     Records count team games with at least one PP goal. They are not player
     power-play-point rates or probabilities for the next game.
@@ -165,21 +165,21 @@ def team_pp_goal_research_signals(row) -> list[str]:
     pk_minutes = _finite(row.get("Opp_PK_Time_PG"))
     if pk_minutes is None or pk_minutes > 4.5:
         return []
-    signals = ["⚡ PK ≤4:30 · 47/66 (71.2%)"]
+    signals = ["⚡ PK ≤4:30 · 58/82 (70.7%)"]
     pk_seconds = opponent_pk_seconds_per_opportunity(row)
     if pk_seconds is not None and pk_seconds <= 90:
-        signals.append("✨ PK ≤90s/opportunity · 17/21 (81.0%)")
+        signals.append("✨ PK ≤90s/opportunity · 20/25 (80.0%)")
     if pk_seconds is not None and pk_seconds <= 85:
-        signals.append("💥 PK ≤85s/opportunity · 13/15 (86.7%)")
+        signals.append("💥 PK ≤85s/opportunity · 14/17 (82.4%)")
     team_ppo = _finite(row.get("Team_PPO_PG"))
     opp_pko = _finite(row.get("Opp_PKO_PG"))
     opp_pk_ga = _finite(row.get("Opp_PK_GA_PG"))
     if team_ppo is not None and team_ppo >= 3.25:
-        signals.append("Team PPO ≥3.25/game · 28/36 (77.8%)")
+        signals.append("Team PPO ≥3.25/game · 34/42 (81.0%)")
     if opp_pko is not None and opp_pko >= 2.75:
-        signals.append("Opp PKO ≥2.75/game · 20/25 (80.0%)")
+        signals.append("Opp PKO ≥2.75/game · 24/31 (77.4%)")
         if opp_pk_ga is not None and opp_pk_ga >= 0.9:
-            signals.append("Opp PK GA ≥0.9/game · 12/14 (85.7%)")
+            signals.append("Opp PK GA ≥0.9/game · 14/16 (87.5%)")
     return signals
 
 
@@ -192,15 +192,15 @@ def team_pp_goal_research_compact(row) -> str:
         if label.startswith("⚡"):
             short.append("⚡71%")
         elif label.startswith("✨"):
-            short.append("✨81%")
+            short.append("✨80%")
         elif label.startswith("💥"):
-            short.append("💥87%")
+            short.append("💥82%")
         elif label.startswith("Team PPO"):
-            short.append("PPO78%")
+            short.append("PPO81%")
         elif label.startswith("Opp PKO"):
-            short.append("PKO80%")
+            short.append("PKO77%")
         elif label.startswith("Opp PK GA"):
-            short.append("GA86%")
+            short.append("GA88%")
     return " + ".join(short) if short else "—"
 
 

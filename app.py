@@ -6557,7 +6557,7 @@ elif page == "Power Play":
             st.dataframe(display_quotes.style.map(_pp_research_flag_color, subset=["PP matchup stack"]),
                          hide_index=True, width="stretch")
         st.caption("Team PP matchup signals are listed top to bottom beside each player; + marks an added matching condition. "
-                   "These 2026–27 records are through Oct 29. "
+                   "These 2026–27 team PP-goal records are through Nov 3. "
                    "The rates are overlapping historical samples, not tonight's player PPP chances. "
                    "PP on-ice xG/game is the team's expected goals while that player is on the ice, per game. "
                    "PP iXG/game is the player's own observed power-play expected goals per game. "
