@@ -18,6 +18,7 @@ from published_output import fetch_grade_file, fetch_tracker, is_newer_tracker, 
 from warlord_moves_2026 import VERSION as MOVE_KIT_VERSION
 from sog_moves_current import is_current_sog25, sog_base_eligible
 from sog_confidence import sog_confidence_color, sog_confidence_style
+from points_moves_current import attach_points_moves, VERSION as POINTS_CURRENT_VERSION
 from sog_matrix import VERSION as SOG_MATRIX_VERSION
 from warlord_moves_2026 import best_move, points_moves, sog_moves, goals_moves as _goals_carry_moves, assists_moves as _assists_mapped_moves
 from goal_moves_current import goal_profile_score, goal_move_summary
@@ -707,7 +708,7 @@ _ROLE_INFO = {
 _CLASS_RULES = {
     "GOALS": {"role": "Carry", "market": "Goal", "entry": "Matrix_Goal Green · Goal 0.5", "note": "Three Goal paths: xG, StarScore/goal drought, and StarScore/TOI20. Star Barrage uses StarScore ≥84.5 + TOI/game ≥20 + L10 shots ≤39. PPP drought ≥1/≥2 adds the highest Runic Barrage level. All fired attacks, crits and buffs appear in the tracker."},
     "ASSISTS": {"role": "Support", "market": "Assists", "entry": "Existing moves: Conf ≥81 · assist rank ≥95. New routes: Conf ≥80 · assist rank ≥94. Both require Green · Assists 0.5.", "note": "Existing moves remain active. New facilitator, PP and shot-share routes have separate records and enhanced levels. The new Crit requires both player routes plus team PP actual GF/60 ≥5.7 and opponent 5v5 HDCA/60 ≤2.2."},
-    "POINTS": {"role": "Tank", "market": "Points", "entry": "Matrix_Points Green · Points 0.5 with Conf_Points ≥ 80, or Points 1.5 with Conf_Points ≥ 75", "note": "The 0.5 and 1.5 lines have separate move trees."},
+    "POINTS": {"role": "Tank", "market": "Points", "entry": "Matrix_Points Green · Points 0.5 with current confidence ≥77, or Points 1.5 with original confidence ≥75", "note": "The 0.5 and 1.5 lines have separate move trees."},
     "SOG": {"role": "Jungle", "market": "SOG", "entry": "SOG2.5 · Green · confidence ≥67 base · ≥71 stronger · opponent PK ≤104s/opportunity buff", "note": "Berserker Swipe → Berserker’s Rage. Paralysis adds the PK-duration buff; both upgrades unlock Assassin’s Overdrive. Current-season records: October13–November3. Green retains the original profile/Elite paths and adds remaining shot checks with iXG ≥60. Existing3.5 rules retain their original inputs."},
 }
 
@@ -822,6 +823,8 @@ def _priced_pool_table(cards: list[dict]) -> pd.DataFrame:
             attacks = [item for item in card["moves"] if not item.get("matchup_buff")]
             move = max(attacks, key=lambda item: int(item["wins"]) / int(item["picks"])) if attacks else None
         points_tier = card.get("points_current_tier")
+        if card.get("market") == "Points" and points_tier:
+            move = points_tier
         featured = bool(card.get("baseline_rule") and (qualified or points_tier))
         row = {
             "Player": card["player"], "Team": card["team"], "Game": card["game"],
@@ -831,7 +834,7 @@ def _priced_pool_table(cards: list[dict]) -> pd.DataFrame:
             "Line": card["line"], "Over odds": int(card["odds"]),
             "Book": card["book"] or "", "Model conf": card.get("confidence"),
             "Frozen move conf": card.get("move_confidence") if has_points else None,
-            "Current Points tier": points_tier["kind"].title() if points_tier else "",
+            "Current Points move": points_tier["name"] if points_tier else "",
             "Book break-even %": round(card["book_prob"] * 100, 1) if card.get("book_prob") is not None else None,
             "Matrix": card.get("matrix") or "Unknown",
             "Featured": "Yes" if featured else "",
@@ -841,7 +844,7 @@ def _priced_pool_table(cards: list[dict]) -> pd.DataFrame:
             "Later record": f'{move["later_wins"]}/{move["later_picks"]}' if move and int(move["later_picks"]) else "",
             "Later %": round(100 * int(move["later_wins"]) / int(move["later_picks"]), 1)
             if move and int(move["later_picks"]) else None,
-            "Reason": "Active roster · odds only; model history missing" if card.get("roster_watch") else "Current-season Points screen" if points_tier else "Featured" if featured else (
+            "Reason": "Active roster · odds only; model history missing" if card.get("roster_watch") else "Current-season Points move" if points_tier else "Featured" if featured else (
                 "Below current baseline" if not card.get("baseline_rule") else
                 (card.get("move_block_reason") or "No frozen move fired") if not card["moves"] else
                 "Fired move below 50%"),
@@ -865,7 +868,7 @@ def _priced_pool_table(cards: list[dict]) -> pd.DataFrame:
                "Fired move", "Move record", "Move %", "Later record", "Later %", "Reason"]
     if has_points:
         columns.insert(columns.index("Model conf") + 1, "Frozen move conf")
-        columns.insert(columns.index("Model conf"), "Current Points tier")
+        columns.insert(columns.index("Model conf"), "Current Points move")
     if has_sog:
         columns[columns.index("Fired move"):columns.index("Fired move")] = ["PK sec/opportunity", "SOG buff", "Move sample BE %"]
     if has_goal_projection:
@@ -4732,6 +4735,11 @@ df.loc[mask, "Points_Why"] = df.loc[mask].apply(_points_why, axis=1)
 # Confidence colors reflect the displayed score only, never Matrix_SOG or move eligibility.
 df["Color_SOG"] = column_or(df, "Conf_SOG", np.nan).apply(sog_confidence_color)
 df["Color_Points"] = safe_num(df, "Conf_Points", 0).apply(_tier_color) if "Conf_Points" in df.columns else "red"
+# Current0.5 kit uses confidence77; leave1.5 presentation unchanged.
+df = attach_points_moves(df)
+_points_current05 = safe_num(df, "Points_Line", 0).eq(0.5) & safe_num(df, "Conf_Points", 0).ge(77)
+df.loc[_points_current05, "Color_Points"] = "green"
+df.loc[safe_num(df, "Points_Line", 0).eq(0.5), "Plays_Points"] = df.loc[safe_num(df, "Points_Line", 0).eq(0.5), "Points_Attack"].ne("")
 df["Color_Goal"] = safe_num(df, "Conf_Goal", 0).apply(_tier_color) if "Conf_Goal" in df.columns else "red"
 
 
@@ -5278,8 +5286,8 @@ if page == "⚔️ Warlords of the Night":
                f"{len(night_df)} roster skaters · {priced_total} priced prop entries · "
                f"{sum(card['move'] is not None for card in goal_cards)} named Goal attacks · "
                f"{len(goal_cards)} total Goal cards · "
-               f"{featured_total} featured prop cards, including current-season Points screens · "
-               f"{len(points_tier_cards)} current-season Points 0.5 tier cards. "
+               f"{featured_total} featured prop cards, including current-season Points moves · "
+               f"{len(points_tier_cards)} current-season Points 0.5 move cards. "
                "Every priced entry is in the complete slate below.")
     if display_total:
         st.html(render_warlords(display_boards, max(map(len, display_boards.values())), _load_svg_icon))
@@ -5291,13 +5299,13 @@ if page == "⚔️ Warlords of the Night":
                       else f"Cards are sorted by {slate_sort.lower()}; same-game move ranks stay intact")
         st.caption(f"{sum(card['move'] is not None for card in goal_cards)} named Goal attacks and "
                    f"{sum(card['move'] is None for card in goal_cards)} Scouting Targets. "
-                   f"{featured_total-len(featured_boards['Carry'])} other featured prop cards include current-season Points screens. "
+                   f"{featured_total-len(featured_boards['Carry'])} other featured prop cards include current-season Points moves. "
                    f"{order_note}. Move histories are not forecasts.")
     else:
         st.info(f"{priced_total} priced prop entries. No named attack fires for this slate; see the complete slate below.")
 
     if points_tier_cards:
-        st.caption("Points 0.5 current-season screens through Oct 26: Base 51/76, Heavy (PP minutes/game ≥3.5) 39/52, Special (last 10 assists ≥8) 27/33. Special takes display priority when both fire. These nested records overlap and are not tonight's probabilities; older named moves remain in card details.")
+        st.caption("Points 0.5 · November 5 current-season move kit · Green + current confidence ≥77. Cards and tracker use the same fixed Oct 13–Nov 4 records. Broader profiles remain eligible when matchup context is unavailable.")
 
     with st.expander(f"Complete priced slate · {priced_total} prop entries", expanded=True):
         st.caption("Every player's displayed priced prop appears here. Book break-even % comes from the displayed odds; Move % and Later % are historical results for the named rule, not forecasts. Active roster players without model history are marked odds only and have no tested move. NHL roster membership does not confirm tonight's dressed lineup.")
@@ -5662,6 +5670,7 @@ elif page == "Scout Board":
 elif page == "Points":
 
     _render_class_header("POINTS", df_f)
+    st.caption("Points kit · November 5 · current confidence 77+ · records through November 4")
 
     df_p = df_f.copy()
     df_p["_cp"] = safe_num(df_p, "Conf_Points", 0)
@@ -5700,7 +5709,14 @@ elif page == "Points":
         "Points_Line","Points_Odds_Over","Points_Book",
 
         # --- SIGNALS ---
-        "Conf_Points","Conf_Points_Move","Matrix_Points",
+        "Points_Attack","Points_Move_Record","Points_Move_Pct","Points_Sample_BE_Pct",
+        "Points_Profile_Routes","Conf_Points","Conf_Points_Move","Matrix_Points",
+        "Log_L20_Point2plus_pct","Log_L20_PPP_hit_pct","PP_TOI_per_game",
+        "Drought_G","NHL_Team_PP_G60","NHL_Opp_GA_10_PG","NHL_Opp_Goals_per_shot_allowed_pct",
+        "NHL_Opp_PP_Goals_PG","Team_PP_OZ_Time_Pct","Team_EV_OZ_Rank",
+        "Opp_5v5_xGA_relative_league","Team_PP_xGF_relative_league","NHL_Opp_GA_Venue_PG",
+        "PP_PPO_Blend_PG","PP_Time_Blend_PG","NHL_Opp_SA_Venue_PG","team_5v5_SF60",
+        "NHL_Opp_PK_Time_PG","NHL_Opp_PK_G60","NHL_Team_PK_goal_drought",
 
         # --- HUD MATH (core) ---
         "Assists_mu","Points_mu",
@@ -7893,4 +7909,5 @@ elif page == "Ledger":
 else:
     st.subheader("Raw CSV (all columns)")
     st.dataframe(df_f, width="stretch", height=620, hide_index=True)
+
 

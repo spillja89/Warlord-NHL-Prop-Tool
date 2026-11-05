@@ -1,0 +1,1134 @@
+{
+  "version": "points-2026-27-current-2026-11-05-v1",
+  "sample_from": "2026-10-13",
+  "sample_through": "2026-11-04",
+  "entry": "Points0.5+Matrix_PointsGreen+Conf_Points>=77",
+  "no_new_display_tier_policy": true,
+  "moves": [
+    {
+      "id": "base77",
+      "name": "Hammer Fists · Current Profile",
+      "family": "base",
+      "conditions": [],
+      "kind": "BASE",
+      "level": 0,
+      "icon": "PTS05_HAMMER_FISTS.svg",
+      "wins": 182,
+      "picks": 273,
+      "sample_book_be_pct": 59.04854572198263,
+      "sample_players": 71,
+      "sample_dates": 21
+    },
+    {
+      "id": "pp240",
+      "name": "Hammer Fists · PP Role",
+      "family": "pp_role",
+      "conditions": [
+        [
+          "PP_TOI_per_game",
+          ">=",
+          2.4
+        ]
+      ],
+      "kind": "ATTACK",
+      "level": 0,
+      "icon": "PTS05_HAMMER_FISTS.svg",
+      "wins": 169,
+      "picks": 241,
+      "sample_book_be_pct": 61.26206887006583,
+      "sample_players": 55,
+      "sample_dates": 21
+    },
+    {
+      "id": "assist97",
+      "name": "Gaia’s Blessing · Creator",
+      "family": "creator",
+      "conditions": [
+        [
+          "iXA%",
+          ">=",
+          97
+        ]
+      ],
+      "kind": "ATTACK",
+      "level": 1,
+      "icon": "PTS05_HAMMER_FISTS.svg",
+      "wins": 77,
+      "picks": 95,
+      "sample_book_be_pct": 62.354790552941466,
+      "sample_players": 22,
+      "sample_dates": 18
+    },
+    {
+      "id": "assist98",
+      "name": "Gaia’s Blessing · Creator Ascendant",
+      "family": "creator",
+      "conditions": [
+        [
+          "iXA%",
+          ">=",
+          98
+        ]
+      ],
+      "kind": "ATTACK",
+      "level": 2,
+      "icon": "PTS05_HAMMER_FISTS.svg",
+      "wins": 55,
+      "picks": 64,
+      "sample_book_be_pct": 61.964962009407046,
+      "sample_players": 17,
+      "sample_dates": 18
+    },
+    {
+      "id": "drought1",
+      "name": "Echo Stomp · Rebound",
+      "family": "rebound",
+      "conditions": [
+        [
+          "Drought_G",
+          ">=",
+          1
+        ]
+      ],
+      "kind": "ATTACK",
+      "level": 3,
+      "icon": "PTS05_HAMMER_FISTS.svg",
+      "wins": 130,
+      "picks": 182,
+      "sample_book_be_pct": 58.055074591257785,
+      "sample_players": 61,
+      "sample_dates": 21
+    },
+    {
+      "id": "drought2",
+      "name": "Echo Stomp · Deep Rebound",
+      "family": "rebound",
+      "conditions": [
+        [
+          "Drought_G",
+          ">=",
+          2
+        ]
+      ],
+      "kind": "ATTACK",
+      "level": 4,
+      "icon": "PTS05_HAMMER_FISTS.svg",
+      "wins": 96,
+      "picks": 128,
+      "sample_book_be_pct": 56.72420477403608,
+      "sample_players": 52,
+      "sample_dates": 21
+    },
+    {
+      "id": "multi28",
+      "name": "Enraged Engine · Steady Profile",
+      "family": "steady",
+      "conditions": [
+        [
+          "Log_L20_Point2plus_pct",
+          "<=",
+          28
+        ]
+      ],
+      "kind": "ATTACK",
+      "level": 5,
+      "icon": "PTS05_HAMMER_FISTS.svg",
+      "wins": 87,
+      "picks": 119,
+      "sample_book_be_pct": 55.03398330828094,
+      "sample_players": 41,
+      "sample_dates": 21
+    },
+    {
+      "id": "mu110",
+      "name": "Gaia’s Blessing · Playmaker",
+      "family": "playmaker",
+      "conditions": [
+        [
+          "Assists_mu",
+          ">=",
+          1.1
+        ]
+      ],
+      "kind": "ATTACK",
+      "level": 6,
+      "icon": "PTS05_HAMMER_FISTS.svg",
+      "wins": 97,
+      "picks": 129,
+      "sample_book_be_pct": 62.33469579723819,
+      "sample_players": 33,
+      "sample_dates": 19
+    },
+    {
+      "id": "mu150",
+      "name": "Gaia’s Blessing · Prime Playmaker",
+      "family": "playmaker",
+      "conditions": [
+        [
+          "Assists_mu",
+          ">=",
+          1.5
+        ]
+      ],
+      "kind": "ATTACK",
+      "level": 7,
+      "icon": "PTS05_HAMMER_FISTS.svg",
+      "wins": 31,
+      "picks": 36,
+      "sample_book_be_pct": 64.44089377643195,
+      "sample_players": 13,
+      "sample_dates": 16
+    },
+    {
+      "id": "ppp41",
+      "name": "Blood Stomp · PP Involvement",
+      "family": "pp_involvement",
+      "conditions": [
+        [
+          "Log_L20_PPP_hit_pct",
+          ">=",
+          41
+        ]
+      ],
+      "kind": "ATTACK",
+      "level": 8,
+      "icon": "PTS05_HAMMER_FISTS.svg",
+      "wins": 45,
+      "picks": 56,
+      "sample_book_be_pct": 62.79567255449711,
+      "sample_players": 25,
+      "sample_dates": 16
+    },
+    {
+      "id": "ppp46",
+      "name": "Blood Stomp · PP Ascendant",
+      "family": "pp_involvement",
+      "conditions": [
+        [
+          "Log_L20_PPP_hit_pct",
+          ">=",
+          46
+        ]
+      ],
+      "kind": "ATTACK",
+      "level": 9,
+      "icon": "PTS05_HAMMER_FISTS.svg",
+      "wins": 26,
+      "picks": 30,
+      "sample_book_be_pct": 62.251857702842834,
+      "sample_players": 15,
+      "sample_dates": 13
+    },
+    {
+      "id": "env_NHL_Opp_Goal_conversion_pct_7.4",
+      "name": "War Aura · Opponent Conversion 7.4",
+      "family": "global_NHL_Opp_Goal_conversion_pct",
+      "conditions": [
+        [
+          "NHL_Opp_Goal_conversion_pct",
+          ">=",
+          7.4
+        ]
+      ],
+      "kind": "CONTEXT",
+      "level": 0,
+      "icon": "PTS05_HAMMER_FISTS.svg",
+      "wins": 175,
+      "picks": 249,
+      "sample_book_be_pct": 59.59364327090612,
+      "sample_players": 65,
+      "sample_dates": 20,
+      "suppress_badge": false
+    },
+    {
+      "id": "env_NHL_Opp_Goal_conversion_pct_11.2",
+      "name": "War Aura · Opponent Conversion 11.2",
+      "family": "global_NHL_Opp_Goal_conversion_pct",
+      "conditions": [
+        [
+          "NHL_Opp_Goal_conversion_pct",
+          ">=",
+          11.2
+        ]
+      ],
+      "kind": "CONTEXT",
+      "level": 1,
+      "icon": "PTS05_HAMMER_FISTS.svg",
+      "wins": 93,
+      "picks": 125,
+      "sample_book_be_pct": 59.45676137148608,
+      "sample_players": 56,
+      "sample_dates": 19,
+      "suppress_badge": false
+    },
+    {
+      "id": "env_NHL_Opp_Goal_conversion_pct_12.3",
+      "name": "War Aura · Opponent Conversion 12.3",
+      "family": "global_NHL_Opp_Goal_conversion_pct",
+      "conditions": [
+        [
+          "NHL_Opp_Goal_conversion_pct",
+          ">=",
+          12.3
+        ]
+      ],
+      "kind": "CONTEXT",
+      "level": 2,
+      "icon": "PTS05_HAMMER_FISTS.svg",
+      "wins": 58,
+      "picks": 73,
+      "sample_book_be_pct": 58.33939775344907,
+      "sample_players": 40,
+      "sample_dates": 18,
+      "suppress_badge": false
+    },
+    {
+      "id": "env_NHL_Opp_GF_10_PG_2.15",
+      "name": "War Aura · Opponent Scoring 2.15",
+      "family": "global_NHL_Opp_GF_10_PG",
+      "conditions": [
+        [
+          "NHL_Opp_GF_10_PG",
+          ">=",
+          2.15
+        ]
+      ],
+      "kind": "CONTEXT",
+      "level": 0,
+      "icon": "PTS05_HAMMER_FISTS.svg",
+      "wins": 167,
+      "picks": 238,
+      "sample_book_be_pct": 59.90995533263178,
+      "sample_players": 62,
+      "sample_dates": 20,
+      "suppress_badge": true
+    },
+    {
+      "id": "env_NHL_Opp_GF_10_PG_3.25",
+      "name": "War Aura · Opponent Scoring 3.25",
+      "family": "global_NHL_Opp_GF_10_PG",
+      "conditions": [
+        [
+          "NHL_Opp_GF_10_PG",
+          ">=",
+          3.25
+        ]
+      ],
+      "kind": "CONTEXT",
+      "level": 1,
+      "icon": "PTS05_HAMMER_FISTS.svg",
+      "wins": 78,
+      "picks": 103,
+      "sample_book_be_pct": 59.70730579648641,
+      "sample_players": 52,
+      "sample_dates": 19,
+      "suppress_badge": false
+    },
+    {
+      "id": "env_NHL_Opp_GF_10_PG_3.55",
+      "name": "War Aura · Opponent Scoring 3.55",
+      "family": "global_NHL_Opp_GF_10_PG",
+      "conditions": [
+        [
+          "NHL_Opp_GF_10_PG",
+          ">=",
+          3.55
+        ]
+      ],
+      "kind": "CONTEXT",
+      "level": 2,
+      "icon": "PTS05_HAMMER_FISTS.svg",
+      "wins": 43,
+      "picks": 54,
+      "sample_book_be_pct": 59.76651130951697,
+      "sample_players": 36,
+      "sample_dates": 16,
+      "suppress_badge": false
+    },
+    {
+      "id": "env_NHL_Team_PP_G60_8.9",
+      "name": "Power Surge · PP Scoring Rate 8.9",
+      "family": "global_NHL_Team_PP_G60",
+      "conditions": [
+        [
+          "NHL_Team_PP_G60",
+          ">=",
+          8.9
+        ]
+      ],
+      "kind": "CONTEXT",
+      "level": 0,
+      "icon": "PTS05_HAMMER_FISTS.svg",
+      "wins": 81,
+      "picks": 107,
+      "sample_book_be_pct": 59.87151501625834,
+      "sample_players": 35,
+      "sample_dates": 19,
+      "suppress_badge": false
+    },
+    {
+      "id": "env_NHL_Team_PP_G60_11.6",
+      "name": "Power Surge · PP Scoring Rate 11.6",
+      "family": "global_NHL_Team_PP_G60",
+      "conditions": [
+        [
+          "NHL_Team_PP_G60",
+          ">=",
+          11.6
+        ]
+      ],
+      "kind": "CONTEXT",
+      "level": 1,
+      "icon": "PTS05_HAMMER_FISTS.svg",
+      "wins": 33,
+      "picks": 41,
+      "sample_book_be_pct": 60.03991540243627,
+      "sample_players": 18,
+      "sample_dates": 15,
+      "suppress_badge": false
+    },
+    {
+      "id": "env_NHL_Team_PP_G60_12.3",
+      "name": "Power Surge · PP Scoring Rate 12.3",
+      "family": "global_NHL_Team_PP_G60",
+      "conditions": [
+        [
+          "NHL_Team_PP_G60",
+          ">=",
+          12.3
+        ]
+      ],
+      "kind": "CONTEXT",
+      "level": 2,
+      "icon": "PTS05_HAMMER_FISTS.svg",
+      "wins": 28,
+      "picks": 32,
+      "sample_book_be_pct": 60.61263723026481,
+      "sample_players": 14,
+      "sample_dates": 12,
+      "suppress_badge": false
+    },
+    {
+      "id": "env_NHL_Team_PP_Goals_PG_0.9",
+      "name": "Power Surge · PP Goals 0.9",
+      "family": "global_NHL_Team_PP_Goals_PG",
+      "conditions": [
+        [
+          "NHL_Team_PP_Goals_PG",
+          ">=",
+          0.9
+        ]
+      ],
+      "kind": "CONTEXT",
+      "level": 0,
+      "icon": "PTS05_HAMMER_FISTS.svg",
+      "wins": 71,
+      "picks": 88,
+      "sample_book_be_pct": 59.33030935336074,
+      "sample_players": 25,
+      "sample_dates": 20,
+      "suppress_badge": false
+    },
+    {
+      "id": "env_NHL_Team_PP_Goals_PG_1.05",
+      "name": "Power Surge · PP Goals 1.05",
+      "family": "global_NHL_Team_PP_Goals_PG",
+      "conditions": [
+        [
+          "NHL_Team_PP_Goals_PG",
+          ">=",
+          1.05
+        ]
+      ],
+      "kind": "CONTEXT",
+      "level": 1,
+      "icon": "PTS05_HAMMER_FISTS.svg",
+      "wins": 27,
+      "picks": 31,
+      "sample_book_be_pct": 61.35980697235146,
+      "sample_players": 14,
+      "sample_dates": 13,
+      "suppress_badge": false
+    },
+    {
+      "id": "env_Opp_PK_xGA_relative_league_1.05",
+      "name": "Exposed Armor · PK Chances 1.05",
+      "family": "global_Opp_PK_xGA_relative_league",
+      "conditions": [
+        [
+          "Opp_PK_xGA_relative_league",
+          ">=",
+          1.05
+        ]
+      ],
+      "kind": "CONTEXT",
+      "level": 0,
+      "icon": "PTS05_HAMMER_FISTS.svg",
+      "wins": 61,
+      "picks": 79,
+      "sample_book_be_pct": 58.893909897181295,
+      "sample_players": 41,
+      "sample_dates": 16,
+      "suppress_badge": false
+    },
+    {
+      "id": "env_Opp_PK_xGA_relative_league_1.09",
+      "name": "Exposed Armor · PK Chances 1.09",
+      "family": "global_Opp_PK_xGA_relative_league",
+      "conditions": [
+        [
+          "Opp_PK_xGA_relative_league",
+          ">=",
+          1.09
+        ]
+      ],
+      "kind": "CONTEXT",
+      "level": 1,
+      "icon": "PTS05_HAMMER_FISTS.svg",
+      "wins": 51,
+      "picks": 64,
+      "sample_book_be_pct": 59.08919215793632,
+      "sample_players": 34,
+      "sample_dates": 14,
+      "suppress_badge": false
+    },
+    {
+      "id": "env_Opp_PK_xGA_relative_league_1.14",
+      "name": "Exposed Armor · PK Chances 1.14",
+      "family": "global_Opp_PK_xGA_relative_league",
+      "conditions": [
+        [
+          "Opp_PK_xGA_relative_league",
+          ">=",
+          1.14
+        ]
+      ],
+      "kind": "CONTEXT",
+      "level": 2,
+      "icon": "PTS05_HAMMER_FISTS.svg",
+      "wins": 32,
+      "picks": 37,
+      "sample_book_be_pct": 58.689610774775225,
+      "sample_players": 25,
+      "sample_dates": 12,
+      "suppress_badge": false
+    },
+    {
+      "id": "env_PP_Matchup_Equal_71",
+      "name": "War Aura · PP Matchup 71",
+      "family": "global_PP_Matchup_Equal",
+      "conditions": [
+        [
+          "PP_Matchup_Equal",
+          ">=",
+          71
+        ]
+      ],
+      "kind": "CONTEXT",
+      "level": 0,
+      "icon": "PTS05_HAMMER_FISTS.svg",
+      "wins": 50,
+      "picks": 64,
+      "sample_book_be_pct": 59.43812298733917,
+      "sample_players": 27,
+      "sample_dates": 15,
+      "suppress_badge": false
+    },
+    {
+      "id": "env_PP_Matchup_Equal_80",
+      "name": "War Aura · PP Matchup 80",
+      "family": "global_PP_Matchup_Equal",
+      "conditions": [
+        [
+          "PP_Matchup_Equal",
+          ">=",
+          80
+        ]
+      ],
+      "kind": "CONTEXT",
+      "level": 1,
+      "icon": "PTS05_HAMMER_FISTS.svg",
+      "wins": 26,
+      "picks": 31,
+      "sample_book_be_pct": 60.73933403469105,
+      "sample_players": 17,
+      "sample_dates": 12,
+      "suppress_badge": false
+    },
+    {
+      "id": "combo_PP scoring",
+      "name": "War Hammer · PP scoring",
+      "family": "combo_PP scoring",
+      "conditions": [
+        [
+          "NHL_Team_PP_G60",
+          ">=",
+          8.9
+        ],
+        [
+          "NHL_Team_PP_Goals_PG",
+          ">=",
+          0.9
+        ]
+      ],
+      "kind": "ATTACK",
+      "level": 0,
+      "icon": "PTS05_HAMMER_FISTS.svg",
+      "wins": 60,
+      "picks": 72,
+      "sample_book_be_pct": 59.63858907429205,
+      "sample_players": 25,
+      "sample_dates": 17
+    },
+    {
+      "id": "combo_PP matchup",
+      "name": "War Hammer · PP matchup",
+      "family": "combo_PP matchup",
+      "conditions": [
+        [
+          "Opp_PK_xGA_relative_league",
+          ">=",
+          1.05
+        ],
+        [
+          "PP_Matchup_Equal",
+          ">=",
+          71
+        ]
+      ],
+      "kind": "ATTACK",
+      "level": 0,
+      "icon": "PTS05_HAMMER_FISTS.svg",
+      "wins": 40,
+      "picks": 47,
+      "sample_book_be_pct": 58.89208938980996,
+      "sample_players": 23,
+      "sample_dates": 13
+    },
+    {
+      "id": "combo_Opponent offense",
+      "name": "War Hammer · Opponent offense",
+      "family": "combo_Opponent offense",
+      "conditions": [
+        [
+          "NHL_Opp_Goal_conversion_pct",
+          ">=",
+          12.3
+        ],
+        [
+          "NHL_Opp_GF_10_PG",
+          ">=",
+          3.55
+        ]
+      ],
+      "kind": "ATTACK",
+      "level": 0,
+      "icon": "PTS05_HAMMER_FISTS.svg",
+      "wins": 31,
+      "picks": 36,
+      "sample_book_be_pct": 59.3178893497104,
+      "sample_players": 28,
+      "sample_dates": 13
+    },
+    {
+      "id": "final_90-01",
+      "name": "Echo Stomp · PP Crossfire",
+      "family": "drought1_NHL_Opp_PP_Goals_PG",
+      "conditions": [
+        [
+          "Drought_G",
+          ">=",
+          1
+        ],
+        [
+          "NHL_Opp_PP_Goals_PG",
+          ">=",
+          0.9
+        ]
+      ],
+      "kind": "ATTACK",
+      "level": 0,
+      "icon": "PTS05_HAMMER_FISTS.svg",
+      "wins": 28,
+      "picks": 31,
+      "sample_book_be_pct": 56.421191997719795,
+      "sample_players": 22,
+      "sample_dates": 15
+    },
+    {
+      "id": "final_90-02",
+      "name": "Echo Stomp · Power Zone",
+      "family": "drought1_Team_PP_OZ_Time_Pct",
+      "conditions": [
+        [
+          "Drought_G",
+          ">=",
+          1
+        ],
+        [
+          "Team_PP_OZ_Time_Pct",
+          ">=",
+          58.8
+        ]
+      ],
+      "kind": "ATTACK",
+      "level": 0,
+      "icon": "PTS05_HAMMER_FISTS.svg",
+      "wins": 33,
+      "picks": 36,
+      "sample_book_be_pct": 59.5612171101447,
+      "sample_players": 24,
+      "sample_dates": 9
+    },
+    {
+      "id": "final_90-03",
+      "name": "Echo Stomp · Zone Control",
+      "family": "drought1_Team_EV_OZ_Rank",
+      "conditions": [
+        [
+          "Drought_G",
+          ">=",
+          1
+        ],
+        [
+          "Team_EV_OZ_Rank",
+          "<=",
+          13.0
+        ]
+      ],
+      "kind": "ATTACK",
+      "level": 0,
+      "icon": "PTS05_HAMMER_FISTS.svg",
+      "wins": 39,
+      "picks": 43,
+      "sample_book_be_pct": 61.892634545460844,
+      "sample_players": 27,
+      "sample_dates": 8
+    },
+    {
+      "id": "final_90-05",
+      "name": "Echo Stomp · Measured Battle",
+      "family": "drought2_Opp_5v5_xGA_relative_league",
+      "conditions": [
+        [
+          "Drought_G",
+          ">=",
+          2
+        ],
+        [
+          "Opp_5v5_xGA_relative_league",
+          "<=",
+          0.98
+        ]
+      ],
+      "kind": "ATTACK",
+      "level": 0,
+      "icon": "PTS05_HAMMER_FISTS.svg",
+      "wins": 30,
+      "picks": 33,
+      "sample_book_be_pct": 60.19420600044153,
+      "sample_players": 21,
+      "sample_dates": 14
+    },
+    {
+      "id": "final_90-06",
+      "name": "Echo Stomp · Power Charge",
+      "family": "drought2_Team_PP_xGF_relative_league",
+      "conditions": [
+        [
+          "Drought_G",
+          ">=",
+          2
+        ],
+        [
+          "Team_PP_xGF_relative_league",
+          ">=",
+          1.02
+        ]
+      ],
+      "kind": "ATTACK",
+      "level": 0,
+      "icon": "PTS05_HAMMER_FISTS.svg",
+      "wins": 47,
+      "picks": 52,
+      "sample_book_be_pct": 59.58519852891108,
+      "sample_players": 27,
+      "sample_dates": 14
+    },
+    {
+      "id": "final_90-07",
+      "name": "Echo Stomp · Fortress Clash",
+      "family": "drought2_NHL_Opp_GA_Venue_PG",
+      "conditions": [
+        [
+          "Drought_G",
+          ">=",
+          2
+        ],
+        [
+          "NHL_Opp_GA_Venue_PG",
+          "<=",
+          2.9
+        ]
+      ],
+      "kind": "ATTACK",
+      "level": 0,
+      "icon": "PTS05_HAMMER_FISTS.svg",
+      "wins": 27,
+      "picks": 30,
+      "sample_book_be_pct": 61.06846799788978,
+      "sample_players": 24,
+      "sample_dates": 13
+    },
+    {
+      "id": "final_90-08",
+      "name": "Enraged Engine · Controlled Fury",
+      "family": "multipoint28_Opp_DefWeak",
+      "conditions": [
+        [
+          "Log_L20_Point2plus_pct",
+          "<=",
+          28
+        ],
+        [
+          "Opp_DefWeak",
+          "<=",
+          55.0
+        ]
+      ],
+      "kind": "ATTACK",
+      "level": 0,
+      "icon": "PTS05_HAMMER_FISTS.svg",
+      "wins": 39,
+      "picks": 42,
+      "sample_book_be_pct": 57.88456782884408,
+      "sample_players": 21,
+      "sample_dates": 16
+    },
+    {
+      "id": "final_90-09",
+      "name": "Enraged Engine · Controlled Fury Ascendant",
+      "family": "multipoint28_Opp_DefWeak",
+      "conditions": [
+        [
+          "Log_L20_Point2plus_pct",
+          "<=",
+          28
+        ],
+        [
+          "Opp_DefWeak",
+          "<=",
+          50.0
+        ]
+      ],
+      "kind": "ATTACK",
+      "level": 1,
+      "icon": "PTS05_HAMMER_FISTS.svg",
+      "wins": 31,
+      "picks": 33,
+      "sample_book_be_pct": 57.259910672632515,
+      "sample_players": 18,
+      "sample_dates": 16
+    },
+    {
+      "id": "final_90-10",
+      "name": "Enraged Engine · Power Opportunity",
+      "family": "multipoint28_PP_PPO_Blend_PG",
+      "conditions": [
+        [
+          "Log_L20_Point2plus_pct",
+          "<=",
+          28
+        ],
+        [
+          "PP_PPO_Blend_PG",
+          ">=",
+          3.25
+        ]
+      ],
+      "kind": "ATTACK",
+      "level": 0,
+      "icon": "PTS05_HAMMER_FISTS.svg",
+      "wins": 29,
+      "picks": 31,
+      "sample_book_be_pct": 57.827223040658524,
+      "sample_players": 17,
+      "sample_dates": 10
+    },
+    {
+      "id": "final_90-11",
+      "name": "Enraged Engine · Sustained Power",
+      "family": "multipoint28_PP_Time_Blend_PG",
+      "conditions": [
+        [
+          "Log_L20_Point2plus_pct",
+          "<=",
+          28
+        ],
+        [
+          "PP_Time_Blend_PG",
+          ">=",
+          5.05
+        ]
+      ],
+      "kind": "ATTACK",
+      "level": 0,
+      "icon": "PTS05_HAMMER_FISTS.svg",
+      "wins": 33,
+      "picks": 36,
+      "sample_book_be_pct": 57.561051615216584,
+      "sample_players": 22,
+      "sample_dates": 10
+    },
+    {
+      "id": "final_90-12",
+      "name": "Gaia’s Blessing · Open Lanes",
+      "family": "assistmu110_NHL_Opp_SA_Venue_PG",
+      "conditions": [
+        [
+          "Assists_mu",
+          ">=",
+          1.1
+        ],
+        [
+          "NHL_Opp_SA_Venue_PG",
+          ">=",
+          28.4
+        ]
+      ],
+      "kind": "ATTACK",
+      "level": 0,
+      "icon": "PTS05_HAMMER_FISTS.svg",
+      "wins": 29,
+      "picks": 32,
+      "sample_book_be_pct": 61.97005080494172,
+      "sample_players": 18,
+      "sample_dates": 15
+    },
+    {
+      "id": "final_90-13",
+      "name": "Gaia’s Blessing · Measured Pressure",
+      "family": "assistmu110_team_5v5_SF60",
+      "conditions": [
+        [
+          "Assists_mu",
+          ">=",
+          1.1
+        ],
+        [
+          "team_5v5_SF60",
+          "<=",
+          24.4
+        ]
+      ],
+      "kind": "ATTACK",
+      "level": 0,
+      "icon": "PTS05_HAMMER_FISTS.svg",
+      "wins": 31,
+      "picks": 34,
+      "sample_book_be_pct": 61.996385000563606,
+      "sample_players": 10,
+      "sample_dates": 12
+    },
+    {
+      "id": "final_80-14",
+      "name": "Blood Stomp · PK Pressure",
+      "family": "pppfrequency41_NHL_Opp_PK_Time_PG",
+      "conditions": [
+        [
+          "Log_L20_PPP_hit_pct",
+          ">=",
+          41
+        ],
+        [
+          "NHL_Opp_PK_Time_PG",
+          "<=",
+          5.9
+        ]
+      ],
+      "kind": "ATTACK",
+      "level": 0,
+      "icon": "PTS05_HAMMER_FISTS.svg",
+      "wins": 38,
+      "picks": 44,
+      "sample_book_be_pct": 62.39013870934303,
+      "sample_players": 18,
+      "sample_dates": 16
+    },
+    {
+      "id": "final_90-18",
+      "name": "Blood Stomp · PK Pressure Ascendant",
+      "family": "pppfrequency41_NHL_Opp_PK_Time_PG",
+      "conditions": [
+        [
+          "Log_L20_PPP_hit_pct",
+          ">=",
+          41
+        ],
+        [
+          "NHL_Opp_PK_Time_PG",
+          "<=",
+          5.45
+        ]
+      ],
+      "kind": "ATTACK",
+      "level": 1,
+      "icon": "PTS05_HAMMER_FISTS.svg",
+      "wins": 28,
+      "picks": 30,
+      "sample_book_be_pct": 61.786210709912766,
+      "sample_players": 16,
+      "sample_dates": 13
+    },
+    {
+      "id": "final_90-19",
+      "name": "Blood Stomp · Broken Kill",
+      "family": "pppfrequency41_NHL_Opp_PK_G60",
+      "conditions": [
+        [
+          "Log_L20_PPP_hit_pct",
+          ">=",
+          41
+        ],
+        [
+          "NHL_Opp_PK_G60",
+          ">=",
+          5.75
+        ]
+      ],
+      "kind": "ATTACK",
+      "level": 0,
+      "icon": "PTS05_HAMMER_FISTS.svg",
+      "wins": 28,
+      "picks": 30,
+      "sample_book_be_pct": 61.856407542088604,
+      "sample_players": 15,
+      "sample_dates": 14
+    },
+    {
+      "id": "final_90-20",
+      "name": "Blood Stomp · Guarded Rebound",
+      "family": "pppfrequency41_NHL_Team_PK_goal_drought",
+      "conditions": [
+        [
+          "Log_L20_PPP_hit_pct",
+          ">=",
+          41
+        ],
+        [
+          "NHL_Team_PK_goal_drought",
+          ">=",
+          1.0
+        ]
+      ],
+      "kind": "ATTACK",
+      "level": 0,
+      "icon": "PTS05_HAMMER_FISTS.svg",
+      "wins": 28,
+      "picks": 30,
+      "sample_book_be_pct": 63.15677572479904,
+      "sample_players": 15,
+      "sample_dates": 13
+    },
+    {
+      "id": "pprole_pp875",
+      "name": "Hammer Fists · Power Forge",
+      "family": "pprole_ppforge",
+      "conditions": [
+        [
+          "PP_TOI_per_game",
+          ">=",
+          2.4
+        ],
+        [
+          "NHL_Team_PP_G60",
+          ">=",
+          8.75
+        ]
+      ],
+      "kind": "ATTACK",
+      "level": 0,
+      "icon": "PTS05_HAMMER_FISTS.svg",
+      "wins": 77,
+      "picks": 96,
+      "sample_book_be_pct": 62.6863328184,
+      "sample_players": 29,
+      "sample_dates": 18
+    },
+    {
+      "id": "pprole_NHL_Opp_GA_10_PG",
+      "name": "Hammer Fists · Measured Defense",
+      "family": "pprole_NHL_Opp_GA_10_PG",
+      "conditions": [
+        [
+          "PP_TOI_per_game",
+          ">=",
+          2.4
+        ],
+        [
+          "NHL_Opp_GA_10_PG",
+          "<=",
+          3.45
+        ]
+      ],
+      "kind": "ATTACK",
+      "level": 0,
+      "icon": "PTS05_HAMMER_FISTS.svg",
+      "wins": 124,
+      "picks": 165,
+      "sample_book_be_pct": 61.11400771012344,
+      "sample_players": 51,
+      "sample_dates": 19
+    },
+    {
+      "id": "pprole_NHL_Opp_Goals_per_shot_allowed_pct",
+      "name": "Hammer Fists · Controlled Finish",
+      "family": "pprole_NHL_Opp_Goals_per_shot_allowed_pct",
+      "conditions": [
+        [
+          "PP_TOI_per_game",
+          ">=",
+          2.4
+        ],
+        [
+          "NHL_Opp_Goals_per_shot_allowed_pct",
+          "<=",
+          12.1
+        ]
+      ],
+      "kind": "ATTACK",
+      "level": 0,
+      "icon": "PTS05_HAMMER_FISTS.svg",
+      "wins": 121,
+      "picks": 162,
+      "sample_book_be_pct": 61.249720008620514,
+      "sample_players": 50,
+      "sample_dates": 19
+    },
+    {
+      "id": "creator_pp875",
+      "name": "Gaia’s Blessing · Power Forge",
+      "family": "creator_ppforge",
+      "conditions": [
+        [
+          "iXA%",
+          ">=",
+          97
+        ],
+        [
+          "NHL_Team_PP_G60",
+          ">=",
+          8.75
+        ]
+      ],
+      "kind": "ATTACK",
+      "level": 0,
+      "icon": "PTS05_HAMMER_FISTS.svg",
+      "wins": 48,
+      "picks": 56,
+      "sample_book_be_pct": 63.6491316864368,
+      "sample_players": 18,
+      "sample_dates": 13
+    }
+  ]
+}

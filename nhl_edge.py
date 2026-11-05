@@ -5921,11 +5921,21 @@ def build_tracker(today_local: date, debug: bool = False, api_key: str | None = 
     tracker = tracker.loc[tracker["Lineup_Status"].ne("Not dressed")].copy()
     tracker["Lineup_Excluded_Count"] = lineup_excluded
 
+    # Fetch strictly prior official team history for Points before finalization.
+    from points_context import attach_points_context
+    tracker = attach_points_context(tracker, sess, today_local)
+
     # Publish source provenance before evaluating or freezing any current kit.
     tracker["Model_Stats_Season"] = tracker["Model_Stats_Season"].fillna(f"{sk_stats_year}-{sk_stats_year + 1}") if "Model_Stats_Season" in tracker else f"{sk_stats_year}-{sk_stats_year + 1}"
     tracker["Team_Stats_Season"] = (f"{int(team_stats_year)}-{int(team_stats_year) + 1}"
                                     if team_stats_year is not None else "Unavailable")
     tracker["Goalie_Stats_Season"] = f"{goalie_stats_year}-{goalie_stats_year + 1}"
+
+    if "Points_Line" in tracker.columns:
+        from points_moves_current import attach_points_moves
+        tracker = attach_points_moves(tracker)
+        _points05 = pd.to_numeric(tracker["Points_Line"], errors="coerce").eq(0.5)
+        tracker.loc[_points05, "Plays_Points"] = tracker.loc[_points05, "Points_Attack"].ne("")
 
     # Score and annotate the current2.5 Jungle kit before freezing its moves.
     from sog_confidence import apply_sog_confidence
@@ -5986,4 +5996,5 @@ def main() -> None:
 if __name__ == "__main__":
 
     main()
+
 

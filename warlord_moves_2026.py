@@ -203,6 +203,10 @@ def legacy_sog_moves(row: Mapping[str, Any]) -> list[dict[str, Any]]:
 
 def best_move(moves: list[dict[str, Any]]) -> dict[str, Any] | None:
     """Choose a sorting label from non-experimental moves using shrinkage."""
+    current = [m for m in moves if m.get('points_current') and m['kind'] != 'CONTEXT']
+    if current:
+        from points_moves_current import display_moves
+        return max(display_moves(current), key=lambda m: (m['wins'] / m['picks'], m['picks']))
     eligible = [m for m in moves if m["kind"] != "STANCE" and not m["track"]]
     if not eligible:
         eligible = [m for m in moves if m["kind"] in ("FLOOR", "STANCE")]
@@ -262,6 +266,16 @@ from assist_moves_current import assists_moves
 legacy_assists_moves = _assists_mapped_moves
 
 
+from points_moves_current import points_moves as current_points_moves
+legacy_points_moves = points_moves
+
+
+def points_moves(row):
+    # Preserve every legacy rule for frozen comparisons; current display filters
+    # to the separately versioned2026-27 kit on primary0.5 lines.
+    return legacy_points_moves(row) + current_points_moves(row)
+
+
 def fired_moves(row: Mapping[str, Any]) -> dict[str, list[dict[str, Any]]]:
     # Existing cross-market rules were graded with the original Goal score.
     legacy_row = dict(row)
@@ -285,3 +299,4 @@ def frozen_move_tags(row: Mapping[str, Any]) -> list[dict[str, str]]:
                 "kit_version": move.get("kit_version", VERSION),
             }.items()})
     return tags
+
