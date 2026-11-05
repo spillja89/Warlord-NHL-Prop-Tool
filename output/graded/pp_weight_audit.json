@@ -1,49 +1,49 @@
 {
   "all_priced": {
-    "dates": 33,
-    "hits": 714,
-    "player_props": 3609,
-    "saved_live_55_45_auc": 0.539,
+    "dates": 34,
+    "hits": 725,
+    "player_props": 3684,
+    "saved_live_55_45_auc": 0.5426,
     "weights": [
       {
-        "auc": 0.5248,
-        "early_auc": 0.515,
-        "later_auc": 0.5316,
+        "auc": 0.5279,
+        "early_auc": 0.5141,
+        "later_auc": 0.5385,
         "opponent_pk_weight": 1.0,
         "team_pp_weight": 0.0
       },
       {
-        "auc": 0.5288,
-        "early_auc": 0.5186,
-        "later_auc": 0.5369,
+        "auc": 0.5323,
+        "early_auc": 0.517,
+        "later_auc": 0.5452,
         "opponent_pk_weight": 0.75,
         "team_pp_weight": 0.25
       },
       {
-        "auc": 0.531,
-        "early_auc": 0.5199,
-        "later_auc": 0.5405,
+        "auc": 0.5347,
+        "early_auc": 0.5177,
+        "later_auc": 0.5494,
         "opponent_pk_weight": 0.55,
         "team_pp_weight": 0.45
       },
       {
-        "auc": 0.5312,
-        "early_auc": 0.5195,
-        "later_auc": 0.5416,
+        "auc": 0.5347,
+        "early_auc": 0.5177,
+        "later_auc": 0.5502,
         "opponent_pk_weight": 0.45,
         "team_pp_weight": 0.55
       },
       {
-        "auc": 0.5287,
-        "early_auc": 0.5196,
-        "later_auc": 0.5386,
+        "auc": 0.5319,
+        "early_auc": 0.518,
+        "later_auc": 0.5462,
         "opponent_pk_weight": 0.25,
         "team_pp_weight": 0.75
       },
       {
-        "auc": 0.5244,
-        "early_auc": 0.5143,
-        "later_auc": 0.5318,
+        "auc": 0.5267,
+        "early_auc": 0.5134,
+        "later_auc": 0.5371,
         "opponent_pk_weight": 0.0,
         "team_pp_weight": 1.0
       }
@@ -65,63 +65,63 @@
     "2026-10-14",
     "2026-10-15",
     "2026-10-16",
-    "2026-10-17"
+    "2026-10-17",
+    "2026-10-18"
   ],
   "first_date": "2026-10-02",
-  "graded_files": 35,
+  "graded_files": 36,
   "inferred_pp1": {
-    "dates": 33,
-    "hits": 540,
-    "player_props": 1961,
-    "saved_live_55_45_auc": 0.5571,
+    "dates": 34,
+    "hits": 550,
+    "player_props": 2001,
+    "saved_live_55_45_auc": 0.5621,
     "weights": [
       {
-        "auc": 0.54,
-        "early_auc": 0.5212,
-        "later_auc": 0.5532,
+        "auc": 0.543,
+        "early_auc": 0.521,
+        "later_auc": 0.559,
         "opponent_pk_weight": 1.0,
         "team_pp_weight": 0.0
       },
       {
-        "auc": 0.5456,
-        "early_auc": 0.5232,
-        "later_auc": 0.5624,
+        "auc": 0.5499,
+        "early_auc": 0.5221,
+        "later_auc": 0.5711,
         "opponent_pk_weight": 0.75,
         "team_pp_weight": 0.25
       },
       {
-        "auc": 0.5483,
-        "early_auc": 0.5217,
-        "later_auc": 0.5696,
+        "auc": 0.5533,
+        "early_auc": 0.5201,
+        "later_auc": 0.5801,
         "opponent_pk_weight": 0.55,
         "team_pp_weight": 0.45
       },
       {
-        "auc": 0.5483,
-        "early_auc": 0.5194,
-        "later_auc": 0.5714,
+        "auc": 0.5536,
+        "early_auc": 0.5182,
+        "later_auc": 0.5824,
         "opponent_pk_weight": 0.45,
         "team_pp_weight": 0.55
       },
       {
-        "auc": 0.5436,
-        "early_auc": 0.5162,
-        "later_auc": 0.567,
+        "auc": 0.549,
+        "early_auc": 0.5155,
+        "later_auc": 0.5777,
         "opponent_pk_weight": 0.25,
         "team_pp_weight": 0.75
       },
       {
-        "auc": 0.5353,
-        "early_auc": 0.509,
-        "later_auc": 0.555,
+        "auc": 0.5403,
+        "early_auc": 0.5093,
+        "later_auc": 0.5641,
         "opponent_pk_weight": 0.0,
         "team_pp_weight": 1.0
       }
     ]
   },
-  "last_date": "2026-11-03",
+  "last_date": "2026-11-04",
   "later_dates": [
-    "2026-10-18",
     "2026-10-19",
     "2026-10-20",
     "2026-10-21",
@@ -137,7 +137,8 @@
     "2026-10-31",
     "2026-11-01",
     "2026-11-02",
-    "2026-11-03"
+    "2026-11-03",
+    "2026-11-04"
   ],
   "method_note": "Candidate weights use within-slate team percentiles; the saved live score used league percentiles. AUC is descriptive, not a betting edge. Inferred PP1 is based on saved usage, not a confirmed game-day unit. No live rating is changed.",
   "skipped_files": [
