@@ -6644,6 +6644,7 @@ elif page == "Power Play":
             "pp_rank": selected["PP rank"],
             "pp_unit": selected["PP unit"],
             "pp_research": selected["PP research signals"],
+            "pp_player_signal_details": selected["PP player signal details"],
             "pp_onice_xg_game": selected["PP on-ice xG/game"],
             "pp_ixg_game": selected["PP shooter xG/game"],
             "team_pp_xgf60": selected["Team PP xGF/60 now"],

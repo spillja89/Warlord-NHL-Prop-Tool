@@ -601,6 +601,24 @@ def _form_html(card, *, expanded=False):
             f'<div class="wn-form-strip">{strip}</div></details>')
 
 
+def _render_pp_player_signal_details(details):
+    """Show actual values beside the four frozen player-signal cutoffs."""
+    result = []
+    for signal in details or []:
+        passed = signal.get("passed")
+        mark, state = ("✓", "hit") if passed is True else ("✕", "miss") if passed is False else ("—", "missing")
+        value = _number(signal.get("value"))
+        digits = int(signal.get("digits", 2))
+        shown = f"{value:.{digits}f}" if value is not None else "Unavailable"
+        direction = "≥" if signal.get("direction") == ">=" else "≤"
+        cutoff = f'{float(signal["cutoff"]):g}'
+        result.append(
+            f'<div class="pp-player-check pp-player-check--{state}">'
+            f'<b>{mark}</b> {_h(signal.get("label"))}: <strong>{_h(shown)}</strong>'
+            f' <span>({direction}{cutoff})</span></div>')
+    return '<div class="pp-player-checks">' + "".join(result) + '</div>' if result else ""
+
+
 def render_power_play_quotes_table(rows, signals_by_team):
     """Full PP scouting table with clickable, typed column sorting."""
     def cell(value):
@@ -686,6 +704,8 @@ def render_power_play_quotes_table(rows, signals_by_team):
             content = stack if key is None else render(row.get(key))
             if label == "Player signals" and row.get("PP research count"):
                 content = f'<span class="pp-player-move">{content}</span>'
+            if label == "Player signals":
+                content += _render_pp_player_signal_details(row.get("PP player signal details"))
             cells.append(f'<td{css} data-sort="{_h(sort_value(label, row, signals))}">{content}</td>')
         body.append("<tr>" + "".join(cells) + "</tr>")
     headings = []
@@ -705,6 +725,11 @@ def render_power_play_quotes_table(rows, signals_by_team):
       .pp-scout .pp-player{position:sticky;left:0;z-index:1;background:#fff;font-weight:700;min-width:145px}
       .pp-scout thead .pp-player{z-index:3;background:#eef2f7}
       .pp-scout .pp-signals{min-width:260px;max-width:340px;white-space:normal;line-height:1.35}
+      .pp-player-checks{display:grid;gap:4px;margin-top:7px;min-width:245px;white-space:normal;font-size:12px;line-height:1.4}
+      .pp-player-check{padding:4px 7px;border-radius:4px;background:#152237;color:#f1f5fb;border-left:3px solid #7d8ba0}
+      .pp-player-check--hit{border-color:#37c789}.pp-player-check--hit>b{color:#72efb2}
+      .pp-player-check--miss{border-color:#d08b6a}.pp-player-check--miss>b{color:#ffc3a6}
+      .pp-player-check--missing{color:#c4cddd}.pp-player-check span{color:#c5d1e3}
       .pp-scout .pp-signal+ .pp-signal{margin-top:3px}
       .pp-scout .pp-sort{border:0;background:none;padding:0;color:inherit;font:inherit;font-weight:700;cursor:pointer;text-align:left;white-space:nowrap}
       .pp-scout .pp-sort:hover,.pp-scout .pp-sort:focus-visible{color:#186598;text-decoration:underline}
@@ -824,6 +849,13 @@ def render_power_play_form(card):
       .ppp-matchup-tile{{padding:8px;background:#111b2e;border:1px solid #ffffff26;border-radius:6px}}
       .ppp-matchup-tile small{{display:block;color:#afbed6;font-size:9px;text-transform:uppercase;letter-spacing:.06em}}
       .ppp-matchup-tile strong{{display:block;color:#fff;font-size:13px;margin-top:4px}}
+      .ppp-player-details{{margin:10px 0;padding:10px;background:#111b2e;border:1px solid #ffffff26;border-radius:6px}}
+      .ppp-player-details>small{{color:#c6d4e9;font-size:10px;font-weight:800}}
+      .ppp-player-details .pp-player-checks{{display:grid;gap:5px;margin-top:7px;font-size:13px;line-height:1.4}}
+      .ppp-player-details .pp-player-check{{padding:5px 8px;color:#f1f5fb;background:#19283d;border-left:3px solid #7d8ba0;border-radius:4px}}
+      .ppp-player-details .pp-player-check--hit{{border-color:#37c789}}.ppp-player-details .pp-player-check--hit>b{{color:#72efb2}}
+      .ppp-player-details .pp-player-check--miss{{border-color:#d08b6a}}.ppp-player-details .pp-player-check--miss>b{{color:#ffc3a6}}
+      .ppp-player-details .pp-player-check span{{color:#c5d1e3}}
       .ppp-context-note{{color:#aebbd0;font-size:10px;margin:2px 0 9px}}
       .wn-form,.wn-form-empty{{color:#b9c9dc;border-top:1px solid #ffffff24;padding-top:8px;font-size:12px}}.wn-form summary{{cursor:pointer;color:#e4c892;font-weight:800}}.wn-form p{{margin:7px 0;color:#aebbd0}}
       .wn-form-tiles{{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:5px;margin:8px 0}}.wn-form-tiles>div{{border:1px solid #ffffff1d;border-radius:5px;padding:7px;background:#0b1629a8}}.wn-form-tiles small{{display:block;color:#98adc6;font-size:9px}}.wn-form-tiles strong{{display:block;color:#fff;font-size:12px;margin-top:3px}}
@@ -833,6 +865,7 @@ def render_power_play_form(card):
       <div class="ppp-price">{_h(price)}<small>BEST FEED PRICE</small></div></div>
       {research_banner}
       <div class="ppp-matchup">{matchup}</div>
+      <div class="ppp-player-details"><small>PLAYER SIGNAL CHECKS · BASE: PP ON-ICE xG/GAME ≥0.55</small>{_render_pp_player_signal_details(card.get("pp_player_signal_details"))}</div>
       <div class="ppp-context-note">Research order {rank(card.get("pp_rank"))} · PP1 is inferred from recorded usage · the team matchup flag applies to every teammate · player signals are past research, not tonight's probability</div>
       {form}</section>'''
 
@@ -1285,6 +1318,7 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
       <div class="wn-hero-foot">{_h(hero_foot)} · HISTORICAL MOVE RATE IS NOT A FORECAST</div></div>"""
     board_class = "wn-board" if show_hero else "wn-board wn-board--compact"
     return styles + f'<div class="{board_class}">' + (hero if show_hero else "") + '<div class="wn-grid">' + ''.join(lanes) + '</div></div>'
+
 
 
 

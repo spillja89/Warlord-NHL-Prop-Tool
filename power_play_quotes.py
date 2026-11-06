@@ -18,6 +18,7 @@ COLUMNS = ("Game", "Player", "Team", "Opponent", "PPP line", "Over odds",
            "PPP drought (games)",
            "PP on-ice xG/game", "PP shooter xG/game", "Equal-weight PP context",
            "PP research signals", "PP research count", "PP research eligible",
+           "PP player signal details",
            "Tonight PPP mean", "Tonight PPP 1+ %", "Tonight PPP status",
            "Stats season", "Context", "Book prices")
 
@@ -94,6 +95,24 @@ def team_pp_time_share_pct(player_pp_minutes, team_pp_minutes):
     # Different game denominators can make a season-average ratio exceed 100%.
     # Show unavailable instead of presenting an impossible share.
     return round(share, 1) if share <= 100.5 else None
+
+
+def pp_player_signal_details(row):
+    """Display the four existing checks, keeping unavailable inputs ungraded."""
+    checks = (
+        ("Observed PP assists/game", "PP_Observed_Assists_per_game", 0.15, ">=", 2),
+        ("Actual PP points/60", "PP_ActualPoints60", 4.5, ">=", 2),
+        ("PPP last 10", "PPP10_total", 4, ">=", 0),
+        ("PPP drought (games)", "Drought_PPP", 1, "<=", 0),
+    )
+    return [
+        {"label": label, "value": value, "cutoff": cutoff,
+         "direction": direction, "digits": digits,
+         "passed": None if value is None else
+         (value >= cutoff if direction == ">=" else value <= cutoff)}
+        for label, field, cutoff, direction, digits in checks
+        for value in [_finite(row.get(field))]
+    ]
 
 
 def team_pp_goal_research_label(row) -> str:
@@ -301,6 +320,7 @@ def priced_ppp_quotes(frame: pd.DataFrame, *, line_filter: float | None = None) 
                 "PP research signals": research_label,
                 "PP research count": research_count,
                 "PP research eligible": research_eligible,
+                "PP player signal details": pp_player_signal_details(row),
                 "Tonight PPP mean": _finite(row.get("Tonight_PPP_mu")) if
                 row.get("Tonight_PPP_Version") == "2026-10-19-research-v3" else None,
                 "Tonight PPP 1+ %": _finite(row.get("Tonight_PPP_1plus_pct")) if
@@ -317,3 +337,4 @@ def priced_ppp_quotes(frame: pd.DataFrame, *, line_filter: float | None = None) 
         result = result.sort_values(["Game", "Player", "PPP line"],
                                     kind="stable").reset_index(drop=True)
     return result
+
