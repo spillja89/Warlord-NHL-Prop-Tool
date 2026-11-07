@@ -134,7 +134,14 @@ def _render_goal_facts(card, move):
         found = re.search(r'(?<![\w])' + re.escape(field) + r'\s*(>=|<=)\s*([0-9.]+)', rule)
         if found:
             checks[field] = (found[1], float(found[2]))
-    profile_fields = ['iXG%', 'StarScore', 'ShotIntent', 'L10_S', 'L10_G', 'Drought_G', 'Drought_PPP', 'Goal_mu', 'Points_mu']
+    aliases = {'TOI_per_game': 'TOI/game', 'L10_S': 'L10 shots', 'Drought_PPP': 'PPP drought',
+               'Drought_G': 'Goal drought', 'Avg5_SOG': 'L5 average SOG',
+               'ShotIntent_Pct': 'Shot-intent percentile', 'ShotIntent': 'Shot intent'}
+    for field, alias in aliases.items():
+        found = re.search(re.escape(alias) + r'\s*(>=|<=)\s*([0-9.]+)', rule, re.IGNORECASE)
+        if found:
+            checks[field] = (found[1], float(found[2]))
+    profile_fields = ['iXG%', 'StarScore', 'TOI_per_game', 'ShotIntent', 'ShotIntent_Pct', 'Avg5_SOG', 'L10_S', 'L10_G', 'Drought_G', 'Drought_PPP', 'Goal_mu', 'Points_mu']
     profile = '<br>'.join(_fact_line(field, values.get(field), *checks.get(field, (None, None)))
                           for field in profile_fields if values.get(field) is not None)
     environment = '<br>'.join(_fact_line(field, values.get(field), op, cut)
@@ -164,11 +171,11 @@ def _class_identity(role, card, move):
         if (move or {}).get('matchup_buff'):
             return 'Panda', 'Warden'
         return 'Gorilla', 'Berserker'
-    text = str((move or {}).get('name', '')) + ' ' + str((move or {}).get('rule', ''))
-    if 'StarScore' in text or 'Star ' in text:
-        return 'Panda', 'Executioner'
+    text = str((move or {}).get('name', ''))
     if (move or {}).get('crit') or any(word in text for word in ('Reaper', 'Measured', 'Creator', 'Controlled', 'Patient')):
         return 'Chimp', 'Reaper'
+    if any(word in text for word in ('Star ', 'Star’s', 'Star Shot', 'Runic', 'Barrage')):
+        return 'Panda', 'Executioner'
     return 'Gorilla', 'Ravager'
 
 
