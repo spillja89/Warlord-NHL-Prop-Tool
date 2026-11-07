@@ -18,6 +18,7 @@ from player_form import summarize_form
 from points15_research import context as points15_research_context
 from assist_routes_2026 import assist_display_tier, assist_display_name
 from points_moves_current import best_move as current_points_best, display_moves as current_points_display, prepare_row as prepare_points_row
+from pp_assist_beta import assist_ppp_beta, beta_summary, beta_details, BETA_CSS
 
 
 CLASSES = (
@@ -463,6 +464,7 @@ def rank_warlords(frame: pd.DataFrame) -> dict[str, list[dict]]:
                     item["kind"] != "STANCE", _move_rank(item)), reverse=True),
                 "move_count": len(moves),
             }
+            candidate["pp_assist_beta"] = assist_ppp_beta(row) if market == "Assists" else None
             previous = boards[role].get(key)
             if previous is None or _move_rank(move) > _move_rank(previous["move"]):
                 boards[role][key] = candidate
@@ -562,6 +564,7 @@ def rank_priced_slate(frame: pd.DataFrame) -> dict[str, list[dict]]:
                     item["name"] == "Blade Impale (Power Tier)" for item in tracked_moves),
                 "roster_watch": watch,
             }
+            candidate["pp_assist_beta"] = assist_ppp_beta(row) if market == "Assists" and not watch else None
             key = (team.casefold(), player.casefold(), line) if market == 'Points' else (team.casefold(), player.casefold())
             previous = boards[role].get(key)
             if previous is None or (
@@ -801,6 +804,8 @@ def render_power_play_quotes_table(rows, signals_by_team):
 
     def sort_value(label, row, signals):
         key = next((field for title, field, _ in columns if title == label), None)
+        if label == "PPP Assist beta":
+            return str(len((row.get("PP Assist beta") or {}).get("routes", [])))
         if label == "Team PP matchup signals":
             return str(len(signals))
         if label == "Player signals":
@@ -839,6 +844,7 @@ def render_power_play_quotes_table(rows, signals_by_team):
         ("Game", "Game", cell),
         ("Best price", "Best feed price", cell),
         ("PP on-ice xG/g", "PP on-ice xG/game", lambda value: decimal(value, 3)),
+        ("PPP Assist beta", "PP Assist beta", lambda value: ('<details class="pp-assist-beta-cell"><summary>' + beta_summary(value) + '</summary>' + beta_details(value) + '</details>') if value else "—"),
         ("Team PP matchup signals", None, None),
         ("Player signals", "PP research signals", cell),
         ("PP unit", "PP unit", cell),
@@ -886,7 +892,7 @@ def render_power_play_quotes_table(rows, signals_by_team):
             f'<button type="button" class="pp-sort" data-kind="{kind}">'
             f'{_h(label)} <span class="pp-sort-arrow" aria-hidden="true">↕</span></button></th>'
         )
-    return '''<style>
+    return BETA_CSS + '''<style>
       .pp-scout-wrap{max-height:650px;overflow:auto;border:1px solid #d7dce4;border-radius:8px;margin:8px 0 12px}
       .pp-scout{border-collapse:separate;border-spacing:0;width:max-content;min-width:100%;font:12px Inter,system-ui,sans-serif;color:#1c2a3b}
       .pp-scout th,.pp-scout td{padding:7px 9px;border-bottom:1px solid #dce1e8;text-align:left;vertical-align:top;background:#fff}
@@ -1359,12 +1365,14 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
                 <div class="wn-attack"><span class="wn-attack-name">{_h(move_name)}</span><span class="wn-badge">{_h(status + sample)}</span></div>
                 {support_route_note}
                 <div class="wn-unit-foot"><span>{_h(line)} <b>{_h(price)}</b>{book_note}</span><span>{_h(later_note)}{confidence_note}</span></div>
-                {book_rate_note}</div>
+                {book_rate_note}
+                {beta_summary(card.get('pp_assist_beta')) if role == 'Support' else ''}</div>
               </div>
               {record_html}
               {_card_quick_summary(role, card)}
               <details class="wn-card-inspect"><summary>Inspect player · profile, matchup &amp; recent form</summary>
               <div class="wn-unit-info">
+                {beta_details(card.get('pp_assist_beta')) if role == 'Support' else ''}
                 {pp_crit_note}
                 {assist_facts}
                 {sog_facts}
@@ -1552,7 +1560,8 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
       <h1>THE NIGHT RAID</h1><p>{_h(hero_text)}</p>
       <div class="wn-hero-foot">{_h(hero_foot)} · HISTORICAL MOVE RATE IS NOT A FORECAST</div></div>"""
     board_class = "wn-board" if show_hero else "wn-board wn-board--compact"
-    return styles + f'<div class="{board_class}">' + (hero if show_hero else "") + '<div class="wn-grid">' + ''.join(lanes) + '</div></div>'
+    return BETA_CSS + styles + f'<div class="{board_class}">' + (hero if show_hero else "") + '<div class="wn-grid">' + ''.join(lanes) + '</div></div>'
+
 
 
 

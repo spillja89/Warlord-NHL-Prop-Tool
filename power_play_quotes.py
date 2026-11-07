@@ -7,6 +7,7 @@ import math
 
 import pandas as pd
 import requests
+from pp_assist_beta import assist_ppp_beta
 
 
 COLUMNS = ("Game", "Player", "Team", "Opponent", "PPP line", "Over odds",
@@ -18,7 +19,7 @@ COLUMNS = ("Game", "Player", "Team", "Opponent", "PPP line", "Over odds",
            "PPP drought (games)",
            "PP on-ice xG/game", "PP shooter xG/game", "Equal-weight PP context",
            "PP research signals", "PP research count", "PP research eligible",
-           "PP player signal details",
+           "PP player signal details", "PP Assist beta",
            "Tonight PPP mean", "Tonight PPP 1+ %", "Tonight PPP status",
            "Stats season", "Context", "Book prices")
 
@@ -321,6 +322,7 @@ def priced_ppp_quotes(frame: pd.DataFrame, *, line_filter: float | None = None) 
                 "PP research count": research_count,
                 "PP research eligible": research_eligible,
                 "PP player signal details": pp_player_signal_details(row),
+                "PP Assist beta": assist_ppp_beta(row) if line == .5 else None,
                 "Tonight PPP mean": _finite(row.get("Tonight_PPP_mu")) if
                 row.get("Tonight_PPP_Version") == "2026-10-19-research-v3" else None,
                 "Tonight PPP 1+ %": _finite(row.get("Tonight_PPP_1plus_pct")) if
@@ -337,4 +339,5 @@ def priced_ppp_quotes(frame: pd.DataFrame, *, line_filter: float | None = None) 
         result = result.sort_values(["Game", "Player", "PPP line"],
                                     kind="stable").reset_index(drop=True)
     return result
+
 

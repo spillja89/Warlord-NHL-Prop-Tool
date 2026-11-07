@@ -1,0 +1,115 @@
+"""Read-only PPP beta overlays for frozen Assist profiles; not a new move gate."""
+from __future__ import annotations
+
+import json
+import math
+from functools import lru_cache
+from html import escape
+from pathlib import Path
+
+from assist_moves_current import assists_moves
+
+VERSION = "pp-assist-overlap-beta-2026-11-07"
+RECORD_FILE = Path(__file__).resolve().parent / "pp_assist_beta_records.json"
+
+
+def _number(value):
+    try:
+        result = float(value)
+        return result if math.isfinite(result) else None
+    except (TypeError, ValueError):
+        return None
+
+
+@lru_cache(maxsize=1)
+def _records():
+    return json.loads(RECORD_FILE.read_text(encoding="utf-8"))
+
+
+def assist_ppp_beta(row):
+    """Match priced PPP0.5 + on-ice xG>=.66 + each unchanged Assist route.
+
+    Layer1, PP1 and the four old player checks are not added to this parent.
+    Missing inputs never count as a failure/zero or create a beta qualifier.
+    """
+    if row.get("Model_Stats_Season") != "2026-2027":
+        return None
+    xg = _number(row.get("PP_OnIce_xG_per_game"))
+    if xg is None:
+        rate = _number(row.get("PP_OnIce_xGF60"))
+        minutes = _number(row.get("PP_TOI_per_game"))
+        if rate is not None and minutes is not None and rate >= 0 and minutes >= 0:
+            xg = round(rate * minutes / 60, 3)
+    if xg is None or xg < .66:
+        return None
+    quotes = []
+    for suffix in ("", "_1", "_2", "_3", "_4"):
+        line = _number(row.get(f"BDL_PPP_Line{suffix}"))
+        odds = _number(row.get(f"BDL_PPP_Odds{suffix}"))
+        if line == .5 and odds is not None and odds != 0:
+            book = row.get(f"BDL_PPP_Book{suffix}")
+            quotes.append((odds, book if isinstance(book, str) else ""))
+    if not quotes:
+        return None
+    odds, book = max(quotes, key=lambda item: item[0])
+    archive = _records()
+    names = {move["name"] for move in assists_moves(row)}
+    matched = []
+    for record in archive["routes"]:
+        if record["name"] not in names:
+            continue
+        # Keep unknown inputs separate even when a production route has aliases.
+        if any(_number(row.get(field)) is None for field, _, _ in record["conditions"]):
+            continue
+        if any(field.startswith(("Team_", "opp_")) for field, _, _ in record["conditions"]):
+            if row.get("Team_Stats_Season") != "2026-2027":
+                continue
+        matched.append(dict(record))
+    if not matched:
+        return None
+    matched.sort(key=lambda item: (-item["plays"], item["name"]))
+    return {"version": VERSION, "xg": xg, "ppp_line": .5,
+            "ppp_odds": odds, "ppp_book": book,
+            "ppp_be": 100 / (1 + odds / 100) if odds > 0 else 100 * -odds / (100 - odds),
+            "routes": matched, "sample_from": archive["sample_from"],
+            "sample_through": archive["sample_through"]}
+
+
+def beta_summary(data):
+    if not data or not data.get("routes"):
+        return ""
+    names = " · ".join(route["display_name"] for route in data["routes"])
+    return (f'<span class="pp-assist-beta-pill" title="{escape(names, quote=True)}">'
+            f'⚡ PPP BETA · {len(data["routes"])} Assist '
+            f'{"route" if len(data["routes"]) == 1 else "routes"}</span>')
+
+
+def beta_details(data):
+    if not data or not data.get("routes"):
+        return ""
+    entries = []
+    for route in data["routes"]:
+        status = "MONITOR · under 30 plays" if route["plays"] < 30 else "BETA SAMPLE · 30+ plays"
+        entries.append(
+            '<div class="pp-assist-beta-route">'
+            f'<b>{escape(route["display_name"])}</b><br>'
+            f'PPP {route["hits"]}/{route["plays"]} · {100 * route["hits"] / route["plays"]:.1f}%'
+            f' · sample PPP BE {route["BE"]:.1f}% · {route["players"]} players'
+            f'<small>{status}</small></div>')
+    return ('<div class="pp-assist-beta-details"><b>PPP BETA · ASSIST ROUTE OVERLAP</b>'
+            f'<p>PP on-ice xG/game {data["xg"]:.3f} (≥0.66) · '
+            f'Over 0.5 PPP {data["ppp_odds"]:+.0f} · {escape(data["ppp_book"])}'
+            f' · current PPP BE {data["ppp_be"]:.1f}%</p>'
+            + ''.join(entries)
+            + f'<p>2026–27 PPP results · {escape(data["sample_from"])} through '
+            f'{escape(data["sample_through"])}. Overlapping frozen Assist routes; '
+            'these records grade PPP, not assists. Research samples, not tonight’s probabilities.</p></div>')
+
+
+BETA_CSS = """<style>
+.pp-assist-beta-pill{display:inline-block;margin-top:5px;padding:4px 7px;border:1px solid #57cbd3;border-radius:5px;background:#103d48;color:#e6fdff;font:800 11px/1.5 system-ui,sans-serif;white-space:normal}
+.pp-assist-beta-details{padding:9px 10px;border:1px solid #4b9db1;border-radius:7px;background:#102a3c;color:#e4f5ff;font:12px/1.6 system-ui,sans-serif;overflow-wrap:anywhere}
+.pp-assist-beta-details p{margin:5px 0;color:#d4eaf5}.pp-assist-beta-details b{color:#c6f8ff}
+.pp-assist-beta-route{padding:7px 0;border-top:1px solid #36566b}.pp-assist-beta-route small{display:block;color:#d4def1;font-size:10px}
+.pp-assist-beta-cell{min-width:230px;max-width:330px;white-space:normal}.pp-assist-beta-cell summary{cursor:pointer;list-style:none}.pp-assist-beta-cell .pp-assist-beta-details{margin-top:5px}
+</style>"""

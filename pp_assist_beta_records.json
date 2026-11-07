@@ -1,0 +1,578 @@
+{
+  "version": "pp-assist-overlap-beta-2026-11-07",
+  "parent": "Priced PPP over0.5 + PPon-ice xG/game>=0.66;noLayer1",
+  "sample_from": "2026-10-17",
+  "sample_through": "2026-11-05",
+  "archives_checked_through": "2026-11-06",
+  "routes": [
+    {
+      "name": "Arcane Channel I",
+      "display_name": "Arcane Channel I",
+      "conditions": [
+        [
+          "Conf_Assists",
+          ">=",
+          81
+        ],
+        [
+          "iXA%",
+          ">=",
+          95
+        ],
+        [
+          "PP_Points60",
+          ">=",
+          3.75
+        ],
+        [
+          "PP_iXA60",
+          ">=",
+          2.5
+        ]
+      ],
+      "hits": 18,
+      "plays": 30,
+      "players": 8,
+      "dates": 16,
+      "available": 128,
+      "BE": 34.296498238358744
+    },
+    {
+      "name": "Runic Infusion",
+      "display_name": "Runic Infusion",
+      "conditions": [
+        [
+          "Conf_Assists",
+          ">=",
+          81
+        ],
+        [
+          "iXA%",
+          ">=",
+          95
+        ],
+        [
+          "PP_iXA60",
+          ">=",
+          3.9
+        ]
+      ],
+      "hits": 13,
+      "plays": 20,
+      "players": 5,
+      "dates": 13,
+      "available": 128,
+      "BE": 35.259219171919135
+    },
+    {
+      "name": "Rune Conduit",
+      "display_name": "Rune Conduit",
+      "conditions": [
+        [
+          "Conf_Assists",
+          ">=",
+          81
+        ],
+        [
+          "iXA%",
+          ">=",
+          95
+        ],
+        [
+          "PP_TOI_per_game",
+          ">=",
+          3.75
+        ]
+      ],
+      "hits": 14,
+      "plays": 31,
+      "players": 8,
+      "dates": 17,
+      "available": 128,
+      "BE": 33.00446197362021
+    },
+    {
+      "name": "Odin's Vigil",
+      "display_name": "Odin's Vigil",
+      "conditions": [
+        [
+          "Conf_Assists",
+          ">=",
+          81
+        ],
+        [
+          "iXA%",
+          ">=",
+          95
+        ],
+        [
+          "TOI_per_game",
+          ">=",
+          22
+        ]
+      ],
+      "hits": 10,
+      "plays": 14,
+      "players": 4,
+      "dates": 11,
+      "available": 128,
+      "BE": 35.40403081368242
+    },
+    {
+      "name": "Runic Infusion Crit",
+      "display_name": "Runic Infusion · PP Upgrade",
+      "conditions": [
+        [
+          "Conf_Assists",
+          ">=",
+          81
+        ],
+        [
+          "iXA%",
+          ">=",
+          95
+        ],
+        [
+          "PP_iXA60",
+          ">=",
+          3.9
+        ],
+        [
+          "Team_PP_xGF60",
+          ">=",
+          8.3
+        ]
+      ],
+      "hits": 12,
+      "plays": 18,
+      "players": 4,
+      "dates": 11,
+      "available": 128,
+      "BE": 34.92520951074916
+    },
+    {
+      "name": "Rune Conduit Crit",
+      "display_name": "Rune Conduit · PP Upgrade",
+      "conditions": [
+        [
+          "Conf_Assists",
+          ">=",
+          81
+        ],
+        [
+          "iXA%",
+          ">=",
+          95
+        ],
+        [
+          "PP_TOI_per_game",
+          ">=",
+          3.75
+        ],
+        [
+          "Team_PP_xGF60",
+          ">=",
+          8.3
+        ]
+      ],
+      "hits": 11,
+      "plays": 21,
+      "players": 6,
+      "dates": 12,
+      "available": 128,
+      "BE": 33.47744084770854
+    },
+    {
+      "name": "Odin's Vigil Crit",
+      "display_name": "Odin's Vigil Crit",
+      "conditions": [
+        [
+          "Conf_Assists",
+          ">=",
+          81
+        ],
+        [
+          "iXA%",
+          ">=",
+          95
+        ],
+        [
+          "TOI_per_game",
+          ">=",
+          22
+        ],
+        [
+          "Team_PP_xGF60",
+          ">=",
+          8.3
+        ]
+      ],
+      "hits": 9,
+      "plays": 12,
+      "players": 3,
+      "dates": 9,
+      "available": 128,
+      "BE": 34.927151595554655
+    },
+    {
+      "name": "Silent Invocation",
+      "display_name": "Silent Invocation",
+      "conditions": [
+        [
+          "Conf_Assists",
+          ">=",
+          80
+        ],
+        [
+          "iXA%",
+          ">=",
+          94
+        ],
+        [
+          "L10_S",
+          "<=",
+          19
+        ]
+      ],
+      "hits": 5,
+      "plays": 6,
+      "players": 3,
+      "dates": 5,
+      "available": 122,
+      "BE": 37.35476744515342
+    },
+    {
+      "name": "Oracle’s Channel",
+      "display_name": "Oracle’s Channel",
+      "conditions": [
+        [
+          "Conf_Assists",
+          ">=",
+          80
+        ],
+        [
+          "iXA%",
+          ">=",
+          94
+        ],
+        [
+          "Goal_mu",
+          "<=",
+          0.33
+        ]
+      ],
+      "hits": 12,
+      "plays": 20,
+      "players": 4,
+      "dates": 12,
+      "available": 128,
+      "BE": 33.74859712542553
+    },
+    {
+      "name": "Oracle’s Guidance",
+      "display_name": "Oracle’s Guidance",
+      "conditions": [
+        [
+          "Conf_Assists",
+          ">=",
+          80
+        ],
+        [
+          "iXA%",
+          ">=",
+          94
+        ],
+        [
+          "Goal_mu",
+          "<=",
+          0.33
+        ],
+        [
+          "i5v5_primaryAssists60",
+          "<=",
+          1.05
+        ]
+      ],
+      "hits": 11,
+      "plays": 16,
+      "players": 3,
+      "dates": 11,
+      "available": 128,
+      "BE": 32.80575453148929
+    },
+    {
+      "name": "Runic Resonance I",
+      "display_name": "Runic Resonance I",
+      "conditions": [
+        [
+          "Conf_Assists",
+          ">=",
+          80
+        ],
+        [
+          "iXA%",
+          ">=",
+          94
+        ],
+        [
+          "Goal_mu",
+          "<=",
+          0.33
+        ],
+        [
+          "PPP10_total",
+          ">=",
+          4
+        ]
+      ],
+      "hits": 12,
+      "plays": 19,
+      "players": 4,
+      "dates": 12,
+      "available": 122,
+      "BE": 33.376611367257816
+    },
+    {
+      "name": "Storm Conduit I",
+      "display_name": "Storm Conduit I",
+      "conditions": [
+        [
+          "Conf_Assists",
+          ">=",
+          80
+        ],
+        [
+          "iXA%",
+          ">=",
+          94
+        ],
+        [
+          "Goal_mu",
+          "<=",
+          0.33
+        ],
+        [
+          "Player_SOG_Share_Proxy",
+          ">=",
+          11
+        ]
+      ],
+      "hits": 7,
+      "plays": 10,
+      "players": 2,
+      "dates": 10,
+      "available": 122,
+      "BE": 31.23243361672154
+    },
+    {
+      "name": "Storm Conduit II",
+      "display_name": "Storm Conduit II",
+      "conditions": [
+        [
+          "Conf_Assists",
+          ">=",
+          80
+        ],
+        [
+          "iXA%",
+          ">=",
+          94
+        ],
+        [
+          "Goal_mu",
+          "<=",
+          0.33
+        ],
+        [
+          "Player_SOG_Share_Proxy",
+          ">=",
+          11
+        ],
+        [
+          "Player_5v5_SOG_Share",
+          ">=",
+          8
+        ]
+      ],
+      "hits": 5,
+      "plays": 7,
+      "players": 2,
+      "dates": 7,
+      "available": 122,
+      "BE": 31.594026499488685
+    },
+    {
+      "name": "Oracle’s Guidance II",
+      "display_name": "Oracle’s Guidance II",
+      "conditions": [
+        [
+          "Conf_Assists",
+          ">=",
+          80
+        ],
+        [
+          "iXA%",
+          ">=",
+          94
+        ],
+        [
+          "Goal_mu",
+          "<=",
+          0.33
+        ],
+        [
+          "i5v5_primaryAssists60",
+          "<=",
+          1.05
+        ],
+        [
+          "Team_PP_GF60",
+          ">=",
+          5.7
+        ],
+        [
+          "opp_5v5_HDCA60",
+          "<=",
+          2.2
+        ]
+      ],
+      "hits": 11,
+      "plays": 14,
+      "players": 3,
+      "dates": 10,
+      "available": 128,
+      "BE": 33.087303091558375
+    },
+    {
+      "name": "Runic Resonance II",
+      "display_name": "Runic Resonance II",
+      "conditions": [
+        [
+          "Conf_Assists",
+          ">=",
+          80
+        ],
+        [
+          "iXA%",
+          ">=",
+          94
+        ],
+        [
+          "Goal_mu",
+          "<=",
+          0.33
+        ],
+        [
+          "PPP10_total",
+          ">=",
+          4
+        ],
+        [
+          "Team_PP_GF60",
+          ">=",
+          5.7
+        ],
+        [
+          "opp_5v5_HDCA60",
+          "<=",
+          2.2
+        ]
+      ],
+      "hits": 11,
+      "plays": 16,
+      "players": 4,
+      "dates": 10,
+      "available": 122,
+      "BE": 33.548218815100086
+    },
+    {
+      "name": "Empowered Storm Conduit",
+      "display_name": "Empowered Storm Conduit",
+      "conditions": [
+        [
+          "Conf_Assists",
+          ">=",
+          80
+        ],
+        [
+          "iXA%",
+          ">=",
+          94
+        ],
+        [
+          "Goal_mu",
+          "<=",
+          0.33
+        ],
+        [
+          "Player_SOG_Share_Proxy",
+          ">=",
+          11
+        ],
+        [
+          "Team_PP_GF60",
+          ">=",
+          5.7
+        ],
+        [
+          "opp_5v5_HDCA60",
+          "<=",
+          2.2
+        ]
+      ],
+      "hits": 7,
+      "plays": 9,
+      "players": 2,
+      "dates": 9,
+      "available": 122,
+      "BE": 31.434730162370343
+    },
+    {
+      "name": "Runic Orchestration Crit",
+      "display_name": "Runic Orchestration Crit",
+      "conditions": [
+        [
+          "Conf_Assists",
+          ">=",
+          80
+        ],
+        [
+          "iXA%",
+          ">=",
+          94
+        ],
+        [
+          "Goal_mu",
+          "<=",
+          0.33
+        ],
+        [
+          "i5v5_primaryAssists60",
+          "<=",
+          1.05
+        ],
+        [
+          "PPP10_total",
+          ">=",
+          4
+        ],
+        [
+          "Team_PP_GF60",
+          ">=",
+          5.7
+        ],
+        [
+          "opp_5v5_HDCA60",
+          "<=",
+          2.2
+        ]
+      ],
+      "hits": 11,
+      "plays": 14,
+      "players": 3,
+      "dates": 10,
+      "available": 122,
+      "BE": 33.087303091558375
+    }
+  ]
+}
