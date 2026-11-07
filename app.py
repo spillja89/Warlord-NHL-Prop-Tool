@@ -4347,6 +4347,11 @@ if df.empty:
     st.warning("No available players remain in this tracker after the injury check.")
     st.stop()
 
+# Resolve stale mainline selections before attaching line-specific rules/tables.
+# Saved ladder quotes can repair the display without another paid odds request.
+from points15_moves_current import quote_rows as _resolve_primary_points
+df = _resolve_primary_points(df)
+
 
 # -------------------------
 # Ensure injury columns exist (older CSV safe)
@@ -5706,6 +5711,7 @@ elif page == "Points":
 
         # --- BOOK FIRST ---
         "Points_Line","Points_Odds_Over","Points_Book",
+        "Points_Primary_Source",
 
         # --- SIGNALS ---
         "Points_Attack","Points_Move_Record","Points_Move_Pct","Points_Sample_BE_Pct",

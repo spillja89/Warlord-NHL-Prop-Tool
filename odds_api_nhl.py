@@ -17,6 +17,7 @@ import pandas as pd
 import requests
 
 from odds_ev_bdl import _norm_name, _safe_float
+from points_primary import select_primary, VERSION as POINTS_PRIMARY_VERSION
 
 
 BASE = "https://api.the-odds-api.com/v4/sports/icehockey_nhl"
@@ -127,6 +128,7 @@ def merge_odds_api_props(
         return tracker
 
     quotes: dict[tuple[str, str, float], list[tuple[float, str, frozenset[str]]]] = defaultdict(list)
+    points_main_quotes = defaultdict(list)
     for event in slate_events:
         teams = frozenset(filter(None, (
             TEAM_NAMES.get(str(event.get("home_team") or "").strip().casefold()),
@@ -175,6 +177,9 @@ def merge_odds_api_props(
                     if parsed:
                         mkt, player, line, price = parsed
                         quotes[(player, mkt, line)].append((price, book_name, teams))
+                        if market_key == "player_points":
+                            points_main_quotes[player].append({
+                                "line": line, "odds": price, "book": book_name, "teams": teams})
                         if mkt == "ATG":
                             # Most books call the ordinary 0.5 Goals line "anytime scorer".
                             quotes[(player, "Goal", line)].append((price, book_name, teams))
@@ -246,7 +251,17 @@ def merge_odds_api_props(
                 df.at[idx, f"BDL_{market}_Odds_{n}"] = None
                 df.at[idx, f"BDL_{market}_Book_{n}"] = ""
             old_main = _safe_float(row.get(f"BDL_{market}_Line"))
-            chosen = old_main if old_main in by_line else min(lines)
+            if market == "Points":
+                mains = [{key: value for key, value in q.items() if key != "teams"}
+                         for q in points_main_quotes.get(player, []) if {team, opp} == q["teams"]]
+                chosen, primary_source, primary_books = select_primary(by_line, mains)
+                df.at[idx, "Points_Main_Market_Quotes"] = json.dumps(mains)
+                df.at[idx, "Points_Primary_Line"] = chosen
+                df.at[idx, "Points_Primary_Source"] = primary_source
+                df.at[idx, "Points_Primary_Books"] = json.dumps(primary_books)
+                df.at[idx, "Points_Primary_Version"] = POINTS_PRIMARY_VERSION
+            else:
+                chosen = old_main if old_main in by_line else min(lines)
             price, book = by_line[chosen]
             df.at[idx, f"BDL_{market}_Line"] = chosen
             df.at[idx, f"BDL_{market}_Odds"] = price
@@ -259,3 +274,4 @@ def merge_odds_api_props(
             known_books.update(str(row.get(f"BDL_{market}_Book_{n}") or "").strip() for n in range(1, 5))
             df.at[idx, f"{market}_Available_Books"] = json.dumps(sorted(known_books - {"", "nan", "None"}))
     return df
+

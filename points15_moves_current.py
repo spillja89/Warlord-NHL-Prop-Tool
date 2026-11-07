@@ -13,25 +13,12 @@ def number(value):
     except (TypeError,ValueError):return None
 
 def quote_rows(frame):
-    """Keep the saved primary line; shop1.5 prices only for primary1.5 rows."""
+    """One resolved primary Points line per real source row, with same-line prices."""
     result=frame.copy()
     if '_points15_alternate' in result.columns:
         result=result.loc[~result['_points15_alternate'].eq(True)].copy()
-    for index,row in result.iterrows():
-        if number(row.get('Points_Line'))!=1.5 or row.get('Model_Stats_Season')!='2026-2027':
-            continue
-        quotes=[]
-        price=number(row.get('Points_Odds_Over'))
-        if price is not None and abs(price)>=100:quotes.append((price,row.get('Points_Book')))
-        for suffix in ('','_1','_2','_3','_4'):
-            if number(row.get('BDL_Points_Line'+suffix))!=1.5:continue
-            price=number(row.get('BDL_Points_Odds'+suffix))
-            if price is not None and abs(price)>=100:quotes.append((price,row.get('BDL_Points_Book'+suffix)))
-        if quotes:
-            price,book=max(quotes,key=lambda q:q[0])
-            result.at[index,'Points_Odds_Over']=price
-            result.at[index,'Points_Book']=book
-    return result
+    from points_primary import resolve_frame
+    return resolve_frame(result)
 
 def prepare_row(row):
     result=dict(row)
@@ -79,4 +66,3 @@ def points15_moves(row):
           'track':False,'later_wins':0,'later_picks':0,'kit_version':VERSION,'record_version':VERSION,
           'sample_season':'2026-27','sample_from':KIT['sample_from'],'sample_through':KIT['sample_through']})
     return moves
-
