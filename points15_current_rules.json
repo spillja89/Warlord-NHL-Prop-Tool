@@ -1,5 +1,5 @@
 {
-  "version": "points15-2026-27-approved-2026-11-06-v1",
+  "version": "points15-2026-27-iron-march-2026-11-06-v2",
   "sample_from": "2026-10-13",
   "sample_through": "2026-11-05",
   "entry": "Points1.5 + current-season Green; per-route confidence and player conditions are independent",
@@ -1865,6 +1865,114 @@
       "sample_players": 13,
       "sample_dates": 9,
       "suppress_badge": false
+    },
+    {
+      "id": "STAR_warpath_iron_march_1",
+      "name": "Ragnarok · Iron March I",
+      "conditions": [
+        [
+          "Conf_Points",
+          ">=",
+          82
+        ],
+        [
+          "Log_L10_S_per_game",
+          "<=",
+          3.9
+        ],
+        [
+          "StarScore",
+          ">=",
+          90.1
+        ],
+        [
+          "Pace_Gap_P10",
+          ">=",
+          0.2
+        ],
+        [
+          "NHL_Opp_PK_Time_PG",
+          ">=",
+          4.1
+        ],
+        [
+          "NHL_Opp_GF_Season_PG",
+          ">=",
+          2.4
+        ],
+        [
+          "NHL_Team_PP_Time_PG",
+          "<=",
+          5.45
+        ]
+      ],
+      "family": "star_iron_march",
+      "level": 1,
+      "kind": "SPECIAL",
+      "icon": "PTS15_TWO_HANDED_HAMMER.svg",
+      "wins": 32,
+      "picks": 41,
+      "sample_book_be_pct": 39.39979766225635,
+      "sample_players": 12,
+      "sample_dates": 14,
+      "suppress_badge": false
+    },
+    {
+      "id": "STAR_warpath_iron_march_2",
+      "name": "Ragnarok · Iron March II",
+      "conditions": [
+        [
+          "Conf_Points",
+          ">=",
+          82
+        ],
+        [
+          "Log_L10_S_per_game",
+          "<=",
+          3.9
+        ],
+        [
+          "StarScore",
+          ">=",
+          90.1
+        ],
+        [
+          "Pace_Gap_P10",
+          ">=",
+          0.2
+        ],
+        [
+          "NHL_Opp_PK_Time_PG",
+          ">=",
+          4.1
+        ],
+        [
+          "NHL_Opp_GF_Season_PG",
+          ">=",
+          2.4
+        ],
+        [
+          "NHL_Team_PP_Time_PG",
+          "<=",
+          5.45
+        ],
+        [
+          "NHL_Opp_PP_Success_pct",
+          ">=",
+          19
+        ]
+      ],
+      "family": "star_iron_march",
+      "level": 2,
+      "kind": "SPECIAL",
+      "icon": "PTS15_TWO_HANDED_HAMMER.svg",
+      "wins": 27,
+      "picks": 31,
+      "sample_book_be_pct": 41.617003314687416,
+      "sample_players": 11,
+      "sample_dates": 13,
+      "suppress_badge": false
     }
   ]
 }
+

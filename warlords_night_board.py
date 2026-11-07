@@ -44,6 +44,145 @@ def _value(row, *keys):
     return None
 
 
+_CARD_LABELS = {
+    'Conf_Points': 'Points profile confidence', 'Conf_Goal': 'Goal profile confidence',
+    'Log_L10_S_per_game': 'L10 average SOG', 'Log_L20_P_per_game': 'Recorded points/game',
+    'Log_L5_P_per_game': 'L5 points/game', 'Pace_Gap_P10': 'Point-pace gap',
+    'StarScore': 'Star score', 'TalentMult': 'Talent multiplier', 'TOI_per_game': 'Ice time/game',
+    'TOI_Pct': 'Ice-time rank', 'PP_TOI_per_game': 'Player PP min/game',
+    'EV5_TOI_per_game': '5v5 ice time/game', 'Assists_mu': 'Saved assist μ',
+    'Points_mu': 'Saved points μ', 'Goal_mu': 'Saved goal μ',
+    'iXA%': 'Observed assist rank', 'iXG%': 'Individual xG rank',
+    'ShotIntent': 'Shot intent', 'ShotIntent_Pct': 'Shot-intent rank',
+    'Avg5_SOG': 'L5 average SOG', 'L10_S': 'Shots L10', 'L10_G': 'Goals L10',
+    'Drought_G': 'Goal drought', 'Drought_PPP': 'PPP drought',
+    'Log_L20_Point2plus_pct': 'Recorded 2+ point frequency %',
+    'Log_L20_PPP_hit_pct': 'Recorded PPP frequency %',
+    'PP_Points60': 'PP involvement proxy/60', 'PPP10_total': 'PPP L10',
+    'team_5v5_SF60': 'Team 5v5 shots/60',
+    'NHL_Opp_PK_Time_PG': 'Opp PK min/game', 'NHL_Opp_GF_Season_PG': 'Opp goals scored/game',
+    'NHL_Opp_PP_Success_pct': 'Opp PP conversion %', 'NHL_Team_PP_Time_PG': 'Team PP min/game',
+    'NHL_Opp_PP_Goals_PG': 'Opp PP goals/game', 'NHL_Opp_PP_G60': 'Opp PP goals/60',
+    'NHL_Opp_PKO_PG': 'Opp PK opportunities/game', 'NHL_Team_PP_G60': 'Team PP goals/60',
+    'NHL_Team_PP_Goals_PG': 'Team PP goals/game', 'NHL_Opp_GA_10_PG': 'Opp L10 goals allowed/game',
+    'NHL_Opp_GA_Venue_PG': 'Opp venue goals allowed/game',
+    'NHL_Opp_Goals_per_shot_allowed_pct': 'Opp shots converted against %',
+    'NHL_Opp_Goal_conversion_pct': 'Opp shooting %',
+    'Opp_PK_xGA60': 'Opp PK xGA/60', 'Opp_PK_GA60': 'Opp PK goals allowed/60',
+    'opp_5v5_HDCA60': 'Opp 5v5 HDCA/60', 'opp_5v5_xGA60': 'Opp 5v5 xGA/60',
+    'Opp_5v5_xGA_relative_league': 'Opp 5v5 xGA / league',
+    'Opp_PK_xGA_relative_league': 'Opp PK xGA / league',
+    'Team_PP_xGF_relative_league': 'Team PP xGF / league',
+    'Team_PP_GF60': 'Team PP actual GF/60', 'Team_PP_xGF60': 'Team PP xGF/60',
+    'PP_PPO_Blend_PG': 'PP opportunity blend/game', 'PP_Time_Blend_PG': 'PP time blend/game',
+    'Team_PP_OZ_Time_Pct': 'Team PP offensive-zone time %', 'Team_EV_OZ_Rank': 'Team EV zone-time rank',
+    'NHL_Team_PK_goal_drought': 'Team PK goal-allowed drought',
+    'NHL_Opp_GF_10_PG': 'Opp L10 goals scored/game', 'NHL_Opp_PK_G60': 'Opp PK goals allowed/60',
+    'NHL_Opp_SA_Venue_PG': 'Opp venue shots allowed/game', 'NHL_Team_GA_5_PG': 'Team L5 goals allowed/game',
+    'NHL_Team_GA_Venue_PG': 'Team venue goals allowed/game', 'NHL_Team_PK_G60': 'Team PK goals allowed/60',
+    'Opp_DefWeak': 'Opponent defensive weakness', 'PP_Matchup_Equal': 'Equal-weight PP context',
+    'Player_5v5_SOG_Share': '5v5 team shot share %', 'Opp_SOG_Against_L10': 'Opp L10 SOG allowed/game',
+}
+
+
+def _role_card_context(row):
+    from power_play_quotes import _unit_label, team_pp_time_share_pct
+    values = {field: _number(row.get(field)) for field in _CARD_LABELS}
+    values['unit'] = _unit_label(row)
+    values['team_pp_share'] = team_pp_time_share_pct(row.get('PP_TOI_per_game'), row.get('Team_PP_Time_PG'))
+    return values
+
+
+def _card_usage_panel(values):
+    def fmt(key, suffix=''):
+        value = _number(values.get(key))
+        return f'{value:.1f}{suffix}' if value is not None else 'Unavailable'
+    return ('<div class="wn-assist-fact"><small>ICE TIME &amp; ROLE</small>'
+            f'Ice time <b>{fmt("TOI_per_game", " min/g")}</b> · PP <b>{fmt("PP_TOI_per_game", " min/g")}</b><br>'
+            f'Recorded unit <b>{_h(values.get("unit") or "Unit unknown")}</b> · '
+            f'Team PP time <b>{fmt("team_pp_share", "%")}</b></div>')
+
+
+def _fact_line(field, value, op=None, cutoff=None):
+    label = _CARD_LABELS.get(field, field.replace('_', ' '))
+    value = _number(value)
+    if value is None:
+        actual = 'Unavailable'
+    elif field.endswith('Time_PG'):
+        seconds = round(value * 60)
+        actual = f'{seconds // 60}:{seconds % 60:02d}'
+    else:
+        digits = 0 if field in {'Drought_G', 'Drought_PPP', 'L10_S', 'L10_G', 'PPP10_total'} else 2
+        actual = f'{value:.{digits}f}'
+    target = ''
+    if op is not None and cutoff is not None:
+        sign = '≥' if op == '>=' else '≤'
+        if field.endswith('Time_PG'):
+            seconds = round(cutoff * 60)
+            limit = f'{seconds // 60}:{seconds % 60:02d}'
+        else:
+            limit = f'{cutoff:g}'
+        target = f' <span>({sign}{limit})</span>'
+    return f'<span title="{_h(label + chr(32) + actual)}">{_h(label)} <b>{_h(actual)}</b>{target}</span>'
+
+
+def _render_goal_facts(card, move):
+    values = {**(card.get('role_context') or {}), **(card.get('goal_profile') or {})}
+    rule = str((move or {}).get('rule', ''))
+    checks = {}
+    for field in _CARD_LABELS:
+        found = re.search(r'(?<![\w])' + re.escape(field) + r'\s*(>=|<=)\s*([0-9.]+)', rule)
+        if found:
+            checks[field] = (found[1], float(found[2]))
+    profile_fields = ['iXG%', 'StarScore', 'ShotIntent', 'L10_S', 'L10_G', 'Drought_G', 'Drought_PPP', 'Goal_mu', 'Points_mu']
+    profile = '<br>'.join(_fact_line(field, values.get(field), *checks.get(field, (None, None)))
+                          for field in profile_fields if values.get(field) is not None)
+    environment = '<br>'.join(_fact_line(field, values.get(field), op, cut)
+                              for field, (op, cut) in checks.items()
+                              if field.startswith(('NHL_', 'Opp_', 'opp_', 'Team_', 'team_')))
+    environment = environment or 'Move-specific matchup requirements are listed in the full fired move list.'
+    sample = _number((move or {}).get('sample_book_be_pct'))
+    sample_note = f'<div class="wn-assist-sample">MOVE SAMPLE AVG BOOK BE <b>{sample:.1f}%</b></div>' if sample is not None else ''
+    return (sample_note + '<div class="wn-assist-facts">' + _card_usage_panel(values) +
+            f'<div class="wn-assist-fact"><small>GOAL PROFILE · ACTUAL / CUTOFF</small>{profile}</div>' +
+            f'<div class="wn-assist-fact"><small>MATCHUP · ACTUAL / CUTOFF</small>{environment}</div></div>')
+
+
+def _class_identity(role, card, move):
+    """Stable cosmetic identities, separate from eligibility and move records."""
+    if role == 'Support':
+        variant = _support_variant(move)
+        animal = 'Orangutan' if variant in {'Runesmith', 'Oracle + Runesmith'} else 'Chimp' if variant == 'Stormcaller' else 'Gorilla'
+        return animal, variant
+    if role == 'Tank':
+        if card.get('line') == 1.5:
+            return 'Panda', 'War Drummer'
+        return ('Orangutan', 'Siegebreaker') if (move or {}).get('kind') in {'HEAVY', 'SPECIAL', 'CRIT'} else ('Gorilla', 'Bulwark')
+    if role == 'Jungle':
+        if (move or {}).get('empowered'):
+            return 'Orangutan', 'Ranger'
+        if (move or {}).get('matchup_buff'):
+            return 'Panda', 'Warden'
+        return 'Gorilla', 'Berserker'
+    text = str((move or {}).get('name', '')) + ' ' + str((move or {}).get('rule', ''))
+    if 'StarScore' in text or 'Star ' in text:
+        return 'Panda', 'Executioner'
+    if (move or {}).get('crit') or any(word in text for word in ('Reaper', 'Measured', 'Creator', 'Controlled', 'Patient')):
+        return 'Chimp', 'Reaper'
+    return 'Gorilla', 'Ravager'
+
+
+def _class_roster_art(role):
+    if role == 'Support':
+        return _support_roster_art()
+    variants = {'Tank': [('Bulwark', 'Gorilla Bulwark'), ('Siegebreaker', 'Orangutan Siegebreaker'), ('War Drummer', 'Panda War Drummer')],
+                'Jungle': [('Berserker', 'Gorilla Berserker'), ('Ranger', 'Orangutan Ranger'), ('Warden', 'Panda Warden')],
+                'Carry': [('Ravager', 'Gorilla Ravager'), ('Reaper', 'Chimp Reaper'), ('Executioner', 'Panda Executioner')]}
+    portraits = [f'<img src="{uri}" alt="{_h(label)}" />' for variant, label in variants.get(role, [])
+                 if (uri := _character_uri(role, variant))]
+    return '<div class="wn-support-roster wn-class-roster">' + ''.join(portraits) + '</div>'
+
+
 def _assist_card_context(row):
     from power_play_quotes import _unit_label, team_pp_time_share_pct
     fields = ('TOI_per_game', 'PP_TOI_per_game', 'Assists_mu', 'iXA%',
@@ -96,24 +235,37 @@ def _render_assist_facts(card, move):
 
 
 def _render_points_facts(card, move):
-    if not move or not move.get("points_current"):
-        return ""
-    values = card.get("points_context") or {}
-    sample = move.get("sample_book_be_pct")
-    facts = []
-    for field, op, cut in move.get("conditions", []):
-        value = _number(values.get(field))
-        actual = f"{value:.2f}" if value is not None else "Unavailable"
-        facts.append(f"{_h(field)} <b>{actual}</b> ({_h(op)}{cut:g})")
-    profile = "<br>".join(facts) if facts else "Green · current Points confidence ≥77"
-    through = "NOV 5" if move.get("points15_current") else "NOV 4"
-    return (f'<div class="wn-assist-sample">MOVE SAMPLE AVG BOOK BE <b>{sample:.1f}%</b> · OCT 13–{through}</div>'
-            f'<div class="wn-assist-facts"><div class="wn-assist-fact"><small>PLAYER PROFILE &amp; MATCHUP · ACTUAL / CUTOFF</small>{profile}</div></div>')
+    move = move or {}
+    values = {**(card.get('role_context') or {}), **(card.get('points_context') or {})}
+    profile = [f'Saved points μ <b>{_number(values.get("Points_mu")):.2f}</b>'
+               if _number(values.get('Points_mu')) is not None else 'Saved points μ <b>Unavailable</b>']
+    environment = []
+    for field, op, cut in move.get('conditions', []):
+        line = _fact_line(field, values.get(field), op, cut)
+        target = environment if field.startswith(('NHL_', 'Opp_', 'opp_', 'Team_', 'team_')) else profile
+        target.append(line)
+    alternatives = []
+    for group in move.get('any_conditions', []):
+        alternatives.append('<br>'.join(_fact_line(field, values.get(field), op, cut) for field, op, cut in group))
+    if alternatives:
+        environment.append('<b>ANY MATCHING PATH</b><br>' + '<br><b>OR</b><br>'.join(alternatives))
+    sample = _number(move.get('sample_book_be_pct'))
+    sample_note = (f'<div class="wn-assist-sample">MOVE SAMPLE AVG BOOK BE <b>{sample:.1f}%</b> · '
+                   f'{_h(move.get("sample_from", ""))} through {_h(move.get("sample_through", ""))}</div>') if sample is not None else ''
+    matchup = '<br>'.join(environment) or 'No additional environment gate for this move.'
+    return (sample_note + '<div class="wn-assist-facts">' + _card_usage_panel(values) +
+            '<div class="wn-assist-fact"><small>POINTS PROFILE · ACTUAL / CUTOFF</small>' + '<br>'.join(profile) + '</div>' +
+            '<div class="wn-assist-fact"><small>MATCHUP · ACTUAL / CUTOFF</small>' + matchup + '</div></div>')
 
 
 def _render_sog_facts(card, move):
     if not move or not move.get("sog_current"):
-        return ""
+        values = card.get("sog_context") or {}
+        profile = '<br>'.join(_fact_line(field, values.get(field)) for field in ('TOI_Pct', 'Player_5v5_SOG_Share', 'iXG%'))
+        matchup = _fact_line('Opp_SOG_Against_L10', values.get('Opp_SOG_Against_L10'))
+        return ('<div class="wn-assist-facts">' + _card_usage_panel(card.get('role_context') or {}) +
+                f'<div class="wn-assist-fact"><small>SHOT PROFILE</small>{profile}</div>' +
+                f'<div class="wn-assist-fact"><small>MATCHUP</small>{matchup}</div></div>')
     values = card.get("sog_context") or {}
     def metric(field, digits=1):
         value = _number(values.get(field))
@@ -290,6 +442,7 @@ def rank_warlords(frame: pd.DataFrame) -> dict[str, list[dict]]:
                 "tonight_status": str(_value(row, f"Tonight_{market}_Status") or ""),
                 "team_pp_xgf60": _number(row.get("Team_PP_xGF60")) if market == "Assists" else None,
                 "assist_context": _assist_card_context(row) if market == "Assists" else None,
+                "role_context": _role_card_context(row),
                 "sog_context": {**{key:_number(row.get(key)) for key in
                     ("TOI_Pct", "TOI_per_game", "Player_5v5_SOG_Share", "Opp_SOG_Against_L10", "iXG%")},
                     "green_route":str(row.get("Matrix_SOG_Route", "") or ""),
@@ -379,6 +532,7 @@ def rank_priced_slate(frame: pd.DataFrame) -> dict[str, list[dict]]:
                 "tonight_status": str(_value(row, f"Tonight_{market}_Status") or ""),
                 "team_pp_xgf60": _number(row.get("Team_PP_xGF60")) if market == "Assists" else None,
                 "assist_context": _assist_card_context(row) if market == "Assists" else None,
+                "role_context": _role_card_context(row),
                 "sog_context": {**{key:_number(row.get(key)) for key in
                     ("TOI_Pct", "TOI_per_game", "Player_5v5_SOG_Share", "Opp_SOG_Against_L10", "iXG%")},
                     "green_route":str(row.get("Matrix_SOG_Route", "") or ""),
@@ -886,6 +1040,18 @@ def _character_uri(role: str, variant: str = "") -> str:
         candidate = image.parent / filename
         if candidate.is_file():
             image = candidate
+    variants = {
+        ('Tank', 'Siegebreaker'): 'tank-orangutan-hammer-v1.webp',
+        ('Tank', 'War Drummer'): 'tank-panda-drum-v1.webp',
+        ('Jungle', 'Ranger'): 'jungle-orangutan-ranger-v1.webp',
+        ('Jungle', 'Warden'): 'jungle-panda-warden-v1.webp',
+        ('Carry', 'Reaper'): 'carry-chimp-reaper-v1.webp',
+        ('Carry', 'Executioner'): 'carry-panda-executioner-v1.webp',
+    }
+    if (role, variant) in variants:
+        candidate = image.parent / variants[(role, variant)]
+        if candidate.is_file():
+            image = candidate
     if not image.is_file():
         return ""
     return "data:image/webp;base64," + base64.b64encode(image.read_bytes()).decode("ascii")
@@ -935,8 +1101,8 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
             tier_badge = ""
             tier_class = ""
             support_tier = assist_display_tier(move) if role == "Support" and move else None
-            if role == "Support":
-                character_uri = _character_uri(role, _support_variant(move))
+            animal, character_variant = _class_identity(role, card, move)
+            character_uri = _character_uri(role, character_variant)
             if move and ((role == "Support" and support_tier["crit"]) or
                          (role == "Carry" and move.get("crit"))):
                 tier_label = support_tier["label"] if support_tier else "CRIT"
@@ -991,6 +1157,8 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
                 support_route_note = (f'<div class="wn-support-route"><b>{_h(animal + " · " + variant)}</b>'
                                       f' · {_h(support_tier["label"])}'
                                       f'<span>Routes: {_h(" · ".join(route_labels))}</span></div>')
+            if role != 'Support':
+                support_route_note = (f'<div class="wn-support-route"><b>{_h(animal + " · " + character_variant)}</b></div>')
             name_backdrop = (f'<img class="wn-unit-ghost" src="{character_uri}" alt="" aria-hidden="true" />'
                              if character_uri else "")
             price = _odds(card["odds"])
@@ -1021,8 +1189,7 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
                 value = _number(profile.get(field))
                 if value is not None:
                     profile_parts.append(f"{label} {value:{fmt}}")
-            goal_profile_note = (f'<div class="wn-goal-profile">GOAL PROFILE · {_h(" · ".join(profile_parts))}</div>'
-                                 if role == "Carry" and profile_parts else "")
+            goal_profile_note = _render_goal_facts(card, move) if role == 'Carry' else '' 
             if role != "Carry":
                 projected_mu = _number(card.get("tonight_mu"))
                 projected_pct = _number(card.get("tonight_over_pct"))
@@ -1160,17 +1327,17 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
               {name_backdrop}
               <div class="wn-portrait" aria-hidden="true">{portrait}</div>
               <div class="wn-unit-body">
-                <div class="wn-unit-head"><span class="wn-rank">{rank:02d}</span>{tier_badge}<strong>{_h(card['player'])}</strong><span class="wn-match">{_h(matchup)}</span></div>
+                <div class="wn-card-heading"><div class="wn-unit-head"><span class="wn-rank">{rank:02d}</span>{tier_badge}<strong>{_h(card['player'])}</strong><span class="wn-match">{_h(matchup)}</span></div>
                 <div class="wn-attack"><span class="wn-attack-name">{_h(move_name)}</span><span class="wn-badge">{_h(status + sample)}</span></div>
                 {support_route_note}
                 <div class="wn-unit-foot"><span>{_h(line)} <b>{_h(price)}</b>{book_note}</span><span>{_h(later_note)}{confidence_note}</span></div>
-                {book_rate_note}
+                {book_rate_note}</div>
                 {pp_crit_note}
                 {assist_facts}
                 {sog_facts}
                 {points_facts}
                 {points_power_note}
-                {points_tier_note}
+                {points_tier_note if not points_facts else ""}
                 {points_research_note}
                 {support_badges}
                 {goal_signals}
@@ -1190,8 +1357,7 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
             units = ['<div class="wn-empty">No featured move for this class on this slate. '
                      'Check the complete priced slate below for all posted lines.</div>']
         backdrop = f'<img class="wn-gorilla" src="{character_uri}" alt="" />' if character_uri else ""
-        if role == 'Support':
-            backdrop = _support_roster_art()
+        backdrop = _class_roster_art(role)
         count_label = "FEATURED" if cards and "confidence" in cards[0] else "PRICED"
         lane_subtitle = ("GOAL ✦ 2026–27 MOVE % ✦ BOOK BREAK-EVEN % FROM POSTED ODDS"
                          if role == "Carry" else
@@ -1220,8 +1386,8 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
       .wn-lane{min-width:0;background:#111a2a;border:1px solid #38435a;border-radius:14px;overflow:hidden;box-shadow:0 8px 28px #1018282e}
       .wn-lane-head{position:relative;isolation:isolate;display:flex;align-items:center;gap:12px;min-height:96px;padding:16px;background:linear-gradient(100deg,color-mix(in srgb,var(--accent) 23%,#111a2a),#111a2a 82%);border-bottom:1px solid #ffffff16;overflow:hidden}
       .wn-gorilla{position:absolute;z-index:-1;right:8px;top:0;height:230px;width:auto;opacity:.34;pointer-events:none;mask-image:linear-gradient(90deg,transparent,#000 35%)}
-      .wn-lane--support .wn-support-roster{position:absolute;z-index:-1;right:0;top:0;height:100%;width:66%;display:flex;opacity:.55;pointer-events:none;mask-image:linear-gradient(90deg,transparent,#000 24%)}
-      .wn-lane--support .wn-support-roster img{width:33.333%;height:100%;object-fit:cover;object-position:center 20%}
+      .wn-lane .wn-support-roster{position:absolute;z-index:-1;right:0;top:0;height:100%;width:66%;display:flex;opacity:.55;pointer-events:none;mask-image:linear-gradient(90deg,transparent,#000 24%)}
+      .wn-lane .wn-support-roster img{width:33.333%;height:100%;object-fit:cover;object-position:center 20%}
       .wn-class-icon{width:42px;height:42px;flex:none;display:grid;place-items:center;border:1px solid color-mix(in srgb,var(--accent) 50%,transparent);border-radius:9px;background:#0a1425e8;font-size:25px}
       .wn-class-icon svg{width:29px;height:29px;max-width:29px;max-height:29px;fill:var(--accent)}
       .wn-class-text{flex:1}.wn-kicker{font-size:10px;text-transform:uppercase;letter-spacing:.15em;color:#c5c6d3}.wn-class-text h2{font-size:23px;line-height:1;margin:3px 0 0;color:var(--accent);font-weight:950}
@@ -1308,6 +1474,18 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
       .wn-board--compact .wn-lane-head{display:none}
       @media(max-width:1050px){.wn-grid{grid-template-columns:1fr}}
       @media(max-width:540px){.wn-unit{gap:10px;padding:12px}.wn-unit-ghost{left:45px;opacity:.12}.wn-portrait{width:40px;height:40px}.wn-portrait svg{width:27px;height:27px}.wn-record{min-width:65px}.wn-record strong{font-size:24px}.wn-match{display:block;flex-basis:100%;font-size:12px}.wn-assist-facts,.wn-context{grid-template-columns:1fr}}
+
+      .wn-lane{container-type:inline-size}
+      .wn-lane .wn-unit{display:grid;grid-template-columns:minmax(0,1fr) 95px 170px;grid-template-areas:"body record portrait" "form form form" "details details details";align-items:start;gap:10px 16px;padding:14px}
+      .wn-lane .wn-unit-ghost{display:none}
+      .wn-lane .wn-unit-body{grid-area:body;min-width:0}
+      .wn-lane .wn-portrait{grid-area:portrait;order:initial;width:170px;height:220px;overflow:hidden;border:1px solid var(--accent);background:radial-gradient(ellipse at center,color-mix(in srgb,var(--accent) 20%,#102039),#0b1424 80%)}
+      .wn-lane .wn-portrait img{object-fit:cover;object-position:center top;padding:0}
+      .wn-lane .wn-record{grid-area:record;order:initial;padding-top:5px;min-width:0}
+      .wn-lane .wn-form,.wn-lane .wn-form-empty{grid-area:form;order:initial}
+      .wn-lane .wn-details{grid-area:details;order:initial}
+      @container(max-width:680px){.wn-lane .wn-unit{display:block;padding:14px}.wn-lane .wn-card-heading{padding-right:140px;min-height:245px}.wn-lane .wn-portrait{position:absolute;right:14px;top:14px;width:120px;height:165px}.wn-lane .wn-record{position:absolute;top:188px;right:14px;width:120px;display:flex;flex-direction:column;text-align:center;gap:3px}.wn-lane .wn-record span,.wn-lane .wn-record em{margin:0}.wn-lane .wn-form,.wn-lane .wn-form-empty,.wn-lane .wn-details{margin-top:10px}}
+      @container(max-width:430px){.wn-lane .wn-unit{padding:11px}.wn-lane .wn-card-heading{padding-right:104px;min-height:215px}.wn-lane .wn-portrait{right:11px;top:11px;width:92px;height:130px}.wn-lane .wn-record{right:11px;top:150px;width:92px}.wn-lane .wn-record strong{font-size:24px}.wn-lane .wn-record em{font-size:8px}.wn-lane .wn-unit-head strong{font-size:17px}.wn-assist-facts{grid-template-columns:1fr}}
     </style>"""
     goal_count = len(boards.get("Carry", []))
     other_count = total - goal_count
@@ -1324,6 +1502,7 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
       <div class="wn-hero-foot">{_h(hero_foot)} · HISTORICAL MOVE RATE IS NOT A FORECAST</div></div>"""
     board_class = "wn-board" if show_hero else "wn-board wn-board--compact"
     return styles + f'<div class="{board_class}">' + (hero if show_hero else "") + '<div class="wn-grid">' + ''.join(lanes) + '</div></div>'
+
 
 
 
