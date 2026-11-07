@@ -708,7 +708,7 @@ _ROLE_INFO = {
 _CLASS_RULES = {
     "GOALS": {"role": "Carry", "market": "Goal", "entry": "Matrix_Goal Green · Goal 0.5", "note": "Three Goal paths: xG, StarScore/goal drought, and StarScore/TOI20. Star Barrage uses StarScore ≥84.5 + TOI/game ≥20 + L10 shots ≤39. PPP drought ≥1/≥2 adds the highest Runic Barrage level. All fired attacks, crits and buffs appear in the tracker."},
     "ASSISTS": {"role": "Support", "market": "Assists", "entry": "Existing moves: Conf ≥81 · assist rank ≥95. New routes: Conf ≥80 · assist rank ≥94. Both require Green · Assists 0.5.", "note": "Existing moves remain active. New facilitator, PP and shot-share routes have separate records and enhanced levels. The new Crit requires both player routes plus team PP actual GF/60 ≥5.7 and opponent 5v5 HDCA/60 ≤2.2."},
-    "POINTS": {"role": "Tank", "market": "Points", "entry": "Matrix_Points Green · Points 0.5 with current confidence ≥77, or Points 1.5 with original confidence ≥75", "note": "The 0.5 and 1.5 lines have separate move trees."},
+    "POINTS": {"role": "Tank", "market": "Points", "entry": "Matrix_Points Green · current-season 0.5 kit at confidence77; 1.5 approved profiles at77/82 by route", "note": "The 0.5 and 1.5 lines have separate move trees."},
     "SOG": {"role": "Jungle", "market": "SOG", "entry": "SOG2.5 · Green · confidence ≥67 base · ≥71 stronger · opponent PK ≤104s/opportunity buff", "note": "Berserker Swipe → Berserker’s Rage. Paralysis adds the PK-duration buff; both upgrades unlock Assassin’s Overdrive. Current-season records: October13–November3. Green retains the original profile/Elite paths and adds remaining shot checks with iXG ≥60. Existing3.5 rules retain their original inputs."},
 }
 
@@ -1205,7 +1205,9 @@ def _points_display_moves(r: dict) -> list[dict]:
     moves = points_moves(r)
     if _safe_float(r.get("Points_Line")) != 1.5:
         return moves
-    return [move for move in moves if move["name"] in {"DPS Tank stance", "Backbone"}]
+    from points_moves_current import display_moves
+    current = display_moves(moves)
+    return current or [move for move in moves if move["name"] in {"DPS Tank stance", "Backbone"}]
 
 
 def _probe_points_best(r: dict) -> dict | None:
@@ -5305,7 +5307,7 @@ if page == "⚔️ Warlords of the Night":
         st.info(f"{priced_total} priced prop entries. No named attack fires for this slate; see the complete slate below.")
 
     if points_tier_cards:
-        st.caption("Points 0.5 · November 5 current-season move kit · Green + current confidence ≥77. Cards and tracker use the same fixed Oct 13–Nov 4 records. Broader profiles remain eligible when matchup context is unavailable.")
+        st.caption("Points 0.5 · November 5 kit; Points 1.5 · November 6 approved profile kit, records through Nov 5. Cards and tracker use each line’s own dated records and rules. Broader profiles remain eligible when matchup context is unavailable.")
 
     with st.expander(f"Complete priced slate · {priced_total} prop entries", expanded=True):
         st.caption("Every player's displayed priced prop appears here. Book break-even % comes from the displayed odds; Move % and Later % are historical results for the named rule, not forecasts. Active roster players without model history are marked odds only and have no tested move. NHL roster membership does not confirm tonight's dressed lineup.")
@@ -5670,9 +5672,10 @@ elif page == "Scout Board":
 elif page == "Points":
 
     _render_class_header("POINTS", df_f)
-    st.caption("Points kit · November 5 · current confidence 77+ · records through November 4")
+    st.caption("Points0.5 · November5 kit. Points1.5 · November6 approved profiles + environment upgrades · records through November5. Monitor-only rules remain off cards.")
 
-    df_p = df_f.copy()
+    from points15_moves_current import quote_rows as _points15_quote_rows
+    df_p = attach_points_moves(_points15_quote_rows(df_f))
     df_p["_cp"] = safe_num(df_p, "Conf_Points", 0)
     df_p = df_p.sort_values(["_cp"], ascending=[False]).drop(columns=["_cp"], errors="ignore")
 
@@ -5711,6 +5714,7 @@ elif page == "Points":
         # --- SIGNALS ---
         "Points_Attack","Points_Move_Record","Points_Move_Pct","Points_Sample_BE_Pct",
         "Points_Profile_Routes","Conf_Points","Conf_Points_Move","Matrix_Points",
+        "Log_L10_S_per_game","Pace_Gap_P10","Log_L20_P_per_game","Log_L5_P_per_game","StarScore","TalentMult","EV5_TOI_per_game",
         "Log_L20_Point2plus_pct","Log_L20_PPP_hit_pct","PP_TOI_per_game",
         "Drought_G","NHL_Team_PP_G60","NHL_Opp_GA_10_PG","NHL_Opp_Goals_per_shot_allowed_pct",
         "NHL_Opp_PP_Goals_PG","Team_PP_OZ_Time_Pct","Team_EV_OZ_Rank",
@@ -7910,5 +7914,6 @@ elif page == "Ledger":
 else:
     st.subheader("Raw CSV (all columns)")
     st.dataframe(df_f, width="stretch", height=620, hide_index=True)
+
 
 

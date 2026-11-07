@@ -25,6 +25,9 @@ def prepare_row(row):
             a, b = number(result.get(numerator)), number(result.get(denominator))
             if result.get('Team_Stats_Season') == '2026-2027' and a is not None and b is not None and b > 0:
                 result[target] = a / b
+    if number(result.get('Points_Line')) == 1.5:
+        from points15_moves_current import prepare_row as prepare15
+        result = prepare15(result)
     return result
 
 def base_eligible(row):
@@ -45,6 +48,9 @@ def field_value(row, field):
     return number(row.get(field))
 
 def points_moves(row):
+    if number(row.get('Points_Line')) == 1.5:
+        from points15_moves_current import points15_moves
+        return points15_moves(row)
     if not base_eligible(row):
         return []
     row = prepare_row(row)
@@ -72,7 +78,10 @@ def display_moves(moves):
         if not move.get('points_current') or move.get('suppress_badge'):
             continue
         family = move['family']
-        if family not in selected or move.get('level', 0) > selected[family].get('level', 0):
+        stronger = family not in selected or move.get('level', 0) > selected[family].get('level', 0)
+        if not stronger and move.get('points15_current'):
+            stronger = (move.get('level', 0), move['wins']/move['picks']) > (selected[family].get('level', 0), selected[family]['wins']/selected[family]['picks'])
+        if stronger:
             selected[family] = move
     return list(selected.values())
 
@@ -91,7 +100,11 @@ def attach_points_moves(frame):
     out['Points_Move_Pct'] = [100 * m['wins'] / m['picks'] if m else None for m in best]
     out['Points_Sample_BE_Pct'] = [m['sample_book_be_pct'] if m else None for m in best]
     out['Points_Profile_Routes'] = [' · '.join(m['name'] for m in moves if m['kind'] != 'CONTEXT' and m['id'] != 'base77') for moves in all_moves]
-    out['Points_Move_Kit_Version'] = VERSION
+    from points15_moves_current import VERSION as VERSION15
+    out['Points_Move_Kit_Version'] = [VERSION15 if number(row.get('Points_Line')) == 1.5 else VERSION for row in records]
+    for field in ['Log_L10_S_per_game','Log_L20_P_per_game','Log_L5_P_per_game','Pace_Gap_P10']:
+        out[field] = pd.Series([prepare_row(row).get(field) for row in records], index=out.index, dtype='Float64')
     for field in ['Log_L20_Point2plus_pct', 'Log_L20_PPP_hit_pct', 'Team_PP_xGF_relative_league', 'Opp_PK_xGA_relative_league', 'Opp_5v5_xGA_relative_league']:
         out[field] = pd.Series([prepare_row(row).get(field) for row in records], index=out.index, dtype='Float64')
     return out
+

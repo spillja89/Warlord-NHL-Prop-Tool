@@ -106,7 +106,8 @@ def _render_points_facts(card, move):
         actual = f"{value:.2f}" if value is not None else "Unavailable"
         facts.append(f"{_h(field)} <b>{actual}</b> ({_h(op)}{cut:g})")
     profile = "<br>".join(facts) if facts else "Green · current Points confidence ≥77"
-    return (f'<div class="wn-assist-sample">MOVE SAMPLE AVG BOOK BE <b>{sample:.1f}%</b> · OCT 13–NOV 4</div>'
+    through = "NOV 5" if move.get("points15_current") else "NOV 4"
+    return (f'<div class="wn-assist-sample">MOVE SAMPLE AVG BOOK BE <b>{sample:.1f}%</b> · OCT 13–{through}</div>'
             f'<div class="wn-assist-facts"><div class="wn-assist-fact"><small>PLAYER PROFILE &amp; MATCHUP · ACTUAL / CUTOFF</small>{profile}</div></div>')
 
 
@@ -202,7 +203,7 @@ def _baseline_rule(row, market, line):
     if market == "Assists" and line == 0.5:
         return "Green + Assists 0.5"
     if market == "Points" and line in (0.5, 1.5):
-        threshold = 77 if line == 0.5 else 75
+        threshold = 77
         if _number(row.get("Conf_Points")) is not None and _number(row.get("Conf_Points")) >= threshold:
             return f"Green + Points {line:g} + Conf_Points ≥ {threshold}"
     if market == "SOG" and line == 2.5 and is_current_sog25(row):
@@ -219,7 +220,8 @@ def _baseline_rule(row, market, line):
 def _display_moves(moves, market, line):
     """Keep Points 1.5 cards focused without changing saved move records."""
     if market == "Points" and line == 1.5:
-        return [move for move in moves if move["name"] in {"DPS Tank stance", "Backbone"}]
+        current = current_points_display(moves)
+        return current or [move for move in moves if move["name"] in {"DPS Tank stance", "Backbone"}]
     if market == "Points" and line == 0.5:
         return current_points_display(moves)
     return moves
@@ -227,7 +229,7 @@ def _display_moves(moves, market, line):
 
 def points_current_tier(row, line, baseline):
     """Strongest current Points move; no additional hand-built tier policy."""
-    return current_points_best(row) if baseline and line == 0.5 else None
+    return current_points_best(row) if baseline and line in (0.5, 1.5) else None
 
 
 def rank_warlords(frame: pd.DataFrame) -> dict[str, list[dict]]:
@@ -316,6 +318,8 @@ def rank_priced_slate(frame: pd.DataFrame) -> dict[str, list[dict]]:
     Historical moves and baseline rules annotate cards; neither admits nor
     excludes a player from this board.
     """
+    from points15_moves_current import quote_rows
+    frame = quote_rows(frame)
     boards = {role: {} for role, *_ in CLASSES}
     if frame.empty:
         return {role: [] for role in boards}
@@ -329,6 +333,8 @@ def rank_priced_slate(frame: pd.DataFrame) -> dict[str, list[dict]]:
         watch = str(row.get("Roster_Watch", "")).strip().casefold() in {"true", "1"}
         active = {market: [] for _, market, *_ in CLASSES} if watch else fired_moves(row)
         for role, market, _, _ in CLASSES:
+            if row.get('_points15_alternate') is True and market != 'Points':
+                continue
             line, odds, book = _line_price(row, market)
             if line is None or odds is None or odds == 0:
                 continue
@@ -395,7 +401,7 @@ def rank_priced_slate(frame: pd.DataFrame) -> dict[str, list[dict]]:
                     item["name"] == "Blade Impale (Power Tier)" for item in tracked_moves),
                 "roster_watch": watch,
             }
-            key = (team.casefold(), player.casefold())
+            key = (team.casefold(), player.casefold(), line) if market == 'Points' else (team.casefold(), player.casefold())
             previous = boards[role].get(key)
             if previous is None or (
                 confidence is not None, confidence or -1,
@@ -1054,7 +1060,7 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
             points_power_note = ('<div class="wn-support-badges">Enhancement: Blade Impale (Power Tier)</div>'
                                  if role == "Tank" and card.get("points_power_tier") else "")
             points_tier_note = (f'<div class="wn-crit-env">{_h(points_tier["rule"])} · '
-                                f'sample through Nov 4 · overlapping move records</div>'
+                                f'sample through {"Nov 5" if points_tier.get("points15_current") else "Nov 4"} · overlapping move records</div>'
                                 if points_tier else "")
             points_research_note = ""
             research = card.get("points15_research") or {}
@@ -1318,6 +1324,7 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
       <div class="wn-hero-foot">{_h(hero_foot)} · HISTORICAL MOVE RATE IS NOT A FORECAST</div></div>"""
     board_class = "wn-board" if show_hero else "wn-board wn-board--compact"
     return styles + f'<div class="{board_class}">' + (hero if show_hero else "") + '<div class="wn-grid">' + ''.join(lanes) + '</div></div>'
+
 
 
 

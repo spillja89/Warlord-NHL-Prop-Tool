@@ -1,0 +1,1870 @@
+{
+  "version": "points15-2026-27-approved-2026-11-06-v1",
+  "sample_from": "2026-10-13",
+  "sample_through": "2026-11-05",
+  "entry": "Points1.5 + current-season Green; per-route confidence and player conditions are independent",
+  "no_monitor_entries": true,
+  "moves": [
+    {
+      "id": "gaia_measured_pressure_15",
+      "name": "Gaia’s Blessing · Measured Pressure",
+      "conditions": [
+        [
+          "Conf_Points",
+          ">=",
+          77
+        ],
+        [
+          "Assists_mu",
+          ">=",
+          1.1
+        ],
+        [
+          "team_5v5_SF60",
+          "<=",
+          24.4
+        ]
+      ],
+      "family": "gaia15",
+      "level": 1,
+      "kind": "HEAVY",
+      "icon": "PTS15_TWO_HANDED_HAMMER.svg",
+      "wins": 39,
+      "picks": 73,
+      "sample_book_be_pct": 34.04049534848152,
+      "sample_players": 17,
+      "sample_dates": 15,
+      "suppress_badge": false
+    },
+    {
+      "id": "points15_pace_gap_base_attack",
+      "name": "Backbone · Reawakening",
+      "conditions": [
+        [
+          "Conf_Points",
+          ">=",
+          82
+        ],
+        [
+          "Log_L10_S_per_game",
+          "<=",
+          3.9
+        ],
+        [
+          "Pace_Gap_P10",
+          ">=",
+          0.2
+        ]
+      ],
+      "family": "pace",
+      "level": 1,
+      "kind": "BASE",
+      "icon": "PTS15_TWO_HANDED_HAMMER.svg",
+      "wins": 52,
+      "picks": 104,
+      "sample_book_be_pct": 36.134880147130076,
+      "sample_players": 29,
+      "sample_dates": 19,
+      "suppress_badge": false
+    },
+    {
+      "id": "points15_talent_pace_gap",
+      "name": "Titan’s Resolve I",
+      "conditions": [
+        [
+          "Conf_Points",
+          ">=",
+          82
+        ],
+        [
+          "Log_L10_S_per_game",
+          "<=",
+          3.9
+        ],
+        [
+          "TalentMult",
+          ">=",
+          1.2
+        ],
+        [
+          "Pace_Gap_P10",
+          ">=",
+          0.2
+        ]
+      ],
+      "family": "talent_star",
+      "level": 1,
+      "kind": "HEAVY",
+      "icon": "PTS15_TWO_HANDED_HAMMER.svg",
+      "wins": 45,
+      "picks": 83,
+      "sample_book_be_pct": 37.61976941168978,
+      "sample_players": 22,
+      "sample_dates": 19,
+      "suppress_badge": false
+    },
+    {
+      "id": "points15_star_pace_gap",
+      "name": "Titan’s Resolve II",
+      "conditions": [
+        [
+          "Conf_Points",
+          ">=",
+          82
+        ],
+        [
+          "Log_L10_S_per_game",
+          "<=",
+          3.9
+        ],
+        [
+          "StarScore",
+          ">=",
+          90.1
+        ],
+        [
+          "Pace_Gap_P10",
+          ">=",
+          0.2
+        ]
+      ],
+      "family": "talent_star",
+      "level": 2,
+      "kind": "HEAVY",
+      "icon": "PTS15_TWO_HANDED_HAMMER.svg",
+      "wins": 43,
+      "picks": 78,
+      "sample_book_be_pct": 37.95048828712925,
+      "sample_players": 21,
+      "sample_dates": 18,
+      "suppress_badge": false
+    },
+    {
+      "id": "points15_recorded_points_pace155",
+      "name": "War Drum · Battle Rhythm",
+      "conditions": [
+        [
+          "Conf_Points",
+          ">=",
+          82
+        ],
+        [
+          "Log_L10_S_per_game",
+          "<=",
+          3.9
+        ],
+        [
+          "Log_L20_P_per_game",
+          ">=",
+          1.55
+        ]
+      ],
+      "family": "recorded_pace",
+      "level": 1,
+      "kind": "HEAVY",
+      "icon": "PTS15_TWO_HANDED_HAMMER.svg",
+      "wins": 29,
+      "picks": 55,
+      "sample_book_be_pct": 41.30484861024853,
+      "sample_players": 10,
+      "sample_dates": 16,
+      "suppress_badge": false
+    },
+    {
+      "id": "points15_l5_points_ceiling100",
+      "name": "Echo Stomp · Rally",
+      "conditions": [
+        [
+          "Conf_Points",
+          ">=",
+          82
+        ],
+        [
+          "Log_L10_S_per_game",
+          "<=",
+          3.9
+        ],
+        [
+          "Log_L5_P_per_game",
+          "<=",
+          1
+        ]
+      ],
+      "family": "recent_points",
+      "level": 1,
+      "kind": "SPECIAL",
+      "icon": "PTS15_TWO_HANDED_HAMMER.svg",
+      "wins": 19,
+      "picks": 33,
+      "sample_book_be_pct": 29.86803082674972,
+      "sample_players": 22,
+      "sample_dates": 16,
+      "suppress_badge": false
+    },
+    {
+      "id": "points15_pp_proxy_ceiling460",
+      "name": "Runebreaker Guard",
+      "conditions": [
+        [
+          "Conf_Points",
+          ">=",
+          82
+        ],
+        [
+          "Log_L10_S_per_game",
+          "<=",
+          3.9
+        ],
+        [
+          "PP_Points60",
+          "<=",
+          4.6
+        ]
+      ],
+      "family": "pp_proxy",
+      "level": 1,
+      "kind": "HEAVY",
+      "icon": "PTS15_TWO_HANDED_HAMMER.svg",
+      "wins": 35,
+      "picks": 64,
+      "sample_book_be_pct": 35.72390607860713,
+      "sample_players": 20,
+      "sample_dates": 18,
+      "suppress_badge": false
+    },
+    {
+      "id": "points15_ev5_toi154",
+      "name": "Ironhide Advance",
+      "conditions": [
+        [
+          "Conf_Points",
+          ">=",
+          82
+        ],
+        [
+          "Log_L10_S_per_game",
+          "<=",
+          3.9
+        ],
+        [
+          "EV5_TOI_per_game",
+          ">=",
+          15.4
+        ]
+      ],
+      "family": "ev5_toi",
+      "level": 1,
+      "kind": "HEAVY",
+      "icon": "PTS15_TWO_HANDED_HAMMER.svg",
+      "wins": 39,
+      "picks": 77,
+      "sample_book_be_pct": 37.873860395249814,
+      "sample_players": 19,
+      "sample_dates": 18,
+      "suppress_badge": false
+    },
+    {
+      "id": "points15_pp_proxy_ev5_special",
+      "name": "Runebreaker Smash",
+      "conditions": [
+        [
+          "Conf_Points",
+          ">=",
+          82
+        ],
+        [
+          "Log_L10_S_per_game",
+          "<=",
+          3.9
+        ],
+        [
+          "PP_Points60",
+          "<=",
+          4.6
+        ],
+        [
+          "EV5_TOI_per_game",
+          ">=",
+          15.4
+        ]
+      ],
+      "family": "pp_ev5_shared",
+      "level": 1,
+      "kind": "SPECIAL",
+      "icon": "PTS15_TWO_HANDED_HAMMER.svg",
+      "wins": 26,
+      "picks": 41,
+      "sample_book_be_pct": 37.12517415062019,
+      "sample_players": 14,
+      "sample_dates": 14,
+      "suppress_badge": false
+    },
+    {
+      "id": "env_0_0",
+      "name": "DPS Tank · Spellbreaker 1",
+      "conditions": [
+        [
+          "Conf_Points",
+          ">=",
+          82
+        ],
+        [
+          "Log_L10_S_per_game",
+          "<=",
+          3.9
+        ],
+        [
+          "NHL_Opp_PP_G60",
+          ">=",
+          6.2
+        ]
+      ],
+      "family": "base_NHL_Opp_PP_G60",
+      "level": 1,
+      "kind": "HEAVY",
+      "icon": "PTS15_TWO_HANDED_HAMMER.svg",
+      "wins": 56,
+      "picks": 110,
+      "sample_book_be_pct": 36.3799525718,
+      "sample_players": 31,
+      "sample_dates": 20,
+      "suppress_badge": false
+    },
+    {
+      "id": "env_0_1",
+      "name": "DPS Tank · Spellbreaker 2",
+      "conditions": [
+        [
+          "Conf_Points",
+          ">=",
+          82
+        ],
+        [
+          "Log_L10_S_per_game",
+          "<=",
+          3.9
+        ],
+        [
+          "NHL_Opp_PP_G60",
+          ">=",
+          7.9
+        ]
+      ],
+      "family": "base_NHL_Opp_PP_G60",
+      "level": 2,
+      "kind": "SPECIAL",
+      "icon": "PTS15_TWO_HANDED_HAMMER.svg",
+      "wins": 41,
+      "picks": 71,
+      "sample_book_be_pct": 36.9950950455,
+      "sample_players": 20,
+      "sample_dates": 18,
+      "suppress_badge": false
+    },
+    {
+      "id": "env_0_2",
+      "name": "DPS Tank · Power Siege 3",
+      "conditions": [
+        [
+          "Conf_Points",
+          ">=",
+          82
+        ],
+        [
+          "Log_L10_S_per_game",
+          "<=",
+          3.9
+        ],
+        [
+          "NHL_Opp_PP_Goals_PG",
+          ">=",
+          0.9
+        ],
+        [
+          "NHL_Opp_PP_G60",
+          ">=",
+          7.9
+        ]
+      ],
+      "family": "base_NHL_Opp_PP_G60",
+      "level": 3,
+      "kind": "SPECIAL",
+      "icon": "PTS15_TWO_HANDED_HAMMER.svg",
+      "wins": 21,
+      "picks": 32,
+      "sample_book_be_pct": 39.244485933833325,
+      "sample_players": 14,
+      "sample_dates": 11,
+      "suppress_badge": false
+    },
+    {
+      "id": "env_1_0",
+      "name": "DPS Tank · Blood Fury 1",
+      "conditions": [
+        [
+          "Conf_Points",
+          ">=",
+          82
+        ],
+        [
+          "Log_L10_S_per_game",
+          "<=",
+          3.9
+        ],
+        [
+          "NHL_Opp_Goal_conversion_pct",
+          ">=",
+          11.2
+        ]
+      ],
+      "family": "base_NHL_Opp_Goal_conversion_pct",
+      "level": 1,
+      "kind": "HEAVY",
+      "icon": "PTS15_TWO_HANDED_HAMMER.svg",
+      "wins": 43,
+      "picks": 79,
+      "sample_book_be_pct": 35.7470794201,
+      "sample_players": 28,
+      "sample_dates": 17,
+      "suppress_badge": false
+    },
+    {
+      "id": "env_1_1",
+      "name": "DPS Tank · Blood Fury 2",
+      "conditions": [
+        [
+          "Conf_Points",
+          ">=",
+          82
+        ],
+        [
+          "Log_L10_S_per_game",
+          "<=",
+          3.9
+        ],
+        [
+          "NHL_Opp_Goal_conversion_pct",
+          ">=",
+          12.5
+        ]
+      ],
+      "family": "base_NHL_Opp_Goal_conversion_pct",
+      "level": 2,
+      "kind": "SPECIAL",
+      "icon": "PTS15_TWO_HANDED_HAMMER.svg",
+      "wins": 32,
+      "picks": 50,
+      "sample_book_be_pct": 36.4802694097,
+      "sample_players": 22,
+      "sample_dates": 15,
+      "suppress_badge": false
+    },
+    {
+      "id": "env_2_0",
+      "name": "DPS Tank · Siege Charge 1",
+      "conditions": [
+        [
+          "Conf_Points",
+          ">=",
+          82
+        ],
+        [
+          "Log_L10_S_per_game",
+          "<=",
+          3.9
+        ],
+        [
+          "NHL_Opp_GF_Season_PG",
+          ">=",
+          2.75
+        ]
+      ],
+      "family": "base_NHL_Opp_GF_Season_PG",
+      "level": 1,
+      "kind": "HEAVY",
+      "icon": "PTS15_TWO_HANDED_HAMMER.svg",
+      "wins": 49,
+      "picks": 96,
+      "sample_book_be_pct": 35.8747859297,
+      "sample_players": 29,
+      "sample_dates": 19,
+      "suppress_badge": false
+    },
+    {
+      "id": "env_2_1",
+      "name": "DPS Tank · Siege Charge 2",
+      "conditions": [
+        [
+          "Conf_Points",
+          ">=",
+          82
+        ],
+        [
+          "Log_L10_S_per_game",
+          "<=",
+          3.9
+        ],
+        [
+          "NHL_Opp_GF_Season_PG",
+          ">=",
+          3.1
+        ]
+      ],
+      "family": "base_NHL_Opp_GF_Season_PG",
+      "level": 2,
+      "kind": "SPECIAL",
+      "icon": "PTS15_TWO_HANDED_HAMMER.svg",
+      "wins": 35,
+      "picks": 61,
+      "sample_book_be_pct": 36.2611983501,
+      "sample_players": 21,
+      "sample_dates": 16,
+      "suppress_badge": false
+    },
+    {
+      "id": "env_2_2",
+      "name": "DPS Tank · Siege Charge 3",
+      "conditions": [
+        [
+          "Conf_Points",
+          ">=",
+          82
+        ],
+        [
+          "Log_L10_S_per_game",
+          "<=",
+          3.9
+        ],
+        [
+          "NHL_Opp_GF_Season_PG",
+          ">=",
+          3.5
+        ]
+      ],
+      "family": "base_NHL_Opp_GF_Season_PG",
+      "level": 3,
+      "kind": "SPECIAL",
+      "icon": "PTS15_TWO_HANDED_HAMMER.svg",
+      "wins": 23,
+      "picks": 36,
+      "sample_book_be_pct": 36.6726632121,
+      "sample_players": 13,
+      "sample_dates": 11,
+      "suppress_badge": false
+    },
+    {
+      "id": "env_3_0",
+      "name": "DPS Tank · Last Bastion 1",
+      "conditions": [
+        [
+          "Conf_Points",
+          ">=",
+          82
+        ],
+        [
+          "Log_L10_S_per_game",
+          "<=",
+          3.9
+        ],
+        [
+          "NHL_Team_GA_Venue_PG",
+          ">=",
+          3.25
+        ]
+      ],
+      "family": "base_NHL_Team_GA_Venue_PG",
+      "level": 1,
+      "kind": "HEAVY",
+      "icon": "PTS15_TWO_HANDED_HAMMER.svg",
+      "wins": 26,
+      "picks": 38,
+      "sample_book_be_pct": 40.0765203079,
+      "sample_players": 14,
+      "sample_dates": 15,
+      "suppress_badge": false
+    },
+    {
+      "id": "env_4_0",
+      "name": "DPS Tank · Iron Vengeance 1",
+      "conditions": [
+        [
+          "Conf_Points",
+          ">=",
+          82
+        ],
+        [
+          "Log_L10_S_per_game",
+          "<=",
+          3.9
+        ],
+        [
+          "NHL_Team_PK_G60",
+          ">=",
+          6.25
+        ]
+      ],
+      "family": "base_NHL_Team_PK_G60",
+      "level": 1,
+      "kind": "HEAVY",
+      "icon": "PTS15_TWO_HANDED_HAMMER.svg",
+      "wins": 50,
+      "picks": 100,
+      "sample_book_be_pct": 37.01885543922555,
+      "sample_players": 28,
+      "sample_dates": 20,
+      "suppress_badge": false
+    },
+    {
+      "id": "env_4_1",
+      "name": "DPS Tank · Iron Vengeance 2",
+      "conditions": [
+        [
+          "Conf_Points",
+          ">=",
+          82
+        ],
+        [
+          "Log_L10_S_per_game",
+          "<=",
+          3.9
+        ],
+        [
+          "NHL_Team_PK_G60",
+          ">=",
+          9.75
+        ]
+      ],
+      "family": "base_NHL_Team_PK_G60",
+      "level": 2,
+      "kind": "SPECIAL",
+      "icon": "PTS15_TWO_HANDED_HAMMER.svg",
+      "wins": 28,
+      "picks": 45,
+      "sample_book_be_pct": 39.96726563095615,
+      "sample_players": 14,
+      "sample_dates": 16,
+      "suppress_badge": false
+    },
+    {
+      "id": "env_5_0",
+      "name": "Backbone · Siege Charge 1",
+      "conditions": [
+        [
+          "Conf_Points",
+          ">=",
+          82
+        ],
+        [
+          "Log_L10_S_per_game",
+          "<=",
+          3.9
+        ],
+        [
+          "Pace_Gap_P10",
+          ">=",
+          0.2
+        ],
+        [
+          "NHL_Opp_GF_Season_PG",
+          ">=",
+          2.3
+        ]
+      ],
+      "family": "gap_base_NHL_Opp_GF_Season_PG",
+      "level": 1,
+      "kind": "HEAVY",
+      "icon": "PTS15_TWO_HANDED_HAMMER.svg",
+      "wins": 51,
+      "picks": 92,
+      "sample_book_be_pct": 36.34693083010186,
+      "sample_players": 27,
+      "sample_dates": 19,
+      "suppress_badge": false
+    },
+    {
+      "id": "env_5_1",
+      "name": "Backbone · Siege Charge 2",
+      "conditions": [
+        [
+          "Conf_Points",
+          ">=",
+          82
+        ],
+        [
+          "Log_L10_S_per_game",
+          "<=",
+          3.9
+        ],
+        [
+          "Pace_Gap_P10",
+          ">=",
+          0.2
+        ],
+        [
+          "NHL_Opp_GF_Season_PG",
+          ">=",
+          3.1
+        ]
+      ],
+      "family": "gap_base_NHL_Opp_GF_Season_PG",
+      "level": 2,
+      "kind": "SPECIAL",
+      "icon": "PTS15_TWO_HANDED_HAMMER.svg",
+      "wins": 29,
+      "picks": 46,
+      "sample_book_be_pct": 37.36626975925987,
+      "sample_players": 18,
+      "sample_dates": 12,
+      "suppress_badge": false
+    },
+    {
+      "id": "env_6_0",
+      "name": "Backbone · Stonewall 1",
+      "conditions": [
+        [
+          "Conf_Points",
+          ">=",
+          82
+        ],
+        [
+          "Log_L10_S_per_game",
+          "<=",
+          3.9
+        ],
+        [
+          "Pace_Gap_P10",
+          ">=",
+          0.2
+        ],
+        [
+          "NHL_Team_GA_5_PG",
+          "<=",
+          3.6
+        ]
+      ],
+      "family": "gap_base_NHL_Team_GA_5_PG",
+      "level": 1,
+      "kind": "HEAVY",
+      "icon": "PTS15_TWO_HANDED_HAMMER.svg",
+      "wins": 47,
+      "picks": 86,
+      "sample_book_be_pct": 35.959057741079164,
+      "sample_players": 23,
+      "sample_dates": 17,
+      "suppress_badge": false
+    },
+    {
+      "id": "env_6_1",
+      "name": "Backbone · Stonewall 2",
+      "conditions": [
+        [
+          "Conf_Points",
+          ">=",
+          82
+        ],
+        [
+          "Log_L10_S_per_game",
+          "<=",
+          3.9
+        ],
+        [
+          "Pace_Gap_P10",
+          ">=",
+          0.2
+        ],
+        [
+          "NHL_Team_GA_5_PG",
+          "<=",
+          3.2
+        ]
+      ],
+      "family": "gap_base_NHL_Team_GA_5_PG",
+      "level": 2,
+      "kind": "SPECIAL",
+      "icon": "PTS15_TWO_HANDED_HAMMER.svg",
+      "wins": 40,
+      "picks": 67,
+      "sample_book_be_pct": 36.55745991742864,
+      "sample_players": 22,
+      "sample_dates": 14,
+      "suppress_badge": false
+    },
+    {
+      "id": "env_7_0",
+      "name": "Backbone · Last Bastion 1",
+      "conditions": [
+        [
+          "Conf_Points",
+          ">=",
+          82
+        ],
+        [
+          "Log_L10_S_per_game",
+          "<=",
+          3.9
+        ],
+        [
+          "Pace_Gap_P10",
+          ">=",
+          0.2
+        ],
+        [
+          "NHL_Team_GA_Venue_PG",
+          ">=",
+          3.25
+        ]
+      ],
+      "family": "gap_base_NHL_Team_GA_Venue_PG",
+      "level": 1,
+      "kind": "HEAVY",
+      "icon": "PTS15_TWO_HANDED_HAMMER.svg",
+      "wins": 22,
+      "picks": 30,
+      "sample_book_be_pct": 39.48399780470719,
+      "sample_players": 14,
+      "sample_dates": 14,
+      "suppress_badge": false
+    },
+    {
+      "id": "env_8_0",
+      "name": "Backbone · Arcane Siege 1",
+      "conditions": [
+        [
+          "Conf_Points",
+          ">=",
+          82
+        ],
+        [
+          "Log_L10_S_per_game",
+          "<=",
+          3.9
+        ],
+        [
+          "Pace_Gap_P10",
+          ">=",
+          0.2
+        ],
+        [
+          "NHL_Opp_PP_Success_pct",
+          ">=",
+          19
+        ]
+      ],
+      "family": "gap_base_NHL_Opp_PP_Success_pct",
+      "level": 1,
+      "kind": "HEAVY",
+      "icon": "PTS15_TWO_HANDED_HAMMER.svg",
+      "wins": 40,
+      "picks": 67,
+      "sample_book_be_pct": 36.939053523235344,
+      "sample_players": 25,
+      "sample_dates": 17,
+      "suppress_badge": true
+    },
+    {
+      "id": "env_8_1",
+      "name": "Backbone · Arcane Siege 2",
+      "conditions": [
+        [
+          "Conf_Points",
+          ">=",
+          82
+        ],
+        [
+          "Log_L10_S_per_game",
+          "<=",
+          3.9
+        ],
+        [
+          "Pace_Gap_P10",
+          ">=",
+          0.2
+        ],
+        [
+          "NHL_Opp_PP_Success_pct",
+          ">=",
+          25
+        ]
+      ],
+      "family": "gap_base_NHL_Opp_PP_Success_pct",
+      "level": 2,
+      "kind": "SPECIAL",
+      "icon": "PTS15_TWO_HANDED_HAMMER.svg",
+      "wins": 21,
+      "picks": 30,
+      "sample_book_be_pct": 39.30944182963633,
+      "sample_players": 14,
+      "sample_dates": 12,
+      "suppress_badge": true
+    },
+    {
+      "id": "env_9_0",
+      "name": "Backbone · Power Siege 1",
+      "conditions": [
+        [
+          "Conf_Points",
+          ">=",
+          82
+        ],
+        [
+          "Log_L10_S_per_game",
+          "<=",
+          3.9
+        ],
+        [
+          "Pace_Gap_P10",
+          ">=",
+          0.2
+        ],
+        [
+          "NHL_Opp_PP_Goals_PG",
+          ">=",
+          0.55
+        ]
+      ],
+      "family": "gap_base_NHL_Opp_PP_Goals_PG",
+      "level": 1,
+      "kind": "HEAVY",
+      "icon": "PTS15_TWO_HANDED_HAMMER.svg",
+      "wins": 43,
+      "picks": 73,
+      "sample_book_be_pct": 36.646308466678875,
+      "sample_players": 27,
+      "sample_dates": 17,
+      "suppress_badge": true
+    },
+    {
+      "id": "env_9_1",
+      "name": "Backbone · Power Siege 2",
+      "conditions": [
+        [
+          "Conf_Points",
+          ">=",
+          82
+        ],
+        [
+          "Log_L10_S_per_game",
+          "<=",
+          3.9
+        ],
+        [
+          "Pace_Gap_P10",
+          ">=",
+          0.2
+        ],
+        [
+          "NHL_Opp_PP_Goals_PG",
+          ">=",
+          0.75
+        ]
+      ],
+      "family": "gap_base_NHL_Opp_PP_Goals_PG",
+      "level": 2,
+      "kind": "SPECIAL",
+      "icon": "PTS15_TWO_HANDED_HAMMER.svg",
+      "wins": 26,
+      "picks": 38,
+      "sample_book_be_pct": 38.566233422103736,
+      "sample_players": 16,
+      "sample_dates": 13,
+      "suppress_badge": true
+    },
+    {
+      "id": "env_10_0",
+      "name": "Backbone · Blood Fury 1",
+      "conditions": [
+        [
+          "Conf_Points",
+          ">=",
+          82
+        ],
+        [
+          "Log_L10_S_per_game",
+          "<=",
+          3.9
+        ],
+        [
+          "Pace_Gap_P10",
+          ">=",
+          0.2
+        ],
+        [
+          "NHL_Opp_Goal_conversion_pct",
+          ">=",
+          9.9
+        ]
+      ],
+      "family": "gap_base_NHL_Opp_Goal_conversion_pct",
+      "level": 1,
+      "kind": "HEAVY",
+      "icon": "PTS15_TWO_HANDED_HAMMER.svg",
+      "wins": 41,
+      "picks": 74,
+      "sample_book_be_pct": 36.09203800490976,
+      "sample_players": 26,
+      "sample_dates": 16,
+      "suppress_badge": false
+    },
+    {
+      "id": "env_10_1",
+      "name": "Backbone · Blood Fury 2",
+      "conditions": [
+        [
+          "Conf_Points",
+          ">=",
+          82
+        ],
+        [
+          "Log_L10_S_per_game",
+          "<=",
+          3.9
+        ],
+        [
+          "Pace_Gap_P10",
+          ">=",
+          0.2
+        ],
+        [
+          "NHL_Opp_Goal_conversion_pct",
+          ">=",
+          11.2
+        ]
+      ],
+      "family": "gap_base_NHL_Opp_Goal_conversion_pct",
+      "level": 2,
+      "kind": "SPECIAL",
+      "icon": "PTS15_TWO_HANDED_HAMMER.svg",
+      "wins": 36,
+      "picks": 59,
+      "sample_book_be_pct": 36.239978804246185,
+      "sample_players": 25,
+      "sample_dates": 14,
+      "suppress_badge": false
+    },
+    {
+      "id": "env_10_2",
+      "name": "Backbone · Blood Fury 3",
+      "conditions": [
+        [
+          "Conf_Points",
+          ">=",
+          82
+        ],
+        [
+          "Log_L10_S_per_game",
+          "<=",
+          3.9
+        ],
+        [
+          "Pace_Gap_P10",
+          ">=",
+          0.2
+        ],
+        [
+          "NHL_Opp_Goal_conversion_pct",
+          ">=",
+          12.5
+        ]
+      ],
+      "family": "gap_base_NHL_Opp_Goal_conversion_pct",
+      "level": 3,
+      "kind": "SPECIAL",
+      "icon": "PTS15_TWO_HANDED_HAMMER.svg",
+      "wins": 28,
+      "picks": 40,
+      "sample_book_be_pct": 36.78973389954812,
+      "sample_players": 20,
+      "sample_dates": 13,
+      "suppress_badge": false
+    },
+    {
+      "id": "env_11_0",
+      "name": "Titan’s Resolve · Siege Charge 1",
+      "conditions": [
+        [
+          "Conf_Points",
+          ">=",
+          82
+        ],
+        [
+          "Log_L10_S_per_game",
+          "<=",
+          3.9
+        ],
+        [
+          "TalentMult",
+          ">=",
+          1.2
+        ],
+        [
+          "Pace_Gap_P10",
+          ">=",
+          0.2
+        ],
+        [
+          "NHL_Opp_GF_Season_PG",
+          ">=",
+          2.4
+        ]
+      ],
+      "family": "talent_gap_NHL_Opp_GF_Season_PG",
+      "level": 1,
+      "kind": "HEAVY",
+      "icon": "PTS15_TWO_HANDED_HAMMER.svg",
+      "wins": 43,
+      "picks": 72,
+      "sample_book_be_pct": 37.84809671084197,
+      "sample_players": 21,
+      "sample_dates": 19,
+      "suppress_badge": false
+    },
+    {
+      "id": "env_11_1",
+      "name": "Titan’s Resolve · Siege Charge 2",
+      "conditions": [
+        [
+          "Conf_Points",
+          ">=",
+          82
+        ],
+        [
+          "Log_L10_S_per_game",
+          "<=",
+          3.9
+        ],
+        [
+          "TalentMult",
+          ">=",
+          1.2
+        ],
+        [
+          "Pace_Gap_P10",
+          ">=",
+          0.2
+        ],
+        [
+          "NHL_Opp_GF_Season_PG",
+          ">=",
+          3.1
+        ]
+      ],
+      "family": "talent_gap_NHL_Opp_GF_Season_PG",
+      "level": 2,
+      "kind": "SPECIAL",
+      "icon": "PTS15_TWO_HANDED_HAMMER.svg",
+      "wins": 27,
+      "picks": 38,
+      "sample_book_be_pct": 39.3083453063673,
+      "sample_players": 15,
+      "sample_dates": 12,
+      "suppress_badge": false
+    },
+    {
+      "id": "env_12_0",
+      "name": "Titan’s Resolve · Stonewall 1",
+      "conditions": [
+        [
+          "Conf_Points",
+          ">=",
+          82
+        ],
+        [
+          "Log_L10_S_per_game",
+          "<=",
+          3.9
+        ],
+        [
+          "TalentMult",
+          ">=",
+          1.2
+        ],
+        [
+          "Pace_Gap_P10",
+          ">=",
+          0.2
+        ],
+        [
+          "NHL_Team_GA_5_PG",
+          "<=",
+          3.6
+        ]
+      ],
+      "family": "talent_gap_NHL_Team_GA_5_PG",
+      "level": 1,
+      "kind": "HEAVY",
+      "icon": "PTS15_TWO_HANDED_HAMMER.svg",
+      "wins": 42,
+      "picks": 70,
+      "sample_book_be_pct": 37.296450755822896,
+      "sample_players": 18,
+      "sample_dates": 17,
+      "suppress_badge": false
+    },
+    {
+      "id": "env_13_0",
+      "name": "Titan’s Resolve · Spellbreaker 1",
+      "conditions": [
+        [
+          "Conf_Points",
+          ">=",
+          82
+        ],
+        [
+          "Log_L10_S_per_game",
+          "<=",
+          3.9
+        ],
+        [
+          "TalentMult",
+          ">=",
+          1.2
+        ],
+        [
+          "Pace_Gap_P10",
+          ">=",
+          0.2
+        ],
+        [
+          "NHL_Opp_PP_G60",
+          ">=",
+          6.2
+        ]
+      ],
+      "family": "talent_gap_pp_scoring",
+      "level": 1,
+      "kind": "HEAVY",
+      "icon": "PTS15_TWO_HANDED_HAMMER.svg",
+      "wins": 39,
+      "picks": 64,
+      "sample_book_be_pct": 38.32675695218429,
+      "sample_players": 21,
+      "sample_dates": 18,
+      "suppress_badge": false
+    },
+    {
+      "id": "env_13_1",
+      "name": "Titan’s Resolve · Spellbreaker 2",
+      "conditions": [
+        [
+          "Conf_Points",
+          ">=",
+          82
+        ],
+        [
+          "Log_L10_S_per_game",
+          "<=",
+          3.9
+        ],
+        [
+          "TalentMult",
+          ">=",
+          1.2
+        ],
+        [
+          "Pace_Gap_P10",
+          ">=",
+          0.2
+        ],
+        [
+          "NHL_Opp_PP_G60",
+          ">=",
+          7.9
+        ]
+      ],
+      "family": "talent_gap_pp_scoring",
+      "level": 2,
+      "kind": "SPECIAL",
+      "icon": "PTS15_TWO_HANDED_HAMMER.svg",
+      "wins": 30,
+      "picks": 43,
+      "sample_book_be_pct": 38.96792486481522,
+      "sample_players": 15,
+      "sample_dates": 15,
+      "suppress_badge": false
+    },
+    {
+      "id": "env_14_0",
+      "name": "Titan’s Resolve · Power Siege 1",
+      "conditions": [
+        [
+          "Conf_Points",
+          ">=",
+          82
+        ],
+        [
+          "Log_L10_S_per_game",
+          "<=",
+          3.9
+        ],
+        [
+          "TalentMult",
+          ">=",
+          1.2
+        ],
+        [
+          "Pace_Gap_P10",
+          ">=",
+          0.2
+        ],
+        [
+          "NHL_Opp_PP_Goals_PG",
+          ">=",
+          0.55
+        ]
+      ],
+      "family": "talent_gap_pp_scoring",
+      "level": 1,
+      "kind": "HEAVY",
+      "icon": "PTS15_TWO_HANDED_HAMMER.svg",
+      "wins": 37,
+      "picks": 59,
+      "sample_book_be_pct": 38.18327840819443,
+      "sample_players": 21,
+      "sample_dates": 17,
+      "suppress_badge": false
+    },
+    {
+      "id": "env_14_1",
+      "name": "Titan’s Resolve · Power Siege 2",
+      "conditions": [
+        [
+          "Conf_Points",
+          ">=",
+          82
+        ],
+        [
+          "Log_L10_S_per_game",
+          "<=",
+          3.9
+        ],
+        [
+          "TalentMult",
+          ">=",
+          1.2
+        ],
+        [
+          "Pace_Gap_P10",
+          ">=",
+          0.2
+        ],
+        [
+          "NHL_Opp_PP_Goals_PG",
+          ">=",
+          0.65
+        ]
+      ],
+      "family": "talent_gap_pp_scoring",
+      "level": 2,
+      "kind": "SPECIAL",
+      "icon": "PTS15_TWO_HANDED_HAMMER.svg",
+      "wins": 29,
+      "picks": 41,
+      "sample_book_be_pct": 39.338191797262944,
+      "sample_players": 16,
+      "sample_dates": 15,
+      "suppress_badge": false
+    },
+    {
+      "id": "env_15_0",
+      "name": "Titan’s Resolve · Blood Fury 1",
+      "conditions": [
+        [
+          "Conf_Points",
+          ">=",
+          82
+        ],
+        [
+          "Log_L10_S_per_game",
+          "<=",
+          3.9
+        ],
+        [
+          "TalentMult",
+          ">=",
+          1.2
+        ],
+        [
+          "Pace_Gap_P10",
+          ">=",
+          0.2
+        ],
+        [
+          "NHL_Opp_Goal_conversion_pct",
+          ">=",
+          11.2
+        ]
+      ],
+      "family": "talent_gap_NHL_Opp_Goal_conversion_pct",
+      "level": 1,
+      "kind": "HEAVY",
+      "icon": "PTS15_TWO_HANDED_HAMMER.svg",
+      "wins": 31,
+      "picks": 45,
+      "sample_book_be_pct": 38.279363043907665,
+      "sample_players": 19,
+      "sample_dates": 14,
+      "suppress_badge": false
+    },
+    {
+      "id": "env_15_1",
+      "name": "Titan’s Resolve · Blood Fury 2",
+      "conditions": [
+        [
+          "Conf_Points",
+          ">=",
+          82
+        ],
+        [
+          "Log_L10_S_per_game",
+          "<=",
+          3.9
+        ],
+        [
+          "TalentMult",
+          ">=",
+          1.2
+        ],
+        [
+          "Pace_Gap_P10",
+          ">=",
+          0.2
+        ],
+        [
+          "NHL_Opp_Goal_conversion_pct",
+          ">=",
+          12.5
+        ]
+      ],
+      "family": "talent_gap_NHL_Opp_Goal_conversion_pct",
+      "level": 2,
+      "kind": "SPECIAL",
+      "icon": "PTS15_TWO_HANDED_HAMMER.svg",
+      "wins": 23,
+      "picks": 31,
+      "sample_book_be_pct": 38.35198091779134,
+      "sample_players": 16,
+      "sample_dates": 13,
+      "suppress_badge": false
+    },
+    {
+      "id": "gap_pp_display_0",
+      "name": "Backbone · Arcane Siege I",
+      "conditions": [
+        [
+          "Conf_Points",
+          ">=",
+          82
+        ],
+        [
+          "Log_L10_S_per_game",
+          "<=",
+          3.9
+        ],
+        [
+          "Pace_Gap_P10",
+          ">=",
+          0.2
+        ]
+      ],
+      "family": "gap_pp_display",
+      "level": 1,
+      "kind": "SPECIAL",
+      "icon": "PTS15_TWO_HANDED_HAMMER.svg",
+      "wins": 43,
+      "picks": 76,
+      "sample_book_be_pct": 36.64524337298143,
+      "sample_players": 27,
+      "sample_dates": 18,
+      "suppress_badge": false,
+      "any_conditions": [
+        [
+          [
+            "NHL_Opp_PP_Goals_PG",
+            ">=",
+            0.55
+          ]
+        ],
+        [
+          [
+            "NHL_Opp_PP_Success_pct",
+            ">=",
+            19
+          ]
+        ]
+      ]
+    },
+    {
+      "id": "gap_pp_display_1",
+      "name": "Backbone · Arcane Siege II",
+      "conditions": [
+        [
+          "Conf_Points",
+          ">=",
+          82
+        ],
+        [
+          "Log_L10_S_per_game",
+          "<=",
+          3.9
+        ],
+        [
+          "Pace_Gap_P10",
+          ">=",
+          0.2
+        ]
+      ],
+      "family": "gap_pp_display",
+      "level": 2,
+      "kind": "SPECIAL",
+      "icon": "PTS15_TWO_HANDED_HAMMER.svg",
+      "wins": 40,
+      "picks": 64,
+      "sample_book_be_pct": 36.95404074652715,
+      "sample_players": 25,
+      "sample_dates": 16,
+      "suppress_badge": false,
+      "any_conditions": [
+        [
+          [
+            "NHL_Opp_PP_Goals_PG",
+            ">=",
+            0.55
+          ],
+          [
+            "NHL_Opp_PP_Success_pct",
+            ">=",
+            19
+          ]
+        ]
+      ]
+    },
+    {
+      "id": "gap_pp_display_2",
+      "name": "Backbone · Arcane Siege III",
+      "conditions": [
+        [
+          "Conf_Points",
+          ">=",
+          82
+        ],
+        [
+          "Log_L10_S_per_game",
+          "<=",
+          3.9
+        ],
+        [
+          "Pace_Gap_P10",
+          ">=",
+          0.2
+        ]
+      ],
+      "family": "gap_pp_display",
+      "level": 3,
+      "kind": "SPECIAL",
+      "icon": "PTS15_TWO_HANDED_HAMMER.svg",
+      "wins": 27,
+      "picks": 40,
+      "sample_book_be_pct": 38.05643281739694,
+      "sample_players": 17,
+      "sample_dates": 13,
+      "suppress_badge": false,
+      "any_conditions": [
+        [
+          [
+            "NHL_Opp_PP_Goals_PG",
+            ">=",
+            0.75
+          ]
+        ],
+        [
+          [
+            "NHL_Opp_PP_Success_pct",
+            ">=",
+            25
+          ]
+        ]
+      ]
+    },
+    {
+      "id": "tg_combo_K1",
+      "name": "Titan’s Resolve · Siege Hammer",
+      "conditions": [
+        [
+          "Conf_Points",
+          ">=",
+          82
+        ],
+        [
+          "Log_L10_S_per_game",
+          "<=",
+          3.9
+        ],
+        [
+          "TalentMult",
+          ">=",
+          1.2
+        ],
+        [
+          "Pace_Gap_P10",
+          ">=",
+          0.2
+        ],
+        [
+          "NHL_Opp_GF_Season_PG",
+          ">=",
+          3.1
+        ],
+        [
+          "NHL_Opp_PP_G60",
+          ">=",
+          6.2
+        ]
+      ],
+      "family": "tg_siege",
+      "level": 1,
+      "kind": "SPECIAL",
+      "icon": "PTS15_TWO_HANDED_HAMMER.svg",
+      "wins": 26,
+      "picks": 32,
+      "sample_book_be_pct": 39.50743662593385,
+      "sample_players": 15,
+      "sample_dates": 11,
+      "suppress_badge": false
+    },
+    {
+      "id": "tg_combo_K4",
+      "name": "Titan’s Resolve · Iron Fortress I",
+      "conditions": [
+        [
+          "Conf_Points",
+          ">=",
+          82
+        ],
+        [
+          "Log_L10_S_per_game",
+          "<=",
+          3.9
+        ],
+        [
+          "TalentMult",
+          ">=",
+          1.2
+        ],
+        [
+          "Pace_Gap_P10",
+          ">=",
+          0.2
+        ],
+        [
+          "NHL_Team_GA_5_PG",
+          "<=",
+          3.6
+        ],
+        [
+          "NHL_Opp_PP_Goals_PG",
+          ">=",
+          0.55
+        ]
+      ],
+      "family": "tg_fortress",
+      "level": 1,
+      "kind": "SPECIAL",
+      "icon": "PTS15_TWO_HANDED_HAMMER.svg",
+      "wins": 34,
+      "picks": 48,
+      "sample_book_be_pct": 37.98677498066259,
+      "sample_players": 18,
+      "sample_dates": 15,
+      "suppress_badge": false
+    },
+    {
+      "id": "tg_combo_K3",
+      "name": "Titan’s Resolve · Iron Fortress II",
+      "conditions": [
+        [
+          "Conf_Points",
+          ">=",
+          82
+        ],
+        [
+          "Log_L10_S_per_game",
+          "<=",
+          3.9
+        ],
+        [
+          "TalentMult",
+          ">=",
+          1.2
+        ],
+        [
+          "Pace_Gap_P10",
+          ">=",
+          0.2
+        ],
+        [
+          "NHL_Team_GA_5_PG",
+          "<=",
+          3.6
+        ],
+        [
+          "NHL_Opp_PP_Goals_PG",
+          ">=",
+          0.65
+        ]
+      ],
+      "family": "tg_fortress",
+      "level": 2,
+      "kind": "SPECIAL",
+      "icon": "PTS15_TWO_HANDED_HAMMER.svg",
+      "wins": 26,
+      "picks": 33,
+      "sample_book_be_pct": 38.72277928115466,
+      "sample_players": 13,
+      "sample_dates": 12,
+      "suppress_badge": false
+    },
+    {
+      "id": "tg_combo_J",
+      "name": "Titan’s Resolve · Bloodforged Fortress",
+      "conditions": [
+        [
+          "Conf_Points",
+          ">=",
+          82
+        ],
+        [
+          "Log_L10_S_per_game",
+          "<=",
+          3.9
+        ],
+        [
+          "TalentMult",
+          ">=",
+          1.2
+        ],
+        [
+          "Pace_Gap_P10",
+          ">=",
+          0.2
+        ],
+        [
+          "NHL_Team_GA_5_PG",
+          "<=",
+          3.6
+        ],
+        [
+          "NHL_Opp_PP_Goals_PG",
+          ">=",
+          0.55
+        ],
+        [
+          "NHL_Opp_Goal_conversion_pct",
+          ">=",
+          11.2
+        ]
+      ],
+      "family": "tg_fortress",
+      "level": 2,
+      "kind": "SPECIAL",
+      "icon": "PTS15_TWO_HANDED_HAMMER.svg",
+      "wins": 28,
+      "picks": 37,
+      "sample_book_be_pct": 37.901909362380344,
+      "sample_players": 15,
+      "sample_dates": 14,
+      "suppress_badge": false
+    },
+    {
+      "id": "STAR_pk_time_scoring_broad",
+      "name": "Ragnarok · Warpath I",
+      "conditions": [
+        [
+          "Conf_Points",
+          ">=",
+          82
+        ],
+        [
+          "Log_L10_S_per_game",
+          "<=",
+          3.9
+        ],
+        [
+          "StarScore",
+          ">=",
+          90.1
+        ],
+        [
+          "Pace_Gap_P10",
+          ">=",
+          0.2
+        ],
+        [
+          "NHL_Opp_PK_Time_PG",
+          ">=",
+          4.1
+        ],
+        [
+          "NHL_Opp_GF_Season_PG",
+          ">=",
+          2.4
+        ]
+      ],
+      "family": "star_warpath",
+      "level": 1,
+      "kind": "SPECIAL",
+      "icon": "PTS15_TWO_HANDED_HAMMER.svg",
+      "wins": 41,
+      "picks": 62,
+      "sample_book_be_pct": 38.083937315717975,
+      "sample_players": 20,
+      "sample_dates": 15,
+      "suppress_badge": false
+    },
+    {
+      "id": "STAR_pk_time_scoring_stronger",
+      "name": "Ragnarok · Warpath II",
+      "conditions": [
+        [
+          "Conf_Points",
+          ">=",
+          82
+        ],
+        [
+          "Log_L10_S_per_game",
+          "<=",
+          3.9
+        ],
+        [
+          "StarScore",
+          ">=",
+          90.1
+        ],
+        [
+          "Pace_Gap_P10",
+          ">=",
+          0.2
+        ],
+        [
+          "NHL_Opp_PK_Time_PG",
+          ">=",
+          4.1
+        ],
+        [
+          "NHL_Opp_GF_Season_PG",
+          ">=",
+          3.1
+        ]
+      ],
+      "family": "star_warpath",
+      "level": 2,
+      "kind": "SPECIAL",
+      "icon": "PTS15_TWO_HANDED_HAMMER.svg",
+      "wins": 25,
+      "picks": 31,
+      "sample_book_be_pct": 39.817923436554985,
+      "sample_players": 13,
+      "sample_dates": 9,
+      "suppress_badge": false
+    }
+  ]
+}
