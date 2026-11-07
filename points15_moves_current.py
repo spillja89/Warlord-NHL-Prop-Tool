@@ -13,33 +13,25 @@ def number(value):
     except (TypeError,ValueError):return None
 
 def quote_rows(frame):
-    """Expose each captured1.5 quote without relabeling a0.5 projection."""
-    import pandas as pd
-    rows=[]
-    sources=frame.to_dict('records')
-    identity=lambda r:(str(r.get('Date')),str(r.get('Team')),str(r.get('Player_ID') or r.get('Player')))
-    existing={identity(r) for r in sources if number(r.get('Points_Line'))==1.5}
-    for source in sources:
-        row=dict(source);quotes=[]
-        if number(row.get('Points_Line'))==1.5:
-            price=number(row.get('Points_Odds_Over'))
-            if price is not None and abs(price)>=100:quotes.append((price,row.get('Points_Book')))
+    """Keep the saved primary line; shop1.5 prices only for primary1.5 rows."""
+    result=frame.copy()
+    if '_points15_alternate' in result.columns:
+        result=result.loc[~result['_points15_alternate'].eq(True)].copy()
+    for index,row in result.iterrows():
+        if number(row.get('Points_Line'))!=1.5 or row.get('Model_Stats_Season')!='2026-2027':
+            continue
+        quotes=[]
+        price=number(row.get('Points_Odds_Over'))
+        if price is not None and abs(price)>=100:quotes.append((price,row.get('Points_Book')))
         for suffix in ('','_1','_2','_3','_4'):
             if number(row.get('BDL_Points_Line'+suffix))!=1.5:continue
             price=number(row.get('BDL_Points_Odds'+suffix))
             if price is not None and abs(price)>=100:quotes.append((price,row.get('BDL_Points_Book'+suffix)))
-        if not quotes or row.get('Model_Stats_Season')!='2026-2027':rows.append(row);continue
-        price,book=max(quotes,key=lambda q:q[0])
-        if number(row.get('Points_Line'))==1.5:
-            row.update(Points_Odds_Over=price,Points_Book=book);rows.append(row)
-        else:
-            rows.append(row)
-            if identity(row) in existing:continue
-            alternate=dict(row,Points_Line=1.5,Points_Odds_Over=price,Points_Book=book,_points15_alternate=True)
-            for field in ('Points_p_model_over','Points_Model%','Points_p_imp_over','Points_EVpct_over','Points_EV%','Tonight_Points_over_pct'):
-                alternate[field]=None
-            rows.append(alternate)
-    return pd.DataFrame(rows)
+        if quotes:
+            price,book=max(quotes,key=lambda q:q[0])
+            result.at[index,'Points_Odds_Over']=price
+            result.at[index,'Points_Book']=book
+    return result
 
 def prepare_row(row):
     result=dict(row)
@@ -87,3 +79,4 @@ def points15_moves(row):
           'track':False,'later_wins':0,'later_picks':0,'kit_version':VERSION,'record_version':VERSION,
           'sample_season':'2026-27','sample_from':KIT['sample_from'],'sample_through':KIT['sample_through']})
     return moves
+
