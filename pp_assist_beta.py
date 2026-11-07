@@ -9,7 +9,7 @@ from pathlib import Path
 
 from assist_moves_current import assists_moves
 
-VERSION = "pp-assist-overlap-beta-2026-11-07"
+VERSION = "pp-assist-overlap-beta-topmove-2026-11-07-v2"
 RECORD_FILE = Path(__file__).resolve().parent / "pp_assist_beta_records.json"
 
 
@@ -67,7 +67,7 @@ def assist_ppp_beta(row):
         matched.append(dict(record))
     if not matched:
         return None
-    matched.sort(key=lambda item: (-item["plays"], item["name"]))
+    matched.sort(key=_route_order)
     return {"version": VERSION, "xg": xg, "ppp_line": .5,
             "ppp_odds": odds, "ppp_book": book,
             "ppp_be": 100 / (1 + odds / 100) if odds > 0 else 100 * -odds / (100 - odds),
@@ -75,20 +75,34 @@ def assist_ppp_beta(row):
             "sample_through": archive["sample_through"]}
 
 
+def _route_order(route):
+    """PPP historical rate first; ties favor volume then the simpler route."""
+    return (-route["hits"] / route["plays"], -route["plays"],
+            len(route.get("conditions", [])), route["display_name"].casefold())
+
+
+def top_beta_route(data):
+    routes = (data or {}).get("routes") or []
+    return min(routes, key=_route_order) if routes else None
+
+
 def beta_summary(data):
     if not data or not data.get("routes"):
         return ""
     names = " · ".join(route["display_name"] for route in data["routes"])
+    top = top_beta_route(data)
+    status = " · MONITOR" if top["plays"] < 30 else ""
     return (f'<span class="pp-assist-beta-pill" title="{escape(names, quote=True)}">'
-            f'⚡ PPP BETA · {len(data["routes"])} Assist '
-            f'{"route" if len(data["routes"]) == 1 else "routes"}</span>')
+            f'<span class="pp-assist-beta-label">⚡ PPP BETA · {escape(top["display_name"])}</span>'
+            f'<span class="pp-assist-beta-record">PPP {top["hits"]}/{top["plays"]}'
+            f' · {100 * top["hits"] / top["plays"]:.1f}% · sample BE {top["BE"]:.1f}%{status}</span></span>')
 
 
 def beta_details(data):
     if not data or not data.get("routes"):
         return ""
     entries = []
-    for route in data["routes"]:
+    for route in sorted(data["routes"], key=_route_order):
         status = "MONITOR · under 30 plays" if route["plays"] < 30 else "BETA SAMPLE · 30+ plays"
         entries.append(
             '<div class="pp-assist-beta-route">'
@@ -108,6 +122,7 @@ def beta_details(data):
 
 BETA_CSS = """<style>
 .pp-assist-beta-pill{display:inline-block;margin-top:5px;padding:4px 7px;border:1px solid #57cbd3;border-radius:5px;background:#103d48;color:#e6fdff;font:800 11px/1.5 system-ui,sans-serif;white-space:normal}
+.pp-assist-beta-label,.pp-assist-beta-record{display:block;overflow-wrap:anywhere}.pp-assist-beta-label{color:#baf5ff}.pp-assist-beta-record{color:#f1fbff;font-size:12px;font-weight:650}
 .pp-assist-beta-details{padding:9px 10px;border:1px solid #4b9db1;border-radius:7px;background:#102a3c;color:#e4f5ff;font:12px/1.6 system-ui,sans-serif;overflow-wrap:anywhere}
 .pp-assist-beta-details p{margin:5px 0;color:#d4eaf5}.pp-assist-beta-details b{color:#c6f8ff}
 .pp-assist-beta-route{padding:7px 0;border-top:1px solid #36566b}.pp-assist-beta-route small{display:block;color:#d4def1;font-size:10px}

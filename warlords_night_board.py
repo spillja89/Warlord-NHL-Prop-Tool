@@ -805,7 +805,8 @@ def render_power_play_quotes_table(rows, signals_by_team):
     def sort_value(label, row, signals):
         key = next((field for title, field, _ in columns if title == label), None)
         if label == "PPP Assist beta":
-            return str(len((row.get("PP Assist beta") or {}).get("routes", [])))
+            routes = (row.get("PP Assist beta") or {}).get("routes", [])
+            return str(max(100 * route["hits"] / route["plays"] for route in routes)) if routes else ""
         if label == "Team PP matchup signals":
             return str(len(signals))
         if label == "Player signals":
