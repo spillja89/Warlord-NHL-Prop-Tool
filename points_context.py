@@ -142,4 +142,8 @@ def attach_points_context(frame, session=None, before_day=None, reports=None, co
     for field in sorted(fields):
         out[field] = [z.get(field) for z in contexts]
     out['Points_Context_Version'] = VERSION
+    # Reuse these exact official reports; no additional download during a run.
+    from pp_card_context import attach_pp_card_context
+    out = attach_pp_card_context(out, before, reports, codes or {})
     return out
+

@@ -23,6 +23,8 @@ from sog_matrix import VERSION as SOG_MATRIX_VERSION
 from warlord_moves_2026 import best_move, points_moves, sog_moves, goals_moves as _goals_carry_moves, assists_moves as _assists_mapped_moves
 from goal_moves_current import goal_profile_score, goal_move_summary
 from warlords_night_board import CLASSES, baseline_audit, rank_warlords, rank_priced_slate, featured_warlords, unfeatured_baselines, goal_display_cards, render_warlords, render_power_play_form, render_power_play_quotes_table, _character_uri
+from pp_cards import rank_pp_cards, render_pp_cards, VERSION as PP_CARD_KIT_VERSION
+from pp_card_context import attach_pp_card_context, VERSION as PP_CARD_CONTEXT_VERSION
 from player_form import compact_regular_log, summarize_form
 from current_season_stats import current_season_rows, season_for_day
 from season_sources import (fetch_moneypuck_skaters, fetch_moneypuck_teams,
@@ -44,6 +46,14 @@ from typesafe_shadow import (review as _jev_review, review_flagged_cards as _jev
 from blade_check import check_slate as _check_blade
 from source_reconcile import compare_slate_sources as _compare_slate_sources
 from points15_research import context as _points15_research_context, summarize as _summarize_points15_research
+
+
+@st.cache_data(ttl=600, show_spinner=False)
+def _cached_pp_card_reports(season_id: int):
+    import requests
+    from points_context import fetch_reports
+    with requests.Session() as session:
+        return fetch_reports(session, season_id)
 
 
 @st.cache_data(ttl=600, show_spinner=False)
@@ -6236,7 +6246,7 @@ elif page == "GOALS (0.5)":
 # =========================
 elif page == "Power Play":
     st.subheader("⚡ Power Play · over 0.5 point")
-    st.caption("Current prices, recent PPP, power-play time, and matchup. PPP has no tested move yet. Tonight's PPP estimate is experimental and uses an observed-assist involvement proxy.")
+    st.caption("Eleven current-season PPP profiles. Strongest fired move leads each card; all matching moves and source windows are in Inspect. Tonight's PPP estimate remains experimental.")
     pp_dates = pd.to_datetime(df_f.get("Date", pd.Series(dtype=str)), errors="coerce").dropna()
     pp_slate_day = (pp_dates.max().date().isoformat() if not pp_dates.empty else
                     datetime.now(ZoneInfo("America/Chicago")).date().isoformat())
@@ -6616,6 +6626,29 @@ elif page == "Power Play":
                 return "background-color:#193d53;color:#c9efff;font-weight:800"
             return ""
 
+        # The new spellbook is additive: existing table, four signals and Assist beta stay intact.
+        pp_card_rows = df_f.copy()
+        context_current = (
+            "PP_Card_Context_Version" in pp_card_rows
+            and pp_card_rows["PP_Card_Context_Version"].eq(PP_CARD_CONTEXT_VERSION).all()
+            and "PP_Card_Context_AsOf" in pp_card_rows
+            and pp_card_rows["PP_Card_Context_AsOf"].astype(str).eq(pp_slate_day).all())
+        if not context_current:
+            try:
+                with st.spinner("Checking pregame PP/PK windows for the spellbook…"):
+                    pp_reports, pp_codes = _cached_pp_card_reports(int(season[:4] + str(int(season[:4]) + 1)))
+                    pp_card_rows = attach_pp_card_context(pp_card_rows, pp_slate_day, pp_reports, pp_codes)
+            except Exception:
+                # Anchor-only Mana Bolt remains available; never manufacture a matchup.
+                pp_card_rows = attach_pp_card_context(pp_card_rows, pp_slate_day, {}, {})
+                st.warning("Official PP/PK windows are unavailable. Mana Bolt can still qualify; matchup upgrades remain ungraded.")
+        pp_cards = rank_pp_cards(pp_card_rows, pp_view)
+        st.caption(f"Power Play spellbook · 11 approved moves · {PP_CARD_KIT_VERSION} · {len(pp_cards)} player cards")
+        if pp_cards:
+            from warlords_night_board import _form_html
+            st.html(render_pp_cards(pp_cards, _character_uri("Support", "Stormcaller"), _form_html))
+        else:
+            st.info("No priced over-0.5 PPP players in this view meet the spellbook's 0.66 PP on-ice xG/game base.")
         st.caption("Click any column heading to sort low to high; click again to reverse it.")
         st.html(render_power_play_quotes_table(pp_view.to_dict("records"), pp_signals_by_team),
                 unsafe_allow_javascript=True)
@@ -7916,6 +7949,7 @@ elif page == "Ledger":
 else:
     st.subheader("Raw CSV (all columns)")
     st.dataframe(df_f, width="stretch", height=620, hide_index=True)
+
 
 
 

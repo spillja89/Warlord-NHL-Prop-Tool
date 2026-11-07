@@ -1,0 +1,507 @@
+{
+  "previous_compound_mapping": "pp_mmo_mapping_proposal.json",
+  "season": "2026-2027",
+  "source_archives": [
+    "2026-10-13",
+    "2026-11-06"
+  ],
+  "parent_qualifiers": [
+    "2026-10-17",
+    "2026-11-05"
+  ],
+  "user_expanded_keeper_scope": "yeah,idwantthosetoo...lookatthegap",
+  "all_11_rule_definitions_included": true,
+  "moves": [
+    {
+      "id": "pp-mana-bolt-v1",
+      "source_route_id": "parent66",
+      "entry": [
+        [
+          "PPP line",
+          "==",
+          0.5
+        ],
+        [
+          "PP_OnIce_xG_per_game",
+          ">=",
+          0.66
+        ]
+      ],
+      "conditions": [],
+      "record": {
+        "hits": 57,
+        "plays": 128,
+        "rate": 44.53125,
+        "BE": 32.03958307537872,
+        "gap": 12.491666924621278,
+        "players": 24,
+        "dates": 19,
+        "games": 43,
+        "attacking_teams": 8,
+        "defending_teams": 24
+      },
+      "rule_approval": "Approved inclusion by user:yeah,idwantthosetoo",
+      "name_approval": "Approved",
+      "family": "pp-mana-bolt-v1",
+      "name": "Mana Bolt",
+      "kind": "BASE"
+    },
+    {
+      "id": "pp-wardbreaker-v1",
+      "source_route_id": "weak_pk",
+      "entry": [
+        [
+          "PPP line",
+          "==",
+          0.5
+        ],
+        [
+          "PP_OnIce_xG_per_game",
+          ">=",
+          0.66
+        ]
+      ],
+      "conditions": [
+        [
+          "Official_Opp_FailurePct_L5",
+          ">=",
+          11
+        ]
+      ],
+      "record": {
+        "hits": 56,
+        "plays": 111,
+        "rate": 50.450450450450454,
+        "BE": 32.091608580708936,
+        "gap": 18.358841869741518,
+        "players": 23,
+        "dates": 18,
+        "games": 36,
+        "attacking_teams": 7,
+        "defending_teams": 20
+      },
+      "rule_approval": "Approved inclusion by user:yeah,idwantthosetoo",
+      "name_approval": "Approved",
+      "family": "pp-wardbreaker-v1",
+      "name": "Wardbreaker",
+      "kind": "VOLUME"
+    },
+    {
+      "id": "pp-arcane-momentum-i-v1",
+      "source_route_id": "ppo_i",
+      "entry": [
+        [
+          "PPP line",
+          "==",
+          0.5
+        ],
+        [
+          "PP_OnIce_xG_per_game",
+          ">=",
+          0.66
+        ]
+      ],
+      "conditions": [
+        [
+          "Official_Team_OpportunitiesPG_L5",
+          ">=",
+          3.4
+        ]
+      ],
+      "record": {
+        "hits": 45,
+        "plays": 88,
+        "rate": 51.13636363636363,
+        "BE": 31.77349423896519,
+        "gap": 19.362869397398445,
+        "players": 19,
+        "dates": 18,
+        "games": 24,
+        "attacking_teams": 6,
+        "defending_teams": 17
+      },
+      "rule_approval": "Approved inclusion by user:yeah,idwantthosetoo",
+      "name_approval": "Approved",
+      "family": "arcane-momentum",
+      "name": "Arcane Momentum I",
+      "kind": "VOLUME"
+    },
+    {
+      "id": "pp-arcane-momentum-ii-v1",
+      "source_route_id": "ppo_ii",
+      "entry": [
+        [
+          "PPP line",
+          "==",
+          0.5
+        ],
+        [
+          "PP_OnIce_xG_per_game",
+          ">=",
+          0.66
+        ]
+      ],
+      "conditions": [
+        [
+          "Official_Team_OpportunitiesPG_L5",
+          ">=",
+          3.6
+        ]
+      ],
+      "record": {
+        "hits": 41,
+        "plays": 70,
+        "rate": 58.57142857142857,
+        "BE": 31.478098175186666,
+        "gap": 27.093330396241903,
+        "players": 19,
+        "dates": 16,
+        "games": 20,
+        "attacking_teams": 6,
+        "defending_teams": 14
+      },
+      "rule_approval": "Approved inclusion by user:yeah,idwantthosetoo",
+      "name_approval": "Approved",
+      "family": "arcane-momentum",
+      "name": "Arcane Momentum II",
+      "kind": "HEAVY"
+    },
+    {
+      "id": "pp-fractured-aegis-v1",
+      "source_route_id": "season_pk_ga",
+      "entry": [
+        [
+          "PPP line",
+          "==",
+          0.5
+        ],
+        [
+          "PP_OnIce_xG_per_game",
+          ">=",
+          0.66
+        ]
+      ],
+      "conditions": [
+        [
+          "Official_Opp_G60_Season",
+          ">=",
+          6.5
+        ]
+      ],
+      "record": {
+        "hits": 47,
+        "plays": 86,
+        "rate": 54.651162790697676,
+        "BE": 31.99611066944399,
+        "gap": 22.655052121253686,
+        "players": 23,
+        "dates": 15,
+        "games": 28,
+        "attacking_teams": 7,
+        "defending_teams": 16
+      },
+      "rule_approval": "Approved inclusion by user:yeah,idwantthosetoo",
+      "name_approval": "Approved",
+      "family": "pp-fractured-aegis-v1",
+      "name": "Fractured Aegis",
+      "kind": "HEAVY"
+    },
+    {
+      "id": "pp-breachfire-v1",
+      "source_route_id": "pk_ga_strong",
+      "entry": [
+        [
+          "PPP line",
+          "==",
+          0.5
+        ],
+        [
+          "PP_OnIce_xG_per_game",
+          ">=",
+          0.66
+        ]
+      ],
+      "conditions": [
+        [
+          "Official_Opp_G60_L5",
+          ">=",
+          11.8
+        ]
+      ],
+      "record": {
+        "hits": 19,
+        "plays": 32,
+        "rate": 59.375,
+        "BE": 32.052497178958376,
+        "gap": 27.322502821041624,
+        "players": 18,
+        "dates": 8,
+        "games": 9,
+        "attacking_teams": 5,
+        "defending_teams": 9
+      },
+      "rule_approval": "Approved inclusion by user:yeah,idwantthosetoo",
+      "name_approval": "Approved",
+      "family": "pp-breachfire-v1",
+      "name": "Breachfire",
+      "kind": "HEAVY"
+    },
+    {
+      "id": "pp-rune-rupture-v1",
+      "source_route_id": "pk_duration",
+      "entry": [
+        [
+          "PPP line",
+          "==",
+          0.5
+        ],
+        [
+          "PP_OnIce_xG_per_game",
+          ">=",
+          0.66
+        ]
+      ],
+      "conditions": [
+        [
+          "Official_Opp_SecondsPerOpportunity_L5",
+          "<=",
+          94
+        ]
+      ],
+      "record": {
+        "hits": 30,
+        "plays": 48,
+        "rate": 62.5,
+        "BE": 30.792936421440356,
+        "gap": 31.707063578559644,
+        "players": 19,
+        "dates": 12,
+        "games": 16,
+        "attacking_teams": 6,
+        "defending_teams": 13
+      },
+      "rule_approval": "Approved inclusion by user:yeah,idwantthosetoo",
+      "name_approval": "Approved",
+      "family": "pp-rune-rupture-v1",
+      "name": "Rune Rupture",
+      "kind": "SPECIAL"
+    },
+    {
+      "id": "pp-tempest-sigil-v1",
+      "source_route_id": "pk_time",
+      "entry": [
+        [
+          "PPP line",
+          "==",
+          0.5
+        ],
+        [
+          "PP_OnIce_xG_per_game",
+          ">=",
+          0.66
+        ]
+      ],
+      "conditions": [
+        [
+          "Official_Opp_MinutesPG_L10",
+          "<=",
+          4.5
+        ]
+      ],
+      "record": {
+        "hits": 26,
+        "plays": 38,
+        "rate": 68.42105263157895,
+        "BE": 30.548453194004257,
+        "gap": 37.87259943757469,
+        "players": 19,
+        "dates": 7,
+        "games": 10,
+        "attacking_teams": 5,
+        "defending_teams": 7
+      },
+      "rule_approval": "Approved inclusion by user:yeah,idwantthosetoo",
+      "name_approval": "Approved",
+      "family": "pp-tempest-sigil-v1",
+      "name": "Tempest Sigil",
+      "kind": "SPECIAL"
+    },
+    {
+      "id": "pp-stormbreakers-wrath-v1",
+      "source_route_ids": [
+        "weak_pk",
+        "pk_time"
+      ],
+      "entry": [
+        [
+          "PPP line",
+          "==",
+          0.5
+        ],
+        [
+          "PP_OnIce_xG_per_game",
+          ">=",
+          0.66
+        ]
+      ],
+      "conditions": [
+        [
+          "Official_Opp_FailurePct_L5",
+          ">=",
+          11
+        ],
+        [
+          "Official_Opp_MinutesPG_L10",
+          "<=",
+          4.5
+        ]
+      ],
+      "flavor": "Crack the PK armor",
+      "record": {
+        "hits": 26,
+        "plays": 35,
+        "rate": 74.28571428571429,
+        "BE": 30.56128320006557,
+        "gap": 43.72443108564872,
+        "players": 16,
+        "dates": 7,
+        "games": 9,
+        "attacking_teams": 4,
+        "defending_teams": 7
+      },
+      "rule_approval": "User approved keeping this compound route",
+      "name_approval": "Approved",
+      "production_input_note": "Use exact strictly prior official L5/L10 windows. Research field names shown; production adapters must be verified at wiring. Never substitute season PK time for L10 or reinterpret94seconds asminutes.",
+      "display_level": null,
+      "family": "pp-stormbreakers-wrath-v1",
+      "component_move_ids": [
+        "pp-wardbreaker-v1",
+        "pp-tempest-sigil-v1"
+      ],
+      "name": "Stormbreaker’s Wrath",
+      "kind": "COMBO SPELL"
+    },
+    {
+      "id": "pp-arcane-overload-v1",
+      "source_route_ids": [
+        "ppo_i",
+        "pk_duration"
+      ],
+      "entry": [
+        [
+          "PPP line",
+          "==",
+          0.5
+        ],
+        [
+          "PP_OnIce_xG_per_game",
+          ">=",
+          0.66
+        ]
+      ],
+      "conditions": [
+        [
+          "Official_Team_OpportunitiesPG_L5",
+          ">=",
+          3.4
+        ],
+        [
+          "Official_Opp_SecondsPerOpportunity_L5",
+          "<=",
+          94
+        ]
+      ],
+      "flavor": "Channel the extra opportunities",
+      "record": {
+        "hits": 23,
+        "plays": 31,
+        "rate": 74.19354838709677,
+        "BE": 29.87509539347307,
+        "gap": 44.318452993623694,
+        "players": 12,
+        "dates": 8,
+        "games": 9,
+        "attacking_teams": 4,
+        "defending_teams": 7
+      },
+      "rule_approval": "User approved keeping this compound route",
+      "name_approval": "Approved",
+      "production_input_note": "Use exact strictly prior official L5/L10 windows. Research field names shown; production adapters must be verified at wiring. Never substitute season PK time for L10 or reinterpret94seconds asminutes.",
+      "display_level": null,
+      "family": "pp-arcane-overload-v1",
+      "component_move_ids": [
+        "pp-arcane-momentum-i-v1",
+        "pp-rune-rupture-v1"
+      ],
+      "name": "Arcane Overload",
+      "kind": "COMBO SPELL"
+    },
+    {
+      "id": "pp-tempest-barrage-v1",
+      "source_route_ids": [
+        "ppo_i",
+        "pk_time"
+      ],
+      "entry": [
+        [
+          "PPP line",
+          "==",
+          0.5
+        ],
+        [
+          "PP_OnIce_xG_per_game",
+          ">=",
+          0.66
+        ]
+      ],
+      "conditions": [
+        [
+          "Official_Team_OpportunitiesPG_L5",
+          ">=",
+          3.4
+        ],
+        [
+          "Official_Opp_MinutesPG_L10",
+          "<=",
+          4.5
+        ]
+      ],
+      "flavor": "Unleash the power-play barrage",
+      "record": {
+        "hits": 22,
+        "plays": 30,
+        "rate": 73.33333333333333,
+        "BE": 31.154448813631575,
+        "gap": 42.178884519701754,
+        "players": 17,
+        "dates": 6,
+        "games": 7,
+        "attacking_teams": 4,
+        "defending_teams": 5
+      },
+      "rule_approval": "User approved keeping this compound route",
+      "name_approval": "Approved",
+      "production_input_note": "Use exact strictly prior official L5/L10 windows. Research field names shown; production adapters must be verified at wiring. Never substitute season PK time for L10 or reinterpret94seconds asminutes.",
+      "display_level": null,
+      "family": "pp-tempest-barrage-v1",
+      "component_move_ids": [
+        "pp-arcane-momentum-i-v1",
+        "pp-tempest-sigil-v1"
+      ],
+      "name": "Tempest Barrage",
+      "kind": "COMBO SPELL"
+    }
+  ],
+  "display_proposal": {
+    "one_player_card": true,
+    "primary": "Strongest fired historical PP move; full rule records retained inInspect",
+    "nested_badges": "ArcaneMomentumII supersedesI asfamilybadgewhenbothfire;broaderIeligibilityretained",
+    "independent_specials": "RuneRupture andTempestSigil are distinctroutes,notI/IIlevels",
+    "PP_numeric_tier_policy": "None selected. Proposed role labels do not importAssist75/80Critthresholds.",
+    "no_hidden_gate": "No inheritedLayer1,PP1,confidence,Greenorfour-player-checkrequirement."
+  },
+  "existing_assist_beta": "ExistingAssistprofiles/PPPrecordsremainseparateandunchanged.",
+  "deployment_status": "Name mapping only; no production code changes or reboot. Await user naming/mapping disposition before wiring.",
+  "version": "pp-card-kit-2026-11-07-v1",
+  "name_approval": "All 11 names and wiring approved by user November 7, 2026"
+}
