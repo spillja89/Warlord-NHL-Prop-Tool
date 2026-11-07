@@ -902,7 +902,7 @@ def _render_class_shortlist(frame: pd.DataFrame, role: str,
     if role == "Tank":
         watch = [card for card in watch if not card.get("points_current_tier")]
     if role == "Carry":
-        st.caption("Goal kit v6 · Three paths: xG; StarScore + goal drought; StarScore + TOI20. Star Barrage needs StarScore ≥84.5, TOI/game ≥20 and L10 shots ≤39, with no goal-drought, confidence or recent-xG gate. PPP drought adds Runic Barrage I at ≥1 or II at ≥2; only the highest level is shown. Attacks and matchup buffs keep separate records. Scouting Targets have no fired attack.")
+        st.caption("Goal kit v6 · Three paths: xG; StarScore + goal drought; StarScore + TOI20. Star Barrage needs StarScore ≥84.5, TOI/game ≥20 and L10 shots ≤39, with no goal-drought, confidence or recent-xG gate. PPP drought adds Runic Barrage I at ≥1 or II at ≥2; only the highest level is shown. Attacks and matchup buffs keep separate records. Only players with a fired Goal attack receive cards.")
         st.html(render_warlords({"Carry": goal_cards}, limit=len(goal_cards),
                                 roles=("Carry",), show_hero=False))
         st.caption("Tonight research projection is a separate matchup-adjusted estimate. It is not the historical move % and does not affect Goal card selection. It is being graded before use as a betting edge.")
@@ -5296,8 +5296,7 @@ if page == "⚔️ Warlords of the Night":
             st.caption(f"Positional SOG matchup feed unavailable ({_position_error}); saved cards and moves are unaffected.")
         order_note = ("Goal cards rank by their strongest fired current-season attack" if slate_sort == "Top ranked"
                       else f"Cards are sorted by {slate_sort.lower()}; same-game move ranks stay intact")
-        st.caption(f"{sum(card['move'] is not None for card in goal_cards)} named Goal attacks and "
-                   f"{sum(card['move'] is None for card in goal_cards)} Scouting Targets. "
+        st.caption(f"{len(goal_cards)} named Goal attack cards. "
                    f"{featured_total-len(featured_boards['Carry'])} other featured prop cards include current-season Points moves. "
                    f"{order_note}. Move histories are not forecasts.")
     else:
@@ -7911,7 +7910,6 @@ elif page == "Ledger":
 else:
     st.subheader("Raw CSV (all columns)")
     st.dataframe(df_f, width="stretch", height=620, hide_index=True)
-
 
 
 

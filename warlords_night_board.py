@@ -619,7 +619,7 @@ def unfeatured_baselines(cards: list[dict]) -> list[dict]:
 
 
 def goal_display_cards(cards: list[dict]) -> list[dict]:
-    """Show named attacks first, followed by priced Goal scouting targets."""
+    """Only fired Goal attacks get cards; scouting rows stay in the research table."""
     eligible = []
     for card in cards:
         if not card.get("baseline_rule"):
@@ -627,8 +627,10 @@ def goal_display_cards(cards: list[dict]) -> list[dict]:
         attacks = [move for move in card.get("moves", [])
                    if not move.get("matchup_buff")
                    if int(move["picks"]) > 0]
-        eligible.append({**card, "move": max(attacks, key=_move_rank) if attacks else None,
-                         "baseline_only": not attacks})
+        if not attacks:
+            continue
+        eligible.append({**card, "move": max(attacks, key=_move_rank),
+                         "baseline_only": False})
     return sorted(eligible, key=lambda card: (
         card["move"] is not None,
         _move_rank(card["move"]) if card["move"] else (-1, -1, -1),
@@ -1090,6 +1092,25 @@ def _support_roster_art():
     return '<div class="wn-support-roster">' + ''.join(portraits) + '</div>'
 
 
+def _card_quick_summary(role, card):
+    values = card.get('role_context') or {}
+    if role == 'Carry':
+        values = {**values, **(card.get('goal_profile') or {})}
+        fields = [('iXG%', 'iXG rank', 0), ('ShotIntent', 'Shot intent', 2), ('Goal_mu', 'Goal μ', 2)]
+    elif role == 'Support':
+        values = {**values, **(card.get('assist_context') or {})}
+        fields = [('iXA%', 'Assist rank', 0), ('Assists_mu', 'Assist μ', 2), ('PP_TOI_per_game', 'PP min/g', 1)]
+    elif role == 'Tank':
+        values = {**values, **(card.get('points_context') or {})}
+        fields = [('Points_mu', 'Points μ', 2), ('Assists_mu', 'Assist μ', 2), ('StarScore', 'Star score', 1)]
+    else:
+        values = {**values, **(card.get('sog_context') or {})}
+        fields = [('TOI_per_game', 'TOI min/g', 1), ('Player_5v5_SOG_Share', '5v5 shot share %', 1), ('Opp_SOG_Against_L10', 'Opp SOG/g', 1)]
+    pieces = [f'{_h(label)} <b>{value:.{digits}f}</b>' for field, label, digits in fields
+              if (value := _number(values.get(field))) is not None]
+    return '<div class="wn-quick-summary">' + ' · '.join(pieces) + '</div>' if pieces else ''
+
+
 def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=None,
                     roles: tuple[str, ...] | None = None, show_hero: bool = True) -> str:
     """Compact, escaped HTML for the raid board or selected class lanes."""
@@ -1339,6 +1360,11 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
                 {support_route_note}
                 <div class="wn-unit-foot"><span>{_h(line)} <b>{_h(price)}</b>{book_note}</span><span>{_h(later_note)}{confidence_note}</span></div>
                 {book_rate_note}</div>
+              </div>
+              {record_html}
+              {_card_quick_summary(role, card)}
+              <details class="wn-card-inspect"><summary>Inspect player · profile, matchup &amp; recent form</summary>
+              <div class="wn-unit-info">
                 {pp_crit_note}
                 {assist_facts}
                 {sog_facts}
@@ -1347,6 +1373,7 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
                 {points_tier_note if not points_facts else ""}
                 {points_research_note}
                 {support_badges}
+                {support_route_note if role == 'Support' else ""}
                 {goal_signals}
                 {goal_profile_note}
                 <div class="wn-context">
@@ -1356,9 +1383,9 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
                   {lineup_note}
                 </div>
               </div>
-              {record_html}
-              {_form_html(card)}
+              {_form_html(card, expanded=True)}
               {details_html}
+              </details>
             </article>""")
         if not units:
             units = ['<div class="wn-empty">No featured move for this class on this slate. '
@@ -1493,6 +1520,23 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
       .wn-lane .wn-details{grid-area:details;order:initial}
       @container(max-width:680px){.wn-lane .wn-unit{display:block;padding:14px}.wn-lane .wn-card-heading{padding-right:140px;min-height:245px}.wn-lane .wn-portrait{position:absolute;right:14px;top:14px;width:120px;height:165px}.wn-lane .wn-record{position:absolute;top:188px;right:14px;width:120px;display:flex;flex-direction:column;text-align:center;gap:3px}.wn-lane .wn-record span,.wn-lane .wn-record em{margin:0}.wn-lane .wn-form,.wn-lane .wn-form-empty,.wn-lane .wn-details{margin-top:10px}}
       @container(max-width:430px){.wn-lane .wn-unit{padding:11px}.wn-lane .wn-card-heading{padding-right:104px;min-height:215px}.wn-lane .wn-portrait{right:11px;top:11px;width:92px;height:130px}.wn-lane .wn-record{right:11px;top:150px;width:92px}.wn-lane .wn-record strong{font-size:24px}.wn-lane .wn-record em{font-size:8px}.wn-lane .wn-unit-head strong{font-size:17px}.wn-assist-facts{grid-template-columns:1fr}}
+
+      .wn-lane .wn-unit{padding:11px;gap:7px 12px;grid-template-columns:minmax(0,1fr) 90px 140px;grid-template-areas:"body record portrait" "quick quick quick" "inspect inspect inspect"}
+      .wn-lane .wn-portrait{width:140px;height:180px}
+      .wn-lane .wn-unit-foot{margin-top:6px;padding:6px 8px;font-size:13px;line-height:1.5;gap:3px 10px}
+      .wn-lane .wn-attack{margin-top:5px}.wn-lane .wn-support-route{margin-top:5px;font-size:12px}
+      .wn-lane .wn-unit-body>.wn-card-heading>.wn-support-route span{display:none}
+      .wn-quick-summary{grid-area:quick;color:#d7e5f7;font-size:13px;line-height:1.5;padding:5px 0}.wn-quick-summary b{color:#fff}
+      .wn-card-inspect{grid-area:inspect;width:100%;min-width:0;border-top:1px solid #485971;padding-top:5px;color:#dbe7f8;font-size:13px}
+      .wn-card-inspect>summary{cursor:pointer;color:#f1d18d;font-weight:750;padding:5px 0;font-size:13px;line-height:1.4}
+      .wn-card-inspect[open]>summary{margin-bottom:7px}
+      .wn-unit-info{width:100%;min-width:0}
+      .wn-card-inspect .wn-assist-facts{grid-template-columns:repeat(auto-fit,minmax(min(100%,190px),1fr));gap:7px;margin:7px 0}
+      .wn-card-inspect .wn-assist-fact{padding:8px 10px;font-size:13px;line-height:1.55}
+      .wn-card-inspect .wn-context{gap:7px;margin-top:7px}.wn-card-inspect .wn-goalie{padding:7px 9px;line-height:1.5}
+      .wn-card-inspect .wn-form,.wn-card-inspect .wn-form-empty,.wn-card-inspect .wn-details{margin-top:8px}
+      @container(max-width:680px){.wn-lane .wn-unit{display:block;padding:11px}.wn-lane .wn-card-heading{padding-right:132px;min-height:230px}.wn-lane .wn-portrait{right:11px;top:11px;width:115px;height:150px}.wn-lane .wn-record{right:11px;top:172px;width:115px}.wn-lane .wn-quick-summary{margin-top:5px}.wn-card-inspect .wn-assist-facts{grid-template-columns:repeat(auto-fit,minmax(min(100%,190px),1fr))}}
+      @container(max-width:430px){.wn-lane .wn-card-heading{padding-right:100px;min-height:200px}.wn-lane .wn-portrait{width:88px;height:120px}.wn-lane .wn-record{top:140px;width:88px}.wn-card-inspect .wn-assist-facts,.wn-card-inspect .wn-context{grid-template-columns:1fr}}
     </style>"""
     goal_count = len(boards.get("Carry", []))
     other_count = total - goal_count
@@ -1509,7 +1553,6 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
       <div class="wn-hero-foot">{_h(hero_foot)} · HISTORICAL MOVE RATE IS NOT A FORECAST</div></div>"""
     board_class = "wn-board" if show_hero else "wn-board wn-board--compact"
     return styles + f'<div class="{board_class}">' + (hero if show_hero else "") + '<div class="wn-grid">' + ''.join(lanes) + '</div></div>'
-
 
 
 
