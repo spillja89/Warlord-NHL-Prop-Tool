@@ -490,6 +490,528 @@
       ],
       "name": "Tempest Barrage",
       "kind": "COMBO SPELL"
+    },
+    {
+      "id": "pp-aether-conduit-flow-v1",
+      "name": "Aether Conduit · Flow",
+      "display_family": "aether-conduit",
+      "nested_level": null,
+      "source_route_id": "assist_mu",
+      "source_category": "Volume",
+      "entry": [
+        [
+          "PPP line",
+          "==",
+          0.5
+        ],
+        [
+          "Official_Opp_MinutesPG_Season",
+          "<=",
+          4.5
+        ],
+        [
+          "PP_OnIce_xG_per_game",
+          ">=",
+          0.32
+        ],
+        [
+          "PP_OnIce_xG_per_game",
+          "<",
+          0.66
+        ]
+      ],
+      "conditions": [
+        [
+          "Assists_mu",
+          ">=",
+          0.32
+        ]
+      ],
+      "record": {
+        "hits": 67,
+        "plays": 165,
+        "rate": 40.60606060606061,
+        "BE": 29.540400256101766,
+        "gap": 11.065660349958844,
+        "players": 101,
+        "dates": 18,
+        "games": 43,
+        "attacking_teams": 28,
+        "defending_teams": 12,
+        "first": "2026-10-16",
+        "last": "2026-11-06"
+      },
+      "record_scope": "2026-27 regular season pregame inputs, archived Oct13-Nov6; qualifying cohort Oct16-Nov6",
+      "replaces_existing_move": null,
+      "family": "aether-conduit",
+      "lane": "layer1-lower-xg",
+      "kind": "VOLUME",
+      "name_approval": "Approved with wiring by user November7",
+      "rule_approval": "Approved lower-xG keepers and additive wiring November7"
+    },
+    {
+      "id": "pp-aether-conduit-insight-v1",
+      "name": "Aether Conduit · Insight",
+      "display_family": "aether-conduit",
+      "nested_level": null,
+      "source_route_id": "assist_rank",
+      "source_category": "Volume",
+      "entry": [
+        [
+          "PPP line",
+          "==",
+          0.5
+        ],
+        [
+          "Official_Opp_MinutesPG_Season",
+          "<=",
+          4.5
+        ],
+        [
+          "PP_OnIce_xG_per_game",
+          ">=",
+          0.32
+        ],
+        [
+          "PP_OnIce_xG_per_game",
+          "<",
+          0.66
+        ]
+      ],
+      "conditions": [
+        [
+          "iXA%",
+          ">=",
+          67
+        ]
+      ],
+      "record": {
+        "hits": 65,
+        "plays": 161,
+        "rate": 40.37267080745342,
+        "BE": 29.540370788811487,
+        "gap": 10.83230001864193,
+        "players": 99,
+        "dates": 18,
+        "games": 42,
+        "attacking_teams": 28,
+        "defending_teams": 12,
+        "first": "2026-10-16",
+        "last": "2026-11-06"
+      },
+      "record_scope": "2026-27 regular season pregame inputs, archived Oct13-Nov6; qualifying cohort Oct16-Nov6",
+      "replaces_existing_move": null,
+      "family": "aether-conduit",
+      "lane": "layer1-lower-xg",
+      "kind": "VOLUME",
+      "name_approval": "Approved with wiring by user November7",
+      "rule_approval": "Approved lower-xG keepers and additive wiring November7"
+    },
+    {
+      "id": "pp-channeling-focus-v1",
+      "name": "Channeling Focus",
+      "display_family": "channeling-focus",
+      "nested_level": null,
+      "source_route_id": "pp_time",
+      "source_category": "Volume",
+      "entry": [
+        [
+          "PPP line",
+          "==",
+          0.5
+        ],
+        [
+          "Official_Opp_MinutesPG_Season",
+          "<=",
+          4.5
+        ],
+        [
+          "PP_OnIce_xG_per_game",
+          ">=",
+          0.32
+        ],
+        [
+          "PP_OnIce_xG_per_game",
+          "<",
+          0.66
+        ]
+      ],
+      "conditions": [
+        [
+          "Official_Player_MinutesPG_Season",
+          ">=",
+          3.4
+        ]
+      ],
+      "record": {
+        "hits": 64,
+        "plays": 158,
+        "rate": 40.50632911392405,
+        "BE": 29.02148850948663,
+        "gap": 11.484840604437423,
+        "players": 89,
+        "dates": 18,
+        "games": 41,
+        "attacking_teams": 25,
+        "defending_teams": 12,
+        "first": "2026-10-16",
+        "last": "2026-11-06"
+      },
+      "record_scope": "2026-27 regular season pregame inputs, archived Oct13-Nov6; qualifying cohort Oct16-Nov6",
+      "replaces_existing_move": null,
+      "family": "channeling-focus",
+      "lane": "layer1-lower-xg",
+      "kind": "VOLUME",
+      "name_approval": "Approved with wiring by user November7",
+      "rule_approval": "Approved lower-xG keepers and additive wiring November7"
+    },
+    {
+      "id": "pp-runic-weave-i-v1",
+      "name": "Runic Weave I",
+      "display_family": "runic-weave",
+      "nested_level": 1,
+      "source_route_id": "team_assist_ratio",
+      "source_category": "Balance",
+      "entry": [
+        [
+          "PPP line",
+          "==",
+          0.5
+        ],
+        [
+          "Official_Opp_MinutesPG_Season",
+          "<=",
+          4.5
+        ],
+        [
+          "PP_OnIce_xG_per_game",
+          ">=",
+          0.32
+        ],
+        [
+          "PP_OnIce_xG_per_game",
+          "<",
+          0.66
+        ]
+      ],
+      "conditions": [
+        [
+          "Official_Team_AssistCreditsPerGoal_L10",
+          "<=",
+          1.93
+        ]
+      ],
+      "record": {
+        "hits": 42,
+        "plays": 79,
+        "rate": 53.164556962025316,
+        "BE": 29.383852697021084,
+        "gap": 23.780704265004232,
+        "players": 52,
+        "dates": 10,
+        "games": 19,
+        "attacking_teams": 12,
+        "defending_teams": 8,
+        "first": "2026-10-17",
+        "last": "2026-11-03"
+      },
+      "record_scope": "2026-27 regular season pregame inputs, archived Oct13-Nov6; qualifying cohort Oct16-Nov6",
+      "replaces_existing_move": null,
+      "family": "runic-weave",
+      "lane": "layer1-lower-xg",
+      "kind": "HEAVY",
+      "name_approval": "Approved with wiring by user November7",
+      "rule_approval": "Approved lower-xG keepers and additive wiring November7"
+    },
+    {
+      "id": "pp-runic-weave-ii-v1",
+      "name": "Runic Weave II",
+      "display_family": "runic-weave",
+      "nested_level": 2,
+      "source_route_id": "team_assist_ratio_strong",
+      "source_category": "Stronger level",
+      "entry": [
+        [
+          "PPP line",
+          "==",
+          0.5
+        ],
+        [
+          "Official_Opp_MinutesPG_Season",
+          "<=",
+          4.5
+        ],
+        [
+          "PP_OnIce_xG_per_game",
+          ">=",
+          0.32
+        ],
+        [
+          "PP_OnIce_xG_per_game",
+          "<",
+          0.66
+        ]
+      ],
+      "conditions": [
+        [
+          "Official_Team_AssistCreditsPerGoal_L10",
+          "<=",
+          1.75
+        ]
+      ],
+      "record": {
+        "hits": 23,
+        "plays": 37,
+        "rate": 62.16216216216216,
+        "BE": 29.81770695651231,
+        "gap": 32.34445520564985,
+        "players": 27,
+        "dates": 7,
+        "games": 9,
+        "attacking_teams": 6,
+        "defending_teams": 6,
+        "first": "2026-10-17",
+        "last": "2026-11-03"
+      },
+      "record_scope": "2026-27 regular season pregame inputs, archived Oct13-Nov6; qualifying cohort Oct16-Nov6",
+      "replaces_existing_move": null,
+      "family": "runic-weave",
+      "lane": "layer1-lower-xg",
+      "kind": "EMPOWERED",
+      "name_approval": "Approved with wiring by user November7",
+      "rule_approval": "Approved lower-xG keepers and additive wiring November7"
+    },
+    {
+      "id": "pp-cinder-surge-i-v1",
+      "name": "Cinder Surge I",
+      "display_family": "cinder-surge",
+      "nested_level": 1,
+      "source_route_id": "team_finishing",
+      "source_category": "Balance",
+      "entry": [
+        [
+          "PPP line",
+          "==",
+          0.5
+        ],
+        [
+          "Official_Opp_MinutesPG_Season",
+          "<=",
+          4.5
+        ],
+        [
+          "PP_OnIce_xG_per_game",
+          ">=",
+          0.32
+        ],
+        [
+          "PP_OnIce_xG_per_game",
+          "<",
+          0.66
+        ]
+      ],
+      "conditions": [
+        [
+          "MP_Team_PP_xG_minus_G60",
+          "<=",
+          -0.9
+        ]
+      ],
+      "record": {
+        "hits": 35,
+        "plays": 60,
+        "rate": 58.333333333333336,
+        "BE": 28.060454459740892,
+        "gap": 30.272878873592443,
+        "players": 41,
+        "dates": 11,
+        "games": 14,
+        "attacking_teams": 10,
+        "defending_teams": 7,
+        "first": "2026-10-17",
+        "last": "2026-11-05"
+      },
+      "record_scope": "2026-27 regular season pregame inputs, archived Oct13-Nov6; qualifying cohort Oct16-Nov6",
+      "replaces_existing_move": null,
+      "family": "cinder-surge",
+      "lane": "layer1-lower-xg",
+      "kind": "HEAVY",
+      "name_approval": "Approved with wiring by user November7",
+      "rule_approval": "Approved lower-xG keepers and additive wiring November7"
+    },
+    {
+      "id": "pp-cinder-surge-ii-v1",
+      "name": "Cinder Surge II",
+      "display_family": "cinder-surge",
+      "nested_level": 2,
+      "source_route_id": "team_finishing_strong",
+      "source_category": "Stronger level",
+      "entry": [
+        [
+          "PPP line",
+          "==",
+          0.5
+        ],
+        [
+          "Official_Opp_MinutesPG_Season",
+          "<=",
+          4.5
+        ],
+        [
+          "PP_OnIce_xG_per_game",
+          ">=",
+          0.32
+        ],
+        [
+          "PP_OnIce_xG_per_game",
+          "<",
+          0.66
+        ]
+      ],
+      "conditions": [
+        [
+          "MP_Team_PP_xG_minus_G60",
+          "<=",
+          -1.6
+        ]
+      ],
+      "record": {
+        "hits": 29,
+        "plays": 46,
+        "rate": 63.04347826086956,
+        "BE": 28.841254874710845,
+        "gap": 34.20222338615872,
+        "players": 27,
+        "dates": 8,
+        "games": 10,
+        "attacking_teams": 6,
+        "defending_teams": 5,
+        "first": "2026-10-22",
+        "last": "2026-11-05"
+      },
+      "record_scope": "2026-27 regular season pregame inputs, archived Oct13-Nov6; qualifying cohort Oct16-Nov6",
+      "replaces_existing_move": null,
+      "family": "cinder-surge",
+      "lane": "layer1-lower-xg",
+      "kind": "EMPOWERED",
+      "name_approval": "Approved with wiring by user November7",
+      "rule_approval": "Approved lower-xG keepers and additive wiring November7"
+    },
+    {
+      "id": "pp-shatter-pulse-v1",
+      "name": "Shatter Pulse",
+      "display_family": "shatter-pulse",
+      "nested_level": null,
+      "source_route_id": "pk_duration",
+      "source_category": "Balance",
+      "entry": [
+        [
+          "PPP line",
+          "==",
+          0.5
+        ],
+        [
+          "Official_Opp_MinutesPG_Season",
+          "<=",
+          4.5
+        ],
+        [
+          "PP_OnIce_xG_per_game",
+          ">=",
+          0.32
+        ],
+        [
+          "PP_OnIce_xG_per_game",
+          "<",
+          0.66
+        ]
+      ],
+      "conditions": [
+        [
+          "Official_Opp_SecondsPerOpportunity_L10",
+          "<=",
+          89
+        ]
+      ],
+      "record": {
+        "hits": 36,
+        "plays": 66,
+        "rate": 54.54545454545455,
+        "BE": 27.36152120346024,
+        "gap": 27.183933341994308,
+        "players": 53,
+        "dates": 12,
+        "games": 15,
+        "attacking_teams": 12,
+        "defending_teams": 6,
+        "first": "2026-10-17",
+        "last": "2026-11-04"
+      },
+      "record_scope": "2026-27 regular season pregame inputs, archived Oct13-Nov6; qualifying cohort Oct16-Nov6",
+      "replaces_existing_move": null,
+      "family": "shatter-pulse",
+      "lane": "layer1-lower-xg",
+      "kind": "HEAVY",
+      "name_approval": "Approved with wiring by user November7",
+      "rule_approval": "Approved lower-xG keepers and additive wiring November7"
+    },
+    {
+      "id": "pp-tempest-rising-v1",
+      "name": "Tempest Rising",
+      "display_family": "tempest-rising",
+      "nested_level": null,
+      "source_route_id": "ppp_trend",
+      "source_category": "Hit rate",
+      "entry": [
+        [
+          "PPP line",
+          "==",
+          0.5
+        ],
+        [
+          "Official_Opp_MinutesPG_Season",
+          "<=",
+          4.5
+        ],
+        [
+          "PP_OnIce_xG_per_game",
+          ">=",
+          0.32
+        ],
+        [
+          "PP_OnIce_xG_per_game",
+          "<",
+          0.66
+        ]
+      ],
+      "conditions": [
+        [
+          "Trend_Opp_PPPcreditsAllowedPG_L10",
+          ">=",
+          0.38
+        ]
+      ],
+      "record": {
+        "hits": 19,
+        "plays": 30,
+        "rate": 63.333333333333336,
+        "BE": 26.55737354143399,
+        "gap": 36.775959791899346,
+        "players": 30,
+        "dates": 6,
+        "games": 7,
+        "attacking_teams": 7,
+        "defending_teams": 4,
+        "first": "2026-10-24",
+        "last": "2026-11-03"
+      },
+      "record_scope": "2026-27 regular season pregame inputs, archived Oct13-Nov6; qualifying cohort Oct16-Nov6",
+      "replaces_existing_move": null,
+      "family": "tempest-rising",
+      "lane": "layer1-lower-xg",
+      "kind": "SPECIAL",
+      "name_approval": "Approved with wiring by user November7",
+      "rule_approval": "Approved lower-xG keepers and additive wiring November7"
     }
   ],
   "display_proposal": {
@@ -501,7 +1023,9 @@
     "no_hidden_gate": "No inheritedLayer1,PP1,confidence,Greenorfour-player-checkrequirement."
   },
   "existing_assist_beta": "ExistingAssistprofiles/PPPrecordsremainseparateandunchanged.",
-  "deployment_status": "Name mapping only; no production code changes or reboot. Await user naming/mapping disposition before wiring.",
-  "version": "pp-card-kit-2026-11-07-v1",
-  "name_approval": "All 11 names and wiring approved by user November 7, 2026"
+  "deployment_status": "Wiring and tests in progress",
+  "version": "pp-card-kit-2026-11-07-v2",
+  "name_approval": "All 11 names and wiring approved by user November 7, 2026",
+  "all_20_rule_definitions_included": true,
+  "lower_lane_source": "Current2026-27 pregame cohort Oct16-Nov6,76/212parent"
 }

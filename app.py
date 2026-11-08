@@ -49,7 +49,7 @@ from points15_research import context as _points15_research_context, summarize a
 
 
 @st.cache_data(ttl=600, show_spinner=False)
-def _cached_pp_card_reports(season_id: int):
+def _cached_pp_card_reports(season_id: int, context_version: str = PP_CARD_CONTEXT_VERSION):
     import requests
     from points_context import fetch_reports
     with requests.Session() as session:
@@ -6643,12 +6643,14 @@ elif page == "Power Play":
                 pp_card_rows = attach_pp_card_context(pp_card_rows, pp_slate_day, {}, {})
                 st.warning("Official PP/PK windows are unavailable. Mana Bolt can still qualify; matchup upgrades remain ungraded.")
         pp_cards = rank_pp_cards(pp_card_rows, pp_view)
-        st.caption(f"Power Play spellbook · 11 approved moves · {PP_CARD_KIT_VERSION} · {len(pp_cards)} player cards")
+        st.caption(f"Power Play spellbook · 20 approved rules · {PP_CARD_KIT_VERSION} · {len(pp_cards)} player cards")
         if pp_cards:
             from warlords_night_board import _form_html
-            st.html(render_pp_cards(pp_cards, _character_uri("Support", "Stormcaller"), _form_html))
+            pp_portraits = {variant: _character_uri("Support", variant)
+                            for variant in ("Arcanist", "Runesmith", "Stormcaller")}
+            st.html(render_pp_cards(pp_cards, pp_portraits, _form_html))
         else:
-            st.info("No priced over-0.5 PPP players in this view meet the spellbook's 0.66 PP on-ice xG/game base.")
+            st.info("No priced over-0.5 PPP players in this view meet an active spellbook route.")
         st.caption("Click any column heading to sort low to high; click again to reverse it.")
         st.html(render_power_play_quotes_table(pp_view.to_dict("records"), pp_signals_by_team),
                 unsafe_allow_javascript=True)
@@ -7949,6 +7951,7 @@ elif page == "Ledger":
 else:
     st.subheader("Raw CSV (all columns)")
     st.dataframe(df_f, width="stretch", height=620, hide_index=True)
+
 
 
 

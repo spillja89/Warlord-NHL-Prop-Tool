@@ -41,15 +41,24 @@ def fetch_reports(session, season):
     codes = {int(z['id']): str(z['triCode']).upper() for z in lookup.json().get('data', []) if z.get('triCode')}
     params = {'cayenneExp': f'seasonId={season} and gameTypeId=2', 'isAggregate': 'false', 'isGame': 'true', 'limit': -1, 'start': 0}
     def fetch(name):
-        response = session.get(base + '/' + name, params=params, timeout=20)
+        endpoint = ('https://api.nhle.com/stats/rest/en/skater/powerplay'
+                    if name == 'skater_powerplay' else base + '/' + name)
+        response = session.get(endpoint, params=params, timeout=20)
         response.raise_for_status()
         payload = response.json()
         rows = payload.get('data', [])
         if int(payload.get('total', len(rows))) != len(rows):
             raise ValueError('Incomplete official team-game report: ' + name)
         return name, pd.DataFrame(rows)
-    with ThreadPoolExecutor(max_workers=3) as pool:
+    with ThreadPoolExecutor(max_workers=4) as pool:
+        skater_future = pool.submit(fetch, 'skater_powerplay')
         reports = dict(pool.map(fetch, ['summary', 'powerplay', 'penaltykill']))
+        try:
+            name, data = skater_future.result()
+            reports[name] = data
+        except Exception as error:
+            # Existing team context survives an unavailable player-credit report.
+            print('[PP spellbook] Player-credit history unavailable: ' + type(error).__name__)
     return reports, codes
 
 def attach_points_context(frame, session=None, before_day=None, reports=None, codes=None):
@@ -74,6 +83,8 @@ def attach_points_context(frame, session=None, before_day=None, reports=None, co
             reports, codes = {}, {}
     prepared = {}
     for name, source in reports.items():
+        if name == 'skater_powerplay':
+            continue
         data = source.copy()
         if data.empty:
             continue
@@ -146,4 +157,5 @@ def attach_points_context(frame, session=None, before_day=None, reports=None, co
     from pp_card_context import attach_pp_card_context
     out = attach_pp_card_context(out, before, reports, codes or {})
     return out
+
 

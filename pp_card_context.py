@@ -3,7 +3,7 @@ from __future__ import annotations
 import math
 import pandas as pd
 
-VERSION = 'pp-card-context-2026-11-07-v1'
+VERSION = 'pp-card-context-2026-11-07-v2'
 FIELDS = {
     'Official_Team_OpportunitiesPG_L5': ('Team', 'L5', 'ppOpportunities', 'games', 1),
     'Official_Opp_FailurePct_L5': ('Opp', 'L5', 'ppGoalsAgainst', 'timesShorthanded', 100),
@@ -71,4 +71,7 @@ def attach_pp_card_context(frame, before_day, reports, codes):
         out[field] = [v.get(field) for v in contexts]
     out['PP_Card_Context_Version'] = VERSION
     out['PP_Card_Context_AsOf'] = before
+    from pp_lower_context import attach_pp_lower_context
+    out = attach_pp_lower_context(out, before, reports, codes)
     return out
+
