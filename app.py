@@ -6246,7 +6246,7 @@ elif page == "GOALS (0.5)":
 # =========================
 elif page == "Power Play":
     st.subheader("⚡ Power Play · over 0.5 point")
-    st.caption("Eleven current-season PPP profiles. Strongest fired move leads each card; all matching moves and source windows are in Inspect. Tonight's PPP estimate remains experimental.")
+    st.caption("Current-season PPP profiles across the original and Layer 1 routes. Strongest fired move leads each card; all matching moves and source windows are in Inspect. Tonight's PPP estimate remains experimental.")
     pp_dates = pd.to_datetime(df_f.get("Date", pd.Series(dtype=str)), errors="coerce").dropna()
     pp_slate_day = (pp_dates.max().date().isoformat() if not pp_dates.empty else
                     datetime.now(ZoneInfo("America/Chicago")).date().isoformat())
