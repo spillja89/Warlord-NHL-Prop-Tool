@@ -19,6 +19,23 @@ def freeze_rows(current: pd.DataFrame, previous: pd.DataFrame, now: datetime) ->
     if current["Fired_Moves"].isna().any() or current["Move_Kit_Version"].isna().any():
         raise ValueError("Cannot freeze slate: move tags or version are missing")
     eligible = current.loc[starts > now.astimezone(timezone.utc)].copy()
+    if 'PP_Fired_Moves' in eligible:
+        import json
+        from pp_tracking import CAPTURED, frozen_pp_tags
+        pp_required={'PP_Tracking_Mode','PP_Move_Kit_Version','PP_Move_Record_Version',
+                     'PP_Tracking_Version','PP_Move_Catalog','PP_Tracking_Evaluated_UTC'}
+        if not pp_required.issubset(eligible.columns):
+            raise ValueError('PPP capture provenance is incomplete')
+        for row in eligible.to_dict('records'):
+            if row['PP_Tracking_Mode'] != CAPTURED:
+                raise ValueError('Only actual pregame PP captures may enter the frozen archive')
+            captured=pd.to_datetime(row['PP_Tracking_Evaluated_UTC'],utc=True,errors='coerce')
+            start=pd.to_datetime(row['StartTimeUTC'],utc=True)
+            if pd.isna(captured) or captured>=start or captured>now.astimezone(timezone.utc):
+                raise ValueError('PPP capture must precede puck drop and freezing')
+            if not isinstance(json.loads(row['PP_Move_Catalog']),list):
+                raise ValueError('PPP catalog is missing')
+            frozen_pp_tags(row)
     eligible["Frozen_At_UTC"] = now.astimezone(timezone.utc).isoformat()
     if previous.empty:
         result = eligible
@@ -54,3 +71,4 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+

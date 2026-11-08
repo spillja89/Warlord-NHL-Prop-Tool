@@ -5958,6 +5958,11 @@ def build_tracker(today_local: date, debug: bool = False, api_key: str | None = 
     )
     tracker = attach_points15_research_flags(tracker)
 
+    # Freeze every matching PPP rule and its exact .5 quote independently of
+    # the four other prop kits. Their original Fired_Moves remain untouched.
+    from pp_tracking import attach_pp_tracking
+    tracker = attach_pp_tracking(tracker)
+
     out_path = os.path.join(OUTPUT_DIR, f"tracker_{today_local.isoformat()}_{stamp}.csv")
     tracker.to_csv(out_path, index=False)
     print(f"CSV saved to: {out_path}")
@@ -5996,5 +6001,6 @@ def main() -> None:
 if __name__ == "__main__":
 
     main()
+
 
 

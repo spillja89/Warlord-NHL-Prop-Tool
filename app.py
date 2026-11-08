@@ -7621,7 +7621,7 @@ elif page == "🧾 Log Bet":
 
 elif page == "📊 Results":
     st.subheader("📊 Graded slates")
-    st.caption("Every saved model row is matched to final NHL game records. W/L/P applies only when that market had a line. Missing players, unfinished games, and missing lines stay ungraded. PPP uses officially credited goals and assists on power-play goals; it has no tested move yet.")
+    st.caption("Every saved model row is matched to final NHL game records. W/L/P applies only when that market had a line. Missing players, unfinished games, and missing lines stay ungraded. PPP uses officially credited goals and assists on power-play goals. Named PP moves use their saved exact-0.5 quotes and versioned rules.")
     graded_dir = Path(OUTPUT_DIR) / "graded"
     for grade_name, grade_sha in _published_grade_manifest():
         grade_path = graded_dir / grade_name
@@ -7648,6 +7648,25 @@ elif page == "📊 Results":
                 st.warning(f"Could not read {price_file.name} for the price audit: {error}")
         if research_frames:
             research_grades = pd.concat(research_frames, ignore_index=True)
+            from pp_tracking import tracking_summary as _pp_tracking_summary
+            from grade_daily_tracker import move_results as _frozen_move_results
+            pp_tracking = _pp_tracking_summary(research_grades, _frozen_move_results(research_grades))
+            with st.expander("Power Play · named move results and units", expanded=True):
+                st.caption("Each move is reported separately at one unit per settled saved price. Moves share players; their units cannot be added into one portfolio. Reconstructed rows use archived pregame inputs and remain separate from moves captured before puck drop. These are model records, separate from your personal bets.")
+                pp_rows=[]
+                for record in pp_tracking['moves']:
+                    settled=record['Wins']+record['Losses']
+                    pp_rows.append({'Move':record['Move'],
+                        'Tracking':'Reconstructed pregame inputs' if record['Tracking_Mode']=='RECONSTRUCTED_ASOF' else 'Pregame capture',
+                        'Hits / plays':f"{record['Wins']}/{settled}", 'Hit %':record['Hit_Pct'],
+                        'Avg posted BE %':record['Average_Book_BE'], 'Gap (pp)':record['Gap_pp'],
+                        'Unique players':record['Unique_Players'], 'Profit (1u/pick)':record['Profit_Units'],
+                        'ROI %':record['ROI_Pct'], 'Unresolved':record['Unresolved'],
+                        'Kit':record['Kit_Version'], 'Record version':record['Record_Version']})
+                if pp_rows:
+                    st.dataframe(pd.DataFrame(pp_rows),width="stretch",hide_index=True)
+                else:
+                    st.info("No frozen PP move captures yet. Future slate runs will preserve all 20 approved definitions; unrecorded past moves are not guessed.")
             with st.expander("Points 1.5 · research signals versus book price", expanded=True):
                 st.caption("Green 1.5-point plays only. PP pressure and 5v5 shot-generator tags overlap; their records cannot be added together. Each price is the saved pregame price. These are observed results, not tonight's hit probabilities or named moves.")
                 discovery = _summarize_points15_research(research_grades, forward=False)
@@ -7663,7 +7682,7 @@ elif page == "📊 Results":
         if priced_frames:
             priced = pd.concat(priced_frames, ignore_index=True)
             with st.expander("Forward move results versus captured book prices", expanded=True):
-                st.caption("Each row is a frozen named move at the book price saved before its game. Profit assumes one unit on every settled pick. A move's old hit rate is separate from these new-season price results. Overlapping moves share outcomes; returns are not a combined betting portfolio. No confidence score is treated as a hit probability.")
+                st.caption("Each row uses the pregame book price. Profit assumes one unit on every settled pick. The Tracking column separates original pregame captures from explicit archived-input reconstructions. A move's old hit rate is separate from these new-season price results. Overlapping moves share outcomes; returns are not a combined betting portfolio.")
                 price_summary = summarize_prices(priced)
                 if price_summary.empty:
                     st.info("No named moves with settled captured prices yet. New graded slates will fill this table.")
@@ -7684,11 +7703,14 @@ elif page == "📊 Results":
             if move_frames:
                 all_moves = pd.concat(move_frames, ignore_index=True)
                 if not all_moves.empty:
-                    st.caption("Pregame move tags are frozen with each slate. Moves overlap on players, so their totals cannot be added together.")
+                    st.caption("Original pregame captures and explicit reconstructions are grouped separately. Moves overlap on players, so their totals cannot be added together.")
+                    for field,default in [('Tracking_Mode','PREGAME_CAPTURED'),('Record_Version','')]:
+                        if field not in all_moves:all_moves[field]=default
+                        all_moves[field]=all_moves[field].fillna(default)
                     min_picks = st.number_input("Minimum settled picks", min_value=0, max_value=10000, value=1, step=1)
                     board_rows = []
-                    for (version, market, move, kind, rule), subset in all_moves.groupby(
-                        ["Kit_Version", "Market", "Move", "Kind", "Rule"], dropna=False, sort=True
+                    for (version, market, move, kind, rule, tracking, record_version), subset in all_moves.groupby(
+                        ["Kit_Version", "Market", "Move", "Kind", "Rule", "Tracking_Mode", "Record_Version"], dropna=False, sort=True
                     ):
                         wins = int(subset["Outcome"].eq("W").sum())
                         losses = int(subset["Outcome"].eq("L").sum())
@@ -7702,6 +7724,8 @@ elif page == "📊 Results":
                                            "Players": int(subset["Player"].nunique()),
                                            "Dates": int(subset["Date"].nunique()),
                                            "Unresolved": int(len(subset) - settled - pushes),
+                                           "Tracking": "Reconstructed pregame inputs" if tracking == "RECONSTRUCTED_ASOF" else "Pregame capture",
+                                           "Record version": record_version,
                                            "Rule": rule, "Kit": version})
                     if board_rows:
                         move_board = pd.DataFrame(board_rows).sort_values(["Picks", "Hit %"], ascending=False)
@@ -7951,6 +7975,7 @@ elif page == "Ledger":
 else:
     st.subheader("Raw CSV (all columns)")
     st.dataframe(df_f, width="stretch", height=620, hide_index=True)
+
 
 
 

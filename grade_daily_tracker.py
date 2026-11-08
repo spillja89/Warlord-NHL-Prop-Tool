@@ -25,7 +25,7 @@ from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 
 
-VERSION = "2026-10-01-v2"
+VERSION = "2026-11-08-pp-tracking-v3"
 API = "https://api-web.nhle.com/v1"
 MARKETS = {
     "Points": ("Points_Line", "points"),
@@ -291,11 +291,16 @@ def move_results(graded: pd.DataFrame) -> pd.DataFrame:
     """Expand frozen pregame move tags; never recompute old rules."""
     columns = ["Date", "Game", "Game_ID", "Player", "Player_ID", "Team", "Market",
                "Move", "Kind", "Rule", "Icon", "Kit_Version", "Line", "Actual",
-               "Outcome", "Grade_Status", "Match_Status"]
-    if "Fired_Moves" not in graded.columns:
+               "Outcome", "Grade_Status", "Match_Status", "Move_ID", "Tracking_Mode",
+               "Record_Version", "Odds", "Book", "Odds_Checked_UTC", "PP_Unit", "Book_BE",
+               "Stake_Units", "Profit_Units", "Sample_Hits", "Sample_Plays", "Sample_Hit_Pct",
+               "Sample_Avg_Book_BE", "Source_Snapshot_SHA256"]
+    if "Fired_Moves" not in graded.columns and "PP_Fired_Moves" not in graded.columns:
         return pd.DataFrame(columns=columns)
+    from pp_tracking import pp_move_results, CAPTURED
     records = []
     for _, row in graded.iterrows():
+        records.extend(pp_move_results(row))
         raw = row.get("Fired_Moves")
         if pd.isna(raw) or str(raw).strip() in ("", "[]"):
             continue
@@ -332,6 +337,7 @@ def move_results(graded: pd.DataFrame) -> pd.DataFrame:
                 "Line": line, "Actual": row.get(f"Actual_{suffix}"),
                 "Outcome": outcome if isinstance(outcome, str) else "",
                 "Grade_Status": row.get("Grade_Status"), "Match_Status": match_status,
+                "Tracking_Mode": CAPTURED, "Record_Version": tag.get("kit_version", ""),
             })
     return pd.DataFrame(records, columns=columns)
 
@@ -340,7 +346,7 @@ def summarize_moves(moves: pd.DataFrame) -> list[dict[str, Any]]:
     if moves.empty:
         return []
     result = []
-    keys = ["Market", "Move", "Kind", "Rule", "Kit_Version"]
+    keys = ["Market", "Move", "Kind", "Rule", "Kit_Version", "Tracking_Mode", "Record_Version"]
     for group_key, rows in moves.groupby(keys, dropna=False, sort=True):
         counts = Counter(rows["Outcome"])
         wins, losses, pushes = (int(counts.get(key, 0)) for key in ("W", "L", "P"))
@@ -378,6 +384,8 @@ def main() -> None:
     graded, summary = grade_tracker(frame, args.date, _session())
     moves = move_results(graded)
     summary["moves"] = summarize_moves(moves)
+    from pp_tracking import tracking_summary
+    summary['pp_tracking'] = tracking_summary(graded, moves)
     summary["source_file"] = source.name
     summary["source_sha256"] = hashlib.sha256(original).hexdigest()
     destination = args.repo / "output" / "graded"
@@ -399,3 +407,4 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+

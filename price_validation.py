@@ -76,7 +76,11 @@ def price_records(graded: pd.DataFrame) -> pd.DataFrame:
                     "Break_even_pct": round(implied * 100.0, 2),
                     "Price_band": _price_bucket(implied), "Outcome": outcome,
                     "Profit_units": round(profit, 4),
+                    "Tracking_Mode": "PREGAME_CAPTURED",
+                    "Record_Version": str(tag.get("kit_version") or row.get("Move_Kit_Version") or ""),
                 })
+    from pp_tracking import pp_price_records
+    records.extend(pp_price_records(graded))
     return pd.DataFrame.from_records(records)
 
 
@@ -86,8 +90,12 @@ def summarize_prices(records: pd.DataFrame) -> pd.DataFrame:
                                      "Hit %", "Avg book break-even %", "Profit (1u/pick)",
                                      "ROI %", "Evidence"])
     rows = []
-    keys = ["Market", "Move", "Kit", "Line", "Price_band"]
-    for (market, move, kit, line, band), group in records.groupby(keys, dropna=False):
+    records=records.copy()
+    for field,default in [('Tracking_Mode','PREGAME_CAPTURED'),('Record_Version','')]:
+        if field not in records:records[field]=default
+        records[field]=records[field].fillna(default)
+    keys = ["Market", "Move", "Kit", "Line", "Price_band", "Tracking_Mode", "Record_Version"]
+    for (market, move, kit, line, band, tracking, record_version), group in records.groupby(keys, dropna=False):
         settled = group[group["Outcome"].isin(["W", "L"])]
         picks = len(settled)
         if not picks:
@@ -97,9 +105,12 @@ def summarize_prices(records: pd.DataFrame) -> pd.DataFrame:
         profit = float(settled["Profit_units"].sum())
         rows.append({
             "Market": market, "Move": move, "Kit": kit, "Line": line, "Price band": band,
+            "Tracking": "Reconstructed pregame inputs" if tracking == "RECONSTRUCTED_ASOF" else "Pregame capture",
+            "Record version": record_version,
             "Picks": picks, "Dates": dates, "Hit %": round(100.0 * wins / picks, 1),
             "Avg book break-even %": round(float(settled["Break_even_pct"].mean()), 1),
             "Profit (1u/pick)": round(profit, 2), "ROI %": round(100.0 * profit / picks, 1),
             "Evidence": "early sample" if dates < 20 or picks < 100 else "larger sample; still exploratory",
         })
     return pd.DataFrame(rows).sort_values(["Picks", "Dates"], ascending=False) if rows else pd.DataFrame()
+
