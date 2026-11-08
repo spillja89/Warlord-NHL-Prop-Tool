@@ -365,6 +365,32 @@ def _source_path(root: Path, slate_day: str) -> Path | None:
     return frozen if frozen.is_file() else None
 
 
+def preserve_reconstructed_pp(frame: pd.DataFrame, previous: pd.DataFrame,
+                              source_sha256: str) -> pd.DataFrame:
+    """Reuse explicit frozen reconstruction tags on regrades, never rediscover rules."""
+    from pp_tracking import RECONSTRUCTED, frozen_pp_tags
+    if "PP_Tracking_Version" in frame.columns or "PP_Tracking_Version" not in previous.columns:
+        return frame
+    if not previous["PP_Tracking_Mode"].eq(RECONSTRUCTED).all():
+        raise ValueError("Cannot restore PP tags with unknown capture provenance")
+    if not previous["PP_Tracking_Source_SHA256"].eq(source_sha256).all():
+        raise ValueError("Reconstructed PP tags do not match this frozen source")
+    identity = ["Date", "Game_ID", "Player_ID", "Team", "Player"]
+    if len(frame) != len(previous) or any(
+        not frame[k].reset_index(drop=True).fillna("").astype(str).equals(
+            previous[k].reset_index(drop=True).fillna("").astype(str)) for k in identity
+    ):
+        raise ValueError("Reconstructed PP tags do not match frozen player rows")
+    columns = ["PP_Fired_Moves", "PP_Move_Kit_Version", "PP_Move_Record_Version",
+               "PP_Move_Catalog"] + [c for c in previous if c.startswith("PP_Tracking_")]
+    restored = frame.copy().reset_index(drop=True)
+    for column in columns:
+        restored[column] = previous[column].reset_index(drop=True)
+    for row in restored.to_dict("records"):
+        frozen_pp_tags(row)
+    return restored
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--date", default=(datetime.now(ZoneInfo("America/Chicago")).date() - timedelta(days=1)).isoformat())
@@ -381,6 +407,14 @@ def main() -> None:
         parser.error(f"No dated tracker for {args.date}")
     original = source.read_bytes()
     frame = pd.read_csv(source, low_memory=False)
+    prior_path = args.repo / "output" / "graded" / f"tracker_{args.date}_GRADED.csv"
+    previous_summary = {}
+    if "PP_Tracking_Version" not in frame.columns and prior_path.is_file():
+        previous = pd.read_csv(prior_path, low_memory=False)
+        frame = preserve_reconstructed_pp(frame, previous, hashlib.sha256(original).hexdigest())
+        prior_summary_path = prior_path.with_name(f"tracker_{args.date}_summary.json")
+        if prior_summary_path.is_file():
+            previous_summary = json.loads(prior_summary_path.read_text(encoding="utf-8"))
     graded, summary = grade_tracker(frame, args.date, _session())
     moves = move_results(graded)
     summary["moves"] = summarize_moves(moves)
@@ -388,6 +422,8 @@ def main() -> None:
     summary['pp_tracking'] = tracking_summary(graded, moves)
     summary["source_file"] = source.name
     summary["source_sha256"] = hashlib.sha256(original).hexdigest()
+    if previous_summary.get("pp_reconstruction") and "PP_Tracking_Version" in frame.columns:
+        summary["pp_reconstruction"] = previous_summary["pp_reconstruction"]
     destination = args.repo / "output" / "graded"
     destination.mkdir(parents=True, exist_ok=True)
     csv_path = destination / f"tracker_{args.date}_GRADED.csv"
