@@ -5,7 +5,7 @@
     "FINAL": 393,
     "NO_PLAYER": 42
   },
-  "grader_version": "2026-10-01-v2",
+  "grader_version": "2026-11-08-pp-tracking-v3",
   "markets": {
     "ATG": {
       "L": 318,
@@ -50,7 +50,9 @@
       "Picks": 20,
       "Players": 20,
       "Pushes": 0,
+      "Record_Version": "assist-2026-27-additive-2026-11-03-v1",
       "Rule": "Assist 0.5 + Matrix_Assists Green + Conf_Assists >=80 + iXA% >=94",
+      "Tracking_Mode": "PREGAME_CAPTURED",
       "Unresolved": 0,
       "Wins": 15
     },
@@ -65,7 +67,9 @@
       "Picks": 19,
       "Players": 19,
       "Pushes": 0,
+      "Record_Version": "assist-2026-27-pp-crits-v1",
       "Rule": "Assist 0.5 + Matrix_Assists Green + Conf_Assists >= 81 + iXA% >= 95",
+      "Tracking_Mode": "PREGAME_CAPTURED",
       "Unresolved": 0,
       "Wins": 14
     },
@@ -80,7 +84,9 @@
       "Picks": 15,
       "Players": 15,
       "Pushes": 0,
+      "Record_Version": "assist-2026-27-pp-crits-v1",
       "Rule": "Assist 0.5 + Matrix_Assists Green + Conf_Assists >= 81 + iXA% >= 95 + Assists_mu >= 1.1",
+      "Tracking_Mode": "PREGAME_CAPTURED",
       "Unresolved": 0,
       "Wins": 11
     },
@@ -95,7 +101,9 @@
       "Picks": 12,
       "Players": 12,
       "Pushes": 0,
+      "Record_Version": "assist-2026-27-pp-crits-v1",
       "Rule": "Assist 0.5 + Matrix_Assists Green + Conf_Assists >= 81 + iXA% >= 95 + PP_Points60 >= 3.75 + PP_iXA60 >= 2.5",
+      "Tracking_Mode": "PREGAME_CAPTURED",
       "Unresolved": 0,
       "Wins": 9
     },
@@ -110,7 +118,9 @@
       "Picks": 12,
       "Players": 12,
       "Pushes": 0,
+      "Record_Version": "assist-2026-27-additive-2026-11-03-v1",
       "Rule": "Assist 0.5 + Matrix_Assists Green + Conf_Assists >=80 + iXA% >=94 + Goal_mu <= 0.33",
+      "Tracking_Mode": "PREGAME_CAPTURED",
       "Unresolved": 0,
       "Wins": 9
     },
@@ -125,7 +135,9 @@
       "Picks": 11,
       "Players": 11,
       "Pushes": 0,
+      "Record_Version": "goal-2026-27-three-paths-v6",
       "Rule": "Green + Goal 0.5 + StarScore >= 84.5 + TOI/game >= 20 + L10 shots <= 39",
+      "Tracking_Mode": "PREGAME_CAPTURED",
       "Unresolved": 0,
       "Wins": 3
     },
@@ -140,7 +152,9 @@
       "Picks": 10,
       "Players": 10,
       "Pushes": 0,
+      "Record_Version": "goal-2026-27-three-paths-v6",
       "Rule": "Green + Goal 0.5 + StarScore >= 84.5 + goal drought >= 1 + TOI rank >= 81",
+      "Tracking_Mode": "PREGAME_CAPTURED",
       "Unresolved": 0,
       "Wins": 2
     },
@@ -155,7 +169,9 @@
       "Picks": 9,
       "Players": 9,
       "Pushes": 0,
+      "Record_Version": "assist-2026-27-additive-2026-11-03-v1",
       "Rule": "Assist 0.5 + Matrix_Assists Green + Conf_Assists >=80 + iXA% >=94 + Goal_mu <= 0.33 + i5v5_primaryAssists60 <= 1.05",
+      "Tracking_Mode": "PREGAME_CAPTURED",
       "Unresolved": 0,
       "Wins": 8
     },
@@ -170,7 +186,9 @@
       "Picks": 9,
       "Players": 9,
       "Pushes": 0,
+      "Record_Version": "assist-2026-27-pp-crits-v1",
       "Rule": "Assist 0.5 + Matrix_Assists Green + Conf_Assists >= 81 + iXA% >= 95 + PP_iXA60 >= 3.9",
+      "Tracking_Mode": "PREGAME_CAPTURED",
       "Unresolved": 0,
       "Wins": 7
     },
@@ -185,7 +203,9 @@
       "Picks": 9,
       "Players": 9,
       "Pushes": 0,
+      "Record_Version": "assist-2026-27-additive-2026-11-03-v1",
       "Rule": "Assist 0.5 + Matrix_Assists Green + Conf_Assists >=80 + iXA% >=94 + Goal_mu <= 0.33 + Player_SOG_Share_Proxy >= 11",
+      "Tracking_Mode": "PREGAME_CAPTURED",
       "Unresolved": 0,
       "Wins": 6
     },
@@ -200,7 +220,9 @@
       "Picks": 9,
       "Players": 9,
       "Pushes": 0,
+      "Record_Version": "goal-2026-27-three-paths-v6",
       "Rule": "Green + Goal 0.5 + StarScore >= 84.5 + goal drought >= 1 + TOI rank >= 81 + Goal confidence >= 93",
+      "Tracking_Mode": "PREGAME_CAPTURED",
       "Unresolved": 0,
       "Wins": 2
     },
@@ -215,7 +237,9 @@
       "Picks": 9,
       "Players": 9,
       "Pushes": 0,
+      "Record_Version": "goal-2026-27-three-paths-v6",
       "Rule": "Green + Goal 0.5 + StarScore >= 84.5 + goal drought >= 1 + TOI rank >= 81 + shot intent <= 3.8",
+      "Tracking_Mode": "PREGAME_CAPTURED",
       "Unresolved": 0,
       "Wins": 2
     },
@@ -230,7 +254,9 @@
       "Picks": 9,
       "Players": 9,
       "Pushes": 0,
+      "Record_Version": "2026-10-23-assist-current-v1",
       "Rule": "Conf_Points >= 75",
+      "Tracking_Mode": "PREGAME_CAPTURED",
       "Unresolved": 0,
       "Wins": 6
     },
@@ -245,7 +271,9 @@
       "Picks": 8,
       "Players": 8,
       "Pushes": 0,
+      "Record_Version": "goal-2026-27-three-paths-v6",
       "Rule": "Green + Goal 0.5 + StarScore >= 84.5 + goal drought >= 1 + TOI rank >= 81 + points model mean >= 1.4",
+      "Tracking_Mode": "PREGAME_CAPTURED",
       "Unresolved": 0,
       "Wins": 2
     },
@@ -260,7 +288,9 @@
       "Picks": 8,
       "Players": 8,
       "Pushes": 0,
+      "Record_Version": "goal-2026-27-three-paths-v6",
       "Rule": "Green + Goal 0.5 + StarScore >= 84.5 + goal drought >= 1 + TOI rank >= 81 + L10 shots <= 35",
+      "Tracking_Mode": "PREGAME_CAPTURED",
       "Unresolved": 0,
       "Wins": 2
     },
@@ -275,7 +305,9 @@
       "Picks": 8,
       "Players": 8,
       "Pushes": 0,
+      "Record_Version": "2026-10-23-assist-current-v1",
       "Rule": "Conf_Points >= 80 + L10_S >= 17",
+      "Tracking_Mode": "PREGAME_CAPTURED",
       "Unresolved": 0,
       "Wins": 6
     },
@@ -290,7 +322,9 @@
       "Picks": 8,
       "Players": 8,
       "Pushes": 0,
+      "Record_Version": "2026-10-23-assist-current-v1",
       "Rule": "Conf_Points >= 80 + Assists_mu >= 0.746",
+      "Tracking_Mode": "PREGAME_CAPTURED",
       "Unresolved": 0,
       "Wins": 6
     },
@@ -305,7 +339,9 @@
       "Picks": 8,
       "Players": 8,
       "Pushes": 0,
+      "Record_Version": "2026-10-23-assist-current-v1",
       "Rule": "Conf_Points >= 81 + Assists_mu >= 0.746",
+      "Tracking_Mode": "PREGAME_CAPTURED",
       "Unresolved": 0,
       "Wins": 6
     },
@@ -320,7 +356,9 @@
       "Picks": 8,
       "Players": 8,
       "Pushes": 0,
+      "Record_Version": "2026-10-23-assist-current-v1",
       "Rule": "Conf_Points >= 80",
+      "Tracking_Mode": "PREGAME_CAPTURED",
       "Unresolved": 0,
       "Wins": 6
     },
@@ -335,7 +373,9 @@
       "Picks": 8,
       "Players": 8,
       "Pushes": 0,
+      "Record_Version": "2026-10-23-assist-current-v1",
       "Rule": "Green + SOG 3.5 + Conf_SOG >= 75",
+      "Tracking_Mode": "PREGAME_CAPTURED",
       "Unresolved": 0,
       "Wins": 4
     },
@@ -350,7 +390,9 @@
       "Picks": 7,
       "Players": 7,
       "Pushes": 0,
+      "Record_Version": "assist-2026-27-pp-crits-v1",
       "Rule": "Assist 0.5 + Matrix_Assists Green + Conf_Assists >= 81 + iXA% >= 95 + Drought_G >= 2",
+      "Tracking_Mode": "PREGAME_CAPTURED",
       "Unresolved": 0,
       "Wins": 4
     },
@@ -365,7 +407,9 @@
       "Picks": 7,
       "Players": 7,
       "Pushes": 0,
+      "Record_Version": "assist-2026-27-additive-2026-11-03-v1",
       "Rule": "Assist 0.5 + Matrix_Assists Green + Conf_Assists >=80 + iXA% >=94 + Goal_mu <= 0.33 + i5v5_primaryAssists60 <= 1.05 + Team_PP_GF60 >= 5.7 + opp_5v5_HDCA60 <= 2.2",
+      "Tracking_Mode": "PREGAME_CAPTURED",
       "Unresolved": 0,
       "Wins": 6
     },
@@ -380,7 +424,9 @@
       "Picks": 7,
       "Players": 7,
       "Pushes": 0,
+      "Record_Version": "assist-2026-27-additive-2026-11-03-v1",
       "Rule": "Assist 0.5 + Matrix_Assists Green + Conf_Assists >=80 + iXA% >=94 + Goal_mu <= 0.33 + PPP10_total >= 4",
+      "Tracking_Mode": "PREGAME_CAPTURED",
       "Unresolved": 0,
       "Wins": 5
     },
@@ -395,7 +441,9 @@
       "Picks": 7,
       "Players": 7,
       "Pushes": 0,
+      "Record_Version": "2026-10-23-assist-current-v1",
       "Rule": "Conf_Points >= 83 + L10_P >= 8 + L10_S >= 17",
+      "Tracking_Mode": "PREGAME_CAPTURED",
       "Unresolved": 0,
       "Wins": 5
     },
@@ -410,7 +458,9 @@
       "Picks": 7,
       "Players": 7,
       "Pushes": 0,
+      "Record_Version": "2026-10-23-assist-current-v1",
       "Rule": "Conf_Points >= 83 + Assists_mu >= 0.746",
+      "Tracking_Mode": "PREGAME_CAPTURED",
       "Unresolved": 0,
       "Wins": 5
     },
@@ -425,7 +475,9 @@
       "Picks": 7,
       "Players": 7,
       "Pushes": 0,
+      "Record_Version": "2026-11-04-sog25-green60-v2",
       "Rule": "SOG2.5 + Matrix_SOG Green + Conf_SOG >=67 (Shot Profile v2) \u00b7 Green: original profile/Elite OR remaining shot checks + iXG% >=60",
+      "Tracking_Mode": "PREGAME_CAPTURED",
       "Unresolved": 0,
       "Wins": 4
     },
@@ -440,7 +492,9 @@
       "Picks": 6,
       "Players": 6,
       "Pushes": 0,
+      "Record_Version": "assist-2026-27-additive-2026-11-03-v1",
       "Rule": "Assist 0.5 + Matrix_Assists Green + Conf_Assists >=80 + iXA% >=94 + Goal_mu <= 0.33 + Player_SOG_Share_Proxy >= 11 + Team_PP_GF60 >= 5.7 + opp_5v5_HDCA60 <= 2.2",
+      "Tracking_Mode": "PREGAME_CAPTURED",
       "Unresolved": 0,
       "Wins": 4
     },
@@ -455,7 +509,9 @@
       "Picks": 6,
       "Players": 6,
       "Pushes": 0,
+      "Record_Version": "assist-2026-27-pp-crits-v1",
       "Rule": "Assist 0.5 + Matrix_Assists Green + Conf_Assists >= 81 + iXA% >= 95 + TOI_per_game >= 22",
+      "Tracking_Mode": "PREGAME_CAPTURED",
       "Unresolved": 0,
       "Wins": 4
     },
@@ -470,7 +526,9 @@
       "Picks": 6,
       "Players": 6,
       "Pushes": 0,
+      "Record_Version": "assist-2026-27-pp-crits-v1",
       "Rule": "Assist 0.5 + Matrix_Assists Green + Conf_Assists >= 81 + iXA% >= 95 + PP_iXA60 >= 3.9 + Team_PP_xGF60 >= 8.3",
+      "Tracking_Mode": "PREGAME_CAPTURED",
       "Unresolved": 0,
       "Wins": 5
     },
@@ -485,7 +543,9 @@
       "Picks": 6,
       "Players": 6,
       "Pushes": 0,
+      "Record_Version": "assist-2026-27-additive-2026-11-03-v1",
       "Rule": "Assist 0.5 + Matrix_Assists Green + Conf_Assists >=80 + iXA% >=94 + Goal_mu <= 0.33 + PPP10_total >= 4 + Team_PP_GF60 >= 5.7 + opp_5v5_HDCA60 <= 2.2",
+      "Tracking_Mode": "PREGAME_CAPTURED",
       "Unresolved": 0,
       "Wins": 4
     },
@@ -500,7 +560,9 @@
       "Picks": 6,
       "Players": 6,
       "Pushes": 0,
+      "Record_Version": "goal-2026-27-three-paths-v6",
       "Rule": "Green + Goal 0.5 + StarScore >= 84.5 + goal drought >= 1 + TOI rank >= 81 + L5 SOG/game <= 3.2",
+      "Tracking_Mode": "PREGAME_CAPTURED",
       "Unresolved": 0,
       "Wins": 2
     },
@@ -515,7 +577,9 @@
       "Picks": 6,
       "Players": 6,
       "Pushes": 0,
+      "Record_Version": "goal-2026-27-three-paths-v6",
       "Rule": "Green + Goal 0.5 + StarScore >= 84.5 + goal drought >= 1 + TOI rank >= 81 + L10 goals <= 4",
+      "Tracking_Mode": "PREGAME_CAPTURED",
       "Unresolved": 0,
       "Wins": 1
     },
@@ -530,7 +594,9 @@
       "Picks": 6,
       "Players": 6,
       "Pushes": 0,
+      "Record_Version": "2026-10-23-assist-current-v1",
       "Rule": "Conf_Points >= 80 + TOI_per_game >= 19.18",
+      "Tracking_Mode": "PREGAME_CAPTURED",
       "Unresolved": 0,
       "Wins": 4
     },
@@ -545,7 +611,9 @@
       "Picks": 6,
       "Players": 6,
       "Pushes": 0,
+      "Record_Version": "2026-10-23-assist-current-v1",
       "Rule": "Conf_Points >= 80 + TOI_per_game >= 19.18 + L10_S >= 17",
+      "Tracking_Mode": "PREGAME_CAPTURED",
       "Unresolved": 0,
       "Wins": 4
     },
@@ -560,7 +628,9 @@
       "Picks": 6,
       "Players": 6,
       "Pushes": 0,
+      "Record_Version": "2026-11-04-sog25-green60-v2",
       "Rule": "SOG2.5 + Matrix_SOG Green + Conf_SOG >=67 (Shot Profile v2) \u00b7 Green: original profile/Elite OR remaining shot checks + iXG% >=60 + Conf_SOG >=71",
+      "Tracking_Mode": "PREGAME_CAPTURED",
       "Unresolved": 0,
       "Wins": 3
     },
@@ -575,7 +645,9 @@
       "Picks": 6,
       "Players": 6,
       "Pushes": 0,
+      "Record_Version": "2026-11-04-sog25-green60-v2",
       "Rule": "SOG2.5 + Matrix_SOG Green + Conf_SOG >=67 (Shot Profile v2) \u00b7 Green: original profile/Elite OR remaining shot checks + iXG% >=60 + opponent PK seconds/opportunity <=104",
+      "Tracking_Mode": "PREGAME_CAPTURED",
       "Unresolved": 0,
       "Wins": 3
     },
@@ -590,7 +662,9 @@
       "Picks": 5,
       "Players": 5,
       "Pushes": 0,
+      "Record_Version": "assist-2026-27-additive-2026-11-03-v1",
       "Rule": "Assist 0.5 + Matrix_Assists Green + Conf_Assists >=80 + iXA% >=94 + Goal_mu <= 0.33 + i5v5_primaryAssists60 <= 1.05 + PPP10_total >= 4 + Team_PP_GF60 >= 5.7 + opp_5v5_HDCA60 <= 2.2",
+      "Tracking_Mode": "PREGAME_CAPTURED",
       "Unresolved": 0,
       "Wins": 4
     },
@@ -605,7 +679,9 @@
       "Picks": 5,
       "Players": 5,
       "Pushes": 0,
+      "Record_Version": "goal-2026-27-three-paths-v6",
       "Rule": "Green + Goal 0.5 + StarScore >= 84.5 + goal drought >= 1 + TOI rank >= 81 + points model mean >= 1.4 + verified 2026-27 team stats + team PP xGF/60 >= 8",
+      "Tracking_Mode": "PREGAME_CAPTURED",
       "Unresolved": 0,
       "Wins": 2
     },
@@ -620,7 +696,9 @@
       "Picks": 5,
       "Players": 5,
       "Pushes": 0,
+      "Record_Version": "goal-2026-27-three-paths-v6",
       "Rule": "Green + Goal 0.5 + StarScore >= 84.5 + goal drought >= 1 + TOI rank >= 81 + shot intent <= 3.8 + verified 2026-27 team stats + team PP xGF/60 >= 8",
+      "Tracking_Mode": "PREGAME_CAPTURED",
       "Unresolved": 0,
       "Wins": 2
     },
@@ -635,7 +713,9 @@
       "Picks": 5,
       "Players": 5,
       "Pushes": 0,
+      "Record_Version": "goal-2026-27-three-paths-v6",
       "Rule": "Green + Goal 0.5 + StarScore >= 84.5 + goal drought >= 1 + TOI rank >= 81 + L10 shots <= 35 + verified 2026-27 team stats + team PP xGF/60 >= 8",
+      "Tracking_Mode": "PREGAME_CAPTURED",
       "Unresolved": 0,
       "Wins": 2
     },
@@ -650,7 +730,9 @@
       "Picks": 5,
       "Players": 5,
       "Pushes": 0,
+      "Record_Version": "goal-2026-27-three-paths-v6",
       "Rule": "Green + Goal 0.5 + StarScore >= 84.5 + goal drought >= 1 + TOI rank >= 81 + shot-intent rank <= 90",
+      "Tracking_Mode": "PREGAME_CAPTURED",
       "Unresolved": 0,
       "Wins": 1
     },
@@ -665,7 +747,9 @@
       "Picks": 5,
       "Players": 5,
       "Pushes": 0,
+      "Record_Version": "points-2026-27-current-2026-11-05-v1",
       "Rule": "Points0.5+Matrix_PointsGreen+Conf_Points>=77",
+      "Tracking_Mode": "PREGAME_CAPTURED",
       "Unresolved": 0,
       "Wins": 2
     },
@@ -680,7 +764,9 @@
       "Picks": 5,
       "Players": 5,
       "Pushes": 0,
+      "Record_Version": "points-2026-27-current-2026-11-05-v1",
       "Rule": "Points0.5+Matrix_PointsGreen+Conf_Points>=77 + NHL_Opp_Goal_conversion_pct >= 11.2",
+      "Tracking_Mode": "PREGAME_CAPTURED",
       "Unresolved": 0,
       "Wins": 2
     },
@@ -695,7 +781,9 @@
       "Picks": 5,
       "Players": 5,
       "Pushes": 0,
+      "Record_Version": "points-2026-27-current-2026-11-05-v1",
       "Rule": "Points0.5+Matrix_PointsGreen+Conf_Points>=77 + NHL_Opp_Goal_conversion_pct >= 7.4",
+      "Tracking_Mode": "PREGAME_CAPTURED",
       "Unresolved": 0,
       "Wins": 2
     },
@@ -710,7 +798,9 @@
       "Picks": 5,
       "Players": 5,
       "Pushes": 0,
+      "Record_Version": "points-2026-27-current-2026-11-05-v1",
       "Rule": "Points0.5+Matrix_PointsGreen+Conf_Points>=77 + NHL_Opp_GF_10_PG >= 2.15",
+      "Tracking_Mode": "PREGAME_CAPTURED",
       "Unresolved": 0,
       "Wins": 2
     },
@@ -725,7 +815,9 @@
       "Picks": 5,
       "Players": 5,
       "Pushes": 0,
+      "Record_Version": "2026-11-04-sog25-green60-v2",
       "Rule": "SOG2.5 + Matrix_SOG Green + Conf_SOG >=67 (Shot Profile v2) \u00b7 Green: original profile/Elite OR remaining shot checks + iXG% >=60 + Conf_SOG >=71 + opponent PK seconds/opportunity <=104",
+      "Tracking_Mode": "PREGAME_CAPTURED",
       "Unresolved": 0,
       "Wins": 2
     },
@@ -740,7 +832,9 @@
       "Picks": 4,
       "Players": 4,
       "Pushes": 0,
+      "Record_Version": "assist-2026-27-pp-crits-v1",
       "Rule": "Assist 0.5 + Matrix_Assists Green + Conf_Assists >= 81 + iXA% >= 95 + PP_TOI_per_game >= 3.75",
+      "Tracking_Mode": "PREGAME_CAPTURED",
       "Unresolved": 0,
       "Wins": 2
     },
@@ -755,7 +849,9 @@
       "Picks": 4,
       "Players": 4,
       "Pushes": 0,
+      "Record_Version": "assist-2026-27-additive-2026-11-03-v1",
       "Rule": "Assist 0.5 + Matrix_Assists Green + Conf_Assists >=80 + iXA% >=94 + L10_S <= 19",
+      "Tracking_Mode": "PREGAME_CAPTURED",
       "Unresolved": 0,
       "Wins": 3
     },
@@ -770,7 +866,9 @@
       "Picks": 4,
       "Players": 4,
       "Pushes": 0,
+      "Record_Version": "goal-2026-27-three-paths-v6",
       "Rule": "Green + Goal 0.5 + StarScore >= 84.5 + goal drought >= 1 + TOI rank >= 81 + points model mean >= 1.4 + verified 2026-27 team stats + team 5v5 shots/60 >= 25.8",
+      "Tracking_Mode": "PREGAME_CAPTURED",
       "Unresolved": 0,
       "Wins": 0
     },
@@ -785,7 +883,9 @@
       "Picks": 4,
       "Players": 4,
       "Pushes": 0,
+      "Record_Version": "goal-2026-27-three-paths-v6",
       "Rule": "Green + Goal 0.5 + StarScore >= 84.5 + goal drought >= 1 + TOI rank >= 81 + shot intent <= 3.8 + verified 2026-27 team stats + team 5v5 shots/60 >= 25.8",
+      "Tracking_Mode": "PREGAME_CAPTURED",
       "Unresolved": 0,
       "Wins": 0
     },
@@ -800,7 +900,9 @@
       "Picks": 4,
       "Players": 4,
       "Pushes": 0,
+      "Record_Version": "goal-2026-27-three-paths-v6",
       "Rule": "Green + Goal 0.5 + StarScore >= 84.5 + goal drought >= 1 + TOI rank >= 81 + points model mean >= 1.4 + verified 2026-27 team stats + opponent PK goals allowed/60 >= 8.2",
+      "Tracking_Mode": "PREGAME_CAPTURED",
       "Unresolved": 0,
       "Wins": 2
     },
@@ -815,7 +917,9 @@
       "Picks": 4,
       "Players": 4,
       "Pushes": 0,
+      "Record_Version": "goal-2026-27-three-paths-v6",
       "Rule": "Green + Goal 0.5 + StarScore >= 84.5 + goal drought >= 1 + TOI rank >= 81 + shot intent <= 3.8 + verified 2026-27 team stats + opponent PK goals allowed/60 >= 8.2",
+      "Tracking_Mode": "PREGAME_CAPTURED",
       "Unresolved": 0,
       "Wins": 2
     },
@@ -830,7 +934,9 @@
       "Picks": 4,
       "Players": 4,
       "Pushes": 0,
+      "Record_Version": "goal-2026-27-three-paths-v6",
       "Rule": "Green + Goal 0.5 + StarScore >= 84.5 + goal drought >= 1 + TOI rank >= 81 + L10 shots <= 35 + verified 2026-27 team stats + opponent PK goals allowed/60 >= 8.2",
+      "Tracking_Mode": "PREGAME_CAPTURED",
       "Unresolved": 0,
       "Wins": 2
     },
@@ -845,7 +951,9 @@
       "Picks": 4,
       "Players": 4,
       "Pushes": 0,
+      "Record_Version": "goal-2026-27-three-paths-v6",
       "Rule": "Green + Goal 0.5 + StarScore >= 84.5 + TOI/game >= 20 + L10 shots <= 39 + PPP drought >= 2",
+      "Tracking_Mode": "PREGAME_CAPTURED",
       "Unresolved": 0,
       "Wins": 0
     },
@@ -860,7 +968,9 @@
       "Picks": 4,
       "Players": 4,
       "Pushes": 0,
+      "Record_Version": "goal-2026-27-three-paths-v6",
       "Rule": "Goal 0.5 + Matrix_Goal Green + last-five xG/game >= 0.50 + last-five xG/game >= 0.55 + StarScore >= 84.5",
+      "Tracking_Mode": "PREGAME_CAPTURED",
       "Unresolved": 0,
       "Wins": 0
     },
@@ -875,7 +985,9 @@
       "Picks": 4,
       "Players": 4,
       "Pushes": 0,
+      "Record_Version": "points-2026-27-current-2026-11-05-v1",
       "Rule": "Points0.5+Matrix_PointsGreen+Conf_Points>=77 + PP_TOI_per_game >= 2.4 + NHL_Opp_Goals_per_shot_allowed_pct <= 12.1",
+      "Tracking_Mode": "PREGAME_CAPTURED",
       "Unresolved": 0,
       "Wins": 2
     },
@@ -890,7 +1002,9 @@
       "Picks": 4,
       "Players": 4,
       "Pushes": 0,
+      "Record_Version": "points-2026-27-current-2026-11-05-v1",
       "Rule": "Points0.5+Matrix_PointsGreen+Conf_Points>=77 + PP_TOI_per_game >= 2.4 + NHL_Opp_GA_10_PG <= 3.45",
+      "Tracking_Mode": "PREGAME_CAPTURED",
       "Unresolved": 0,
       "Wins": 2
     },
@@ -905,7 +1019,9 @@
       "Picks": 4,
       "Players": 4,
       "Pushes": 0,
+      "Record_Version": "points-2026-27-current-2026-11-05-v1",
       "Rule": "Points0.5+Matrix_PointsGreen+Conf_Points>=77 + PP_TOI_per_game >= 2.4",
+      "Tracking_Mode": "PREGAME_CAPTURED",
       "Unresolved": 0,
       "Wins": 2
     },
@@ -920,7 +1036,9 @@
       "Picks": 3,
       "Players": 3,
       "Pushes": 0,
+      "Record_Version": "assist-2026-27-pp-crits-v1",
       "Rule": "Assist 0.5 + Matrix_Assists Green + Conf_Assists >= 81 + iXA% >= 95 + TOI_per_game >= 22 + Team_PP_xGF60 >= 8.3",
+      "Tracking_Mode": "PREGAME_CAPTURED",
       "Unresolved": 0,
       "Wins": 3
     },
@@ -935,7 +1053,9 @@
       "Picks": 3,
       "Players": 3,
       "Pushes": 0,
+      "Record_Version": "assist-2026-27-additive-2026-11-03-v1",
       "Rule": "Assist 0.5 + Matrix_Assists Green + Conf_Assists >=80 + iXA% >=94 + Goal_mu <= 0.33 + Player_SOG_Share_Proxy >= 11 + Player_5v5_SOG_Share >= 8",
+      "Tracking_Mode": "PREGAME_CAPTURED",
       "Unresolved": 0,
       "Wins": 2
     },
@@ -950,7 +1070,9 @@
       "Picks": 3,
       "Players": 3,
       "Pushes": 0,
+      "Record_Version": "goal-2026-27-three-paths-v6",
       "Rule": "Green + Goal 0.5 + StarScore >= 84.5 + goal drought >= 1 + TOI rank >= 81 + L10 shots <= 35 + verified 2026-27 team stats + team 5v5 shots/60 >= 25.8",
+      "Tracking_Mode": "PREGAME_CAPTURED",
       "Unresolved": 0,
       "Wins": 0
     },
@@ -965,7 +1087,9 @@
       "Picks": 3,
       "Players": 3,
       "Pushes": 0,
+      "Record_Version": "goal-2026-27-three-paths-v6",
       "Rule": "Goal 0.5 + Matrix_Goal Green + last-five xG/game >= 0.50 + last-five xG/game >= 0.55 + Goal profile >= 93",
+      "Tracking_Mode": "PREGAME_CAPTURED",
       "Unresolved": 0,
       "Wins": 0
     },
@@ -980,7 +1104,9 @@
       "Picks": 3,
       "Players": 3,
       "Pushes": 0,
+      "Record_Version": "goal-2026-27-three-paths-v6",
       "Rule": "Goal 0.5 + Matrix_Goal Green + last-five xG/game >= 0.50 + last-five xG/game >= 0.55 + Goal profile >= 89 + L20_A <= 8 + ShotIntent_Pct <= 91.1",
+      "Tracking_Mode": "PREGAME_CAPTURED",
       "Unresolved": 0,
       "Wins": 0
     },
@@ -995,7 +1121,9 @@
       "Picks": 3,
       "Players": 3,
       "Pushes": 0,
+      "Record_Version": "goal-2026-27-three-paths-v6",
       "Rule": "Goal 0.5 + Matrix_Goal Green + last-five xG/game >= 0.50 + last-five xG/game >= 0.55 + Goal profile >= 89 + ShotIntent_Pct <= 91.1",
+      "Tracking_Mode": "PREGAME_CAPTURED",
       "Unresolved": 0,
       "Wins": 0
     },
@@ -1010,7 +1138,9 @@
       "Picks": 3,
       "Players": 3,
       "Pushes": 0,
+      "Record_Version": "2026-10-23-assist-current-v1",
       "Rule": "Conf_Points >= 75 + Conf_Goal <= 88 + Conf_SOG >= 80",
+      "Tracking_Mode": "PREGAME_CAPTURED",
       "Unresolved": 0,
       "Wins": 2
     },
@@ -1025,7 +1155,9 @@
       "Picks": 3,
       "Players": 3,
       "Pushes": 0,
+      "Record_Version": "2026-10-23-assist-current-v1",
       "Rule": "Conf_Points >= 83 + TOI_per_game >= 19.18 + Opp_PK_xGA60 >= 7.784",
+      "Tracking_Mode": "PREGAME_CAPTURED",
       "Unresolved": 0,
       "Wins": 3
     },
@@ -1040,7 +1172,9 @@
       "Picks": 3,
       "Players": 3,
       "Pushes": 0,
+      "Record_Version": "points-2026-27-current-2026-11-05-v1",
       "Rule": "Points0.5+Matrix_PointsGreen+Conf_Points>=77 + Drought_G >= 1",
+      "Tracking_Mode": "PREGAME_CAPTURED",
       "Unresolved": 0,
       "Wins": 1
     },
@@ -1055,7 +1189,9 @@
       "Picks": 3,
       "Players": 3,
       "Pushes": 0,
+      "Record_Version": "points-2026-27-current-2026-11-05-v1",
       "Rule": "Points0.5+Matrix_PointsGreen+Conf_Points>=77 + iXA% >= 97",
+      "Tracking_Mode": "PREGAME_CAPTURED",
       "Unresolved": 0,
       "Wins": 1
     },
@@ -1070,7 +1206,9 @@
       "Picks": 3,
       "Players": 3,
       "Pushes": 0,
+      "Record_Version": "points-2026-27-current-2026-11-05-v1",
       "Rule": "Points0.5+Matrix_PointsGreen+Conf_Points>=77 + Assists_mu >= 1.1",
+      "Tracking_Mode": "PREGAME_CAPTURED",
       "Unresolved": 0,
       "Wins": 1
     },
@@ -1085,7 +1223,9 @@
       "Picks": 3,
       "Players": 3,
       "Pushes": 0,
+      "Record_Version": "points-2026-27-current-2026-11-05-v1",
       "Rule": "Points0.5+Matrix_PointsGreen+Conf_Points>=77 + Assists_mu >= 1.5",
+      "Tracking_Mode": "PREGAME_CAPTURED",
       "Unresolved": 0,
       "Wins": 1
     },
@@ -1100,7 +1240,9 @@
       "Picks": 2,
       "Players": 2,
       "Pushes": 0,
+      "Record_Version": "assist-2026-27-pp-crits-v1",
       "Rule": "Assist 0.5 + Matrix_Assists Green + Conf_Assists >= 81 + iXA% >= 95 + PP_TOI_per_game >= 3.75 + Team_PP_xGF60 >= 8.3",
+      "Tracking_Mode": "PREGAME_CAPTURED",
       "Unresolved": 0,
       "Wins": 2
     },
@@ -1115,7 +1257,9 @@
       "Picks": 2,
       "Players": 2,
       "Pushes": 0,
+      "Record_Version": "goal-2026-27-three-paths-v6",
       "Rule": "Goal 0.5 + Matrix_Goal Green + last-five xG/game >= 0.50 + last-five xG/game >= 0.55 + Goal profile >= 89",
+      "Tracking_Mode": "PREGAME_CAPTURED",
       "Unresolved": 0,
       "Wins": 1
     },
@@ -1130,7 +1274,9 @@
       "Picks": 2,
       "Players": 2,
       "Pushes": 0,
+      "Record_Version": "goal-2026-27-three-paths-v6",
       "Rule": "Goal 0.5 + Matrix_Goal Green + last-five xG/game >= 0.50 + last-five xG/game >= 0.55 + Goal profile >= 89 + L20_A <= 8",
+      "Tracking_Mode": "PREGAME_CAPTURED",
       "Unresolved": 0,
       "Wins": 1
     },
@@ -1145,7 +1291,9 @@
       "Picks": 2,
       "Players": 2,
       "Pushes": 0,
+      "Record_Version": "goal-2026-27-three-paths-v6",
       "Rule": "Goal 0.5 + Matrix_Goal Green + last-five xG/game >= 0.50 + last-five xG/game >= 0.55 + Goal profile >= 93 + L20_A <= 8",
+      "Tracking_Mode": "PREGAME_CAPTURED",
       "Unresolved": 0,
       "Wins": 0
     },
@@ -1160,7 +1308,9 @@
       "Picks": 2,
       "Players": 2,
       "Pushes": 0,
+      "Record_Version": "goal-2026-27-three-paths-v6",
       "Rule": "Goal 0.5 + Matrix_Goal Green + last-five xG/game >= 0.50 + last-five xG/game >= 0.55 + verified 2026-27 team stats + Goal profile >= 93 + v2_defense_vulnerability >= 51.5",
+      "Tracking_Mode": "PREGAME_CAPTURED",
       "Unresolved": 0,
       "Wins": 0
     },
@@ -1175,7 +1325,9 @@
       "Picks": 2,
       "Players": 2,
       "Pushes": 0,
+      "Record_Version": "goal-2026-27-three-paths-v6",
       "Rule": "Goal 0.5 + Matrix_Goal Green + last-five xG/game >= 0.50 + last-five xG/game >= 0.55 + Goal profile >= 93 + Drought_G >= 1",
+      "Tracking_Mode": "PREGAME_CAPTURED",
       "Unresolved": 0,
       "Wins": 0
     },
@@ -1190,7 +1342,9 @@
       "Picks": 2,
       "Players": 2,
       "Pushes": 0,
+      "Record_Version": "goal-2026-27-three-paths-v6",
       "Rule": "Goal 0.5 + Matrix_Goal Green + last-five xG/game >= 0.50 + last-five xG/game >= 0.55 + Goal profile >= 93 + L10_S <= 38 + Drought_G >= 1",
+      "Tracking_Mode": "PREGAME_CAPTURED",
       "Unresolved": 0,
       "Wins": 0
     },
@@ -1205,7 +1359,9 @@
       "Picks": 2,
       "Players": 2,
       "Pushes": 0,
+      "Record_Version": "goal-2026-27-three-paths-v6",
       "Rule": "Goal 0.5 + Matrix_Goal Green + last-five xG/game >= 0.50 + last-five xG/game >= 0.55 + Goal profile >= 93 + L10_S <= 38",
+      "Tracking_Mode": "PREGAME_CAPTURED",
       "Unresolved": 0,
       "Wins": 0
     },
@@ -1220,7 +1376,9 @@
       "Picks": 2,
       "Players": 2,
       "Pushes": 0,
+      "Record_Version": "goal-2026-27-three-paths-v6",
       "Rule": "Goal 0.5 + Matrix_Goal Green + last-five xG/game >= 0.50 + StarScore >= 84.5",
+      "Tracking_Mode": "PREGAME_CAPTURED",
       "Unresolved": 0,
       "Wins": 1
     },
@@ -1235,7 +1393,9 @@
       "Picks": 2,
       "Players": 2,
       "Pushes": 0,
+      "Record_Version": "2026-10-23-assist-current-v1",
       "Rule": "Backbone + Assists_mu <= 1.55",
+      "Tracking_Mode": "PREGAME_CAPTURED",
       "Unresolved": 0,
       "Wins": 2
     },
@@ -1250,7 +1410,9 @@
       "Picks": 2,
       "Players": 2,
       "Pushes": 0,
+      "Record_Version": "2026-10-23-assist-current-v1",
       "Rule": "Conf_Points >= 75 + Goal_Model% >= 33.4 + Opp_PK_xGA60 >= 7.38249",
+      "Tracking_Mode": "PREGAME_CAPTURED",
       "Unresolved": 0,
       "Wins": 1
     },
@@ -1265,7 +1427,9 @@
       "Picks": 2,
       "Players": 2,
       "Pushes": 0,
+      "Record_Version": "points-2026-27-current-2026-11-05-v1",
       "Rule": "Points0.5+Matrix_PointsGreen+Conf_Points>=77 + Drought_G >= 2",
+      "Tracking_Mode": "PREGAME_CAPTURED",
       "Unresolved": 0,
       "Wins": 1
     },
@@ -1280,7 +1444,9 @@
       "Picks": 2,
       "Players": 2,
       "Pushes": 0,
+      "Record_Version": "points-2026-27-current-2026-11-05-v1",
       "Rule": "Points0.5+Matrix_PointsGreen+Conf_Points>=77 + Drought_G >= 1 + NHL_Opp_PP_Goals_PG >= 0.9",
+      "Tracking_Mode": "PREGAME_CAPTURED",
       "Unresolved": 0,
       "Wins": 1
     },
@@ -1295,7 +1461,9 @@
       "Picks": 2,
       "Players": 2,
       "Pushes": 0,
+      "Record_Version": "points-2026-27-current-2026-11-05-v1",
       "Rule": "Points0.5+Matrix_PointsGreen+Conf_Points>=77 + Drought_G >= 1 + Team_EV_OZ_Rank <= 13",
+      "Tracking_Mode": "PREGAME_CAPTURED",
       "Unresolved": 0,
       "Wins": 1
     },
@@ -1310,7 +1478,9 @@
       "Picks": 2,
       "Players": 2,
       "Pushes": 0,
+      "Record_Version": "points-2026-27-current-2026-11-05-v1",
       "Rule": "Points0.5+Matrix_PointsGreen+Conf_Points>=77 + Assists_mu >= 1.1 + team_5v5_SF60 <= 24.4",
+      "Tracking_Mode": "PREGAME_CAPTURED",
       "Unresolved": 0,
       "Wins": 1
     },
@@ -1325,7 +1495,9 @@
       "Picks": 2,
       "Players": 2,
       "Pushes": 0,
+      "Record_Version": "points-2026-27-current-2026-11-05-v1",
       "Rule": "Points0.5+Matrix_PointsGreen+Conf_Points>=77 + iXA% >= 97 + NHL_Team_PP_G60 >= 8.75",
+      "Tracking_Mode": "PREGAME_CAPTURED",
       "Unresolved": 0,
       "Wins": 1
     },
@@ -1340,7 +1512,9 @@
       "Picks": 2,
       "Players": 2,
       "Pushes": 0,
+      "Record_Version": "points-2026-27-current-2026-11-05-v1",
       "Rule": "Points0.5+Matrix_PointsGreen+Conf_Points>=77 + PP_TOI_per_game >= 2.4 + NHL_Team_PP_G60 >= 8.75",
+      "Tracking_Mode": "PREGAME_CAPTURED",
       "Unresolved": 0,
       "Wins": 1
     },
@@ -1355,7 +1529,9 @@
       "Picks": 2,
       "Players": 2,
       "Pushes": 0,
+      "Record_Version": "points-2026-27-current-2026-11-05-v1",
       "Rule": "Points0.5+Matrix_PointsGreen+Conf_Points>=77 + NHL_Team_PP_Goals_PG >= 0.9",
+      "Tracking_Mode": "PREGAME_CAPTURED",
       "Unresolved": 0,
       "Wins": 1
     },
@@ -1370,7 +1546,9 @@
       "Picks": 2,
       "Players": 2,
       "Pushes": 0,
+      "Record_Version": "points-2026-27-current-2026-11-05-v1",
       "Rule": "Points0.5+Matrix_PointsGreen+Conf_Points>=77 + NHL_Team_PP_G60 >= 11.6",
+      "Tracking_Mode": "PREGAME_CAPTURED",
       "Unresolved": 0,
       "Wins": 1
     },
@@ -1385,7 +1563,9 @@
       "Picks": 2,
       "Players": 2,
       "Pushes": 0,
+      "Record_Version": "points-2026-27-current-2026-11-05-v1",
       "Rule": "Points0.5+Matrix_PointsGreen+Conf_Points>=77 + NHL_Team_PP_G60 >= 8.9",
+      "Tracking_Mode": "PREGAME_CAPTURED",
       "Unresolved": 0,
       "Wins": 1
     },
@@ -1400,7 +1580,9 @@
       "Picks": 2,
       "Players": 2,
       "Pushes": 0,
+      "Record_Version": "points-2026-27-current-2026-11-05-v1",
       "Rule": "Points0.5+Matrix_PointsGreen+Conf_Points>=77 + NHL_Opp_Goal_conversion_pct >= 12.3",
+      "Tracking_Mode": "PREGAME_CAPTURED",
       "Unresolved": 0,
       "Wins": 1
     },
@@ -1415,7 +1597,9 @@
       "Picks": 2,
       "Players": 2,
       "Pushes": 0,
+      "Record_Version": "points-2026-27-current-2026-11-05-v1",
       "Rule": "Points0.5+Matrix_PointsGreen+Conf_Points>=77 + NHL_Opp_GF_10_PG >= 3.25",
+      "Tracking_Mode": "PREGAME_CAPTURED",
       "Unresolved": 0,
       "Wins": 1
     },
@@ -1430,7 +1614,9 @@
       "Picks": 2,
       "Players": 2,
       "Pushes": 0,
+      "Record_Version": "points-2026-27-current-2026-11-05-v1",
       "Rule": "Points0.5+Matrix_PointsGreen+Conf_Points>=77 + NHL_Opp_GF_10_PG >= 3.55",
+      "Tracking_Mode": "PREGAME_CAPTURED",
       "Unresolved": 0,
       "Wins": 1
     },
@@ -1445,7 +1631,9 @@
       "Picks": 2,
       "Players": 2,
       "Pushes": 0,
+      "Record_Version": "points-2026-27-current-2026-11-05-v1",
       "Rule": "Points0.5+Matrix_PointsGreen+Conf_Points>=77 + NHL_Opp_Goal_conversion_pct >= 12.3 + NHL_Opp_GF_10_PG >= 3.55",
+      "Tracking_Mode": "PREGAME_CAPTURED",
       "Unresolved": 0,
       "Wins": 1
     },
@@ -1460,7 +1648,9 @@
       "Picks": 2,
       "Players": 2,
       "Pushes": 0,
+      "Record_Version": "points-2026-27-current-2026-11-05-v1",
       "Rule": "Points0.5+Matrix_PointsGreen+Conf_Points>=77 + NHL_Team_PP_G60 >= 8.9 + NHL_Team_PP_Goals_PG >= 0.9",
+      "Tracking_Mode": "PREGAME_CAPTURED",
       "Unresolved": 0,
       "Wins": 1
     },
@@ -1475,7 +1665,9 @@
       "Picks": 2,
       "Players": 2,
       "Pushes": 0,
+      "Record_Version": "2026-10-23-assist-current-v1",
       "Rule": "Strong + Assists_Model% >= 56.3",
+      "Tracking_Mode": "PREGAME_CAPTURED",
       "Unresolved": 0,
       "Wins": 1
     },
@@ -1490,7 +1682,9 @@
       "Picks": 2,
       "Players": 2,
       "Pushes": 0,
+      "Record_Version": "2026-10-23-assist-current-v1",
       "Rule": "Best_Conf >= 89 + opp_5v5_HDCA60 >= 2.36",
+      "Tracking_Mode": "PREGAME_CAPTURED",
       "Unresolved": 0,
       "Wins": 1
     },
@@ -1505,7 +1699,9 @@
       "Picks": 2,
       "Players": 2,
       "Pushes": 0,
+      "Record_Version": "2026-10-23-assist-current-v1",
       "Rule": "Strong + Assists_Model% >= 56.3 + SOG share >= 19",
+      "Tracking_Mode": "PREGAME_CAPTURED",
       "Unresolved": 0,
       "Wins": 1
     },
@@ -1520,7 +1716,9 @@
       "Picks": 2,
       "Players": 2,
       "Pushes": 0,
+      "Record_Version": "2026-10-23-assist-current-v1",
       "Rule": "PPP10_total >= 3 + opp_5v5_HDCA60 >= 2.36",
+      "Tracking_Mode": "PREGAME_CAPTURED",
       "Unresolved": 0,
       "Wins": 1
     },
@@ -1535,7 +1733,9 @@
       "Picks": 1,
       "Players": 1,
       "Pushes": 0,
+      "Record_Version": "goal-2026-27-three-paths-v6",
       "Rule": "Goal 0.5 + Matrix_Goal Green + last-five xG/game >= 0.50 + Goal profile >= 89",
+      "Tracking_Mode": "PREGAME_CAPTURED",
       "Unresolved": 0,
       "Wins": 1
     },
@@ -1550,7 +1750,9 @@
       "Picks": 1,
       "Players": 1,
       "Pushes": 0,
+      "Record_Version": "goal-2026-27-three-paths-v6",
       "Rule": "Goal 0.5 + Matrix_Goal Green + last-five xG/game >= 0.50 + Goal profile >= 93",
+      "Tracking_Mode": "PREGAME_CAPTURED",
       "Unresolved": 0,
       "Wins": 0
     },
@@ -1565,7 +1767,9 @@
       "Picks": 1,
       "Players": 1,
       "Pushes": 0,
+      "Record_Version": "goal-2026-27-three-paths-v6",
       "Rule": "Goal 0.5 + Matrix_Goal Green + last-five xG/game >= 0.50 + Goal profile >= 89 + L20_A <= 8",
+      "Tracking_Mode": "PREGAME_CAPTURED",
       "Unresolved": 0,
       "Wins": 1
     },
@@ -1580,7 +1784,9 @@
       "Picks": 1,
       "Players": 1,
       "Pushes": 0,
+      "Record_Version": "goal-2026-27-three-paths-v6",
       "Rule": "Goal 0.5 + Matrix_Goal Green + last-five xG/game >= 0.50 + Goal profile >= 89 + Drought_G >= 1",
+      "Tracking_Mode": "PREGAME_CAPTURED",
       "Unresolved": 0,
       "Wins": 1
     },
@@ -1595,7 +1801,9 @@
       "Picks": 1,
       "Players": 1,
       "Pushes": 0,
+      "Record_Version": "goal-2026-27-three-paths-v6",
       "Rule": "Goal 0.5 + Matrix_Goal Green + last-five xG/game >= 0.50 + Goal profile >= 93 + Drought_G >= 1",
+      "Tracking_Mode": "PREGAME_CAPTURED",
       "Unresolved": 0,
       "Wins": 0
     },
@@ -1610,7 +1818,9 @@
       "Picks": 1,
       "Players": 1,
       "Pushes": 0,
+      "Record_Version": "goal-2026-27-three-paths-v6",
       "Rule": "Goal 0.5 + Matrix_Goal Green + last-five xG/game >= 0.50 + Goal profile >= 89 + ShotIntent_Pct <= 91.1",
+      "Tracking_Mode": "PREGAME_CAPTURED",
       "Unresolved": 0,
       "Wins": 0
     },
@@ -1625,7 +1835,9 @@
       "Picks": 1,
       "Players": 1,
       "Pushes": 0,
+      "Record_Version": "goal-2026-27-three-paths-v6",
       "Rule": "Goal 0.5 + Matrix_Goal Green + last-five xG/game >= 0.50 + Goal profile >= 89 + L10_S <= 38 + Drought_G >= 1",
+      "Tracking_Mode": "PREGAME_CAPTURED",
       "Unresolved": 0,
       "Wins": 1
     },
@@ -1640,7 +1852,9 @@
       "Picks": 1,
       "Players": 1,
       "Pushes": 0,
+      "Record_Version": "goal-2026-27-three-paths-v6",
       "Rule": "Goal 0.5 + Matrix_Goal Green + last-five xG/game >= 0.50 + Goal profile >= 93 + L10_S <= 38 + Drought_G >= 1",
+      "Tracking_Mode": "PREGAME_CAPTURED",
       "Unresolved": 0,
       "Wins": 0
     },
@@ -1655,7 +1869,9 @@
       "Picks": 1,
       "Players": 1,
       "Pushes": 0,
+      "Record_Version": "goal-2026-27-three-paths-v6",
       "Rule": "Green + Goal 0.5 + StarScore >= 84.5 + TOI/game >= 20 + L10 shots <= 39 + PPP drought >= 1",
+      "Tracking_Mode": "PREGAME_CAPTURED",
       "Unresolved": 0,
       "Wins": 0
     },
@@ -1670,7 +1886,9 @@
       "Picks": 1,
       "Players": 1,
       "Pushes": 0,
+      "Record_Version": "goal-2026-27-three-paths-v6",
       "Rule": "Goal 0.5 + Matrix_Goal Green + last-five xG/game >= 0.50 + Goal profile >= 89 + L10_S <= 38",
+      "Tracking_Mode": "PREGAME_CAPTURED",
       "Unresolved": 0,
       "Wins": 1
     },
@@ -1685,7 +1903,9 @@
       "Picks": 1,
       "Players": 1,
       "Pushes": 0,
+      "Record_Version": "goal-2026-27-three-paths-v6",
       "Rule": "Goal 0.5 + Matrix_Goal Green + last-five xG/game >= 0.50 + last-five xG/game >= 0.55 + Goal profile >= 89 + L10_S <= 38",
+      "Tracking_Mode": "PREGAME_CAPTURED",
       "Unresolved": 0,
       "Wins": 0
     },
@@ -1700,7 +1920,9 @@
       "Picks": 1,
       "Players": 1,
       "Pushes": 0,
+      "Record_Version": "goal-2026-27-three-paths-v6",
       "Rule": "Goal 0.5 + Matrix_Goal Green + last-five xG/game >= 0.50 + Goal profile >= 93 + L10_S <= 38",
+      "Tracking_Mode": "PREGAME_CAPTURED",
       "Unresolved": 0,
       "Wins": 0
     },
@@ -1715,7 +1937,9 @@
       "Picks": 1,
       "Players": 1,
       "Pushes": 0,
+      "Record_Version": "2026-10-23-assist-current-v1",
       "Rule": "Conf_Points >= 83 + Goal_ProofCount >= 3",
+      "Tracking_Mode": "PREGAME_CAPTURED",
       "Unresolved": 0,
       "Wins": 0
     },
@@ -1730,7 +1954,9 @@
       "Picks": 1,
       "Players": 1,
       "Pushes": 0,
+      "Record_Version": "points-2026-27-current-2026-11-05-v1",
       "Rule": "Points0.5+Matrix_PointsGreen+Conf_Points>=77 + Log_L20_PPP_hit_pct >= 41 + NHL_Opp_PK_G60 >= 5.75",
+      "Tracking_Mode": "PREGAME_CAPTURED",
       "Unresolved": 0,
       "Wins": 1
     },
@@ -1745,7 +1971,9 @@
       "Picks": 1,
       "Players": 1,
       "Pushes": 0,
+      "Record_Version": "points-2026-27-current-2026-11-05-v1",
       "Rule": "Points0.5+Matrix_PointsGreen+Conf_Points>=77 + Log_L20_PPP_hit_pct >= 41 + NHL_Team_PK_goal_drought >= 1",
+      "Tracking_Mode": "PREGAME_CAPTURED",
       "Unresolved": 0,
       "Wins": 1
     },
@@ -1760,7 +1988,9 @@
       "Picks": 1,
       "Players": 1,
       "Pushes": 0,
+      "Record_Version": "points-2026-27-current-2026-11-05-v1",
       "Rule": "Points0.5+Matrix_PointsGreen+Conf_Points>=77 + Log_L20_PPP_hit_pct >= 41 + NHL_Opp_PK_Time_PG <= 5.9",
+      "Tracking_Mode": "PREGAME_CAPTURED",
       "Unresolved": 0,
       "Wins": 1
     },
@@ -1775,7 +2005,9 @@
       "Picks": 1,
       "Players": 1,
       "Pushes": 0,
+      "Record_Version": "points-2026-27-current-2026-11-05-v1",
       "Rule": "Points0.5+Matrix_PointsGreen+Conf_Points>=77 + Log_L20_PPP_hit_pct >= 41 + NHL_Opp_PK_Time_PG <= 5.45",
+      "Tracking_Mode": "PREGAME_CAPTURED",
       "Unresolved": 0,
       "Wins": 1
     },
@@ -1790,7 +2022,9 @@
       "Picks": 1,
       "Players": 1,
       "Pushes": 0,
+      "Record_Version": "points-2026-27-current-2026-11-05-v1",
       "Rule": "Points0.5+Matrix_PointsGreen+Conf_Points>=77 + Log_L20_PPP_hit_pct >= 46",
+      "Tracking_Mode": "PREGAME_CAPTURED",
       "Unresolved": 0,
       "Wins": 1
     },
@@ -1805,7 +2039,9 @@
       "Picks": 1,
       "Players": 1,
       "Pushes": 0,
+      "Record_Version": "points-2026-27-current-2026-11-05-v1",
       "Rule": "Points0.5+Matrix_PointsGreen+Conf_Points>=77 + Log_L20_PPP_hit_pct >= 41",
+      "Tracking_Mode": "PREGAME_CAPTURED",
       "Unresolved": 0,
       "Wins": 1
     },
@@ -1820,7 +2056,9 @@
       "Picks": 1,
       "Players": 1,
       "Pushes": 0,
+      "Record_Version": "points-2026-27-current-2026-11-05-v1",
       "Rule": "Points0.5+Matrix_PointsGreen+Conf_Points>=77 + Drought_G >= 2 + NHL_Opp_GA_Venue_PG <= 2.9",
+      "Tracking_Mode": "PREGAME_CAPTURED",
       "Unresolved": 0,
       "Wins": 0
     },
@@ -1835,7 +2073,9 @@
       "Picks": 1,
       "Players": 1,
       "Pushes": 0,
+      "Record_Version": "points-2026-27-current-2026-11-05-v1",
       "Rule": "Points0.5+Matrix_PointsGreen+Conf_Points>=77 + Drought_G >= 2 + Opp_5v5_xGA_relative_league <= 0.98",
+      "Tracking_Mode": "PREGAME_CAPTURED",
       "Unresolved": 0,
       "Wins": 0
     },
@@ -1850,7 +2090,9 @@
       "Picks": 1,
       "Players": 1,
       "Pushes": 0,
+      "Record_Version": "points-2026-27-current-2026-11-05-v1",
       "Rule": "Points0.5+Matrix_PointsGreen+Conf_Points>=77 + iXA% >= 98",
+      "Tracking_Mode": "PREGAME_CAPTURED",
       "Unresolved": 0,
       "Wins": 1
     },
@@ -1865,7 +2107,9 @@
       "Picks": 1,
       "Players": 1,
       "Pushes": 0,
+      "Record_Version": "points-2026-27-current-2026-11-05-v1",
       "Rule": "Points0.5+Matrix_PointsGreen+Conf_Points>=77 + Assists_mu >= 1.1 + NHL_Opp_SA_Venue_PG >= 28.4",
+      "Tracking_Mode": "PREGAME_CAPTURED",
       "Unresolved": 0,
       "Wins": 0
     },
@@ -1880,11 +2124,22 @@
       "Picks": 1,
       "Players": 1,
       "Pushes": 0,
+      "Record_Version": "2026-10-23-assist-current-v1",
       "Rule": "Blade Impale + Blade Slash",
+      "Tracking_Mode": "PREGAME_CAPTURED",
       "Unresolved": 0,
       "Wins": 0
     }
   ],
+  "pp_tracking": {
+    "catalog_moves": 0,
+    "missing_capture_rows": 435,
+    "modes": [],
+    "moves": [],
+    "tagged_rows": 0,
+    "unit_policy": "Flat1u at each rule's saved exact-.5 best quote; overlapping rules are separate reports, not an additive portfolio.",
+    "version": "pp-tracking-2026-11-08-v1"
+  },
   "slate_date": "2026-11-05",
   "source_file": "tracker_2026-11-05.csv",
   "source_sha256": "4abc584b351b732ae51c3157063b7ed05ed34483812ebef2f00ed6f7c2768039",
