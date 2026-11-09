@@ -19,6 +19,7 @@ from points15_research import context as points15_research_context
 from assist_routes_2026 import assist_display_tier, assist_display_name
 from points_moves_current import best_move as current_points_best, display_moves as current_points_display, prepare_row as prepare_points_row
 from pp_assist_beta import assist_ppp_beta, beta_summary, beta_details, BETA_CSS
+from goal_return_monitor import return_panel as goal_return_panel, RETURN_CSS as GOAL_RETURN_CSS
 
 
 CLASSES = (
@@ -1331,6 +1332,7 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
                   <div class="wn-move-title"><strong>{_h(fired_move["name"])}</strong><em>{_h(fired_label)}</em></div>
                   <div class="wn-move-record">{fired_wins}/{fired_picks} · {fired_pct:.1f}% <span>{later_text}</span></div>
                   <div class="wn-move-rule">{_h(fired_rule)}</div>
+                  {goal_return_panel(fired_move, compact=False) if role == 'Carry' else ''}
                 </div>''')
             later_note = (f"MOVE {wins}/{picks}" +
                           (f" · MAR 15+ {late_wins}/{late_picks} ({late_pct:.1f}%)" if late_picks else
@@ -1347,6 +1349,8 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
                             (move and move.get("sample_season") == "2026-27") else "HISTORICAL MOVE")
             if points_tier:
                 record_label = "2026–27 REG MOVE"
+            if role == 'Carry' and goal_return_panel(move):
+                record_label = "ORIGINAL MOVE · THROUGH OCT 31"
             record_html = (f'<div class="wn-record"><strong>{pct:.1f}%</strong><span>{wins}/{picks}</span><em>{record_label}</em></div>'
                            if picks else '<div class="wn-record"><strong>SCOUT</strong><em>NO GOAL ATTACK</em></div>'
                            if role == "Carry" else '<div class="wn-record"><strong>BASE</strong><em>SCREEN ONLY</em></div>')
@@ -1368,6 +1372,7 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
                 <div class="wn-unit-foot"><span>{_h(line)} <b>{_h(price)}</b>{book_note}</span><span>{_h(later_note)}{confidence_note}</span></div>
                 {book_rate_note}
                 {beta_summary(card.get('pp_assist_beta')) if role == 'Support' else ''}</div>
+                {goal_return_panel(move) if role == 'Carry' else ''}
               </div>
               {record_html}
               {_card_quick_summary(role, card)}
@@ -1561,7 +1566,8 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
       <h1>THE NIGHT RAID</h1><p>{_h(hero_text)}</p>
       <div class="wn-hero-foot">{_h(hero_foot)} · HISTORICAL MOVE RATE IS NOT A FORECAST</div></div>"""
     board_class = "wn-board" if show_hero else "wn-board wn-board--compact"
-    return BETA_CSS + styles + f'<div class="{board_class}">' + (hero if show_hero else "") + '<div class="wn-grid">' + ''.join(lanes) + '</div></div>'
+    goal_return_styles = '<style>' + GOAL_RETURN_CSS + '</style>' if any(item[0] == 'Carry' for item in selected) else ''
+    return BETA_CSS + styles + goal_return_styles + f'<div class="{board_class}">' + (hero if show_hero else "") + '<div class="wn-grid">' + ''.join(lanes) + '</div></div>'
 
 
 
