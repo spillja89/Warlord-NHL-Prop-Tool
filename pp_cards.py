@@ -8,6 +8,7 @@ import math
 
 from pp_card_context import VERSION as CONTEXT_VERSION
 from pp_lower_context import VERSION as LOWER_CONTEXT_VERSION
+from pp_card_form import ppp_l10_chart, ppp_l10_label, FORM_CSS
 
 VERSION = 'pp-card-kit-2026-11-07-v2'
 LABELS = {
@@ -50,6 +51,35 @@ def display_families(moves):
     for move in sorted(moves, key=lambda m: (-m['record']['rate'], -m['record']['plays'], m['id'])):
         families.setdefault(move.get('display_family', move.get('family', move['id'])), move)
     return list(families.values())
+
+def _rule_implies(child, parent):
+    """Only literal rule nesting, never correlation or historical-cohort overlap."""
+    for field, op, cutoff in parent['entry'] + parent['conditions']:
+        def enough(check):
+            f, comparison, value = check
+            if f != field:
+                return False
+            if op == '>=':
+                return comparison in ('>=', '==') and value >= cutoff
+            if op == '<=':
+                return comparison in ('<=', '<', '==') and value <= cutoff
+            if op == '<':
+                return comparison == '<' and value <= cutoff or comparison in ('<=', '==') and value < cutoff
+            return comparison == '==' and value == cutoff
+        if not any(enough(check) for check in child['entry'] + child['conditions']):
+            return False
+    return True
+
+def display_routes(moves):
+    """Display only: stronger levels/combos cover their weaker stacked steps."""
+    candidates = display_families(moves)
+    result = []
+    for index, move in enumerate(candidates):
+        # Earlier records are the already established stronger display order.
+        if any(_rule_implies(stronger, move) for stronger in candidates[:index]):
+            continue
+        result.append(move)
+    return result
 
 def _matches(value, op, cutoff):
     if value is None:
@@ -143,17 +173,17 @@ def _rule_checks(row, move, xg):
     return '<br>'.join(checks)
 
 def render_pp_cards(cards, portrait_uri='', form_renderer=None):
-    """Compact front; all fired rules and their actual values are inside Inspect."""
+    """Compact front; dated PPP form and distinct routes are inside Inspect."""
     articles = []
     for index, card in enumerate(cards, 1):
         row, quote, move = card['row'], card['quote'], card['best']
         record = move['record']
         variant, character, accent = pp_character(move)
         portrait = portrait_uri.get(variant, '') if isinstance(portrait_uri, dict) else portrait_uri
-        families = display_families(card['moves'])
+        families = display_routes(card['moves'])
         odds = float(quote['Over odds'])
         matches = []
-        for fired in card['moves']:
+        for fired in families:
             r = fired['record']
             matches.append(f'<section class="pp-w-move" data-move-id="{_h(fired["id"])}">'
                 f'<b>{_h(fired["name"])}</b> <span>{_h(fired["kind"])}</span>'
@@ -173,12 +203,10 @@ def render_pp_cards(cards, portrait_uri='', form_renderer=None):
                 ('Opponent L10 credits', 'PP_Lower_Opp_L10_GP', 'PP_Lower_Opp_Last_Date')]:
                 source.append(f'{label}: {_value(row.get(field),0)} games · through '
                               f'{_h(row.get(dayfield) or "unavailable")}')
-        form = (form_renderer(dict(form_log=row.get('Form_Log'), market='PPP', line=.5,
-                                  form_season='2026-27')) if form_renderer else '')
+        form = ppp_l10_chart(row)
         image = (f'<img class="pp-w-portrait" src="{_h(portrait)}" alt="{_h(character)}" />'
                  if portrait else '<div class="pp-w-portrait pp-w-sigil" aria-hidden="true">ϟ</div>')
         upgraded = ' pp-w-combo' if move['kind'] == 'COMBO SPELL' else ''
-        family_badges = ''.join('<span>'+_h(m['name'])+'</span>' for m in families)
         articles.append(f'<article class="pp-w-card pp-w-{accent}{upgraded}"><div class="pp-w-front">'
             f'<div class="pp-w-body"><div class="pp-w-heading"><span>{index:02d}</span> '
             f'<strong>{_h(quote["Player"])}</strong> <small>{_h(quote["Game"])}</small></div>'
@@ -188,21 +216,21 @@ def render_pp_cards(cards, portrait_uri='', form_renderer=None):
             f'<p>BOOK BREAK-EVEN <b>{card["be"]:.1f}%</b></p>'
             f'<p class="pp-w-quick">PP on-ice xG/game <b>{card["xg"]:.3f}</b> · '
             f'PP <b>{_value(quote.get("PP TOI/game"), 1)} min/game</b> · {_h(quote.get("PP unit", "Unit unknown"))}'
-            f' · <b>{len(families)}</b> route {"family" if len(families) == 1 else "families"}</p></div>'
+            f' · <b>{len(families)}</b> route {"family" if len(families) == 1 else "families"}</p>'
+            f'<p class="pp-w-l10-quick">PPP L10 <b>{_h(ppp_l10_label(row))}</b> · dated chart in Inspect</p></div>'
             f'<div class="pp-w-record"><strong>{record["rate"]:.1f}%</strong>'
             f'<b>{record["hits"]}/{record["plays"]}</b><small>2026–27 PPP MOVE</small></div>{image}</div>'
-            f'<details class="pp-w-inspect"><summary>Inspect · all {len(card["moves"])} fired moves, matchup &amp; recent form</summary>'
+            f'<details class="pp-w-inspect"><summary>Inspect · PPP L10, {len(families)} distinct {"route" if len(families) == 1 else "routes"} &amp; matchup</summary>{form}'
             f'<div class="pp-w-info">Move sample book BE <b>{record["BE"]:.1f}%</b> · '
             f'<b>{record["gap"]:+.1f} points</b> historical gap<br>'
             'One player-game counts once in each matching rule. Nested and overlapping moves are not independent evidence.</div>'
-            f'<div class="pp-w-family-list">{family_badges}</div>'
             f'{"".join(matches)}<div class="pp-w-info"><b>Official pregame windows</b><br>{"<br>".join(source)}'
             f'<br>As of {_h(row.get("Date"))} · all PP/PK strengths; last up-to-5/10 completed regular-season games.</div>'
-            f'{form}<div class="pp-w-info">Lineup: {_h(row.get("Lineup_Status", "Pending"))}<br>'
+            f'<div class="pp-w-info">Lineup: {_h(row.get("Lineup_Status", "Pending"))}<br>'
             f'2026–27 research samples: higher-xG Oct 17–Nov 5; Layer 1 lower-xG Oct 16–Nov 6 · {VERSION}. '
             'Historical move results are not tonight’s PPP probabilities. On-ice xG describes team chances while this player is on the ice.</div>'
             '</details></article>')
-    return '''<style>
+    return '<style>' + FORM_CSS + '''</style><style>
     .pp-w{container-type:inline-size;color:#eff6ff;font-family:Arial,sans-serif;background:#0d1525;border:1px solid #71649c;border-radius:14px;padding:12px}
     .pp-w *{box-sizing:border-box}.pp-w-title{color:#e6d0ff;font-size:21px;margin:4px 0 7px}.pp-w-caption{font-size:13px;color:#c8d7f1;line-height:1.5;margin-bottom:12px}
     .pp-w-card{position:relative;border:1px solid #586783;border-left:4px solid #b596ff;border-radius:9px;background:linear-gradient(115deg,#27223e,#1c293c);padding:12px;margin:9px 0;overflow:hidden}
@@ -214,6 +242,7 @@ def render_pp_cards(cards, portrait_uri='', form_renderer=None):
     .pp-w-name{font-size:16px;color:#efd095;font-weight:850;margin:8px 0}.pp-w-name small{font-size:10px;border:1px solid #b79ce9;border-radius:3px;padding:3px;margin-left:5px;color:#e7daff;white-space:nowrap}
     .pp-w-card p{font-size:13px;line-height:1.55;margin:6px 0}.pp-w-card .pp-w-price{font-size:14px;background:#111c2f;border:1px solid #4b617b;border-radius:6px;padding:8px}.pp-w-price b{color:#ffe3a0;font-size:17px}
     .pp-w-quick{color:#d9e8fa}.pp-w-record{text-align:right;display:flex;flex-direction:column;gap:4px}.pp-w-record strong{font-size:28px;color:#fff}.pp-w-record b{font-size:15px;color:#f5d89c}.pp-w-record small{font-size:9px;color:#bfcce2}
+    .pp-w-l10-quick{grid-column:1/-1;color:#cbdaf0;font-size:12px!important}.pp-w-l10-quick b{color:#fff}
     .pp-w-portrait{width:110px;height:145px;object-fit:cover;object-position:center top;border:1px solid #b59ae7;border-radius:8px;background:#10182b}.pp-w-sigil{display:grid;place-items:center;font-size:90px;color:#c4a5ff}
     .pp-w-inspect{border-top:1px solid #4a5971;margin-top:10px;padding-top:4px;font-size:13px}.pp-w-inspect>summary{cursor:pointer;color:#f0d59b;font-weight:750;padding:5px 0}.pp-w-move,.pp-w-info{background:#101b2c;border:1px solid #44546e;border-radius:7px;padding:10px;margin-top:8px;line-height:1.6;font-size:13px}.pp-w-move>b{color:#f1dba7;font-size:15px}.pp-w-move>span{float:right;color:#c8aef4;font-size:10px}.pp-w-info{color:#cbdaf0}
     .pp-w-combo{border-color:#b7a0f0;box-shadow:inset 3px 0 18px #985bce30,0 0 9px #b38dff32}.pp-w-combo .pp-w-name{text-shadow:0 0 10px #ba8eff88}
@@ -221,5 +250,5 @@ def render_pp_cards(cards, portrait_uri='', form_renderer=None):
     @keyframes pp-w-shimmer{0%,30%{transform:translateX(-100%)}80%,100%{transform:translateX(100%)}}@media(prefers-reduced-motion:reduce){.pp-w-combo:before{animation:none}}
     .pp-w .wn-form{margin-top:10px;font-size:13px}.pp-w .wn-form summary{cursor:pointer;color:#f0d59b}.pp-w .wn-form-tiles{display:flex;flex-wrap:wrap;gap:6px}.pp-w .wn-form-tiles>div{background:#101b2c;padding:8px;border-radius:5px;min-width:110px}.pp-w .wn-form-tiles small,.pp-w .wn-form-tiles strong{display:block}.pp-w .wn-form-meta{margin:7px 0}.pp-w .wn-form-strip{display:flex;flex-wrap:wrap;gap:4px}.pp-w .wn-form-strip>span{padding:7px;border-radius:5px}.pp-w .wn-form-strip .hit{background:#245744}.pp-w .wn-form-strip .miss{background:#663540}.pp-w .wn-form-strip b,.pp-w .wn-form-strip small{display:block;text-align:center}.pp-w .wn-form-strip small{font-size:11px;margin-top:4px}
     @container(max-width:600px){.pp-w-front{grid-template-columns:minmax(0,1fr) 75px}.pp-w-portrait{display:none}.pp-w-record strong{font-size:25px}.pp-w-heading>strong{font-size:17px}.pp-w-name small{display:inline-block;margin:4px 0}.pp-w-price{overflow-wrap:anywhere}}
-    </style><section class="pp-w"><h3 class="pp-w-title">ϟ Power Play · Spellbook</h3><div class="pp-w-caption">Strongest fired move leads each card. Open Inspect for every matching move and its actual values.</div>''' + ''.join(articles) + '</section>'
+    </style><section class="pp-w"><h3 class="pp-w-title">ϟ Power Play · Spellbook</h3><div class="pp-w-caption">Strongest move leads each card. Inspect shows PPP L10 first, then distinct routes; weaker stacked steps are tucked away.</div>''' + ''.join(articles) + '</section>'
 
