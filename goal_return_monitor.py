@@ -48,13 +48,17 @@ def return_panel(move, *, compact=True):
 def render_return_panel(row,data, *, compact=True):
     """Shared presentation; caller owns the exact market/rule/record identity."""
     full,recent,prior=row['full'],row['since_check'],row['previous']
+    alert=''
     if recent['plays']:
         delta=full['roi']-prior['roi']
         arrow='↑' if delta>1e-9 else '↓' if delta<-1e-9 else '→'
         trend='up' if delta>1e-9 else 'down' if delta<-1e-9 else 'neutral'
-        change=f'{arrow} {delta:+.1f} pp ROI vs previous full record'
-        status='WINNING UNITS' if recent['units']>0 else 'LOSING UNITS' if recent['units']<0 else 'FLAT UNITS'
+        comparison='base' if row.get('legacy') else 'V1'
+        change=f'{arrow} Total ROI {delta:+.1f} pp vs {comparison}'
+        status='RECENT PROFIT' if recent['units']>0 else 'RECENT LOSS' if recent['units']<0 else 'RECENT FLAT'
         tone='gain' if recent['units']>0 else 'loss' if recent['units']<0 else 'flat'
+        if delta < -1e-9:
+            alert='<strong class="wn-gr-alert">⚠ ROI DECLINING</strong>'
     else:
         change='— No new plays to judge';trend='neutral';status='NO NEW PLAYS';tone='flat'
     version=data.get('move_version_label')
@@ -72,7 +76,7 @@ def render_return_panel(row,data, *, compact=True):
             f'<div class="wn-gr-box"><small>{"BASE RECORD %" if row.get("legacy") else "V1 MOVE %"}</small>{_metric(prior)}</div>'
             f'<div class="wn-gr-box"><small>SINCE CHECK %</small>{_metric(recent)}</div>'
             f'<div class="wn-gr-box"><small>TOTAL MOVE %</small>{_metric(full)}</div>'
-            f'<div class="wn-gr-change"><strong class="wn-gr-{tone}">{status}</strong>'
+            f'<div class="wn-gr-change wn-gr-change-{trend}">{alert}<strong class="wn-gr-{tone}">{status}</strong>'
             f'<span class="wn-gr-{trend}">{change}</span></div>{detail}</div>')
 
 RETURN_CSS='''
@@ -83,6 +87,8 @@ RETURN_CSS='''
 .wn-gr-box>.wn-gr-record{font-size:15px;font-weight:850;color:#f1f6ff}
 .wn-gr-box>b{font-size:13px;font-weight:850}.wn-gr-box>b>span{font-size:11px}.wn-gr-box>span{font-size:10px;color:#d0ddef}
 .wn-gr-change{grid-column:1/-1;display:flex;gap:8px;flex-wrap:wrap;font-size:10px;align-items:center}.wn-gr-change>strong{font-size:10px}
+.wn-gr-change-down{background:#65420d40;border:1px solid #c8953d;border-radius:5px;padding:6px 8px}
+.wn-gr-change>.wn-gr-alert{color:#ffdb80;font-size:11px;font-weight:900;letter-spacing:.03em}
 .wn-goal-returns .wn-gr-gain{color:#82edb5}.wn-goal-returns .wn-gr-loss{color:#ff9c97}.wn-goal-returns .wn-gr-flat{color:#d6deeb}
 .wn-goal-returns .wn-gr-up{color:#82edb5}.wn-goal-returns .wn-gr-down{color:#f2cd86}.wn-goal-returns .wn-gr-neutral{color:#c4d2e7}
 .wn-gr-note{grid-column:1/-1;color:#bdcde3;font-size:11px}.wn-move-entry .wn-goal-returns{max-width:680px}
