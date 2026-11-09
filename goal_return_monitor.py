@@ -31,11 +31,14 @@ def _date(value):
     month,day=value[5:7],int(value[8:10])
     return {'10':'Oct','11':'Nov'}.get(month,month)+f' {day}'
 
-def _metric(stats):
+def _metric(stats, *, updated_total=False):
     if not stats['plays']:return '<b>—</b><span>No new plays · ROI —</span>'
     tone='gain' if stats['units']>0 else 'loss' if stats['units']<0 else 'flat'
-    return (f'<b class="wn-gr-{tone}">{stats["units"]:+.2f}u <span>· {stats["roi"]:+.1f}% ROI</span></b>'
-            f'<span>{stats["hits"]}/{stats["plays"]} · {stats["plays"]} × 1u bets</span>')
+    record=(f'<strong class="wn-gr-record">{stats["hits"]}/{stats["plays"]} · '
+            f'{100*stats["hits"]/stats["plays"]:.1f}%</strong>') if updated_total else ''
+    count='' if updated_total else f'{stats["hits"]}/{stats["plays"]} · '
+    return (record+f'<b class="wn-gr-{tone}">{stats["units"]:+.2f}u <span>· {stats["roi"]:+.1f}% ROI</span></b>'
+            f'<span>{count}{stats["plays"]} × 1u bets</span>')
 
 def return_panel(move, *, compact=True):
     row=record_for(move)
@@ -67,7 +70,7 @@ def render_return_panel(row,data, *, compact=True):
             'Flat 1u at saved pregame prices. Overlapping moves are separate records.</div>')
     return (f'<div class="wn-goal-returns" data-return-version="{escape(data["version"])}">'
             +version_note+
-            f'<div class="wn-gr-box"><small>FULL MOVE RECORD</small>{_metric(full)}</div>'
+            f'<div class="wn-gr-box"><small>UPDATED TOTAL</small>{_metric(full,updated_total=True)}</div>'
             f'<div class="wn-gr-box"><small>SINCE LAST CHECK</small>{_metric(recent)}</div>'
             f'<div class="wn-gr-change"><strong class="wn-gr-{tone}">{status}</strong>'
             f'<span class="wn-gr-{trend}">{change}</span></div>{detail}</div>')
@@ -77,6 +80,7 @@ RETURN_CSS='''
 .wn-gr-version{grid-column:1/-1;font-size:10px;font-weight:800;color:#c4d2e7;letter-spacing:.03em}
 .wn-gr-box{background:#101a2bcc;border:1px solid #4a5b73;border-radius:7px;padding:7px 9px;display:flex;flex-direction:column;gap:2px;min-width:0}
 .wn-gr-box small{font-size:9px;font-weight:850;letter-spacing:.04em;color:#eac77e}
+.wn-gr-box>.wn-gr-record{font-size:15px;font-weight:850;color:#f1f6ff}
 .wn-gr-box>b{font-size:15px;font-weight:850}.wn-gr-box>b>span{font-size:13px}.wn-gr-box>span{font-size:11px;color:#d0ddef}
 .wn-gr-change{grid-column:1/-1;display:flex;gap:8px;flex-wrap:wrap;font-size:10px;align-items:center}.wn-gr-change>strong{font-size:10px}
 .wn-goal-returns .wn-gr-gain{color:#82edb5}.wn-goal-returns .wn-gr-loss{color:#ff9c97}.wn-goal-returns .wn-gr-flat{color:#d6deeb}
