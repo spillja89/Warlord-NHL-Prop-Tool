@@ -22,6 +22,7 @@ from pp_assist_beta import assist_ppp_beta, beta_summary, beta_details, BETA_CSS
 from goal_return_monitor import return_panel as goal_return_panel, RETURN_CSS as GOAL_RETURN_CSS
 from assist_return_monitor import return_panel as assist_return_panel
 from points_return_monitor import return_panel as points_return_panel, original_caption as points_original_caption
+from special_return_monitor import sog_return_panel
 
 
 CLASSES = (
@@ -1337,6 +1338,7 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
                   {goal_return_panel(fired_move, compact=False) if role == 'Carry' else ''}
                   {assist_return_panel(fired_move, compact=False) if role == 'Support' else ''}
                   {points_return_panel(fired_move, compact=False) if role == 'Tank' else ''}
+                  {sog_return_panel(fired_move, compact=False) if role == 'Jungle' else ''}
                 </div>''')
             later_note = (f"MOVE {wins}/{picks}" +
                           (f" · MAR 15+ {late_wins}/{late_picks} ({late_pct:.1f}%)" if late_picks else
@@ -1354,11 +1356,15 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
             if points_tier:
                 record_label = "2026–27 REG MOVE"
             if role == 'Carry' and goal_return_panel(move):
-                record_label = "V1 RESEARCH RECORD"
+                record_label = "V1 MOVE %"
             if role == 'Support' and assist_return_panel(move):
-                record_label = "V1 RESEARCH RECORD"
+                record_label = "V1 MOVE %"
             if role == 'Tank' and points_original_caption(move):
                 record_label = points_original_caption(move)
+            if role == 'Jungle' and sog_return_panel(move):
+                record_label = "V1 MOVE %"
+            if record_label == "V1 MOVE %":
+                later_note = f'V1 MOVE {wins}/{picks}'
             record_html = (f'<div class="wn-record"><strong>{pct:.1f}%</strong><span>{wins}/{picks}</span><em>{record_label}</em></div>'
                            if picks else '<div class="wn-record"><strong>SCOUT</strong><em>NO GOAL ATTACK</em></div>'
                            if role == "Carry" else '<div class="wn-record"><strong>BASE</strong><em>SCREEN ONLY</em></div>')
@@ -1383,6 +1389,7 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
                 {goal_return_panel(move) if role == 'Carry' else ''}
                 {assist_return_panel(move) if role == 'Support' else ''}
                 {points_return_panel(move) if role == 'Tank' else ''}
+                {sog_return_panel(move) if role == 'Jungle' else ''}
               </div>
               {record_html}
               {_card_quick_summary(role, card)}

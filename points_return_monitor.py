@@ -27,7 +27,7 @@ def record_for(move):
 
 def original_caption(move):
     row=record_for(move)
-    return 'V1 RESEARCH RECORD' if row and not row.get('legacy') else ''
+    return 'V1 MOVE %' if row and not row.get('legacy') else ''
 
 def return_panel(move, *, compact=True):
     row=record_for(move)

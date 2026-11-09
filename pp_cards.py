@@ -8,6 +8,8 @@ import math
 
 from pp_card_context import VERSION as CONTEXT_VERSION
 from pp_lower_context import VERSION as LOWER_CONTEXT_VERSION
+from special_return_monitor import pp_return_panel
+from goal_return_monitor import RETURN_CSS
 from pp_card_form import ppp_l10_chart, ppp_l10_label, FORM_CSS
 
 VERSION = 'pp-card-kit-2026-11-07-v2'
@@ -190,7 +192,7 @@ def render_pp_cards(cards, portrait_uri='', form_renderer=None):
                 f'<p><strong>{r["hits"]}/{r["plays"]} · {r["rate"]:.1f}%</strong> · '
                 f'sample book BE {r["BE"]:.1f}% · +{r["gap"]:.1f} points · '
                 f'{r["players"]} players · {r["dates"]} slate dates</p>'
-                f'<div>{_rule_checks(row, fired, card["xg"])}</div></section>')
+                f'<div>{_rule_checks(row, fired, card["xg"])}</div>{pp_return_panel(fired,compact=False)}</section>')
         source = []
         for side, window in [('Team', 'L5'), ('Opp', 'L5'), ('Opp', 'L10'), ('Opp', 'Season')]:
             prefix = f'PP_Card_{side}_{window}'
@@ -217,9 +219,9 @@ def render_pp_cards(cards, portrait_uri='', form_renderer=None):
             f'<p class="pp-w-quick">PP on-ice xG/game <b>{card["xg"]:.3f}</b> · '
             f'PP <b>{_value(quote.get("PP TOI/game"), 1)} min/game</b> · {_h(quote.get("PP unit", "Unit unknown"))}'
             f' · <b>{len(families)}</b> route {"family" if len(families) == 1 else "families"}</p>'
-            f'<p class="pp-w-l10-quick">PPP L10 <b>{_h(ppp_l10_label(row))}</b> · dated chart in Inspect</p></div>'
+            f'<p class="pp-w-l10-quick">PPP L10 <b>{_h(ppp_l10_label(row))}</b> · dated chart in Inspect</p>{pp_return_panel(move)}</div>'
             f'<div class="pp-w-record"><strong>{record["rate"]:.1f}%</strong>'
-            f'<b>{record["hits"]}/{record["plays"]}</b><small>2026–27 PPP MOVE</small></div>{image}</div>'
+            f'<b>{record["hits"]}/{record["plays"]}</b><small>V1 MOVE %</small></div>{image}</div>'
             f'<details class="pp-w-inspect"><summary>Inspect · PPP L10, {len(families)} distinct {"route" if len(families) == 1 else "routes"} &amp; matchup</summary>{form}'
             f'<div class="pp-w-info">Move sample book BE <b>{record["BE"]:.1f}%</b> · '
             f'<b>{record["gap"]:+.1f} points</b> historical gap<br>'
@@ -230,7 +232,7 @@ def render_pp_cards(cards, portrait_uri='', form_renderer=None):
             f'2026–27 research samples: higher-xG Oct 17–Nov 5; Layer 1 lower-xG Oct 16–Nov 6 · {VERSION}. '
             'Historical move results are not tonight’s PPP probabilities. On-ice xG describes team chances while this player is on the ice.</div>'
             '</details></article>')
-    return '<style>' + FORM_CSS + '''</style><style>
+    return '<style>' + FORM_CSS + RETURN_CSS + '''</style><style>
     .pp-w{container-type:inline-size;color:#eff6ff;font-family:Arial,sans-serif;background:#0d1525;border:1px solid #71649c;border-radius:14px;padding:12px}
     .pp-w *{box-sizing:border-box}.pp-w-title{color:#e6d0ff;font-size:21px;margin:4px 0 7px}.pp-w-caption{font-size:13px;color:#c8d7f1;line-height:1.5;margin-bottom:12px}
     .pp-w-card{position:relative;border:1px solid #586783;border-left:4px solid #b596ff;border-radius:9px;background:linear-gradient(115deg,#27223e,#1c293c);padding:12px;margin:9px 0;overflow:hidden}
