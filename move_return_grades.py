@@ -12,6 +12,29 @@ from special_return_monitor import record_for as special_record
 VERSION='return-grades-2026-11-09-v1'
 PRIORITY={'S':4,'A':3,'B':2,'Review':1}
 
+# User-approved disposition of the Nov9 Goal review; not a searched cutoff or
+# permanent rule. Exact record fingerprints prevent stale labels after regrading.
+GOAL_REVIEW={
+    'goal_star:controlled':('A',False,(39,68,35.7795652173913),(14,32,4.489565217391305),86.91666666666667),
+    'goal_star:measured':('A',False,(58,108,46.79348463131072),(19,44,5.289565217391305),64.84987408424908),
+    'goal_star:pk_breach:reaper':('A',False,(19,31,20.47153846153846),(6,14,2.02),108.53846153846153),
+    'goal_star:barrage:reaper':('S',True,(27,37,36.08348463131072),(7,13,5.6695652173913045),126.72466422466422),
+}
+
+def _reviewed_goal_grade(row,grade):
+    review=GOAL_REVIEW.get(row.get('key'))
+    if not review or grade['tier']!='S':return grade
+    tier,early,full,recent,prior_roi=review
+    for saved,expected in ((row.get('full',{}),full),(row.get('since_check',{}),recent)):
+        actual=tuple(_number(saved.get(k)) for k in ('hits','plays','units'))
+        if any(a is None or not math.isclose(a,e,rel_tol=0,abs_tol=1e-9) for a,e in zip(actual,expected)):return grade
+    actual_roi=_number(row.get('previous',{}).get('roi'))
+    if actual_roi is None or not math.isclose(actual_roi,prior_roi,rel_tol=0,abs_tol=1e-9):return grade
+    reason=('Only 13 recent bets; strong returns, early confirmation.' if early else
+            f'Recent ROI {grade["recent_roi"]:+.1f}% versus V1 {prior_roi:+.1f}%; grade capped at A after review.')
+    return {**grade,'tier':tier,'watch':True,'watch_reason':reason,
+            'review_early':early,'reviewed_on':'2026-11-09'}
+
 @lru_cache(maxsize=1)
 def _pp_kit_version():
     try:return json.loads(Path(__file__).with_name('pp_card_records.json').read_text(encoding='utf-8')).get('version')
@@ -53,9 +76,10 @@ def grade_record(row):
         tier='A'
     elif roi>0:tier='B'
     else:tier='Review'
-    return dict(tier=tier,watch=bool(new_plays and new_units<0),roi=roi,units=units,
+    grade=dict(tier=tier,watch=bool(new_plays and new_units<0),roi=roi,units=units,
                 plays=int(plays),recent_plays=int(new_plays),recent_roi=new_roi,
                 early=new_plays<10,record_key=row.get('key',''),version=VERSION)
+    return _reviewed_goal_grade(row,grade)
 
 def move_grade(move):return grade_record(return_record(move))
 
@@ -86,7 +110,10 @@ def grade_badges(move):
                  +(f'Since check {grade["recent_roi"]:+.1f}% ROI · {grade["recent_plays"]} plays.'
                    if grade['recent_plays'] else 'No new graded plays.'))
     if grade['early']:explanation+=' Fewer than10 new plays; S confirmation pending.'
-    watch=(f'<span class="rg-watch" title="Recent graded plays have negative net units; the move remains eligible">⚠ WATCH</span>' if grade['watch'] else '')
+    if grade.get('watch_reason'):explanation+=' '+grade['watch_reason']
+    watch_reason=grade.get('watch_reason','Recent graded plays have negative net units; the move remains eligible')
+    watch_label='⚠ WATCH · EARLY' if grade.get('review_early') else '⚠ WATCH'
+    watch=(f'<span class="rg-watch" title="{escape(watch_reason,quote=True)}">{watch_label}</span>' if grade['watch'] else '')
     return (f'<span class="rg-badges" data-return-grade="{escape(tier)}" '
             f'data-return-watch="{str(grade["watch"]).lower()}">'
             f'<span class="rg-badge rg-{tier.lower()}" title="{escape(explanation,quote=True)}">{label}</span>{watch}</span>')
@@ -106,3 +133,4 @@ GRADE_CSS='''
 .wn-unit--return-b,.pp-w-card.rg-card-b{border-left:4px solid #b7c5d9;background:linear-gradient(110deg,#293443,#1b2739 50%)}
 .wn-unit--return-review,.wn-unit--return-watch,.pp-w-card.rg-card-watch{border-left-color:#d49b4d}
 '''
+
