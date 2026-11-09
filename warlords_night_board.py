@@ -1354,9 +1354,9 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
             if points_tier:
                 record_label = "2026–27 REG MOVE"
             if role == 'Carry' and goal_return_panel(move):
-                record_label = "ORIGINAL MOVE · THROUGH OCT 31"
+                record_label = "V1 RESEARCH RECORD"
             if role == 'Support' and assist_return_panel(move):
-                record_label = "ORIGINAL MOVE · THROUGH NOV 2"
+                record_label = "V1 RESEARCH RECORD"
             if role == 'Tank' and points_original_caption(move):
                 record_label = points_original_caption(move)
             record_html = (f'<div class="wn-record"><strong>{pct:.1f}%</strong><span>{wins}/{picks}</span><em>{record_label}</em></div>'

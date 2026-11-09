@@ -51,7 +51,9 @@
         "games": 29,
         "units": 6.409250223914064,
         "roi": 9.425367976344212
-      }
+      },
+      "move_version_label": "Moves V1",
+      "wired_on": "2026-11-05"
     },
     {
       "key": "points-2026-27-current-2026-11-05-v1|pp240",
@@ -98,7 +100,9 @@
         "games": 28,
         "units": 8.223348192850743,
         "roi": 13.480898676804497
-      }
+      },
+      "move_version_label": "Moves V1",
+      "wired_on": "2026-11-05"
     },
     {
       "key": "points-2026-27-current-2026-11-05-v1|env_NHL_Opp_Goal_conversion_pct_7.4",
@@ -145,7 +149,9 @@
         "games": 29,
         "units": 6.409250223914064,
         "roi": 9.425367976344212
-      }
+      },
+      "move_version_label": "Moves V1",
+      "wired_on": "2026-11-05"
     },
     {
       "key": "points-2026-27-current-2026-11-05-v1|env_NHL_Opp_GF_10_PG_2.15",
@@ -192,7 +198,9 @@
         "games": 27,
         "units": 6.853694668358509,
         "roi": 10.384385861149257
-      }
+      },
+      "move_version_label": "Moves V1",
+      "wired_on": "2026-11-05"
     },
     {
       "key": "points-2026-27-current-2026-11-05-v1|assist97",
@@ -239,7 +247,9 @@
         "games": 18,
         "units": 5.391366170940085,
         "roi": 19.96802285533365
-      }
+      },
+      "move_version_label": "Moves V1",
+      "wired_on": "2026-11-05"
     },
     {
       "key": "points-2026-27-current-2026-11-05-v1|assist98",
@@ -286,7 +296,9 @@
         "games": 13,
         "units": 6.414653556069576,
         "roi": 35.63696420038653
-      }
+      },
+      "move_version_label": "Moves V1",
+      "wired_on": "2026-11-05"
     },
     {
       "key": "points-2026-27-current-2026-11-05-v1|drought1",
@@ -333,7 +345,9 @@
         "games": 27,
         "units": 1.6645771296349148,
         "roi": 3.3291542592698296
-      }
+      },
+      "move_version_label": "Moves V1",
+      "wired_on": "2026-11-05"
     },
     {
       "key": "points-2026-27-current-2026-11-05-v1|drought2",
@@ -380,7 +394,9 @@
         "games": 22,
         "units": 0.9484365042764124,
         "roi": 2.8740500129588256
-      }
+      },
+      "move_version_label": "Moves V1",
+      "wired_on": "2026-11-05"
     },
     {
       "key": "points-2026-27-current-2026-11-05-v1|mu110",
@@ -427,7 +443,9 @@
         "games": 19,
         "units": 7.816289366024571,
         "roi": 25.213836664595387
-      }
+      },
+      "move_version_label": "Moves V1",
+      "wired_on": "2026-11-05"
     },
     {
       "key": "points-2026-27-current-2026-11-05-v1|mu150",
@@ -474,7 +492,9 @@
         "games": 10,
         "units": 1.6187180101340297,
         "roi": 12.451677001030998
-      }
+      },
+      "move_version_label": "Moves V1",
+      "wired_on": "2026-11-05"
     },
     {
       "key": "points-2026-27-current-2026-11-05-v1|ppp41",
@@ -521,7 +541,9 @@
         "games": 13,
         "units": 5.321134324015982,
         "roi": 25.338734876266578
-      }
+      },
+      "move_version_label": "Moves V1",
+      "wired_on": "2026-11-05"
     },
     {
       "key": "points-2026-27-current-2026-11-05-v1|ppp46",
@@ -568,7 +590,9 @@
         "games": 8,
         "units": 4.984811633231049,
         "roi": 38.34470487100806
-      }
+      },
+      "move_version_label": "Moves V1",
+      "wired_on": "2026-11-05"
     },
     {
       "key": "points-2026-27-current-2026-11-05-v1|env_NHL_Team_PP_G60_8.9",
@@ -615,7 +639,9 @@
         "games": 16,
         "units": 6.647854309055152,
         "roi": 19.552512673691623
-      }
+      },
+      "move_version_label": "Moves V1",
+      "wired_on": "2026-11-05"
     },
     {
       "key": "points-2026-27-current-2026-11-05-v1|env_NHL_Team_PP_G60_11.6",
@@ -662,7 +688,9 @@
         "games": 9,
         "units": 7.34756760745266,
         "roi": 33.39803457933028
-      }
+      },
+      "move_version_label": "Moves V1",
+      "wired_on": "2026-11-05"
     },
     {
       "key": "points-2026-27-current-2026-11-05-v1|env_NHL_Team_PP_G60_12.3",
@@ -709,7 +737,9 @@
         "games": 6,
         "units": 6.790948787675946,
         "roi": 42.443429922974666
-      }
+      },
+      "move_version_label": "Moves V1",
+      "wired_on": "2026-11-05"
     },
     {
       "key": "points-2026-27-current-2026-11-05-v1|env_NHL_Team_PP_Goals_PG_0.9",
@@ -756,7 +786,9 @@
         "games": 10,
         "units": 7.350660791700344,
         "roi": 33.41209450772884
-      }
+      },
+      "move_version_label": "Moves V1",
+      "wired_on": "2026-11-05"
     },
     {
       "key": "points-2026-27-current-2026-11-05-v1|env_NHL_Team_PP_Goals_PG_1.05",
@@ -803,7 +835,9 @@
         "games": 7,
         "units": 6.491011668893327,
         "roi": 40.56882293058329
-      }
+      },
+      "move_version_label": "Moves V1",
+      "wired_on": "2026-11-05"
     },
     {
       "key": "points-2026-27-current-2026-11-05-v1|combo_PP scoring",
@@ -850,7 +884,9 @@
         "games": 10,
         "units": 7.350660791700344,
         "roi": 33.41209450772884
-      }
+      },
+      "move_version_label": "Moves V1",
+      "wired_on": "2026-11-05"
     },
     {
       "key": "points-2026-27-current-2026-11-05-v1|final_80-14",
@@ -897,7 +933,9 @@
         "games": 12,
         "units": 4.866588869470527,
         "roi": 24.332944347352637
-      }
+      },
+      "move_version_label": "Moves V1",
+      "wired_on": "2026-11-05"
     },
     {
       "key": "points-2026-27-current-2026-11-05-v1|final_90-18",
@@ -944,7 +982,9 @@
         "games": 9,
         "units": 3.7069397466635094,
         "roi": 23.168373416646936
-      }
+      },
+      "move_version_label": "Moves V1",
+      "wired_on": "2026-11-05"
     },
     {
       "key": "points-2026-27-current-2026-11-05-v1|final_90-20",
@@ -991,7 +1031,9 @@
         "games": 8,
         "units": 1.4718234981392877,
         "roi": 14.718234981392877
-      }
+      },
+      "move_version_label": "Moves V1",
+      "wired_on": "2026-11-05"
     },
     {
       "key": "points-2026-27-current-2026-11-05-v1|pprole_pp875",
@@ -1038,7 +1080,9 @@
         "games": 16,
         "units": 7.747666563706116,
         "roi": 24.992472786148763
-      }
+      },
+      "move_version_label": "Moves V1",
+      "wired_on": "2026-11-05"
     },
     {
       "key": "points-2026-27-current-2026-11-05-v1|creator_pp875",
@@ -1085,7 +1129,9 @@
         "games": 13,
         "units": 5.083826488400403,
         "roi": 24.20869756381144
-      }
+      },
+      "move_version_label": "Moves V1",
+      "wired_on": "2026-11-05"
     },
     {
       "key": "points-2026-27-current-2026-11-05-v1|pprole_NHL_Opp_GA_10_PG",
@@ -1132,7 +1178,9 @@
         "games": 23,
         "units": 3.507304568487934,
         "roi": 7.306884517683196
-      }
+      },
+      "move_version_label": "Moves V1",
+      "wired_on": "2026-11-05"
     },
     {
       "key": "points-2026-27-current-2026-11-05-v1|pprole_NHL_Opp_Goals_per_shot_allowed_pct",
@@ -1179,7 +1227,9 @@
         "games": 23,
         "units": 4.135952801974877,
         "roi": 8.991201743423646
-      }
+      },
+      "move_version_label": "Moves V1",
+      "wired_on": "2026-11-05"
     },
     {
       "key": "points-2026-27-current-2026-11-05-v1|multi28",
@@ -1226,7 +1276,9 @@
         "games": 22,
         "units": 5.57872244640446,
         "roi": 17.995878859369224
-      }
+      },
+      "move_version_label": "Moves V1",
+      "wired_on": "2026-11-05"
     },
     {
       "key": "points-2026-27-current-2026-11-05-v1|env_NHL_Opp_Goal_conversion_pct_11.2",
@@ -1273,7 +1325,9 @@
         "games": 18,
         "units": -0.09879866795875984,
         "roi": -0.25332991784297393
-      }
+      },
+      "move_version_label": "Moves V1",
+      "wired_on": "2026-11-05"
     },
     {
       "key": "points-2026-27-current-2026-11-05-v1|env_NHL_Opp_Goal_conversion_pct_12.3",
@@ -1320,7 +1374,9 @@
         "games": 12,
         "units": 1.4349773324980555,
         "roi": 7.174886662490278
-      }
+      },
+      "move_version_label": "Moves V1",
+      "wired_on": "2026-11-05"
     },
     {
       "key": "points-2026-27-current-2026-11-05-v1|env_NHL_Opp_GF_10_PG_3.25",
@@ -1367,7 +1423,9 @@
         "games": 20,
         "units": 1.4036332285733064,
         "roi": 4.2534340259797165
-      }
+      },
+      "move_version_label": "Moves V1",
+      "wired_on": "2026-11-05"
     },
     {
       "key": "points-2026-27-current-2026-11-05-v1|env_NHL_Opp_GF_10_PG_3.55",
@@ -1414,7 +1472,9 @@
         "games": 14,
         "units": -0.011793002430174107,
         "roi": -0.05127392360945264
-      }
+      },
+      "move_version_label": "Moves V1",
+      "wired_on": "2026-11-05"
     },
     {
       "key": "points-2026-27-current-2026-11-05-v1|final_90-19",
@@ -1461,7 +1521,9 @@
         "games": 11,
         "units": 2.733949686309119,
         "roi": 16.082056978288936
-      }
+      },
+      "move_version_label": "Moves V1",
+      "wired_on": "2026-11-05"
     },
     {
       "key": "points-2026-27-current-2026-11-05-v1|final_90-01",
@@ -1508,7 +1570,9 @@
         "games": 6,
         "units": 0.17059419075548107,
         "roi": 2.1324273844435133
-      }
+      },
+      "move_version_label": "Moves V1",
+      "wired_on": "2026-11-05"
     },
     {
       "key": "points-2026-27-current-2026-11-05-v1|final_90-07",
@@ -1555,7 +1619,9 @@
         "games": 5,
         "units": -4.918128654970761,
         "roi": -61.4766081871345
-      }
+      },
+      "move_version_label": "Moves V1",
+      "wired_on": "2026-11-05"
     },
     {
       "key": "points-2026-27-current-2026-11-05-v1|combo_Opponent offense",
@@ -1602,7 +1668,9 @@
         "games": 10,
         "units": -0.549671790308962,
         "roi": -3.233363472405659
-      }
+      },
+      "move_version_label": "Moves V1",
+      "wired_on": "2026-11-05"
     },
     {
       "key": "points-2026-27-current-2026-11-05-v1|final_90-12",
@@ -1649,7 +1717,9 @@
         "games": 7,
         "units": 3.698911996287768,
         "roi": 41.099022180975204
-      }
+      },
+      "move_version_label": "Moves V1",
+      "wired_on": "2026-11-05"
     },
     {
       "key": "points-2026-27-current-2026-11-05-v1|final_90-08",
@@ -1696,7 +1766,9 @@
         "games": 12,
         "units": 1.94660010491929,
         "roi": 12.977334032795266
-      }
+      },
+      "move_version_label": "Moves V1",
+      "wired_on": "2026-11-05"
     },
     {
       "key": "points-2026-27-current-2026-11-05-v1|final_90-09",
@@ -1743,7 +1815,9 @@
         "games": 12,
         "units": 1.2799334382526233,
         "roi": 9.142381701804453
-      }
+      },
+      "move_version_label": "Moves V1",
+      "wired_on": "2026-11-05"
     },
     {
       "key": "points-2026-27-current-2026-11-05-v1|final_90-13",
@@ -1790,7 +1864,9 @@
         "games": 8,
         "units": 6.880540903960319,
         "roi": 52.927237722771686
-      }
+      },
+      "move_version_label": "Moves V1",
+      "wired_on": "2026-11-05"
     },
     {
       "key": "points-2026-27-current-2026-11-05-v1|env_PP_Matchup_Equal_71",
@@ -1837,7 +1913,9 @@
         "games": 10,
         "units": 3.1516765398344346,
         "roi": 19.697978373965217
-      }
+      },
+      "move_version_label": "Moves V1",
+      "wired_on": "2026-11-05"
     },
     {
       "key": "points-2026-27-current-2026-11-05-v1|env_PP_Matchup_Equal_80",
@@ -1884,7 +1962,9 @@
         "games": 5,
         "units": 2.895363408521303,
         "roi": 41.362334407447186
-      }
+      },
+      "move_version_label": "Moves V1",
+      "wired_on": "2026-11-05"
     },
     {
       "key": "points-2026-27-current-2026-11-05-v1|final_90-05",
@@ -1931,7 +2011,9 @@
         "games": 11,
         "units": -3.766141752983858,
         "roi": -25.107611686559054
-      }
+      },
+      "move_version_label": "Moves V1",
+      "wired_on": "2026-11-05"
     },
     {
       "key": "points-2026-27-current-2026-11-05-v1|env_Opp_PK_xGA_relative_league_1.05",
@@ -1978,7 +2060,9 @@
         "games": 14,
         "units": 5.32538052402229,
         "roi": 24.206275109192227
-      }
+      },
+      "move_version_label": "Moves V1",
+      "wired_on": "2026-11-05"
     },
     {
       "key": "points-2026-27-current-2026-11-05-v1|env_Opp_PK_xGA_relative_league_1.09",
@@ -2025,7 +2109,9 @@
         "games": 8,
         "units": 2.579596737915923,
         "roi": 28.66218597684359
-      }
+      },
+      "move_version_label": "Moves V1",
+      "wired_on": "2026-11-05"
     },
     {
       "key": "points-2026-27-current-2026-11-05-v1|env_Opp_PK_xGA_relative_league_1.14",
@@ -2072,7 +2158,9 @@
         "games": 4,
         "units": -0.6057692307692307,
         "roi": -15.14423076923077
-      }
+      },
+      "move_version_label": "Moves V1",
+      "wired_on": "2026-11-05"
     },
     {
       "key": "points-2026-27-current-2026-11-05-v1|combo_PP matchup",
@@ -2119,7 +2207,9 @@
         "games": 8,
         "units": 1.9054644186223133,
         "roi": 17.322403805657395
-      }
+      },
+      "move_version_label": "Moves V1",
+      "wired_on": "2026-11-05"
     },
     {
       "key": "points-2026-27-current-2026-11-05-v1|final_90-06",
@@ -2166,7 +2256,9 @@
         "games": 14,
         "units": -0.9222834269273897,
         "roi": -6.148556179515932
-      }
+      },
+      "move_version_label": "Moves V1",
+      "wired_on": "2026-11-05"
     },
     {
       "key": "points-2026-27-current-2026-11-05-v1|final_90-10",
@@ -2213,7 +2305,9 @@
         "games": 9,
         "units": 2.354880256196046,
         "roi": 26.165336179956064
-      }
+      },
+      "move_version_label": "Moves V1",
+      "wired_on": "2026-11-05"
     },
     {
       "key": "points-2026-27-current-2026-11-05-v1|final_90-11",
@@ -2260,7 +2354,9 @@
         "games": 11,
         "units": 2.776448883647026,
         "roi": 23.137074030391883
-      }
+      },
+      "move_version_label": "Moves V1",
+      "wired_on": "2026-11-05"
     },
     {
       "key": "points-2026-27-current-2026-11-05-v1|final_90-02",
@@ -2307,7 +2403,9 @@
         "games": 18,
         "units": -0.45894997675183435,
         "roi": -1.7651922182762858
-      }
+      },
+      "move_version_label": "Moves V1",
+      "wired_on": "2026-11-05"
     },
     {
       "key": "points-2026-27-current-2026-11-05-v1|final_90-03",
@@ -2354,7 +2452,9 @@
         "games": 19,
         "units": 3.457856335215768,
         "roi": 12.806875315613956
-      }
+      },
+      "move_version_label": "Moves V1",
+      "wired_on": "2026-11-05"
     },
     {
       "key": "points15-2026-27-iron-march-2026-11-06-v2|env_4_0",
@@ -2401,7 +2501,9 @@
         "games": 10,
         "units": 2.9655555555555555,
         "roi": 17.444444444444443
-      }
+      },
+      "move_version_label": "Moves V1",
+      "wired_on": "2026-11-06"
     },
     {
       "key": "points15-2026-27-iron-march-2026-11-06-v2|points15_recorded_points_pace155",
@@ -2448,7 +2550,9 @@
         "games": 3,
         "units": 0.6155555555555555,
         "roi": 12.311111111111112
-      }
+      },
+      "move_version_label": "Moves V1",
+      "wired_on": "2026-11-06"
     },
     {
       "key": "points15-2026-27-iron-march-2026-11-06-v2|env_0_0",
@@ -2495,7 +2599,9 @@
         "games": 12,
         "units": 3.4655555555555555,
         "roi": 17.32777777777778
-      }
+      },
+      "move_version_label": "Moves V1",
+      "wired_on": "2026-11-06"
     },
     {
       "key": "points15-2026-27-iron-march-2026-11-06-v2|env_0_1",
@@ -2542,7 +2648,9 @@
         "games": 9,
         "units": 2.86,
         "roi": 28.6
-      }
+      },
+      "move_version_label": "Moves V1",
+      "wired_on": "2026-11-06"
     },
     {
       "key": "points15-2026-27-iron-march-2026-11-06-v2|env_3_0",
@@ -2589,7 +2697,9 @@
         "games": 5,
         "units": 0.45555555555555555,
         "roi": 4.555555555555555
-      }
+      },
+      "move_version_label": "Moves V1",
+      "wired_on": "2026-11-06"
     },
     {
       "key": "points15-2026-27-iron-march-2026-11-06-v2|env_4_1",
@@ -2636,7 +2746,9 @@
         "games": 5,
         "units": -1.8944444444444444,
         "roi": -21.049382716049383
-      }
+      },
+      "move_version_label": "Moves V1",
+      "wired_on": "2026-11-06"
     },
     {
       "key": "points15-2026-27-iron-march-2026-11-06-v2|points15_l5_points_ceiling100",
@@ -2683,7 +2795,9 @@
         "games": 6,
         "units": 2.91,
         "roi": 48.5
-      }
+      },
+      "move_version_label": "Moves V1",
+      "wired_on": "2026-11-06"
     },
     {
       "key": "points15-2026-27-iron-march-2026-11-06-v2|env_0_2",
@@ -2730,7 +2844,9 @@
         "games": 4,
         "units": -1.3,
         "roi": -32.5
-      }
+      },
+      "move_version_label": "Moves V1",
+      "wired_on": "2026-11-06"
     },
     {
       "key": "points15-2026-27-iron-march-2026-11-06-v2|env_1_0",
@@ -2777,7 +2893,9 @@
         "games": 9,
         "units": -1.6944444444444444,
         "roi": -11.296296296296296
-      }
+      },
+      "move_version_label": "Moves V1",
+      "wired_on": "2026-11-06"
     },
     {
       "key": "points15-2026-27-iron-march-2026-11-06-v2|env_2_0",
@@ -2824,7 +2942,9 @@
         "games": 12,
         "units": -1.0844444444444445,
         "roi": -5.4222222222222225
-      }
+      },
+      "move_version_label": "Moves V1",
+      "wired_on": "2026-11-06"
     },
     {
       "key": "points15-2026-27-iron-march-2026-11-06-v2|env_2_1",
@@ -2871,7 +2991,9 @@
         "games": 9,
         "units": -5.05,
         "roi": -33.666666666666664
-      }
+      },
+      "move_version_label": "Moves V1",
+      "wired_on": "2026-11-06"
     },
     {
       "key": "points15-2026-27-iron-march-2026-11-06-v2|env_2_2",
@@ -2918,7 +3040,9 @@
         "games": 5,
         "units": -3.5,
         "roi": -50.0
-      }
+      },
+      "move_version_label": "Moves V1",
+      "wired_on": "2026-11-06"
     },
     {
       "key": "points15-2026-27-iron-march-2026-11-06-v2|env_1_1",
@@ -2965,7 +3089,9 @@
         "games": 4,
         "units": -0.14444444444444443,
         "roi": -2.0634920634920637
-      }
+      },
+      "move_version_label": "Moves V1",
+      "wired_on": "2026-11-06"
     },
     {
       "key": "points15-2026-27-iron-march-2026-11-06-v2|points15_pace_gap_base_attack",
@@ -3012,7 +3138,9 @@
         "games": 12,
         "units": 2.0755555555555554,
         "roi": 12.209150326797385
-      }
+      },
+      "move_version_label": "Moves V1",
+      "wired_on": "2026-11-06"
     },
     {
       "key": "points15-2026-27-iron-march-2026-11-06-v2|points15_talent_pace_gap",
@@ -3059,7 +3187,9 @@
         "games": 11,
         "units": 2.6755555555555555,
         "roi": 19.11111111111111
-      }
+      },
+      "move_version_label": "Moves V1",
+      "wired_on": "2026-11-06"
     },
     {
       "key": "points15-2026-27-iron-march-2026-11-06-v2|points15_pp_proxy_ceiling460",
@@ -3106,7 +3236,9 @@
         "games": 10,
         "units": -2.64,
         "roi": -26.4
-      }
+      },
+      "move_version_label": "Moves V1",
+      "wired_on": "2026-11-06"
     },
     {
       "key": "points15-2026-27-iron-march-2026-11-06-v2|points15_ev5_toi154",
@@ -3153,7 +3285,9 @@
         "games": 9,
         "units": 6.9655555555555555,
         "roi": 53.58119658119658
-      }
+      },
+      "move_version_label": "Moves V1",
+      "wired_on": "2026-11-06"
     },
     {
       "key": "points15-2026-27-iron-march-2026-11-06-v2|points15_pp_proxy_ev5_special",
@@ -3200,7 +3334,9 @@
         "games": 6,
         "units": 1.36,
         "roi": 22.666666666666668
-      }
+      },
+      "move_version_label": "Moves V1",
+      "wired_on": "2026-11-06"
     },
     {
       "key": "points15-2026-27-iron-march-2026-11-06-v2|env_5_0",
@@ -3247,7 +3383,9 @@
         "games": 11,
         "units": 0.21555555555555556,
         "roi": 1.3472222222222223
-      }
+      },
+      "move_version_label": "Moves V1",
+      "wired_on": "2026-11-06"
     },
     {
       "key": "points15-2026-27-iron-march-2026-11-06-v2|env_5_1",
@@ -3294,7 +3432,9 @@
         "games": 7,
         "units": -6.3,
         "roi": -70.0
-      }
+      },
+      "move_version_label": "Moves V1",
+      "wired_on": "2026-11-06"
     },
     {
       "key": "points15-2026-27-iron-march-2026-11-06-v2|env_6_0",
@@ -3341,7 +3481,9 @@
         "games": 9,
         "units": 2.7255555555555557,
         "roi": 20.965811965811966
-      }
+      },
+      "move_version_label": "Moves V1",
+      "wired_on": "2026-11-06"
     },
     {
       "key": "points15-2026-27-iron-march-2026-11-06-v2|env_6_1",
@@ -3388,7 +3530,9 @@
         "games": 7,
         "units": 4.725555555555555,
         "roi": 42.95959595959596
-      }
+      },
+      "move_version_label": "Moves V1",
+      "wired_on": "2026-11-06"
     },
     {
       "key": "points15-2026-27-iron-march-2026-11-06-v2|env_7_0",
@@ -3435,7 +3579,9 @@
         "games": 4,
         "units": 0.7055555555555556,
         "roi": 11.75925925925926
-      }
+      },
+      "move_version_label": "Moves V1",
+      "wired_on": "2026-11-06"
     },
     {
       "key": "points15-2026-27-iron-march-2026-11-06-v2|env_8_0",
@@ -3482,7 +3628,9 @@
         "games": 9,
         "units": 4.2155555555555555,
         "roi": 35.129629629629626
-      }
+      },
+      "move_version_label": "Moves V1",
+      "wired_on": "2026-11-06"
     },
     {
       "key": "points15-2026-27-iron-march-2026-11-06-v2|env_8_1",
@@ -3529,7 +3677,9 @@
         "games": 4,
         "units": -4.0,
         "roi": -100.0
-      }
+      },
+      "move_version_label": "Moves V1",
+      "wired_on": "2026-11-06"
     },
     {
       "key": "points15-2026-27-iron-march-2026-11-06-v2|env_9_0",
@@ -3576,7 +3726,9 @@
         "games": 9,
         "units": -1.1344444444444444,
         "roi": -8.103174603174603
-      }
+      },
+      "move_version_label": "Moves V1",
+      "wired_on": "2026-11-06"
     },
     {
       "key": "points15-2026-27-iron-march-2026-11-06-v2|env_9_1",
@@ -3623,7 +3775,9 @@
         "games": 7,
         "units": 1.51,
         "roi": 18.875
-      }
+      },
+      "move_version_label": "Moves V1",
+      "wired_on": "2026-11-06"
     },
     {
       "key": "points15-2026-27-iron-march-2026-11-06-v2|env_10_0",
@@ -3670,7 +3824,9 @@
         "games": 9,
         "units": -3.5944444444444446,
         "roi": -27.64957264957265
-      }
+      },
+      "move_version_label": "Moves V1",
+      "wired_on": "2026-11-06"
     },
     {
       "key": "points15-2026-27-iron-march-2026-11-06-v2|env_10_1",
@@ -3717,7 +3873,9 @@
         "games": 7,
         "units": -2.9444444444444446,
         "roi": -32.71604938271605
-      }
+      },
+      "move_version_label": "Moves V1",
+      "wired_on": "2026-11-06"
     },
     {
       "key": "points15-2026-27-iron-march-2026-11-06-v2|env_10_2",
@@ -3764,7 +3922,9 @@
         "games": 2,
         "units": -0.6444444444444445,
         "roi": -16.11111111111111
-      }
+      },
+      "move_version_label": "Moves V1",
+      "wired_on": "2026-11-06"
     },
     {
       "key": "points15-2026-27-iron-march-2026-11-06-v2|env_11_0",
@@ -3811,7 +3971,9 @@
         "games": 10,
         "units": 0.8155555555555556,
         "roi": 6.273504273504273
-      }
+      },
+      "move_version_label": "Moves V1",
+      "wired_on": "2026-11-06"
     },
     {
       "key": "points15-2026-27-iron-march-2026-11-06-v2|env_11_1",
@@ -3858,7 +4020,9 @@
         "games": 6,
         "units": -5.3,
         "roi": -66.25
-      }
+      },
+      "move_version_label": "Moves V1",
+      "wired_on": "2026-11-06"
     },
     {
       "key": "points15-2026-27-iron-march-2026-11-06-v2|env_12_0",
@@ -3905,7 +4069,9 @@
         "games": 9,
         "units": 2.3255555555555554,
         "roi": 21.141414141414142
-      }
+      },
+      "move_version_label": "Moves V1",
+      "wired_on": "2026-11-06"
     },
     {
       "key": "points15-2026-27-iron-march-2026-11-06-v2|env_13_0",
@@ -3952,7 +4118,9 @@
         "games": 9,
         "units": 2.8155555555555556,
         "roi": 25.595959595959595
-      }
+      },
+      "move_version_label": "Moves V1",
+      "wired_on": "2026-11-06"
     },
     {
       "key": "points15-2026-27-iron-march-2026-11-06-v2|env_13_1",
@@ -3999,7 +4167,9 @@
         "games": 7,
         "units": 3.46,
         "roi": 49.42857142857143
-      }
+      },
+      "move_version_label": "Moves V1",
+      "wired_on": "2026-11-06"
     },
     {
       "key": "points15-2026-27-iron-march-2026-11-06-v2|env_14_0",
@@ -4046,7 +4216,9 @@
         "games": 8,
         "units": -0.5344444444444445,
         "roi": -4.858585858585859
-      }
+      },
+      "move_version_label": "Moves V1",
+      "wired_on": "2026-11-06"
     },
     {
       "key": "points15-2026-27-iron-march-2026-11-06-v2|env_14_1",
@@ -4093,7 +4265,9 @@
         "games": 7,
         "units": 2.4655555555555555,
         "roi": 30.819444444444443
-      }
+      },
+      "move_version_label": "Moves V1",
+      "wired_on": "2026-11-06"
     },
     {
       "key": "points15-2026-27-iron-march-2026-11-06-v2|env_15_0",
@@ -4140,7 +4314,9 @@
         "games": 6,
         "units": -0.9444444444444444,
         "roi": -13.492063492063492
-      }
+      },
+      "move_version_label": "Moves V1",
+      "wired_on": "2026-11-06"
     },
     {
       "key": "points15-2026-27-iron-march-2026-11-06-v2|env_15_1",
@@ -4187,7 +4363,9 @@
         "games": 1,
         "units": 1.3555555555555556,
         "roi": 67.77777777777777
-      }
+      },
+      "move_version_label": "Moves V1",
+      "wired_on": "2026-11-06"
     },
     {
       "key": "points15-2026-27-iron-march-2026-11-06-v2|gap_pp_display_0",
@@ -4234,7 +4412,9 @@
         "games": 10,
         "units": 1.2155555555555555,
         "roi": 8.103703703703705
-      }
+      },
+      "move_version_label": "Moves V1",
+      "wired_on": "2026-11-06"
     },
     {
       "key": "points15-2026-27-iron-march-2026-11-06-v2|gap_pp_display_1",
@@ -4281,7 +4461,9 @@
         "games": 8,
         "units": 1.8655555555555556,
         "roi": 16.95959595959596
-      }
+      },
+      "move_version_label": "Moves V1",
+      "wired_on": "2026-11-06"
     },
     {
       "key": "points15-2026-27-iron-march-2026-11-06-v2|gap_pp_display_2",
@@ -4328,7 +4510,9 @@
         "games": 7,
         "units": 1.51,
         "roi": 18.875
-      }
+      },
+      "move_version_label": "Moves V1",
+      "wired_on": "2026-11-06"
     },
     {
       "key": "points15-2026-27-iron-march-2026-11-06-v2|tg_combo_K1",
@@ -4375,7 +4559,9 @@
         "games": 5,
         "units": -3.3,
         "roi": -55.0
-      }
+      },
+      "move_version_label": "Moves V1",
+      "wired_on": "2026-11-06"
     },
     {
       "key": "points15-2026-27-iron-march-2026-11-06-v2|tg_combo_K4",
@@ -4422,7 +4608,9 @@
         "games": 7,
         "units": 1.4655555555555555,
         "roi": 16.28395061728395
-      }
+      },
+      "move_version_label": "Moves V1",
+      "wired_on": "2026-11-06"
     },
     {
       "key": "points15-2026-27-iron-march-2026-11-06-v2|tg_combo_K3",
@@ -4469,7 +4657,9 @@
         "games": 7,
         "units": 2.4655555555555555,
         "roi": 30.819444444444443
-      }
+      },
+      "move_version_label": "Moves V1",
+      "wired_on": "2026-11-06"
     },
     {
       "key": "points15-2026-27-iron-march-2026-11-06-v2|tg_combo_J",
@@ -4516,7 +4706,9 @@
         "games": 5,
         "units": 0.05555555555555555,
         "roi": 0.9259259259259259
-      }
+      },
+      "move_version_label": "Moves V1",
+      "wired_on": "2026-11-06"
     },
     {
       "key": "points15-2026-27-iron-march-2026-11-06-v2|points15_star_pace_gap",
@@ -4563,7 +4755,9 @@
         "games": 11,
         "units": 2.6755555555555555,
         "roi": 19.11111111111111
-      }
+      },
+      "move_version_label": "Moves V1",
+      "wired_on": "2026-11-06"
     },
     {
       "key": "points15-2026-27-iron-march-2026-11-06-v2|STAR_pk_time_scoring_broad",
@@ -4610,7 +4804,9 @@
         "games": 9,
         "units": 2.8155555555555556,
         "roi": 25.595959595959595
-      }
+      },
+      "move_version_label": "Moves V1",
+      "wired_on": "2026-11-06"
     },
     {
       "key": "points15-2026-27-iron-march-2026-11-06-v2|gaia_measured_pressure_15",
@@ -4657,7 +4853,9 @@
         "games": 7,
         "units": 8.805555555555555,
         "roi": 67.73504273504274
-      }
+      },
+      "move_version_label": "Moves V1",
+      "wired_on": "2026-11-06"
     },
     {
       "key": "points15-2026-27-iron-march-2026-11-06-v2|STAR_pk_time_scoring_stronger",
@@ -4704,7 +4902,9 @@
         "games": 5,
         "units": -3.3,
         "roi": -55.0
-      }
+      },
+      "move_version_label": "Moves V1",
+      "wired_on": "2026-11-06"
     },
     {
       "key": "points15-2026-27-iron-march-2026-11-06-v2|STAR_warpath_iron_march_1",
@@ -4751,7 +4951,9 @@
         "games": 4,
         "units": 1.0555555555555556,
         "roi": 21.11111111111111
-      }
+      },
+      "move_version_label": "Moves V1",
+      "wired_on": "2026-11-06"
     },
     {
       "key": "points15-2026-27-iron-march-2026-11-06-v2|STAR_warpath_iron_march_2",
@@ -4798,7 +5000,9 @@
         "games": 3,
         "units": 2.0555555555555554,
         "roi": 51.388888888888886
-      }
+      },
+      "move_version_label": "Moves V1",
+      "wired_on": "2026-11-06"
     },
     {
       "key": "legacy-points15|DPS Tank stance",
@@ -4846,7 +5050,9 @@
         "games": 19,
         "units": 16.785555555555554,
         "roi": 35.71394799054374
-      }
+      },
+      "move_version_label": "Legacy profile · 2026–27 replay",
+      "wired_on": null
     },
     {
       "key": "legacy-points15|Backbone",
@@ -4894,7 +5100,9 @@
         "games": 9,
         "units": -1.35,
         "roi": -12.272727272727273
-      }
+      },
+      "move_version_label": "Legacy profile · 2026–27 replay",
+      "wired_on": null
     }
   ]
 }

@@ -55,18 +55,26 @@ def render_return_panel(row,data, *, compact=True):
         tone='gain' if recent['units']>0 else 'loss' if recent['units']<0 else 'flat'
     else:
         change='— No new plays to judge';trend='neutral';status='NO NEW PLAYS';tone='flat'
+    version=data.get('move_version_label')
+    wired=data.get('wired_on')
+    version_note=(f'<div class="wn-gr-version">{escape(version)}'
+                  +(f' · wired {_date(wired)}' if wired else '')+'</div>') if version else ''
     detail=('' if compact else
-            f'<div class="wn-gr-note">Previous record through {_date(data["previous_through"])}: '
+            f'<div class="wn-gr-note">Full record: {_date(data["full_from"])}–{_date(data["full_through"])}. '
+            f'Since last check: {_date(data["since_from"])}–{_date(data["since_through"])}. '
+            f'Previous record through {_date(data["previous_through"])}: '
             f'{prior["units"]:+.2f}u · {prior["roi"]:+.1f}% ROI. '
             'Flat 1u at saved pregame prices. Overlapping moves are separate records.</div>')
     return (f'<div class="wn-goal-returns" data-return-version="{escape(data["version"])}">'
-            f'<div class="wn-gr-box"><small>FULL · {_date(data["full_from"])}–{_date(data["full_through"])}</small>{_metric(full)}</div>'
-            f'<div class="wn-gr-box"><small>SINCE LAST CHECK · {_date(data["since_from"])}–{_date(data["since_through"])}</small>{_metric(recent)}</div>'
+            +version_note+
+            f'<div class="wn-gr-box"><small>FULL MOVE RECORD</small>{_metric(full)}</div>'
+            f'<div class="wn-gr-box"><small>SINCE LAST CHECK</small>{_metric(recent)}</div>'
             f'<div class="wn-gr-change"><strong class="wn-gr-{tone}">{status}</strong>'
             f'<span class="wn-gr-{trend}">{change}</span></div>{detail}</div>')
 
 RETURN_CSS='''
 .wn-goal-returns{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;margin:8px 0 2px;max-width:680px;font-size:12px;line-height:1.4}
+.wn-gr-version{grid-column:1/-1;font-size:10px;font-weight:800;color:#c4d2e7;letter-spacing:.03em}
 .wn-gr-box{background:#101a2bcc;border:1px solid #4a5b73;border-radius:7px;padding:7px 9px;display:flex;flex-direction:column;gap:2px;min-width:0}
 .wn-gr-box small{font-size:9px;font-weight:850;letter-spacing:.04em;color:#eac77e}
 .wn-gr-box>b{font-size:15px;font-weight:850}.wn-gr-box>b>span{font-size:13px}.wn-gr-box>span{font-size:11px;color:#d0ddef}
