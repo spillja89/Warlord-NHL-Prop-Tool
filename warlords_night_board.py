@@ -1464,7 +1464,7 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
           <header class="wn-lane-head">{backdrop}<div class="wn-class-icon" aria-hidden="true">{class_icon}</div>
             <div class="wn-class-text"><span class="wn-kicker">{_h(descriptions[role])}</span><h2>{_h(role)}</h2></div>
             <div class="wn-count"><strong>{len(cards)}</strong><span>{count_label}</span></div></header>
-          <div class="wn-lane-sub">{_h(lane_subtitle)}<div class="wn-grade-legend">S / A / B rank updated returns · Watch flags recent net losses · every matched route stays in Inspect</div></div>
+          <div class="wn-lane-sub">{_h(lane_subtitle)}<div class="wn-grade-legend">S / A / B rank updated returns · Watch flags recent losses, deterioration or limited confirmation · every matched route stays in Inspect</div></div>
           <div class="wn-units">{''.join(units)}</div></section>""")
     total = sum(len(cards) for cards in boards.values())
     styles = """<style>
@@ -1613,3 +1613,10 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
     board_class = "wn-board" if show_hero else "wn-board wn-board--compact"
     goal_return_styles = '<style>' + GOAL_RETURN_CSS + '</style>' if any(item[0] in ('Carry', 'Support', 'Tank') for item in selected) else ''
     return BETA_CSS + '<style>' + GRADE_CSS + '</style>' + styles + goal_return_styles + f'<div class="{board_class}">' + (hero if show_hero else "") + '<div class="wn-grid">' + ''.join(lanes) + '</div></div>'
+
+
+
+
+
+
+
