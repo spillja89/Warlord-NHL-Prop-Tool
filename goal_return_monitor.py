@@ -40,7 +40,12 @@ def _metric(stats):
 def return_panel(move, *, compact=True):
     row=record_for(move)
     if row is None:return ''
-    data=records();full,recent,prior=row['full'],row['since_check'],row['previous']
+    return render_return_panel(row,records(),compact=compact)
+
+
+def render_return_panel(row,data, *, compact=True):
+    """Shared presentation; caller owns the exact market/rule/record identity."""
+    full,recent,prior=row['full'],row['since_check'],row['previous']
     if recent['plays']:
         delta=full['roi']-prior['roi']
         arrow='↑' if delta>1e-9 else '↓' if delta<-1e-9 else '→'
