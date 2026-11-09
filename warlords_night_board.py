@@ -17,12 +17,13 @@ from player_availability import is_unavailable
 from player_form import summarize_form
 from points15_research import context as points15_research_context
 from assist_routes_2026 import assist_display_tier, assist_display_name
-from points_moves_current import best_move as current_points_best, display_moves as current_points_display, prepare_row as prepare_points_row
+from points_moves_current import best_move as current_points_best, display_moves as current_points_display, prepare_row as prepare_points_row, points_moves as current_points_moves
 from pp_assist_beta import assist_ppp_beta, beta_summary, beta_details, BETA_CSS
 from goal_return_monitor import return_panel as goal_return_panel, RETURN_CSS as GOAL_RETURN_CSS
 from assist_return_monitor import return_panel as assist_return_panel
 from points_return_monitor import return_panel as points_return_panel, original_caption as points_original_caption
 from special_return_monitor import sog_return_panel
+from move_return_grades import grade_rank, move_grade, grade_badges, stable_identity, GRADE_CSS
 
 
 CLASSES = (
@@ -350,12 +351,15 @@ def _move_rank(move):
     wins, picks = int(move["wins"]), int(move["picks"])
     later_wins, later_picks = int(move["later_wins"]), int(move["later_picks"])
     if move.get("matchup_buff"):
-        return (-1, picks, wins / picks if picks else -1)
+        return (-1, False, picks, wins / picks if picks else -1, 0, stable_identity(move))
+    performance = grade_rank(move)
+    if performance is not None:
+        return performance
     if move.get("market") == "Assists":
         tier = assist_display_tier(move)["priority"]
-        return (tier, wins / picks if picks else -1, picks)
-    return (wins / picks if picks else -1, picks,
-            later_wins / later_picks if later_picks else -1)
+        return (0, False, tier, wins / picks if picks else -1, picks, stable_identity(move))
+    return (0, False, wins / picks if picks else -1, picks,
+            later_wins / later_picks if later_picks else -1, stable_identity(move))
 
 
 def _baseline_rule(row, market, line):
@@ -383,17 +387,33 @@ def _baseline_rule(row, market, line):
 
 def _display_moves(moves, market, line):
     """Keep Points 1.5 cards focused without changing saved move records."""
-    if market == "Points" and line == 1.5:
+    if market == "Points" and line in (0.5, 1.5):
         current = current_points_display(moves)
-        return current or [move for move in moves if move["name"] in {"DPS Tank stance", "Backbone"}]
-    if market == "Points" and line == 0.5:
-        return current_points_display(moves)
+        families = {move['family'] for move in current}
+        selected = {}
+        for move in sorted(moves, key=_move_rank, reverse=True):
+            if move.get('points_current') and not move.get('suppress_badge') and move.get('family') in families:
+                selected.setdefault(move['family'], move)
+        return list(selected.values()) or ([move for move in moves if move["name"] in {"DPS Tank stance", "Backbone"}] if line == 1.5 else [])
     return moves
+
+
+def _inspect_moves(moves, market, line):
+    """Preserve every matched current definition behind Inspect, including nested steps."""
+    if market == 'Points':
+        current = [move for move in moves if move.get('points_current')]
+        moves = current or _display_moves(moves, market, line)
+    return sorted(moves, key=_move_rank, reverse=True)
 
 
 def points_current_tier(row, line, baseline):
     """Strongest current Points move; no additional hand-built tier policy."""
-    return current_points_best(row) if baseline and line in (0.5, 1.5) else None
+    original = current_points_best(row) if baseline and line in (0.5, 1.5) else None
+    if original is None:
+        return None
+    moves = [move for move in _display_moves(current_points_moves(row), 'Points', line)
+             if move['kind'] != 'CONTEXT']
+    return max(moves, key=_move_rank, default=original)
 
 
 def rank_warlords(frame: pd.DataFrame) -> dict[str, list[dict]]:
@@ -425,7 +445,7 @@ def rank_warlords(frame: pd.DataFrame) -> dict[str, list[dict]]:
                 move = {"name": "Green Baseline", "kind": "BASELINE", "rule": baseline_rule,
                         "wins": 0, "picks": 0, "later_wins": 0, "later_picks": 0}
             else:
-                attacks = [move for move in moves if move["kind"] not in {"STANCE", "CONTEXT"}]
+                attacks = [move for move in moves if move["kind"] != "CONTEXT" and not move.get("matchup_buff")]
                 move = max(attacks or moves, key=_move_rank)
             player = str(row["Player"]).strip()
             team = str(_value(row, "Team") or "").strip()
@@ -464,6 +484,7 @@ def rank_warlords(frame: pd.DataFrame) -> dict[str, list[dict]]:
                 "goalie_status": str(_value(row, "Opp_Goalie_Status") or "Unknown"),
                 "lineup_status": str(_value(row, "Lineup_Status") or "Lineup pending"),
                 "baseline_only": baseline_only,
+                "inspect_moves": _inspect_moves(active[market], market, line),
                 "move": move, "moves": sorted(moves, key=lambda item: (
                     item["kind"] != "STANCE", _move_rank(item)), reverse=True),
                 "move_count": len(moves),
@@ -507,7 +528,7 @@ def rank_priced_slate(frame: pd.DataFrame) -> dict[str, list[dict]]:
             model_prob, book_prob, price_gap = _price_comparison(row, market, line, odds)
             tracked_moves = active[market]
             moves = _display_moves(tracked_moves, market, line)
-            attacks = [move for move in moves if move["kind"] not in {"STANCE", "CONTEXT"}]
+            attacks = [move for move in moves if move["kind"] != "CONTEXT" and not move.get("matchup_buff")]
             best = max(attacks or moves, key=_move_rank) if moves else None
             baseline = None if watch else _baseline_rule(row, market, line)
             current_points_tier = points_current_tier(row, line, baseline) if market == "Points" else None
@@ -561,6 +582,7 @@ def rank_priced_slate(frame: pd.DataFrame) -> dict[str, list[dict]]:
                 "goalie_status": str(_value(row, "Opp_Goalie_Status") or "Unknown"),
                 "lineup_status": str(_value(row, "Lineup_Status") or "Lineup pending"),
                 "move": best,
+                "inspect_moves": _inspect_moves(tracked_moves, market, line),
                 "moves": sorted(moves, key=lambda item: (
                     item["kind"] != "STANCE", _move_rank(item)), reverse=True),
                 "move_count": len(moves),
@@ -610,8 +632,6 @@ def featured_warlords(boards: dict[str, list[dict]]) -> dict[str, list[dict]]:
                 continue
             selected.append({**card, "move": max(qualifying, key=_move_rank)})
         featured[role] = sorted(selected, key=lambda card: (
-            {"SPECIAL": 3, "HEAVY": 2, "BASE": 1}.get(
-                (card.get("points_current_tier") or {}).get("kind"), 0) if role == "Tank" else 0,
             _move_rank(card["move"]), card.get("confidence") or -1,
             card["player"].casefold()), reverse=True)
     return featured
@@ -1158,6 +1178,14 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
                 tier_style = {"SPECIAL": "s", "HEAVY": "a", "BASE": "b"}.get(points_tier["kind"], "a")
                 tier_badge = f'<span class="wn-tier wn-tier--{tier_style}">{points_tier["kind"]}</span>'
                 tier_class = f" wn-unit--{tier_style}"
+            performance = move_grade(move)
+            if performance:
+                tier_badge = grade_badges(move)
+                tier_class = ' wn-unit--return-' + performance['tier'].lower()
+                if performance['watch']:
+                    tier_class += ' wn-unit--return-watch'
+            elif move and move.get('picks'):
+                tier_badge = grade_badges(move) + tier_badge
             baseline_only = bool(card.get("baseline_only") and not points_tier)
             wins, picks = (int(move["wins"]), int(move["picks"])) if move else (0, 0)
             late_wins, late_picks = ((int(move["later_wins"]), int(move["later_picks"]))
@@ -1255,7 +1283,7 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
                              f'<b>{positional["shots_per_game"]:.1f} SOG/game</b> to {_h(positional["position"])} '
                              f'· #{positional["rank"]} most · {positional["gp"]} GP</div>'
                              if positional else "")
-            fired = card.get("moves") or ([] if not move or baseline_only else [move])
+            fired = card.get("inspect_moves") or card.get("moves") or ([] if not move or baseline_only else [move])
             # Keep secondary Goal attacks in the full move list below.
             goal_signals = ""
             support_badges = ""
@@ -1332,7 +1360,7 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
                     later_text += (f' · sample BE {fired_move["sample_book_be_pct"]:.1f}%'
                                    f' · {fired_move["sample_players"]} players · {fired_move["sample_dates"]} slate dates')
                 move_rows.append(f'''<div class="wn-move-entry">
-                  <div class="wn-move-title"><strong>{_h(fired_move["name"])}</strong><em>{_h(fired_label)}</em></div>
+                  <div class="wn-move-title"><strong>{_h(fired_move["name"])}</strong>{grade_badges(fired_move)}<em>{_h(fired_label)}</em></div>
                   <div class="wn-move-record">{fired_wins}/{fired_picks} · {fired_pct:.1f}% <span>{later_text}</span></div>
                   <div class="wn-move-rule">{_h(fired_rule)}</div>
                   {goal_return_panel(fired_move, compact=False) if role == 'Carry' else ''}
@@ -1436,7 +1464,7 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
           <header class="wn-lane-head">{backdrop}<div class="wn-class-icon" aria-hidden="true">{class_icon}</div>
             <div class="wn-class-text"><span class="wn-kicker">{_h(descriptions[role])}</span><h2>{_h(role)}</h2></div>
             <div class="wn-count"><strong>{len(cards)}</strong><span>{count_label}</span></div></header>
-          <div class="wn-lane-sub">{_h(lane_subtitle)}</div>
+          <div class="wn-lane-sub">{_h(lane_subtitle)}<div class="wn-grade-legend">S / A / B rank updated returns · Watch flags recent net losses · every matched route stays in Inspect</div></div>
           <div class="wn-units">{''.join(units)}</div></section>""")
     total = sum(len(cards) for cards in boards.values())
     styles = """<style>
@@ -1584,10 +1612,4 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
       <div class="wn-hero-foot">{_h(hero_foot)} · HISTORICAL MOVE RATE IS NOT A FORECAST</div></div>"""
     board_class = "wn-board" if show_hero else "wn-board wn-board--compact"
     goal_return_styles = '<style>' + GOAL_RETURN_CSS + '</style>' if any(item[0] in ('Carry', 'Support', 'Tank') for item in selected) else ''
-    return BETA_CSS + styles + goal_return_styles + f'<div class="{board_class}">' + (hero if show_hero else "") + '<div class="wn-grid">' + ''.join(lanes) + '</div></div>'
-
-
-
-
-
-
+    return BETA_CSS + '<style>' + GRADE_CSS + '</style>' + styles + goal_return_styles + f'<div class="{board_class}">' + (hero if show_hero else "") + '<div class="wn-grid">' + ''.join(lanes) + '</div></div>'

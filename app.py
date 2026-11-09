@@ -810,6 +810,7 @@ def _render_class_header(mkt: str, frame: pd.DataFrame) -> None:
 
 def _priced_pool_table(cards: list[dict]) -> pd.DataFrame:
     from assist_routes_2026 import assist_display_tier, assist_display_name
+    from move_return_grades import move_grade
     rows = []
     has_position_data = any(card.get("position_sog") for card in cards)
     has_goal_projection = any(card.get("market") == "Goal" for card in cards)
@@ -832,6 +833,9 @@ def _priced_pool_table(cards: list[dict]) -> pd.DataFrame:
         points_tier = card.get("points_current_tier")
         if card.get("market") == "Points" and points_tier:
             move = points_tier
+        elif card.get('move') is not None:
+            move = card['move']
+        performance = move_grade(move)
         featured = bool(card.get("baseline_rule") and (qualified or points_tier))
         row = {
             "Player": card["player"], "Team": card["team"], "Game": card["game"],
@@ -846,6 +850,10 @@ def _priced_pool_table(cards: list[dict]) -> pd.DataFrame:
             "Matrix": card.get("matrix") or "Unknown",
             "Featured": "Yes" if featured else "",
             "Fired move": (assist_display_name(move) if card.get("market") == "Assists" else move["name"]) if move else "",
+            "Return tier": performance['tier'] if performance else "—",
+            "Watch": "⚠ Recent loss" if performance and performance['watch'] else "",
+            "Total ROI %": round(performance['roi'], 1) if performance else None,
+            "Total units": round(performance['units'], 2) if performance else None,
             "Move record": f'{move["wins"]}/{move["picks"]}' if move else "",
             "Move %": round(100 * int(move["wins"]) / int(move["picks"]), 1) if move else None,
             "Later record": f'{move["later_wins"]}/{move["later_picks"]}' if move and int(move["later_picks"]) else "",
@@ -873,6 +881,7 @@ def _priced_pool_table(cards: list[dict]) -> pd.DataFrame:
     columns = ["Player", "Team", "Game", "Start (CT)", "Lineup", "Opp goalie", "Line", "Over odds",
                "Book", "Book break-even %", "Model conf", "Matrix", "Featured",
                "Fired move", "Move record", "Move %", "Later record", "Later %", "Reason"]
+    columns[columns.index('Fired move')+1:columns.index('Fired move')+1] = ['Return tier','Watch','Total ROI %','Total units']
     if has_points:
         columns.insert(columns.index("Model conf") + 1, "Frozen move conf")
         columns.insert(columns.index("Model conf"), "Current Points move")
@@ -7975,9 +7984,3 @@ elif page == "Ledger":
 else:
     st.subheader("Raw CSV (all columns)")
     st.dataframe(df_f, width="stretch", height=620, hide_index=True)
-
-
-
-
-
-
