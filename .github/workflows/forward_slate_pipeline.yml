@@ -115,10 +115,11 @@ jobs:
             python grade_daily_tracker.py --date "$slate_date" --skip-missing
           done
           python audit_pp_weights.py
+          python card_returns.py
           git config user.name 'github-actions[bot]'
           git config user.email 'github-actions[bot]@users.noreply.github.com'
           shopt -s nullglob
-          results=(output/graded/tracker_*_GRADED.csv output/graded/tracker_*_summary.json output/graded/moves_*.csv output/graded/pp_weight_audit.json)
+          results=(output/graded/tracker_*_GRADED.csv output/graded/tracker_*_summary.json output/graded/moves_*.csv output/graded/pp_weight_audit.json output/card_returns/*.json goal_return_records.json assist_return_records.json points_return_records.json special_return_records.json)
           if (( ${#results[@]} )); then
             git add -f "${results[@]}"
           fi
