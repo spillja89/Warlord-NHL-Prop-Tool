@@ -69,7 +69,7 @@ def render_return_panel(row,data, *, compact=True):
             'Flat 1u at saved pregame prices. Overlapping moves are separate records.</div>')
     return (f'<div class="wn-goal-returns" data-return-version="{escape(data["version"])}">'
             +version_note+
-            f'<div class="wn-gr-box"><small>{"BASE RECORD %" if row.get("legacy") else "V1 MOVE %"}</small>{_metric(prior)}</div>'
+            f'<div class="wn-gr-box"><small>{escape(row.get("baseline_label") or ("BASE RECORD %" if row.get("legacy") else "V1 MOVE %"))}</small>{_metric(prior)}</div>'
             f'<div class="wn-gr-box"><small>SINCE CHECK %</small>{_metric(recent)}</div>'
             f'<div class="wn-gr-box"><small>TOTAL MOVE %</small>{_metric(full)}</div>'
             f'<div class="wn-gr-change wn-gr-change-{trend}">{alert}<strong class="wn-gr-{tone}">{status}</strong>'
@@ -90,3 +90,4 @@ RETURN_CSS='''
 .wn-gr-note{grid-column:1/-1;color:#bdcde3;font-size:11px}.wn-move-entry .wn-goal-returns{max-width:680px}
 @media(max-width:420px){.wn-gr-box{padding:6px}.wn-gr-box>.wn-gr-record{font-size:12px}.wn-gr-box>b{font-size:11px}.wn-gr-box>b>span{font-size:10px}.wn-gr-box small{font-size:8px}}
 '''
+

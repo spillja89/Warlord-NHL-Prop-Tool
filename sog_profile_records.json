@@ -1,0 +1,436 @@
+{
+  "version": "2026-11-10-sog25-profiles-v3",
+  "wired_on": "2026-11-10",
+  "moves": [
+    {
+      "id": "P1",
+      "name": "Predator’s Mark I",
+      "kind": "BASE",
+      "family": "hunter",
+      "variant": "Berserker",
+      "icon": "sog_berserkers_rage.svg",
+      "conditions": [
+        [
+          "L20_S",
+          "<=",
+          46.0
+        ],
+        [
+          "Drought_G",
+          ">=",
+          1.0
+        ]
+      ],
+      "rule": "SOG2.5 + Matrix_SOG Green + Conf_SOG >=71 (Shot Profile v2) + L20_S <= 46 + Drought_G >= 1",
+      "record": {
+        "hits": 41,
+        "plays": 60,
+        "hit_rate": 68.33333333333333,
+        "BE": 49.02998370312119,
+        "gap": 19.30334963021214,
+        "players": 24,
+        "units": 26.377513230034026,
+        "ROI": 43.96252205005671,
+        "dates": 24,
+        "games": 54
+      },
+      "matchup_buff": false
+    },
+    {
+      "id": "P2",
+      "name": "Predator’s Mark II",
+      "kind": "HEAVY",
+      "family": "hunter",
+      "variant": "Berserker",
+      "icon": "sog_berserkers_rage.svg",
+      "conditions": [
+        [
+          "L20_S",
+          "<=",
+          40.0
+        ],
+        [
+          "Drought_G",
+          ">=",
+          1.0
+        ]
+      ],
+      "rule": "SOG2.5 + Matrix_SOG Green + Conf_SOG >=71 (Shot Profile v2) + L20_S <= 40 + Drought_G >= 1",
+      "record": {
+        "hits": 38,
+        "plays": 52,
+        "hit_rate": 73.07692307692308,
+        "BE": 48.47725605298845,
+        "gap": 24.59966702393463,
+        "players": 21,
+        "units": 28.706372290436708,
+        "ROI": 55.20456209699367,
+        "dates": 22,
+        "games": 47
+      },
+      "matchup_buff": false
+    },
+    {
+      "id": "B2",
+      "name": "Patient Volley",
+      "kind": "HEAVY",
+      "family": "hunter",
+      "variant": "Berserker",
+      "icon": "sog_berserkers_rage.svg",
+      "conditions": [
+        [
+          "L20_S",
+          "<=",
+          40.0
+        ]
+      ],
+      "rule": "SOG2.5 + Matrix_SOG Green + Conf_SOG >=71 (Shot Profile v2) + L20_S <= 40",
+      "record": {
+        "hits": 43,
+        "plays": 63,
+        "hit_rate": 68.25396825396825,
+        "BE": 48.70138287203625,
+        "gap": 19.552585381932005,
+        "players": 21,
+        "units": 27.339205644067206,
+        "ROI": 43.39556451439239,
+        "dates": 23,
+        "games": 55
+      },
+      "matchup_buff": false
+    },
+    {
+      "id": "B1",
+      "name": "Ranger’s Focus I",
+      "kind": "HEAVY",
+      "family": "tempo",
+      "variant": "Ranger",
+      "icon": "sog_berserkers_rage.svg",
+      "conditions": [
+        [
+          "Player_Log_L5_TOI_per_game",
+          "<=",
+          23.6
+        ]
+      ],
+      "rule": "SOG2.5 + Matrix_SOG Green + Conf_SOG >=71 (Shot Profile v2) + Player_Log_L5_TOI_per_game <= 23.6",
+      "record": {
+        "hits": 38,
+        "plays": 54,
+        "hit_rate": 70.37037037037037,
+        "BE": 50.5243365123406,
+        "gap": 19.84603385802977,
+        "players": 19,
+        "units": 24.85235736615451,
+        "ROI": 46.022884011397245,
+        "dates": 24,
+        "games": 52
+      },
+      "matchup_buff": false
+    },
+    {
+      "id": "P3",
+      "name": "Ranger’s Focus II",
+      "kind": "SPECIAL",
+      "family": "tempo",
+      "variant": "Ranger",
+      "icon": "sog_assassins_overdrive.svg",
+      "conditions": [
+        [
+          "Player_Log_L5_TOI_per_game",
+          "<=",
+          23.6
+        ],
+        [
+          "Player_Log_L10_S_per_game",
+          "<=",
+          3.45
+        ]
+      ],
+      "rule": "SOG2.5 + Matrix_SOG Green + Conf_SOG >=71 (Shot Profile v2) + Player_Log_L5_TOI_per_game <= 23.6 + Player_Log_L10_S_per_game <= 3.45",
+      "record": {
+        "hits": 33,
+        "plays": 44,
+        "hit_rate": 75.0,
+        "BE": 49.07408816483658,
+        "gap": 25.92591183516342,
+        "players": 16,
+        "units": 26.27202592934492,
+        "ROI": 59.70914983942027,
+        "dates": 22,
+        "games": 44
+      },
+      "matchup_buff": false
+    },
+    {
+      "id": "P4",
+      "name": "Deadeye Ambush",
+      "kind": "SPECIAL",
+      "family": "precision",
+      "variant": "Ranger",
+      "icon": "sog_assassins_overdrive.svg",
+      "conditions": [
+        [
+          "Player_Log_L20_S_hit_pct",
+          "<=",
+          59.0
+        ],
+        [
+          "Player_Log_L5_TOI_per_game",
+          "<=",
+          24.1
+        ]
+      ],
+      "rule": "SOG2.5 + Matrix_SOG Green + Conf_SOG >=71 (Shot Profile v2) + Player_Log_L20_S_hit_pct <= 59 + Player_Log_L5_TOI_per_game <= 24.1",
+      "record": {
+        "hits": 28,
+        "plays": 32,
+        "hit_rate": 87.5,
+        "BE": 47.442579676647114,
+        "gap": 40.057420323352886,
+        "players": 13,
+        "units": 28.626718107027703,
+        "ROI": 89.45849408446158,
+        "dates": 22,
+        "games": 32
+      },
+      "matchup_buff": false
+    },
+    {
+      "id": "H3",
+      "name": "Measured Shot I",
+      "kind": "SPECIAL",
+      "family": "opportunity",
+      "variant": "Ranger",
+      "icon": "sog_assassins_overdrive.svg",
+      "conditions": [
+        [
+          "SOG_Opportunity_Base",
+          "<=",
+          2.55
+        ]
+      ],
+      "rule": "SOG2.5 + Matrix_SOG Green + Conf_SOG >=71 (Shot Profile v2) + SOG_Opportunity_Base <= 2.55",
+      "record": {
+        "hits": 22,
+        "plays": 30,
+        "hit_rate": 73.33333333333333,
+        "BE": 46.36777530867013,
+        "gap": 26.965558024663196,
+        "players": 13,
+        "units": 18.485834659314637,
+        "ROI": 61.61944886438212,
+        "dates": 15,
+        "games": 29
+      },
+      "matchup_buff": false
+    },
+    {
+      "id": "P5",
+      "name": "Measured Shot II",
+      "kind": "SPECIAL",
+      "family": "opportunity",
+      "variant": "Ranger",
+      "icon": "sog_assassins_overdrive.svg",
+      "conditions": [
+        [
+          "Player_Log_L5_TOI_per_game",
+          "<=",
+          23.6
+        ],
+        [
+          "SOG_Opportunity_Base",
+          "<=",
+          2.75
+        ]
+      ],
+      "rule": "SOG2.5 + Matrix_SOG Green + Conf_SOG >=71 (Shot Profile v2) + Player_Log_L5_TOI_per_game <= 23.6 + SOG_Opportunity_Base <= 2.75",
+      "record": {
+        "hits": 29,
+        "plays": 36,
+        "hit_rate": 80.55555555555556,
+        "BE": 48.45449309924112,
+        "gap": 32.10106245631444,
+        "players": 13,
+        "units": 25.998106515425505,
+        "ROI": 72.21696254284863,
+        "dates": 18,
+        "games": 36
+      },
+      "matchup_buff": false
+    },
+    {
+      "id": "H2",
+      "name": "Bloodtrail Strike",
+      "kind": "SPECIAL",
+      "family": "production",
+      "variant": "Berserker",
+      "icon": "sog_assassins_overdrive.svg",
+      "conditions": [
+        [
+          "Player_Log_L20_G_hit_pct",
+          ">=",
+          38.0
+        ]
+      ],
+      "rule": "SOG2.5 + Matrix_SOG Green + Conf_SOG >=71 (Shot Profile v2) + Player_Log_L20_G_hit_pct >= 38",
+      "record": {
+        "hits": 25,
+        "plays": 34,
+        "hit_rate": 73.52941176470588,
+        "BE": 51.95999588671263,
+        "gap": 21.56941587799325,
+        "players": 12,
+        "units": 15.230430337629851,
+        "ROI": 44.79538334597015,
+        "dates": 17,
+        "games": 30
+      },
+      "matchup_buff": false
+    },
+    {
+      "id": "E0",
+      "name": "Exposed Guard",
+      "kind": "ENV",
+      "family": "exposure",
+      "variant": "Warden",
+      "icon": "sog_env_paralysis.svg",
+      "conditions": [
+        [
+          "NHL_Opp_PK_Goal_drought",
+          "<=",
+          0.0
+        ]
+      ],
+      "rule": "SOG2.5 + Matrix_SOG Green + Conf_SOG >=71 (Shot Profile v2) + NHL_Opp_PK_Goal_drought <= 0",
+      "record": {
+        "hits": 36,
+        "plays": 53,
+        "hit_rate": 67.9245283018868,
+        "BE": 50.101990859571345,
+        "gap": 17.82253744231545,
+        "players": 23,
+        "units": 19.178110614059946,
+        "ROI": 36.18511436615084,
+        "dates": 20,
+        "games": 47
+      },
+      "matchup_buff": true
+    },
+    {
+      "id": "E1",
+      "name": "Exposed Guard · Predator’s Mark",
+      "kind": "SPECIAL",
+      "family": "exposure_attack",
+      "variant": "Warden",
+      "icon": "sog_env_paralysis.svg",
+      "conditions": [
+        [
+          "L20_S",
+          "<=",
+          46.0
+        ],
+        [
+          "NHL_Opp_PK_Goal_drought",
+          "<=",
+          0.0
+        ]
+      ],
+      "rule": "SOG2.5 + Matrix_SOG Green + Conf_SOG >=71 (Shot Profile v2) + L20_S <= 46 + NHL_Opp_PK_Goal_drought <= 0",
+      "record": {
+        "hits": 34,
+        "plays": 47,
+        "hit_rate": 72.34042553191489,
+        "BE": 49.72717040496084,
+        "gap": 22.61325512695405,
+        "players": 23,
+        "units": 21.508063284783407,
+        "ROI": 45.761836776134906,
+        "dates": 19,
+        "games": 41
+      },
+      "matchup_buff": false
+    }
+  ],
+  "monitors": [
+    {
+      "id": "E3",
+      "name": "MONITOR · Deadeye Overcharge",
+      "kind": "MONITOR",
+      "family": "monitor_precision",
+      "variant": "Ranger",
+      "icon": "sog_berserkers_rage.svg",
+      "conditions": [
+        [
+          "Player_Log_L20_S_hit_pct",
+          "<=",
+          59.0
+        ],
+        [
+          "Player_Log_L5_TOI_per_game",
+          "<=",
+          24.1
+        ],
+        [
+          "NHL_Team_PP_L5_O_PG",
+          "<=",
+          4.0
+        ]
+      ],
+      "rule": "SOG2.5 + Matrix_SOG Green + Conf_SOG >=71 (Shot Profile v2) + Player_Log_L20_S_hit_pct <= 59 + Player_Log_L5_TOI_per_game <= 24.1 + NHL_Team_PP_L5_O_PG <= 4",
+      "record": {
+        "hits": 28,
+        "plays": 30,
+        "hit_rate": 93.33333333333333,
+        "BE": 47.07991943040437,
+        "gap": 46.25341390292896,
+        "players": 12,
+        "units": 30.626718107027703,
+        "ROI": 102.08906035675902,
+        "dates": 21,
+        "games": 30
+      },
+      "matchup_buff": false
+    },
+    {
+      "id": "E4",
+      "name": "MONITOR · Guardbreaker Surge",
+      "kind": "MONITOR",
+      "family": "monitor_exposure",
+      "variant": "Warden",
+      "icon": "sog_env_paralysis.svg",
+      "conditions": [
+        [
+          "L20_S",
+          "<=",
+          46.0
+        ],
+        [
+          "NHL_Opp_PK_Goal_drought",
+          "<=",
+          0.0
+        ],
+        [
+          "NHL_Opp_PK_L5_Success_pct",
+          ">=",
+          70.0
+        ]
+      ],
+      "rule": "SOG2.5 + Matrix_SOG Green + Conf_SOG >=71 (Shot Profile v2) + L20_S <= 46 + NHL_Opp_PK_Goal_drought <= 0 + NHL_Opp_PK_L5_Success_pct >= 70",
+      "record": {
+        "hits": 27,
+        "plays": 30,
+        "hit_rate": 90.0,
+        "BE": 49.342445887196554,
+        "gap": 40.657554112803446,
+        "players": 20,
+        "units": 25.6840187608071,
+        "ROI": 85.61339586935699,
+        "dates": 17,
+        "games": 26
+      },
+      "matchup_buff": false
+    }
+  ],
+  "policy": "Additive core routes; original four rules/confidence/Green unchanged. Two high-rate candidates track only, never visible/fired attacks."
+}

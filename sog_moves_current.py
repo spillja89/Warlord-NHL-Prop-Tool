@@ -83,7 +83,8 @@ def sog_moves(row):
     if stronger and buff:
         moves.append(move("Assassin’s Overdrive","SPECIAL","sog_assassins_overdrive.svg",
             base+" + Conf_SOG >=71 + opponent PK seconds/opportunity <=104",empowered=True))
-    return moves
+    from sog_profiles_2026 import profile_moves
+    return moves + profile_moves(row)
 
 
 def attach_sog_route_context(frame):
@@ -95,11 +96,23 @@ def attach_sog_route_context(frame):
     out["Opp_PK_Seconds_Per_Opportunity"] = pd.Series(durations,index=out.index,dtype="Float64")
     out["Opp_PK_Duration_Source"] = [SOURCE if v is not None else "unavailable" for v in durations]
     moves = [sog_moves(row) for row in rows]
-    attacks = [next((m for m in reversed(items) if not m.get("matchup_buff")),None) for items in moves]
+    from move_return_grades import grade_rank
+    def attack(items):
+        active=[m for m in items if not m.get('matchup_buff')]
+        return max(active,key=lambda m:grade_rank(m) or (0,False,m['wins']/m['picks'],0,m['picks'],m['name'])) if active else None
+    attacks = [attack(items) for items in moves]
     out["SOG_Attack"] = [m["name"] if m else "" for m in attacks]
-    out["SOG_Buff"] = ["Paralysis" if any(m.get("matchup_buff") for m in items) else "" for items in moves]
+    out["SOG_Buff"] = [' · '.join(m['name'] for m in items if m.get('matchup_buff')) for items in moves]
     out["SOG_Move_Record"] = [f'{m["wins"]}/{m["picks"]}' if m else "" for m in attacks]
     out["SOG_Move_Pct"] = [100*m["wins"]/m["picks"] if m else None for m in attacks]
     out["SOG_Sample_BE_Pct"] = [m["sample_book_be_pct"] if m else None for m in attacks]
-    out["SOG_Move_Kit_Version"] = [version_for(row) for row in rows]
+    out["SOG_Move_Kit_Version"] = [m['kit_version'] if m else version_for(row) for m,row in zip(attacks,rows)]
+    from sog_profiles_2026 import VERSION as PROFILE_VERSION, profile_values, profile_moves
+    values=[profile_values(row) for row in rows]
+    for field in ('L20_S','Player_Log_L20_S_hit_pct','Player_Log_L20_G_hit_pct','Player_Log_L5_TOI_per_game','Player_Log_L10_S_per_game','Drought_G','SOG_Profile_Log_GP'):
+        out['SOG_Profile_'+field]=[v.get(field) for v in values]
+    out['SOG_Profile_Kit_Version']=PROFILE_VERSION
+    out['SOG_Research_Monitors']=[' · '.join(m['name'] for m in profile_moves(row,monitors=True)) for row in rows]
+    out['SOG_Fired_Profile_Routes']=[' · '.join(m['name'] for m in items if m.get('sog_profile')) for items in moves]
     return out
+

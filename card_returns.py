@@ -80,6 +80,7 @@ def capture_row(row,*,root=ROOT):
     from goal_moves_current import goals_moves
     from assist_moves_current import assists_moves
     from sog_moves_current import sog_moves
+    from sog_profiles_2026 import profile_moves
     from points_moves_current import points_moves
     from warlord_moves_2026 import legacy_points_moves
     from pp_tracking import frozen_pp_tags
@@ -95,7 +96,7 @@ def capture_row(row,*,root=ROOT):
                 result.append(dict(file=s['file'],key=s['key'],market=market,line=line,odds=quote[0],book=quote[1],rule=s['rule'],kit_version=s['kit']))
     for market,fn,line in [('Goal',goals_moves,.5),('Assists',assists_moves,.5),('SOG',sog_moves,2.5)]:
         quote=_quote(row,market,line)
-        if quote:add(market,fn(row),quote,line)
+        if quote:add(market,fn(row)+(profile_moves(row,monitors=True) if market=='SOG' else []),quote,line)
     for line in (.5,1.5):
         quote=_quote(row,'Points',line)
         if not quote:continue
@@ -251,3 +252,4 @@ def main():
     bundle=refresh(args.repo);print(json.dumps(bundle['manifest'],indent=2))
 
 if __name__=='__main__':main()
+

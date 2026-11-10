@@ -13,6 +13,7 @@ import pandas as pd
 
 from warlord_moves_2026 import fired_moves
 from sog_moves_current import is_current_sog25, sog_base_eligible, pk_duration_seconds
+from sog_profiles_2026 import profile_values as sog_profile_values, display_moves as sog_profile_display
 from player_availability import is_unavailable
 from player_form import summarize_form
 from points15_research import context as points15_research_context
@@ -172,6 +173,9 @@ def _class_identity(role, card, move):
             return 'Panda', 'War Drummer'
         return ('Orangutan', 'Siegebreaker') if (move or {}).get('kind') in {'HEAVY', 'SPECIAL', 'CRIT'} else ('Gorilla', 'Bulwark')
     if role == 'Jungle':
+        variant=(move or {}).get('sog_variant')
+        if variant in {'Berserker','Ranger','Warden'}:
+            return {'Berserker':'Gorilla','Ranger':'Orangutan','Warden':'Panda'}[variant],variant
         if (move or {}).get('empowered'):
             return 'Orangutan', 'Ranger'
         if (move or {}).get('matchup_buff'):
@@ -272,6 +276,25 @@ def _render_points_facts(card, move):
 
 
 def _render_sog_facts(card, move):
+    if move and move.get('sog_profile'):
+        values=card.get('sog_context') or {}
+        labels={'L20_S':'Shots · up to20 games','Drought_G':'Goal drought (games)',
+                'Player_Log_L5_TOI_per_game':'L5 average TOI (minutes)',
+                'Player_Log_L10_S_per_game':'L10 average SOG',
+                'Player_Log_L20_S_hit_pct':'3+ SOG game frequency % · up to20',
+                'Player_Log_L20_G_hit_pct':'Goal-game frequency % · up to20',
+                'SOG_Opportunity_Base':'Saved shot opportunity',
+                'NHL_Opp_PK_Goal_drought':'Opponent PP-goal allowed drought',
+                'NHL_Team_PP_L5_O_PG':'Own L5 PPO/game',
+                'NHL_Opp_PK_L5_Success_pct':'Opponent L5 PK success %'}
+        player=[];environment=[]
+        for field,op,cut in move.get('conditions',[]):
+            v=_number(values.get(field));actual='Unavailable' if v is None else f'{v:.2f}'
+            fact=f'{_h(labels.get(field,field))} <b>{actual}</b> ({_h(op)} {cut:g})'
+            (environment if field.startswith('NHL_') else player).append(fact)
+        return ('<div class="wn-assist-facts">'+_card_usage_panel(card.get('role_context') or {})+
+                '<div class="wn-assist-fact"><small>SHOT ROUTE · ACTUAL / CUTOFF</small>'+'<br>'.join(player or ['No extra player gate.'])+'</div>'+
+                '<div class="wn-assist-fact"><small>MATCHUP · ACTUAL / CUTOFF</small>'+'<br>'.join(environment or ['No additional environment gate.'])+'</div></div>')
     if not move or not move.get("sog_current"):
         values = card.get("sog_context") or {}
         profile = '<br>'.join(_fact_line(field, values.get(field)) for field in ('TOI_Pct', 'Player_5v5_SOG_Share', 'iXG%'))
@@ -287,11 +310,11 @@ def _render_sog_facts(card, move):
     conf_label = f"{conf:.0f}" if conf is not None else "—"
     seconds = _number(values.get("pk_seconds"))
     duration = f"{seconds:.2f}s" if seconds is not None else "Unavailable"
-    buff = any(item.get("matchup_buff") for item in card.get("moves", []))
+    buff = any(item.get("name")=='Paralysis' for item in card.get("moves", []))
     state = "PARALYSIS ACTIVE" if buff else "PK duration unavailable" if seconds is None else "Outside PK buff"
     sample = _number(move.get("sample_book_be_pct"))
     sample_note = f'<div class="wn-assist-sample">MOVE SAMPLE AVG BOOK BE <b>{sample:.1f}%</b></div>' if sample is not None else ""
-    buff_move = next((item for item in card.get("moves", []) if item.get("matchup_buff")), None)
+    buff_move = next((item for item in card.get("moves", []) if item.get("name")=='Paralysis'), None)
     buff_note = ""
     if buff_move and buff_move.get("picks"):
         bw, bn = int(buff_move["wins"]), int(buff_move["picks"])
@@ -387,6 +410,8 @@ def _baseline_rule(row, market, line):
 
 def _display_moves(moves, market, line):
     """Keep Points 1.5 cards focused without changing saved move records."""
+    if market=='SOG' and line==2.5:
+        return sog_profile_display(moves,_move_rank)
     if market == "Points" and line in (0.5, 1.5):
         current = current_points_display(moves)
         families = {move['family'] for move in current}
@@ -400,6 +425,8 @@ def _display_moves(moves, market, line):
 
 def _inspect_moves(moves, market, line):
     """Preserve every matched current definition behind Inspect, including nested steps."""
+    if market=='SOG' and line==2.5:
+        return sorted(sog_profile_display(moves,_move_rank),key=_move_rank,reverse=True)
     if market == 'Points':
         current = [move for move in moves if move.get('points_current')]
         moves = current or _display_moves(moves, market, line)
@@ -475,7 +502,7 @@ def rank_warlords(frame: pd.DataFrame) -> dict[str, list[dict]]:
                 "team_pp_xgf60": _number(row.get("Team_PP_xGF60")) if market == "Assists" else None,
                 "assist_context": _assist_card_context(row) if market == "Assists" else None,
                 "role_context": _role_card_context(row),
-                "sog_context": {**{key:_number(row.get(key)) for key in
+                "sog_context": {**sog_profile_values(row), **{key:_number(row.get(key)) for key in
                     ("TOI_Pct", "TOI_per_game", "Player_5v5_SOG_Share", "Opp_SOG_Against_L10", "iXG%")},
                     "green_route":str(row.get("Matrix_SOG_Route", "") or ""),
                     "pk_seconds":pk_duration_seconds(row)} if market == "SOG" else None,
@@ -567,7 +594,7 @@ def rank_priced_slate(frame: pd.DataFrame) -> dict[str, list[dict]]:
                 "team_pp_xgf60": _number(row.get("Team_PP_xGF60")) if market == "Assists" else None,
                 "assist_context": _assist_card_context(row) if market == "Assists" else None,
                 "role_context": _role_card_context(row),
-                "sog_context": {**{key:_number(row.get(key)) for key in
+                "sog_context": {**sog_profile_values(row), **{key:_number(row.get(key)) for key in
                     ("TOI_Pct", "TOI_per_game", "Player_5v5_SOG_Share", "Opp_SOG_Against_L10", "iXG%")},
                     "green_route":str(row.get("Matrix_SOG_Route", "") or ""),
                     "pk_seconds":pk_duration_seconds(row)} if market == "SOG" else None,
@@ -1613,6 +1640,7 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
     board_class = "wn-board" if show_hero else "wn-board wn-board--compact"
     goal_return_styles = '<style>' + GOAL_RETURN_CSS + '</style>' if any(item[0] in ('Carry', 'Support', 'Tank') for item in selected) else ''
     return BETA_CSS + '<style>' + GRADE_CSS + '</style>' + styles + goal_return_styles + f'<div class="{board_class}">' + (hero if show_hero else "") + '<div class="wn-grid">' + ''.join(lanes) + '</div></div>'
+
 
 
 

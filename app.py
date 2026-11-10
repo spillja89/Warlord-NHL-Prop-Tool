@@ -23,7 +23,6 @@ from sog_matrix import VERSION as SOG_MATRIX_VERSION
 from warlord_moves_2026 import best_move, points_moves, sog_moves, goals_moves as _goals_carry_moves, assists_moves as _assists_mapped_moves
 from goal_moves_current import goal_profile_score, goal_move_summary
 from warlords_night_board import CLASSES, baseline_audit, rank_warlords, rank_priced_slate, featured_warlords, unfeatured_baselines, goal_display_cards, render_warlords, render_power_play_form, render_power_play_quotes_table, _character_uri
-from pp_cards import rank_pp_cards, render_pp_cards, VERSION as PP_CARD_KIT_VERSION
 from pp_card_context import attach_pp_card_context, VERSION as PP_CARD_CONTEXT_VERSION
 from player_form import compact_regular_log, summarize_form
 from current_season_stats import current_season_rows, season_for_day
@@ -2665,6 +2664,13 @@ COLUMN_HELP = {
 }
 COLUMN_LABELS = {
     "SOG_Attack": "SOG attack",
+    "SOG_Fired_Profile_Routes": "Matching shot routes",
+    "SOG_Profile_Player_Log_L5_TOI_per_game": "L5 TOI min/g",
+    "SOG_Profile_Player_Log_L20_S_hit_pct": "3+ SOG games % (up to20)",
+    "SOG_Profile_Player_Log_L20_G_hit_pct": "Goal games % (up to20)",
+    "SOG_Profile_L20_S": "Shots (up to20 games)",
+    "SOG_Profile_Drought_G": "Goal drought",
+    "NHL_Opp_PK_Goal_drought": "Opp PP-goal allowed drought",
     "SOG_Buff": "SOG buff",
     "SOG_Move_Record": "Move record",
     "SOG_Move_Pct": "Move %",
@@ -5994,6 +6000,7 @@ elif page == "Assists":
 elif page == "SOG":
 
     _render_class_header("SOG", df_f)
+    st.caption("Shot routes V2 · wired Nov 10 · player profiles and environment upgrades · high-rate research monitors stay off the cards.")
 
     if "Conf_SOG_Version" in df_f and df_f["Conf_SOG_Version"].eq("sog-profile-v2-2026-11-04").any():
         st.caption("SOG2.5 Jungle kit · Swipe: Green + confidence67 · Rage: confidence71 · Paralysis: opponent PK duration ≤104s/opportunity · Overdrive: Rage + Paralysis. Current-season research records through November3; profile confidence is not hit probability.")
@@ -6044,6 +6051,10 @@ elif page == "SOG":
               
        "Conf_SOG", "Matrix_SOG", "Matrix_SOG_Route",
        "SOG_Attack", "SOG_Buff", "SOG_Move_Record", "SOG_Move_Pct", "SOG_Sample_BE_Pct",
+       "SOG_Fired_Profile_Routes", "SOG_Profile_Player_Log_L5_TOI_per_game",
+       "SOG_Profile_Player_Log_L20_S_hit_pct", "SOG_Profile_Player_Log_L20_G_hit_pct",
+       "SOG_Profile_L20_S", "SOG_Profile_Drought_G", "SOG_Opportunity_Base",
+       "NHL_Opp_PK_Goal_drought",
        "Opp_PK_Seconds_Per_Opportunity", "Opp_PK_Duration_Source",
 
         # --- EV / Odds ---
@@ -6647,31 +6658,7 @@ elif page == "Power Play":
                 return "background-color:#193d53;color:#c9efff;font-weight:800"
             return ""
 
-        # The new spellbook is additive: existing table, four signals and Assist beta stay intact.
-        pp_card_rows = df_f.copy()
-        context_current = (
-            "PP_Card_Context_Version" in pp_card_rows
-            and pp_card_rows["PP_Card_Context_Version"].eq(PP_CARD_CONTEXT_VERSION).all()
-            and "PP_Card_Context_AsOf" in pp_card_rows
-            and pp_card_rows["PP_Card_Context_AsOf"].astype(str).eq(pp_slate_day).all())
-        if not context_current:
-            try:
-                with st.spinner("Checking pregame PP/PK windows for the spellbook…"):
-                    pp_reports, pp_codes = _cached_pp_card_reports(int(season[:4] + str(int(season[:4]) + 1)))
-                    pp_card_rows = attach_pp_card_context(pp_card_rows, pp_slate_day, pp_reports, pp_codes)
-            except Exception:
-                # Anchor-only Mana Bolt remains available; never manufacture a matchup.
-                pp_card_rows = attach_pp_card_context(pp_card_rows, pp_slate_day, {}, {})
-                st.warning("Official PP/PK windows are unavailable. Mana Bolt can still qualify; matchup upgrades remain ungraded.")
-        pp_cards = rank_pp_cards(pp_card_rows, pp_view)
-        st.caption(f"Power Play spellbook · 20 approved rules · {PP_CARD_KIT_VERSION} · {len(pp_cards)} player cards")
-        if pp_cards:
-            from warlords_night_board import _form_html
-            pp_portraits = {variant: _character_uri("Support", variant)
-                            for variant in ("Arcanist", "Runesmith", "Stormcaller")}
-            st.html(render_pp_cards(pp_cards, pp_portraits, _form_html))
-        else:
-            st.info("No priced over-0.5 PPP players in this view meet an active spellbook route.")
+        # PP remains a research table; the user retired the pick-card display.
         st.caption("Click any column heading to sort low to high; click again to reverse it.")
         st.html(render_power_play_quotes_table(pp_view.to_dict("records"), pp_signals_by_team),
                 unsafe_allow_javascript=True)
@@ -7996,3 +7983,4 @@ elif page == "Ledger":
 else:
     st.subheader("Raw CSV (all columns)")
     st.dataframe(df_f, width="stretch", height=620, hide_index=True)
+

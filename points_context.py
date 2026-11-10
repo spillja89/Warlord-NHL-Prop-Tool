@@ -156,6 +156,9 @@ def attach_points_context(frame, session=None, before_day=None, reports=None, co
     # Reuse these exact official reports; no additional download during a run.
     from pp_card_context import attach_pp_card_context
     out = attach_pp_card_context(out, before, reports, codes or {})
+    from sog_profiles_2026 import attach_context as attach_sog_profile_context
+    out = attach_sog_profile_context(out, before, reports, codes or {})
     return out
+
 
 
