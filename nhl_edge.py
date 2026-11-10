@@ -5963,6 +5963,10 @@ def build_tracker(today_local: date, debug: bool = False, api_key: str | None = 
     from pp_tracking import attach_pp_tracking
     tracker = attach_pp_tracking(tracker)
 
+    # Freeze every current card rule with its exact line and pregame price.
+    from card_returns import attach_return_tracking
+    tracker = attach_return_tracking(tracker)
+
     out_path = os.path.join(OUTPUT_DIR, f"tracker_{today_local.isoformat()}_{stamp}.csv")
     tracker.to_csv(out_path, index=False)
     print(f"CSV saved to: {out_path}")
@@ -6001,6 +6005,3 @@ def main() -> None:
 if __name__ == "__main__":
 
     main()
-
-
-

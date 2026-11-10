@@ -438,9 +438,11 @@ def main() -> None:
     csv_tmp.replace(csv_path)
     moves_tmp.replace(moves_path)
     json_tmp.replace(json_path)
+    # Rebuild from unique settled identities; retries replace, never append.
+    from card_returns import refresh
+    refresh(args.repo)
     print(f"Graded {args.date}: {summary['grade_status']} -> {csv_path}")
 
 
 if __name__ == "__main__":
     main()
-

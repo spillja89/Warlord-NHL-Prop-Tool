@@ -1,0 +1,2138 @@
+{
+  "version": "card-return-tracking-2026-11-10-v1",
+  "mode": "EXPLICIT_SAVED_PREGAME_REPLAY",
+  "date": "2026-11-09",
+  "source_sha256": "f6c5f08fe78a6d0de405c8613130ec2f3da8855933a7b3e2b0de94f2200a04de",
+  "tags": {
+    "2026020285|8476917": [],
+    "2026020285|8477407": [],
+    "2026020285|8477018": [],
+    "2026020285|8477500": [
+      {
+        "file": "goal_return_records.json",
+        "key": "goal_star:drought_i",
+        "market": "Goal",
+        "line": 0.5,
+        "odds": 155.0,
+        "book": "BetMGM",
+        "rule": "Green + Goal 0.5 + StarScore >= 84.5 + goal drought >= 1 + TOI rank >= 81",
+        "kit_version": "goal-2026-27-three-paths-v6"
+      },
+      {
+        "file": "goal_return_records.json",
+        "key": "goal_star:drought_ii",
+        "market": "Goal",
+        "line": 0.5,
+        "odds": 155.0,
+        "book": "BetMGM",
+        "rule": "Green + Goal 0.5 + StarScore >= 84.5 + goal drought >= 1 + TOI rank >= 81 + Goal confidence >= 93",
+        "kit_version": "goal-2026-27-three-paths-v6"
+      },
+      {
+        "file": "goal_return_records.json",
+        "key": "goal_star:reaper",
+        "market": "Goal",
+        "line": 0.5,
+        "odds": 155.0,
+        "book": "BetMGM",
+        "rule": "Green + Goal 0.5 + StarScore >= 84.5 + goal drought >= 1 + TOI rank >= 81 + L10 shots <= 35",
+        "kit_version": "goal-2026-27-three-paths-v6"
+      },
+      {
+        "file": "goal_return_records.json",
+        "key": "goal_star:measured",
+        "market": "Goal",
+        "line": 0.5,
+        "odds": 155.0,
+        "book": "BetMGM",
+        "rule": "Green + Goal 0.5 + StarScore >= 84.5 + goal drought >= 1 + TOI rank >= 81 + shot intent <= 3.8",
+        "kit_version": "goal-2026-27-three-paths-v6"
+      },
+      {
+        "file": "goal_return_records.json",
+        "key": "goal_star:arcane",
+        "market": "Goal",
+        "line": 0.5,
+        "odds": 155.0,
+        "book": "BetMGM",
+        "rule": "Green + Goal 0.5 + StarScore >= 84.5 + goal drought >= 1 + TOI rank >= 81 + points model mean >= 1.4",
+        "kit_version": "goal-2026-27-three-paths-v6"
+      },
+      {
+        "file": "goal_return_records.json",
+        "key": "goal_star:controlled",
+        "market": "Goal",
+        "line": 0.5,
+        "odds": 155.0,
+        "book": "BetMGM",
+        "rule": "Green + Goal 0.5 + StarScore >= 84.5 + goal drought >= 1 + TOI rank >= 81 + L5 SOG/game <= 3.2",
+        "kit_version": "goal-2026-27-three-paths-v6"
+      },
+      {
+        "file": "goal_return_records.json",
+        "key": "goal_star:patient",
+        "market": "Goal",
+        "line": 0.5,
+        "odds": 155.0,
+        "book": "BetMGM",
+        "rule": "Green + Goal 0.5 + StarScore >= 84.5 + goal drought >= 1 + TOI rank >= 81 + L10 goals <= 4",
+        "kit_version": "goal-2026-27-three-paths-v6"
+      },
+      {
+        "file": "goal_return_records.json",
+        "key": "goal_star:pk_breach:reaper",
+        "market": "Goal",
+        "line": 0.5,
+        "odds": 155.0,
+        "book": "BetMGM",
+        "rule": "Green + Goal 0.5 + StarScore >= 84.5 + goal drought >= 1 + TOI rank >= 81 + L10 shots <= 35 + verified 2026-27 team stats + opponent PK goals allowed/60 >= 8.2",
+        "kit_version": "goal-2026-27-three-paths-v6"
+      },
+      {
+        "file": "goal_return_records.json",
+        "key": "goal_star:pk_breach:measured",
+        "market": "Goal",
+        "line": 0.5,
+        "odds": 155.0,
+        "book": "BetMGM",
+        "rule": "Green + Goal 0.5 + StarScore >= 84.5 + goal drought >= 1 + TOI rank >= 81 + shot intent <= 3.8 + verified 2026-27 team stats + opponent PK goals allowed/60 >= 8.2",
+        "kit_version": "goal-2026-27-three-paths-v6"
+      },
+      {
+        "file": "goal_return_records.json",
+        "key": "goal_star:pk_breach:arcane",
+        "market": "Goal",
+        "line": 0.5,
+        "odds": 155.0,
+        "book": "BetMGM",
+        "rule": "Green + Goal 0.5 + StarScore >= 84.5 + goal drought >= 1 + TOI rank >= 81 + points model mean >= 1.4 + verified 2026-27 team stats + opponent PK goals allowed/60 >= 8.2",
+        "kit_version": "goal-2026-27-three-paths-v6"
+      },
+      {
+        "file": "goal_return_records.json",
+        "key": "goal_toi20:base",
+        "market": "Goal",
+        "line": 0.5,
+        "odds": 155.0,
+        "book": "BetMGM",
+        "rule": "Green + Goal 0.5 + StarScore >= 84.5 + TOI/game >= 20 + L10 shots <= 39",
+        "kit_version": "goal-2026-27-three-paths-v6"
+      },
+      {
+        "file": "goal_return_records.json",
+        "key": "goal_toi20:ppp_ii",
+        "market": "Goal",
+        "line": 0.5,
+        "odds": 155.0,
+        "book": "BetMGM",
+        "rule": "Green + Goal 0.5 + StarScore >= 84.5 + TOI/game >= 20 + L10 shots <= 39 + PPP drought >= 2",
+        "kit_version": "goal-2026-27-three-paths-v6"
+      }
+    ],
+    "2026020285|8475170": [],
+    "2026020285|8475231": [],
+    "2026020285|8482476": [],
+    "2026020285|8476419": [],
+    "2026020285|8481237": [],
+    "2026020285|8475151": [],
+    "2026020285|8479378": [],
+    "2026020285|8482516": [],
+    "2026020285|8485366": [
+      {
+        "file": "points_return_records.json",
+        "key": "points-2026-27-current-2026-11-05-v1|base77",
+        "market": "Points",
+        "line": 0.5,
+        "odds": -190.0,
+        "book": "theScore Bet",
+        "rule": "Points0.5+Matrix_PointsGreen+Conf_Points>=77",
+        "kit_version": "points-2026-27-current-2026-11-05-v1"
+      },
+      {
+        "file": "points_return_records.json",
+        "key": "points-2026-27-current-2026-11-05-v1|pp240",
+        "market": "Points",
+        "line": 0.5,
+        "odds": -190.0,
+        "book": "theScore Bet",
+        "rule": "Points0.5+Matrix_PointsGreen+Conf_Points>=77 + PP_TOI_per_game >= 2.4",
+        "kit_version": "points-2026-27-current-2026-11-05-v1"
+      },
+      {
+        "file": "points_return_records.json",
+        "key": "points-2026-27-current-2026-11-05-v1|multi28",
+        "market": "Points",
+        "line": 0.5,
+        "odds": -190.0,
+        "book": "theScore Bet",
+        "rule": "Points0.5+Matrix_PointsGreen+Conf_Points>=77 + Log_L20_Point2plus_pct <= 28",
+        "kit_version": "points-2026-27-current-2026-11-05-v1"
+      },
+      {
+        "file": "points_return_records.json",
+        "key": "points-2026-27-current-2026-11-05-v1|mu110",
+        "market": "Points",
+        "line": 0.5,
+        "odds": -190.0,
+        "book": "theScore Bet",
+        "rule": "Points0.5+Matrix_PointsGreen+Conf_Points>=77 + Assists_mu >= 1.1",
+        "kit_version": "points-2026-27-current-2026-11-05-v1"
+      },
+      {
+        "file": "points_return_records.json",
+        "key": "points-2026-27-current-2026-11-05-v1|env_NHL_Opp_Goal_conversion_pct_7.4",
+        "market": "Points",
+        "line": 0.5,
+        "odds": -190.0,
+        "book": "theScore Bet",
+        "rule": "Points0.5+Matrix_PointsGreen+Conf_Points>=77 + NHL_Opp_Goal_conversion_pct >= 7.4",
+        "kit_version": "points-2026-27-current-2026-11-05-v1"
+      },
+      {
+        "file": "points_return_records.json",
+        "key": "points-2026-27-current-2026-11-05-v1|env_NHL_Opp_GF_10_PG_2.15",
+        "market": "Points",
+        "line": 0.5,
+        "odds": -190.0,
+        "book": "theScore Bet",
+        "rule": "Points0.5+Matrix_PointsGreen+Conf_Points>=77 + NHL_Opp_GF_10_PG >= 2.15",
+        "kit_version": "points-2026-27-current-2026-11-05-v1"
+      },
+      {
+        "file": "points_return_records.json",
+        "key": "points-2026-27-current-2026-11-05-v1|env_Opp_PK_xGA_relative_league_1.05",
+        "market": "Points",
+        "line": 0.5,
+        "odds": -190.0,
+        "book": "theScore Bet",
+        "rule": "Points0.5+Matrix_PointsGreen+Conf_Points>=77 + Opp_PK_xGA_relative_league >= 1.05",
+        "kit_version": "points-2026-27-current-2026-11-05-v1"
+      },
+      {
+        "file": "points_return_records.json",
+        "key": "points-2026-27-current-2026-11-05-v1|env_Opp_PK_xGA_relative_league_1.09",
+        "market": "Points",
+        "line": 0.5,
+        "odds": -190.0,
+        "book": "theScore Bet",
+        "rule": "Points0.5+Matrix_PointsGreen+Conf_Points>=77 + Opp_PK_xGA_relative_league >= 1.09",
+        "kit_version": "points-2026-27-current-2026-11-05-v1"
+      },
+      {
+        "file": "points_return_records.json",
+        "key": "points-2026-27-current-2026-11-05-v1|env_Opp_PK_xGA_relative_league_1.14",
+        "market": "Points",
+        "line": 0.5,
+        "odds": -190.0,
+        "book": "theScore Bet",
+        "rule": "Points0.5+Matrix_PointsGreen+Conf_Points>=77 + Opp_PK_xGA_relative_league >= 1.14",
+        "kit_version": "points-2026-27-current-2026-11-05-v1"
+      },
+      {
+        "file": "points_return_records.json",
+        "key": "points-2026-27-current-2026-11-05-v1|final_90-10",
+        "market": "Points",
+        "line": 0.5,
+        "odds": -190.0,
+        "book": "theScore Bet",
+        "rule": "Points0.5+Matrix_PointsGreen+Conf_Points>=77 + Log_L20_Point2plus_pct <= 28 + PP_PPO_Blend_PG >= 3.25",
+        "kit_version": "points-2026-27-current-2026-11-05-v1"
+      },
+      {
+        "file": "points_return_records.json",
+        "key": "points-2026-27-current-2026-11-05-v1|final_90-11",
+        "market": "Points",
+        "line": 0.5,
+        "odds": -190.0,
+        "book": "theScore Bet",
+        "rule": "Points0.5+Matrix_PointsGreen+Conf_Points>=77 + Log_L20_Point2plus_pct <= 28 + PP_Time_Blend_PG >= 5.05",
+        "kit_version": "points-2026-27-current-2026-11-05-v1"
+      },
+      {
+        "file": "points_return_records.json",
+        "key": "points-2026-27-current-2026-11-05-v1|final_90-12",
+        "market": "Points",
+        "line": 0.5,
+        "odds": -190.0,
+        "book": "theScore Bet",
+        "rule": "Points0.5+Matrix_PointsGreen+Conf_Points>=77 + Assists_mu >= 1.1 + NHL_Opp_SA_Venue_PG >= 28.4",
+        "kit_version": "points-2026-27-current-2026-11-05-v1"
+      },
+      {
+        "file": "points_return_records.json",
+        "key": "points-2026-27-current-2026-11-05-v1|pprole_NHL_Opp_Goals_per_shot_allowed_pct",
+        "market": "Points",
+        "line": 0.5,
+        "odds": -190.0,
+        "book": "theScore Bet",
+        "rule": "Points0.5+Matrix_PointsGreen+Conf_Points>=77 + PP_TOI_per_game >= 2.4 + NHL_Opp_Goals_per_shot_allowed_pct <= 12.1",
+        "kit_version": "points-2026-27-current-2026-11-05-v1"
+      },
+      {
+        "file": "points_return_records.json",
+        "key": "points15-2026-27-iron-march-2026-11-06-v2|points15_pace_gap_base_attack",
+        "market": "Points",
+        "line": 1.5,
+        "odds": 250.0,
+        "book": "FanDuel",
+        "rule": "Points1.5 + Green + Conf_Points >= 82 + Log_L10_S_per_game <= 3.9 + Pace_Gap_P10 >= 0.2",
+        "kit_version": "points15-2026-27-iron-march-2026-11-06-v2"
+      },
+      {
+        "file": "points_return_records.json",
+        "key": "points15-2026-27-iron-march-2026-11-06-v2|points15_pp_proxy_ceiling460",
+        "market": "Points",
+        "line": 1.5,
+        "odds": 250.0,
+        "book": "FanDuel",
+        "rule": "Points1.5 + Green + Conf_Points >= 82 + Log_L10_S_per_game <= 3.9 + PP_Points60 <= 4.6",
+        "kit_version": "points15-2026-27-iron-march-2026-11-06-v2"
+      },
+      {
+        "file": "points_return_records.json",
+        "key": "points15-2026-27-iron-march-2026-11-06-v2|points15_ev5_toi154",
+        "market": "Points",
+        "line": 1.5,
+        "odds": 250.0,
+        "book": "FanDuel",
+        "rule": "Points1.5 + Green + Conf_Points >= 82 + Log_L10_S_per_game <= 3.9 + EV5_TOI_per_game >= 15.4",
+        "kit_version": "points15-2026-27-iron-march-2026-11-06-v2"
+      },
+      {
+        "file": "points_return_records.json",
+        "key": "points15-2026-27-iron-march-2026-11-06-v2|points15_pp_proxy_ev5_special",
+        "market": "Points",
+        "line": 1.5,
+        "odds": 250.0,
+        "book": "FanDuel",
+        "rule": "Points1.5 + Green + Conf_Points >= 82 + Log_L10_S_per_game <= 3.9 + PP_Points60 <= 4.6 + EV5_TOI_per_game >= 15.4",
+        "kit_version": "points15-2026-27-iron-march-2026-11-06-v2"
+      },
+      {
+        "file": "points_return_records.json",
+        "key": "points15-2026-27-iron-march-2026-11-06-v2|env_0_0",
+        "market": "Points",
+        "line": 1.5,
+        "odds": 250.0,
+        "book": "FanDuel",
+        "rule": "Points1.5 + Green + Conf_Points >= 82 + Log_L10_S_per_game <= 3.9 + NHL_Opp_PP_G60 >= 6.2",
+        "kit_version": "points15-2026-27-iron-march-2026-11-06-v2"
+      },
+      {
+        "file": "points_return_records.json",
+        "key": "points15-2026-27-iron-march-2026-11-06-v2|env_5_0",
+        "market": "Points",
+        "line": 1.5,
+        "odds": 250.0,
+        "book": "FanDuel",
+        "rule": "Points1.5 + Green + Conf_Points >= 82 + Log_L10_S_per_game <= 3.9 + Pace_Gap_P10 >= 0.2 + NHL_Opp_GF_Season_PG >= 2.3",
+        "kit_version": "points15-2026-27-iron-march-2026-11-06-v2"
+      },
+      {
+        "file": "points_return_records.json",
+        "key": "points15-2026-27-iron-march-2026-11-06-v2|env_8_0",
+        "market": "Points",
+        "line": 1.5,
+        "odds": 250.0,
+        "book": "FanDuel",
+        "rule": "Points1.5 + Green + Conf_Points >= 82 + Log_L10_S_per_game <= 3.9 + Pace_Gap_P10 >= 0.2 + NHL_Opp_PP_Success_pct >= 19",
+        "kit_version": "points15-2026-27-iron-march-2026-11-06-v2"
+      },
+      {
+        "file": "points_return_records.json",
+        "key": "points15-2026-27-iron-march-2026-11-06-v2|env_9_0",
+        "market": "Points",
+        "line": 1.5,
+        "odds": 250.0,
+        "book": "FanDuel",
+        "rule": "Points1.5 + Green + Conf_Points >= 82 + Log_L10_S_per_game <= 3.9 + Pace_Gap_P10 >= 0.2 + NHL_Opp_PP_Goals_PG >= 0.55",
+        "kit_version": "points15-2026-27-iron-march-2026-11-06-v2"
+      },
+      {
+        "file": "points_return_records.json",
+        "key": "points15-2026-27-iron-march-2026-11-06-v2|env_9_1",
+        "market": "Points",
+        "line": 1.5,
+        "odds": 250.0,
+        "book": "FanDuel",
+        "rule": "Points1.5 + Green + Conf_Points >= 82 + Log_L10_S_per_game <= 3.9 + Pace_Gap_P10 >= 0.2 + NHL_Opp_PP_Goals_PG >= 0.75",
+        "kit_version": "points15-2026-27-iron-march-2026-11-06-v2"
+      },
+      {
+        "file": "points_return_records.json",
+        "key": "points15-2026-27-iron-march-2026-11-06-v2|gap_pp_display_0",
+        "market": "Points",
+        "line": 1.5,
+        "odds": 250.0,
+        "book": "FanDuel",
+        "rule": "Points1.5 + Green + Conf_Points >= 82 + Log_L10_S_per_game <= 3.9 + Pace_Gap_P10 >= 0.2 + (NHL_Opp_PP_Goals_PG >= 0.55 OR NHL_Opp_PP_Success_pct >= 19)",
+        "kit_version": "points15-2026-27-iron-march-2026-11-06-v2"
+      },
+      {
+        "file": "points_return_records.json",
+        "key": "points15-2026-27-iron-march-2026-11-06-v2|gap_pp_display_1",
+        "market": "Points",
+        "line": 1.5,
+        "odds": 250.0,
+        "book": "FanDuel",
+        "rule": "Points1.5 + Green + Conf_Points >= 82 + Log_L10_S_per_game <= 3.9 + Pace_Gap_P10 >= 0.2 + (NHL_Opp_PP_Goals_PG >= 0.55 AND NHL_Opp_PP_Success_pct >= 19)",
+        "kit_version": "points15-2026-27-iron-march-2026-11-06-v2"
+      },
+      {
+        "file": "points_return_records.json",
+        "key": "points15-2026-27-iron-march-2026-11-06-v2|gap_pp_display_2",
+        "market": "Points",
+        "line": 1.5,
+        "odds": 250.0,
+        "book": "FanDuel",
+        "rule": "Points1.5 + Green + Conf_Points >= 82 + Log_L10_S_per_game <= 3.9 + Pace_Gap_P10 >= 0.2 + (NHL_Opp_PP_Goals_PG >= 0.75 OR NHL_Opp_PP_Success_pct >= 25)",
+        "kit_version": "points15-2026-27-iron-march-2026-11-06-v2"
+      },
+      {
+        "file": "points_return_records.json",
+        "key": "legacy-points15|DPS Tank stance",
+        "market": "Points",
+        "line": 1.5,
+        "odds": 250.0,
+        "book": "FanDuel",
+        "rule": "Conf_Points >= 75",
+        "kit_version": null
+      }
+    ],
+    "2026020285|8482070": [],
+    "2026020285|8476292": [],
+    "2026020285|8476429": [],
+    "2026020285|8481601": [],
+    "2026020285|8477950": [],
+    "2026020285|8485388": [],
+    "2026020285|8478874": [],
+    "2026020285|8477505": [],
+    "2026020285|8476624": [],
+    "2026020285|8484911": [],
+    "2026020285|8477498": [],
+    "2026020285|8475200": [],
+    "2026020285|8484421": [],
+    "2026020285|8486103": [],
+    "2026020285|8476885": [],
+    "2026020285|8480748": [],
+    "2026020285|8484801": [
+      {
+        "file": "goal_return_records.json",
+        "key": "goal_star:drought_i",
+        "market": "Goal",
+        "line": 0.5,
+        "odds": 140.0,
+        "book": "theScore Bet",
+        "rule": "Green + Goal 0.5 + StarScore >= 84.5 + goal drought >= 1 + TOI rank >= 81",
+        "kit_version": "goal-2026-27-three-paths-v6"
+      },
+      {
+        "file": "goal_return_records.json",
+        "key": "goal_star:drought_ii",
+        "market": "Goal",
+        "line": 0.5,
+        "odds": 140.0,
+        "book": "theScore Bet",
+        "rule": "Green + Goal 0.5 + StarScore >= 84.5 + goal drought >= 1 + TOI rank >= 81 + Goal confidence >= 93",
+        "kit_version": "goal-2026-27-three-paths-v6"
+      },
+      {
+        "file": "goal_return_records.json",
+        "key": "goal_star:arcane",
+        "market": "Goal",
+        "line": 0.5,
+        "odds": 140.0,
+        "book": "theScore Bet",
+        "rule": "Green + Goal 0.5 + StarScore >= 84.5 + goal drought >= 1 + TOI rank >= 81 + points model mean >= 1.4",
+        "kit_version": "goal-2026-27-three-paths-v6"
+      },
+      {
+        "file": "goal_return_records.json",
+        "key": "goal_star:patient",
+        "market": "Goal",
+        "line": 0.5,
+        "odds": 140.0,
+        "book": "theScore Bet",
+        "rule": "Green + Goal 0.5 + StarScore >= 84.5 + goal drought >= 1 + TOI rank >= 81 + L10 goals <= 4",
+        "kit_version": "goal-2026-27-three-paths-v6"
+      },
+      {
+        "file": "assist_return_records.json",
+        "key": "assist-2026-27-pp-crits-v1|Staff (Green Stance)",
+        "market": "Assists",
+        "line": 0.5,
+        "odds": -110.0,
+        "book": "Hard Rock Bet",
+        "rule": "Assist 0.5 + Matrix_Assists Green + Conf_Assists >= 81 + iXA% >= 95",
+        "kit_version": "assist-2026-27-pp-crits-v1"
+      },
+      {
+        "file": "assist_return_records.json",
+        "key": "assist-2026-27-pp-crits-v1|Arcane Channel I",
+        "market": "Assists",
+        "line": 0.5,
+        "odds": -110.0,
+        "book": "Hard Rock Bet",
+        "rule": "Assist 0.5 + Matrix_Assists Green + Conf_Assists >= 81 + iXA% >= 95 + PP_Points60 >= 3.75 + PP_iXA60 >= 2.5",
+        "kit_version": "assist-2026-27-pp-crits-v1"
+      },
+      {
+        "file": "assist_return_records.json",
+        "key": "assist-2026-27-pp-crits-v1|Runic Infusion",
+        "market": "Assists",
+        "line": 0.5,
+        "odds": -110.0,
+        "book": "Hard Rock Bet",
+        "rule": "Assist 0.5 + Matrix_Assists Green + Conf_Assists >= 81 + iXA% >= 95 + PP_iXA60 >= 3.9",
+        "kit_version": "assist-2026-27-pp-crits-v1"
+      },
+      {
+        "file": "assist_return_records.json",
+        "key": "assist-2026-27-pp-crits-v1|Rune Conduit",
+        "market": "Assists",
+        "line": 0.5,
+        "odds": -110.0,
+        "book": "Hard Rock Bet",
+        "rule": "Assist 0.5 + Matrix_Assists Green + Conf_Assists >= 81 + iXA% >= 95 + PP_TOI_per_game >= 3.75",
+        "kit_version": "assist-2026-27-pp-crits-v1"
+      },
+      {
+        "file": "assist_return_records.json",
+        "key": "assist-2026-27-pp-crits-v1|Odin's Vigil",
+        "market": "Assists",
+        "line": 0.5,
+        "odds": -110.0,
+        "book": "Hard Rock Bet",
+        "rule": "Assist 0.5 + Matrix_Assists Green + Conf_Assists >= 81 + iXA% >= 95 + TOI_per_game >= 22",
+        "kit_version": "assist-2026-27-pp-crits-v1"
+      },
+      {
+        "file": "assist_return_records.json",
+        "key": "assist-2026-27-pp-crits-v1|High Assist μ",
+        "market": "Assists",
+        "line": 0.5,
+        "odds": -110.0,
+        "book": "Hard Rock Bet",
+        "rule": "Assist 0.5 + Matrix_Assists Green + Conf_Assists >= 81 + iXA% >= 95 + Assists_mu >= 1.1",
+        "kit_version": "assist-2026-27-pp-crits-v1"
+      },
+      {
+        "file": "assist_return_records.json",
+        "key": "assist-2026-27-additive-2026-11-03-v1|assist-nov03-staff-of-insight",
+        "market": "Assists",
+        "line": 0.5,
+        "odds": -110.0,
+        "book": "Hard Rock Bet",
+        "rule": "Assist 0.5 + Matrix_Assists Green + Conf_Assists >=80 + iXA% >=94",
+        "kit_version": "assist-2026-27-additive-2026-11-03-v1"
+      },
+      {
+        "file": "points_return_records.json",
+        "key": "legacy-points15|DPS Tank stance",
+        "market": "Points",
+        "line": 1.5,
+        "odds": 170.0,
+        "book": "theScore Bet",
+        "rule": "Conf_Points >= 75",
+        "kit_version": null
+      }
+    ],
+    "2026020285|8478975": [],
+    "2026020285|8480891": [],
+    "2026020285|8485402": [],
+    "2026020285|8482700": [],
+    "2026020285|8484806": [],
+    "2026020285|8480848": [],
+    "2026020285|8475726": [],
+    "2026020285|8484227": [],
+    "2026020285|8482859": [],
+    "2026020283|8480029": [],
+    "2026020283|8478402": [
+      {
+        "file": "goal_return_records.json",
+        "key": "goal_star:drought_i",
+        "market": "Goal",
+        "line": 0.5,
+        "odds": 117.0,
+        "book": "Caesars",
+        "rule": "Green + Goal 0.5 + StarScore >= 84.5 + goal drought >= 1 + TOI rank >= 81",
+        "kit_version": "goal-2026-27-three-paths-v6"
+      },
+      {
+        "file": "goal_return_records.json",
+        "key": "goal_star:drought_ii",
+        "market": "Goal",
+        "line": 0.5,
+        "odds": 117.0,
+        "book": "Caesars",
+        "rule": "Green + Goal 0.5 + StarScore >= 84.5 + goal drought >= 1 + TOI rank >= 81 + Goal confidence >= 93",
+        "kit_version": "goal-2026-27-three-paths-v6"
+      },
+      {
+        "file": "goal_return_records.json",
+        "key": "goal_star:reaper",
+        "market": "Goal",
+        "line": 0.5,
+        "odds": 117.0,
+        "book": "Caesars",
+        "rule": "Green + Goal 0.5 + StarScore >= 84.5 + goal drought >= 1 + TOI rank >= 81 + L10 shots <= 35",
+        "kit_version": "goal-2026-27-three-paths-v6"
+      },
+      {
+        "file": "goal_return_records.json",
+        "key": "goal_star:measured",
+        "market": "Goal",
+        "line": 0.5,
+        "odds": 117.0,
+        "book": "Caesars",
+        "rule": "Green + Goal 0.5 + StarScore >= 84.5 + goal drought >= 1 + TOI rank >= 81 + shot intent <= 3.8",
+        "kit_version": "goal-2026-27-three-paths-v6"
+      },
+      {
+        "file": "goal_return_records.json",
+        "key": "goal_star:arcane",
+        "market": "Goal",
+        "line": 0.5,
+        "odds": 117.0,
+        "book": "Caesars",
+        "rule": "Green + Goal 0.5 + StarScore >= 84.5 + goal drought >= 1 + TOI rank >= 81 + points model mean >= 1.4",
+        "kit_version": "goal-2026-27-three-paths-v6"
+      },
+      {
+        "file": "goal_return_records.json",
+        "key": "goal_star:controlled",
+        "market": "Goal",
+        "line": 0.5,
+        "odds": 117.0,
+        "book": "Caesars",
+        "rule": "Green + Goal 0.5 + StarScore >= 84.5 + goal drought >= 1 + TOI rank >= 81 + L5 SOG/game <= 3.2",
+        "kit_version": "goal-2026-27-three-paths-v6"
+      },
+      {
+        "file": "goal_return_records.json",
+        "key": "goal_star:patient",
+        "market": "Goal",
+        "line": 0.5,
+        "odds": 117.0,
+        "book": "Caesars",
+        "rule": "Green + Goal 0.5 + StarScore >= 84.5 + goal drought >= 1 + TOI rank >= 81 + L10 goals <= 4",
+        "kit_version": "goal-2026-27-three-paths-v6"
+      },
+      {
+        "file": "goal_return_records.json",
+        "key": "goal_star:power_surge:reaper",
+        "market": "Goal",
+        "line": 0.5,
+        "odds": 117.0,
+        "book": "Caesars",
+        "rule": "Green + Goal 0.5 + StarScore >= 84.5 + goal drought >= 1 + TOI rank >= 81 + L10 shots <= 35 + verified 2026-27 team stats + team PP xGF/60 >= 8",
+        "kit_version": "goal-2026-27-three-paths-v6"
+      },
+      {
+        "file": "goal_return_records.json",
+        "key": "goal_star:power_surge:measured",
+        "market": "Goal",
+        "line": 0.5,
+        "odds": 117.0,
+        "book": "Caesars",
+        "rule": "Green + Goal 0.5 + StarScore >= 84.5 + goal drought >= 1 + TOI rank >= 81 + shot intent <= 3.8 + verified 2026-27 team stats + team PP xGF/60 >= 8",
+        "kit_version": "goal-2026-27-three-paths-v6"
+      },
+      {
+        "file": "goal_return_records.json",
+        "key": "goal_star:power_surge:arcane",
+        "market": "Goal",
+        "line": 0.5,
+        "odds": 117.0,
+        "book": "Caesars",
+        "rule": "Green + Goal 0.5 + StarScore >= 84.5 + goal drought >= 1 + TOI rank >= 81 + points model mean >= 1.4 + verified 2026-27 team stats + team PP xGF/60 >= 8",
+        "kit_version": "goal-2026-27-three-paths-v6"
+      },
+      {
+        "file": "goal_return_records.json",
+        "key": "goal_toi20:base",
+        "market": "Goal",
+        "line": 0.5,
+        "odds": 117.0,
+        "book": "Caesars",
+        "rule": "Green + Goal 0.5 + StarScore >= 84.5 + TOI/game >= 20 + L10 shots <= 39",
+        "kit_version": "goal-2026-27-three-paths-v6"
+      },
+      {
+        "file": "points_return_records.json",
+        "key": "points15-2026-27-iron-march-2026-11-06-v2|gaia_measured_pressure_15",
+        "market": "Points",
+        "line": 1.5,
+        "odds": -130.0,
+        "book": "Fanatics",
+        "rule": "Points1.5 + Green + Conf_Points >= 77 + Assists_mu >= 1.1 + team_5v5_SF60 <= 24.4",
+        "kit_version": "points15-2026-27-iron-march-2026-11-06-v2"
+      },
+      {
+        "file": "points_return_records.json",
+        "key": "points15-2026-27-iron-march-2026-11-06-v2|points15_pace_gap_base_attack",
+        "market": "Points",
+        "line": 1.5,
+        "odds": -130.0,
+        "book": "Fanatics",
+        "rule": "Points1.5 + Green + Conf_Points >= 82 + Log_L10_S_per_game <= 3.9 + Pace_Gap_P10 >= 0.2",
+        "kit_version": "points15-2026-27-iron-march-2026-11-06-v2"
+      },
+      {
+        "file": "points_return_records.json",
+        "key": "points15-2026-27-iron-march-2026-11-06-v2|points15_talent_pace_gap",
+        "market": "Points",
+        "line": 1.5,
+        "odds": -130.0,
+        "book": "Fanatics",
+        "rule": "Points1.5 + Green + Conf_Points >= 82 + Log_L10_S_per_game <= 3.9 + TalentMult >= 1.2 + Pace_Gap_P10 >= 0.2",
+        "kit_version": "points15-2026-27-iron-march-2026-11-06-v2"
+      },
+      {
+        "file": "points_return_records.json",
+        "key": "points15-2026-27-iron-march-2026-11-06-v2|points15_star_pace_gap",
+        "market": "Points",
+        "line": 1.5,
+        "odds": -130.0,
+        "book": "Fanatics",
+        "rule": "Points1.5 + Green + Conf_Points >= 82 + Log_L10_S_per_game <= 3.9 + StarScore >= 90.1 + Pace_Gap_P10 >= 0.2",
+        "kit_version": "points15-2026-27-iron-march-2026-11-06-v2"
+      },
+      {
+        "file": "points_return_records.json",
+        "key": "points15-2026-27-iron-march-2026-11-06-v2|points15_recorded_points_pace155",
+        "market": "Points",
+        "line": 1.5,
+        "odds": -130.0,
+        "book": "Fanatics",
+        "rule": "Points1.5 + Green + Conf_Points >= 82 + Log_L10_S_per_game <= 3.9 + Log_L20_P_per_game >= 1.55",
+        "kit_version": "points15-2026-27-iron-march-2026-11-06-v2"
+      },
+      {
+        "file": "points_return_records.json",
+        "key": "points15-2026-27-iron-march-2026-11-06-v2|points15_ev5_toi154",
+        "market": "Points",
+        "line": 1.5,
+        "odds": -130.0,
+        "book": "Fanatics",
+        "rule": "Points1.5 + Green + Conf_Points >= 82 + Log_L10_S_per_game <= 3.9 + EV5_TOI_per_game >= 15.4",
+        "kit_version": "points15-2026-27-iron-march-2026-11-06-v2"
+      },
+      {
+        "file": "points_return_records.json",
+        "key": "points15-2026-27-iron-march-2026-11-06-v2|env_0_0",
+        "market": "Points",
+        "line": 1.5,
+        "odds": -130.0,
+        "book": "Fanatics",
+        "rule": "Points1.5 + Green + Conf_Points >= 82 + Log_L10_S_per_game <= 3.9 + NHL_Opp_PP_G60 >= 6.2",
+        "kit_version": "points15-2026-27-iron-march-2026-11-06-v2"
+      },
+      {
+        "file": "points_return_records.json",
+        "key": "points15-2026-27-iron-march-2026-11-06-v2|env_1_0",
+        "market": "Points",
+        "line": 1.5,
+        "odds": -130.0,
+        "book": "Fanatics",
+        "rule": "Points1.5 + Green + Conf_Points >= 82 + Log_L10_S_per_game <= 3.9 + NHL_Opp_Goal_conversion_pct >= 11.2",
+        "kit_version": "points15-2026-27-iron-march-2026-11-06-v2"
+      },
+      {
+        "file": "points_return_records.json",
+        "key": "points15-2026-27-iron-march-2026-11-06-v2|env_2_0",
+        "market": "Points",
+        "line": 1.5,
+        "odds": -130.0,
+        "book": "Fanatics",
+        "rule": "Points1.5 + Green + Conf_Points >= 82 + Log_L10_S_per_game <= 3.9 + NHL_Opp_GF_Season_PG >= 2.75",
+        "kit_version": "points15-2026-27-iron-march-2026-11-06-v2"
+      },
+      {
+        "file": "points_return_records.json",
+        "key": "points15-2026-27-iron-march-2026-11-06-v2|env_3_0",
+        "market": "Points",
+        "line": 1.5,
+        "odds": -130.0,
+        "book": "Fanatics",
+        "rule": "Points1.5 + Green + Conf_Points >= 82 + Log_L10_S_per_game <= 3.9 + NHL_Team_GA_Venue_PG >= 3.25",
+        "kit_version": "points15-2026-27-iron-march-2026-11-06-v2"
+      },
+      {
+        "file": "points_return_records.json",
+        "key": "points15-2026-27-iron-march-2026-11-06-v2|env_4_0",
+        "market": "Points",
+        "line": 1.5,
+        "odds": -130.0,
+        "book": "Fanatics",
+        "rule": "Points1.5 + Green + Conf_Points >= 82 + Log_L10_S_per_game <= 3.9 + NHL_Team_PK_G60 >= 6.25",
+        "kit_version": "points15-2026-27-iron-march-2026-11-06-v2"
+      },
+      {
+        "file": "points_return_records.json",
+        "key": "points15-2026-27-iron-march-2026-11-06-v2|env_5_0",
+        "market": "Points",
+        "line": 1.5,
+        "odds": -130.0,
+        "book": "Fanatics",
+        "rule": "Points1.5 + Green + Conf_Points >= 82 + Log_L10_S_per_game <= 3.9 + Pace_Gap_P10 >= 0.2 + NHL_Opp_GF_Season_PG >= 2.3",
+        "kit_version": "points15-2026-27-iron-march-2026-11-06-v2"
+      },
+      {
+        "file": "points_return_records.json",
+        "key": "points15-2026-27-iron-march-2026-11-06-v2|env_6_0",
+        "market": "Points",
+        "line": 1.5,
+        "odds": -130.0,
+        "book": "Fanatics",
+        "rule": "Points1.5 + Green + Conf_Points >= 82 + Log_L10_S_per_game <= 3.9 + Pace_Gap_P10 >= 0.2 + NHL_Team_GA_5_PG <= 3.6",
+        "kit_version": "points15-2026-27-iron-march-2026-11-06-v2"
+      },
+      {
+        "file": "points_return_records.json",
+        "key": "points15-2026-27-iron-march-2026-11-06-v2|env_6_1",
+        "market": "Points",
+        "line": 1.5,
+        "odds": -130.0,
+        "book": "Fanatics",
+        "rule": "Points1.5 + Green + Conf_Points >= 82 + Log_L10_S_per_game <= 3.9 + Pace_Gap_P10 >= 0.2 + NHL_Team_GA_5_PG <= 3.2",
+        "kit_version": "points15-2026-27-iron-march-2026-11-06-v2"
+      },
+      {
+        "file": "points_return_records.json",
+        "key": "points15-2026-27-iron-march-2026-11-06-v2|env_7_0",
+        "market": "Points",
+        "line": 1.5,
+        "odds": -130.0,
+        "book": "Fanatics",
+        "rule": "Points1.5 + Green + Conf_Points >= 82 + Log_L10_S_per_game <= 3.9 + Pace_Gap_P10 >= 0.2 + NHL_Team_GA_Venue_PG >= 3.25",
+        "kit_version": "points15-2026-27-iron-march-2026-11-06-v2"
+      },
+      {
+        "file": "points_return_records.json",
+        "key": "points15-2026-27-iron-march-2026-11-06-v2|env_8_0",
+        "market": "Points",
+        "line": 1.5,
+        "odds": -130.0,
+        "book": "Fanatics",
+        "rule": "Points1.5 + Green + Conf_Points >= 82 + Log_L10_S_per_game <= 3.9 + Pace_Gap_P10 >= 0.2 + NHL_Opp_PP_Success_pct >= 19",
+        "kit_version": "points15-2026-27-iron-march-2026-11-06-v2"
+      },
+      {
+        "file": "points_return_records.json",
+        "key": "points15-2026-27-iron-march-2026-11-06-v2|env_9_0",
+        "market": "Points",
+        "line": 1.5,
+        "odds": -130.0,
+        "book": "Fanatics",
+        "rule": "Points1.5 + Green + Conf_Points >= 82 + Log_L10_S_per_game <= 3.9 + Pace_Gap_P10 >= 0.2 + NHL_Opp_PP_Goals_PG >= 0.55",
+        "kit_version": "points15-2026-27-iron-march-2026-11-06-v2"
+      },
+      {
+        "file": "points_return_records.json",
+        "key": "points15-2026-27-iron-march-2026-11-06-v2|env_10_0",
+        "market": "Points",
+        "line": 1.5,
+        "odds": -130.0,
+        "book": "Fanatics",
+        "rule": "Points1.5 + Green + Conf_Points >= 82 + Log_L10_S_per_game <= 3.9 + Pace_Gap_P10 >= 0.2 + NHL_Opp_Goal_conversion_pct >= 9.9",
+        "kit_version": "points15-2026-27-iron-march-2026-11-06-v2"
+      },
+      {
+        "file": "points_return_records.json",
+        "key": "points15-2026-27-iron-march-2026-11-06-v2|env_10_1",
+        "market": "Points",
+        "line": 1.5,
+        "odds": -130.0,
+        "book": "Fanatics",
+        "rule": "Points1.5 + Green + Conf_Points >= 82 + Log_L10_S_per_game <= 3.9 + Pace_Gap_P10 >= 0.2 + NHL_Opp_Goal_conversion_pct >= 11.2",
+        "kit_version": "points15-2026-27-iron-march-2026-11-06-v2"
+      },
+      {
+        "file": "points_return_records.json",
+        "key": "points15-2026-27-iron-march-2026-11-06-v2|env_11_0",
+        "market": "Points",
+        "line": 1.5,
+        "odds": -130.0,
+        "book": "Fanatics",
+        "rule": "Points1.5 + Green + Conf_Points >= 82 + Log_L10_S_per_game <= 3.9 + TalentMult >= 1.2 + Pace_Gap_P10 >= 0.2 + NHL_Opp_GF_Season_PG >= 2.4",
+        "kit_version": "points15-2026-27-iron-march-2026-11-06-v2"
+      },
+      {
+        "file": "points_return_records.json",
+        "key": "points15-2026-27-iron-march-2026-11-06-v2|env_12_0",
+        "market": "Points",
+        "line": 1.5,
+        "odds": -130.0,
+        "book": "Fanatics",
+        "rule": "Points1.5 + Green + Conf_Points >= 82 + Log_L10_S_per_game <= 3.9 + TalentMult >= 1.2 + Pace_Gap_P10 >= 0.2 + NHL_Team_GA_5_PG <= 3.6",
+        "kit_version": "points15-2026-27-iron-march-2026-11-06-v2"
+      },
+      {
+        "file": "points_return_records.json",
+        "key": "points15-2026-27-iron-march-2026-11-06-v2|env_13_0",
+        "market": "Points",
+        "line": 1.5,
+        "odds": -130.0,
+        "book": "Fanatics",
+        "rule": "Points1.5 + Green + Conf_Points >= 82 + Log_L10_S_per_game <= 3.9 + TalentMult >= 1.2 + Pace_Gap_P10 >= 0.2 + NHL_Opp_PP_G60 >= 6.2",
+        "kit_version": "points15-2026-27-iron-march-2026-11-06-v2"
+      },
+      {
+        "file": "points_return_records.json",
+        "key": "points15-2026-27-iron-march-2026-11-06-v2|env_14_0",
+        "market": "Points",
+        "line": 1.5,
+        "odds": -130.0,
+        "book": "Fanatics",
+        "rule": "Points1.5 + Green + Conf_Points >= 82 + Log_L10_S_per_game <= 3.9 + TalentMult >= 1.2 + Pace_Gap_P10 >= 0.2 + NHL_Opp_PP_Goals_PG >= 0.55",
+        "kit_version": "points15-2026-27-iron-march-2026-11-06-v2"
+      },
+      {
+        "file": "points_return_records.json",
+        "key": "points15-2026-27-iron-march-2026-11-06-v2|env_15_0",
+        "market": "Points",
+        "line": 1.5,
+        "odds": -130.0,
+        "book": "Fanatics",
+        "rule": "Points1.5 + Green + Conf_Points >= 82 + Log_L10_S_per_game <= 3.9 + TalentMult >= 1.2 + Pace_Gap_P10 >= 0.2 + NHL_Opp_Goal_conversion_pct >= 11.2",
+        "kit_version": "points15-2026-27-iron-march-2026-11-06-v2"
+      },
+      {
+        "file": "points_return_records.json",
+        "key": "points15-2026-27-iron-march-2026-11-06-v2|gap_pp_display_0",
+        "market": "Points",
+        "line": 1.5,
+        "odds": -130.0,
+        "book": "Fanatics",
+        "rule": "Points1.5 + Green + Conf_Points >= 82 + Log_L10_S_per_game <= 3.9 + Pace_Gap_P10 >= 0.2 + (NHL_Opp_PP_Goals_PG >= 0.55 OR NHL_Opp_PP_Success_pct >= 19)",
+        "kit_version": "points15-2026-27-iron-march-2026-11-06-v2"
+      },
+      {
+        "file": "points_return_records.json",
+        "key": "points15-2026-27-iron-march-2026-11-06-v2|gap_pp_display_1",
+        "market": "Points",
+        "line": 1.5,
+        "odds": -130.0,
+        "book": "Fanatics",
+        "rule": "Points1.5 + Green + Conf_Points >= 82 + Log_L10_S_per_game <= 3.9 + Pace_Gap_P10 >= 0.2 + (NHL_Opp_PP_Goals_PG >= 0.55 AND NHL_Opp_PP_Success_pct >= 19)",
+        "kit_version": "points15-2026-27-iron-march-2026-11-06-v2"
+      },
+      {
+        "file": "points_return_records.json",
+        "key": "points15-2026-27-iron-march-2026-11-06-v2|tg_combo_K4",
+        "market": "Points",
+        "line": 1.5,
+        "odds": -130.0,
+        "book": "Fanatics",
+        "rule": "Points1.5 + Green + Conf_Points >= 82 + Log_L10_S_per_game <= 3.9 + TalentMult >= 1.2 + Pace_Gap_P10 >= 0.2 + NHL_Team_GA_5_PG <= 3.6 + NHL_Opp_PP_Goals_PG >= 0.55",
+        "kit_version": "points15-2026-27-iron-march-2026-11-06-v2"
+      },
+      {
+        "file": "points_return_records.json",
+        "key": "points15-2026-27-iron-march-2026-11-06-v2|tg_combo_J",
+        "market": "Points",
+        "line": 1.5,
+        "odds": -130.0,
+        "book": "Fanatics",
+        "rule": "Points1.5 + Green + Conf_Points >= 82 + Log_L10_S_per_game <= 3.9 + TalentMult >= 1.2 + Pace_Gap_P10 >= 0.2 + NHL_Team_GA_5_PG <= 3.6 + NHL_Opp_PP_Goals_PG >= 0.55 + NHL_Opp_Goal_conversion_pct >= 11.2",
+        "kit_version": "points15-2026-27-iron-march-2026-11-06-v2"
+      },
+      {
+        "file": "points_return_records.json",
+        "key": "points15-2026-27-iron-march-2026-11-06-v2|STAR_pk_time_scoring_broad",
+        "market": "Points",
+        "line": 1.5,
+        "odds": -130.0,
+        "book": "Fanatics",
+        "rule": "Points1.5 + Green + Conf_Points >= 82 + Log_L10_S_per_game <= 3.9 + StarScore >= 90.1 + Pace_Gap_P10 >= 0.2 + NHL_Opp_PK_Time_PG >= 4.1 + NHL_Opp_GF_Season_PG >= 2.4",
+        "kit_version": "points15-2026-27-iron-march-2026-11-06-v2"
+      },
+      {
+        "file": "points_return_records.json",
+        "key": "points15-2026-27-iron-march-2026-11-06-v2|STAR_warpath_iron_march_1",
+        "market": "Points",
+        "line": 1.5,
+        "odds": -130.0,
+        "book": "Fanatics",
+        "rule": "Points1.5 + Green + Conf_Points >= 82 + Log_L10_S_per_game <= 3.9 + StarScore >= 90.1 + Pace_Gap_P10 >= 0.2 + NHL_Opp_PK_Time_PG >= 4.1 + NHL_Opp_GF_Season_PG >= 2.4 + NHL_Team_PP_Time_PG <= 5.45",
+        "kit_version": "points15-2026-27-iron-march-2026-11-06-v2"
+      },
+      {
+        "file": "points_return_records.json",
+        "key": "points15-2026-27-iron-march-2026-11-06-v2|STAR_warpath_iron_march_2",
+        "market": "Points",
+        "line": 1.5,
+        "odds": -130.0,
+        "book": "Fanatics",
+        "rule": "Points1.5 + Green + Conf_Points >= 82 + Log_L10_S_per_game <= 3.9 + StarScore >= 90.1 + Pace_Gap_P10 >= 0.2 + NHL_Opp_PK_Time_PG >= 4.1 + NHL_Opp_GF_Season_PG >= 2.4 + NHL_Team_PP_Time_PG <= 5.45 + NHL_Opp_PP_Success_pct >= 19",
+        "kit_version": "points15-2026-27-iron-march-2026-11-06-v2"
+      },
+      {
+        "file": "points_return_records.json",
+        "key": "legacy-points15|DPS Tank stance",
+        "market": "Points",
+        "line": 1.5,
+        "odds": -130.0,
+        "book": "Fanatics",
+        "rule": "Conf_Points >= 75",
+        "kit_version": null
+      },
+      {
+        "file": "points_return_records.json",
+        "key": "legacy-points15|Backbone",
+        "market": "Points",
+        "line": 1.5,
+        "odds": -130.0,
+        "book": "Fanatics",
+        "rule": "Conf_Points >= 75 + Conf_Goal <= 88 + Conf_SOG >= 80",
+        "kit_version": null
+      }
+    ],
+    "2026020283|8476473": [],
+    "2026020283|8480803": [
+      {
+        "file": "assist_return_records.json",
+        "key": "assist-2026-27-pp-crits-v1|Staff (Green Stance)",
+        "market": "Assists",
+        "line": 0.5,
+        "odds": -155.0,
+        "book": "BetMGM",
+        "rule": "Assist 0.5 + Matrix_Assists Green + Conf_Assists >= 81 + iXA% >= 95",
+        "kit_version": "assist-2026-27-pp-crits-v1"
+      },
+      {
+        "file": "assist_return_records.json",
+        "key": "assist-2026-27-pp-crits-v1|Arcane Channel I",
+        "market": "Assists",
+        "line": 0.5,
+        "odds": -155.0,
+        "book": "BetMGM",
+        "rule": "Assist 0.5 + Matrix_Assists Green + Conf_Assists >= 81 + iXA% >= 95 + PP_Points60 >= 3.75 + PP_iXA60 >= 2.5",
+        "kit_version": "assist-2026-27-pp-crits-v1"
+      },
+      {
+        "file": "assist_return_records.json",
+        "key": "assist-2026-27-pp-crits-v1|Runic Infusion",
+        "market": "Assists",
+        "line": 0.5,
+        "odds": -155.0,
+        "book": "BetMGM",
+        "rule": "Assist 0.5 + Matrix_Assists Green + Conf_Assists >= 81 + iXA% >= 95 + PP_iXA60 >= 3.9",
+        "kit_version": "assist-2026-27-pp-crits-v1"
+      },
+      {
+        "file": "assist_return_records.json",
+        "key": "assist-2026-27-pp-crits-v1|Runic Infusion Crit",
+        "market": "Assists",
+        "line": 0.5,
+        "odds": -155.0,
+        "book": "BetMGM",
+        "rule": "Assist 0.5 + Matrix_Assists Green + Conf_Assists >= 81 + iXA% >= 95 + PP_iXA60 >= 3.9 + Team_PP_xGF60 >= 8.3",
+        "kit_version": "assist-2026-27-pp-crits-v1"
+      },
+      {
+        "file": "assist_return_records.json",
+        "key": "assist-2026-27-pp-crits-v1|Rune Conduit",
+        "market": "Assists",
+        "line": 0.5,
+        "odds": -155.0,
+        "book": "BetMGM",
+        "rule": "Assist 0.5 + Matrix_Assists Green + Conf_Assists >= 81 + iXA% >= 95 + PP_TOI_per_game >= 3.75",
+        "kit_version": "assist-2026-27-pp-crits-v1"
+      },
+      {
+        "file": "assist_return_records.json",
+        "key": "assist-2026-27-pp-crits-v1|Rune Conduit Crit",
+        "market": "Assists",
+        "line": 0.5,
+        "odds": -155.0,
+        "book": "BetMGM",
+        "rule": "Assist 0.5 + Matrix_Assists Green + Conf_Assists >= 81 + iXA% >= 95 + PP_TOI_per_game >= 3.75 + Team_PP_xGF60 >= 8.3",
+        "kit_version": "assist-2026-27-pp-crits-v1"
+      },
+      {
+        "file": "assist_return_records.json",
+        "key": "assist-2026-27-pp-crits-v1|Odin's Vigil",
+        "market": "Assists",
+        "line": 0.5,
+        "odds": -155.0,
+        "book": "BetMGM",
+        "rule": "Assist 0.5 + Matrix_Assists Green + Conf_Assists >= 81 + iXA% >= 95 + TOI_per_game >= 22",
+        "kit_version": "assist-2026-27-pp-crits-v1"
+      },
+      {
+        "file": "assist_return_records.json",
+        "key": "assist-2026-27-pp-crits-v1|Odin's Vigil Crit",
+        "market": "Assists",
+        "line": 0.5,
+        "odds": -155.0,
+        "book": "BetMGM",
+        "rule": "Assist 0.5 + Matrix_Assists Green + Conf_Assists >= 81 + iXA% >= 95 + TOI_per_game >= 22 + Team_PP_xGF60 >= 8.3",
+        "kit_version": "assist-2026-27-pp-crits-v1"
+      },
+      {
+        "file": "assist_return_records.json",
+        "key": "assist-2026-27-pp-crits-v1|High Assist μ",
+        "market": "Assists",
+        "line": 0.5,
+        "odds": -155.0,
+        "book": "BetMGM",
+        "rule": "Assist 0.5 + Matrix_Assists Green + Conf_Assists >= 81 + iXA% >= 95 + Assists_mu >= 1.1",
+        "kit_version": "assist-2026-27-pp-crits-v1"
+      },
+      {
+        "file": "assist_return_records.json",
+        "key": "assist-2026-27-additive-2026-11-03-v1|assist-nov03-staff-of-insight",
+        "market": "Assists",
+        "line": 0.5,
+        "odds": -155.0,
+        "book": "BetMGM",
+        "rule": "Assist 0.5 + Matrix_Assists Green + Conf_Assists >=80 + iXA% >=94",
+        "kit_version": "assist-2026-27-additive-2026-11-03-v1"
+      },
+      {
+        "file": "assist_return_records.json",
+        "key": "assist-2026-27-additive-2026-11-03-v1|assist-nov03-oracle-s-channel",
+        "market": "Assists",
+        "line": 0.5,
+        "odds": -155.0,
+        "book": "BetMGM",
+        "rule": "Assist 0.5 + Matrix_Assists Green + Conf_Assists >=80 + iXA% >=94 + Goal_mu <= 0.33",
+        "kit_version": "assist-2026-27-additive-2026-11-03-v1"
+      },
+      {
+        "file": "assist_return_records.json",
+        "key": "assist-2026-27-additive-2026-11-03-v1|assist-nov03-oracle-s-guidance",
+        "market": "Assists",
+        "line": 0.5,
+        "odds": -155.0,
+        "book": "BetMGM",
+        "rule": "Assist 0.5 + Matrix_Assists Green + Conf_Assists >=80 + iXA% >=94 + Goal_mu <= 0.33 + i5v5_primaryAssists60 <= 1.05",
+        "kit_version": "assist-2026-27-additive-2026-11-03-v1"
+      },
+      {
+        "file": "assist_return_records.json",
+        "key": "assist-2026-27-additive-2026-11-03-v1|assist-nov03-runic-resonance-i",
+        "market": "Assists",
+        "line": 0.5,
+        "odds": -155.0,
+        "book": "BetMGM",
+        "rule": "Assist 0.5 + Matrix_Assists Green + Conf_Assists >=80 + iXA% >=94 + Goal_mu <= 0.33 + PPP10_total >= 4",
+        "kit_version": "assist-2026-27-additive-2026-11-03-v1"
+      },
+      {
+        "file": "assist_return_records.json",
+        "key": "assist-2026-27-additive-2026-11-03-v1|assist-nov03-storm-conduit-i",
+        "market": "Assists",
+        "line": 0.5,
+        "odds": -155.0,
+        "book": "BetMGM",
+        "rule": "Assist 0.5 + Matrix_Assists Green + Conf_Assists >=80 + iXA% >=94 + Goal_mu <= 0.33 + Player_SOG_Share_Proxy >= 11",
+        "kit_version": "assist-2026-27-additive-2026-11-03-v1"
+      },
+      {
+        "file": "assist_return_records.json",
+        "key": "assist-2026-27-additive-2026-11-03-v1|assist-nov03-storm-conduit-ii",
+        "market": "Assists",
+        "line": 0.5,
+        "odds": -155.0,
+        "book": "BetMGM",
+        "rule": "Assist 0.5 + Matrix_Assists Green + Conf_Assists >=80 + iXA% >=94 + Goal_mu <= 0.33 + Player_SOG_Share_Proxy >= 11 + Player_5v5_SOG_Share >= 8",
+        "kit_version": "assist-2026-27-additive-2026-11-03-v1"
+      },
+      {
+        "file": "assist_return_records.json",
+        "key": "assist-2026-27-additive-2026-11-03-v1|assist-nov03-oracle-s-guidance-ii",
+        "market": "Assists",
+        "line": 0.5,
+        "odds": -155.0,
+        "book": "BetMGM",
+        "rule": "Assist 0.5 + Matrix_Assists Green + Conf_Assists >=80 + iXA% >=94 + Goal_mu <= 0.33 + i5v5_primaryAssists60 <= 1.05 + Team_PP_GF60 >= 5.7 + opp_5v5_HDCA60 <= 2.2",
+        "kit_version": "assist-2026-27-additive-2026-11-03-v1"
+      },
+      {
+        "file": "assist_return_records.json",
+        "key": "assist-2026-27-additive-2026-11-03-v1|assist-nov03-runic-resonance-ii",
+        "market": "Assists",
+        "line": 0.5,
+        "odds": -155.0,
+        "book": "BetMGM",
+        "rule": "Assist 0.5 + Matrix_Assists Green + Conf_Assists >=80 + iXA% >=94 + Goal_mu <= 0.33 + PPP10_total >= 4 + Team_PP_GF60 >= 5.7 + opp_5v5_HDCA60 <= 2.2",
+        "kit_version": "assist-2026-27-additive-2026-11-03-v1"
+      },
+      {
+        "file": "assist_return_records.json",
+        "key": "assist-2026-27-additive-2026-11-03-v1|assist-nov03-empowered-storm-conduit",
+        "market": "Assists",
+        "line": 0.5,
+        "odds": -155.0,
+        "book": "BetMGM",
+        "rule": "Assist 0.5 + Matrix_Assists Green + Conf_Assists >=80 + iXA% >=94 + Goal_mu <= 0.33 + Player_SOG_Share_Proxy >= 11 + Team_PP_GF60 >= 5.7 + opp_5v5_HDCA60 <= 2.2",
+        "kit_version": "assist-2026-27-additive-2026-11-03-v1"
+      },
+      {
+        "file": "assist_return_records.json",
+        "key": "assist-2026-27-additive-2026-11-03-v1|assist-nov03-runic-orchestration-crit",
+        "market": "Assists",
+        "line": 0.5,
+        "odds": -155.0,
+        "book": "BetMGM",
+        "rule": "Assist 0.5 + Matrix_Assists Green + Conf_Assists >=80 + iXA% >=94 + Goal_mu <= 0.33 + i5v5_primaryAssists60 <= 1.05 + PPP10_total >= 4 + Team_PP_GF60 >= 5.7 + opp_5v5_HDCA60 <= 2.2",
+        "kit_version": "assist-2026-27-additive-2026-11-03-v1"
+      },
+      {
+        "file": "points_return_records.json",
+        "key": "points15-2026-27-iron-march-2026-11-06-v2|gaia_measured_pressure_15",
+        "market": "Points",
+        "line": 1.5,
+        "odds": 210.0,
+        "book": "theScore Bet",
+        "rule": "Points1.5 + Green + Conf_Points >= 77 + Assists_mu >= 1.1 + team_5v5_SF60 <= 24.4",
+        "kit_version": "points15-2026-27-iron-march-2026-11-06-v2"
+      },
+      {
+        "file": "points_return_records.json",
+        "key": "points15-2026-27-iron-march-2026-11-06-v2|points15_pace_gap_base_attack",
+        "market": "Points",
+        "line": 1.5,
+        "odds": 210.0,
+        "book": "theScore Bet",
+        "rule": "Points1.5 + Green + Conf_Points >= 82 + Log_L10_S_per_game <= 3.9 + Pace_Gap_P10 >= 0.2",
+        "kit_version": "points15-2026-27-iron-march-2026-11-06-v2"
+      },
+      {
+        "file": "points_return_records.json",
+        "key": "points15-2026-27-iron-march-2026-11-06-v2|points15_recorded_points_pace155",
+        "market": "Points",
+        "line": 1.5,
+        "odds": 210.0,
+        "book": "theScore Bet",
+        "rule": "Points1.5 + Green + Conf_Points >= 82 + Log_L10_S_per_game <= 3.9 + Log_L20_P_per_game >= 1.55",
+        "kit_version": "points15-2026-27-iron-march-2026-11-06-v2"
+      },
+      {
+        "file": "points_return_records.json",
+        "key": "points15-2026-27-iron-march-2026-11-06-v2|points15_pp_proxy_ceiling460",
+        "market": "Points",
+        "line": 1.5,
+        "odds": 210.0,
+        "book": "theScore Bet",
+        "rule": "Points1.5 + Green + Conf_Points >= 82 + Log_L10_S_per_game <= 3.9 + PP_Points60 <= 4.6",
+        "kit_version": "points15-2026-27-iron-march-2026-11-06-v2"
+      },
+      {
+        "file": "points_return_records.json",
+        "key": "points15-2026-27-iron-march-2026-11-06-v2|points15_ev5_toi154",
+        "market": "Points",
+        "line": 1.5,
+        "odds": 210.0,
+        "book": "theScore Bet",
+        "rule": "Points1.5 + Green + Conf_Points >= 82 + Log_L10_S_per_game <= 3.9 + EV5_TOI_per_game >= 15.4",
+        "kit_version": "points15-2026-27-iron-march-2026-11-06-v2"
+      },
+      {
+        "file": "points_return_records.json",
+        "key": "points15-2026-27-iron-march-2026-11-06-v2|points15_pp_proxy_ev5_special",
+        "market": "Points",
+        "line": 1.5,
+        "odds": 210.0,
+        "book": "theScore Bet",
+        "rule": "Points1.5 + Green + Conf_Points >= 82 + Log_L10_S_per_game <= 3.9 + PP_Points60 <= 4.6 + EV5_TOI_per_game >= 15.4",
+        "kit_version": "points15-2026-27-iron-march-2026-11-06-v2"
+      },
+      {
+        "file": "points_return_records.json",
+        "key": "points15-2026-27-iron-march-2026-11-06-v2|env_0_0",
+        "market": "Points",
+        "line": 1.5,
+        "odds": 210.0,
+        "book": "theScore Bet",
+        "rule": "Points1.5 + Green + Conf_Points >= 82 + Log_L10_S_per_game <= 3.9 + NHL_Opp_PP_G60 >= 6.2",
+        "kit_version": "points15-2026-27-iron-march-2026-11-06-v2"
+      },
+      {
+        "file": "points_return_records.json",
+        "key": "points15-2026-27-iron-march-2026-11-06-v2|env_1_0",
+        "market": "Points",
+        "line": 1.5,
+        "odds": 210.0,
+        "book": "theScore Bet",
+        "rule": "Points1.5 + Green + Conf_Points >= 82 + Log_L10_S_per_game <= 3.9 + NHL_Opp_Goal_conversion_pct >= 11.2",
+        "kit_version": "points15-2026-27-iron-march-2026-11-06-v2"
+      },
+      {
+        "file": "points_return_records.json",
+        "key": "points15-2026-27-iron-march-2026-11-06-v2|env_2_0",
+        "market": "Points",
+        "line": 1.5,
+        "odds": 210.0,
+        "book": "theScore Bet",
+        "rule": "Points1.5 + Green + Conf_Points >= 82 + Log_L10_S_per_game <= 3.9 + NHL_Opp_GF_Season_PG >= 2.75",
+        "kit_version": "points15-2026-27-iron-march-2026-11-06-v2"
+      },
+      {
+        "file": "points_return_records.json",
+        "key": "points15-2026-27-iron-march-2026-11-06-v2|env_3_0",
+        "market": "Points",
+        "line": 1.5,
+        "odds": 210.0,
+        "book": "theScore Bet",
+        "rule": "Points1.5 + Green + Conf_Points >= 82 + Log_L10_S_per_game <= 3.9 + NHL_Team_GA_Venue_PG >= 3.25",
+        "kit_version": "points15-2026-27-iron-march-2026-11-06-v2"
+      },
+      {
+        "file": "points_return_records.json",
+        "key": "points15-2026-27-iron-march-2026-11-06-v2|env_4_0",
+        "market": "Points",
+        "line": 1.5,
+        "odds": 210.0,
+        "book": "theScore Bet",
+        "rule": "Points1.5 + Green + Conf_Points >= 82 + Log_L10_S_per_game <= 3.9 + NHL_Team_PK_G60 >= 6.25",
+        "kit_version": "points15-2026-27-iron-march-2026-11-06-v2"
+      },
+      {
+        "file": "points_return_records.json",
+        "key": "points15-2026-27-iron-march-2026-11-06-v2|env_5_0",
+        "market": "Points",
+        "line": 1.5,
+        "odds": 210.0,
+        "book": "theScore Bet",
+        "rule": "Points1.5 + Green + Conf_Points >= 82 + Log_L10_S_per_game <= 3.9 + Pace_Gap_P10 >= 0.2 + NHL_Opp_GF_Season_PG >= 2.3",
+        "kit_version": "points15-2026-27-iron-march-2026-11-06-v2"
+      },
+      {
+        "file": "points_return_records.json",
+        "key": "points15-2026-27-iron-march-2026-11-06-v2|env_6_0",
+        "market": "Points",
+        "line": 1.5,
+        "odds": 210.0,
+        "book": "theScore Bet",
+        "rule": "Points1.5 + Green + Conf_Points >= 82 + Log_L10_S_per_game <= 3.9 + Pace_Gap_P10 >= 0.2 + NHL_Team_GA_5_PG <= 3.6",
+        "kit_version": "points15-2026-27-iron-march-2026-11-06-v2"
+      },
+      {
+        "file": "points_return_records.json",
+        "key": "points15-2026-27-iron-march-2026-11-06-v2|env_6_1",
+        "market": "Points",
+        "line": 1.5,
+        "odds": 210.0,
+        "book": "theScore Bet",
+        "rule": "Points1.5 + Green + Conf_Points >= 82 + Log_L10_S_per_game <= 3.9 + Pace_Gap_P10 >= 0.2 + NHL_Team_GA_5_PG <= 3.2",
+        "kit_version": "points15-2026-27-iron-march-2026-11-06-v2"
+      },
+      {
+        "file": "points_return_records.json",
+        "key": "points15-2026-27-iron-march-2026-11-06-v2|env_7_0",
+        "market": "Points",
+        "line": 1.5,
+        "odds": 210.0,
+        "book": "theScore Bet",
+        "rule": "Points1.5 + Green + Conf_Points >= 82 + Log_L10_S_per_game <= 3.9 + Pace_Gap_P10 >= 0.2 + NHL_Team_GA_Venue_PG >= 3.25",
+        "kit_version": "points15-2026-27-iron-march-2026-11-06-v2"
+      },
+      {
+        "file": "points_return_records.json",
+        "key": "points15-2026-27-iron-march-2026-11-06-v2|env_8_0",
+        "market": "Points",
+        "line": 1.5,
+        "odds": 210.0,
+        "book": "theScore Bet",
+        "rule": "Points1.5 + Green + Conf_Points >= 82 + Log_L10_S_per_game <= 3.9 + Pace_Gap_P10 >= 0.2 + NHL_Opp_PP_Success_pct >= 19",
+        "kit_version": "points15-2026-27-iron-march-2026-11-06-v2"
+      },
+      {
+        "file": "points_return_records.json",
+        "key": "points15-2026-27-iron-march-2026-11-06-v2|env_9_0",
+        "market": "Points",
+        "line": 1.5,
+        "odds": 210.0,
+        "book": "theScore Bet",
+        "rule": "Points1.5 + Green + Conf_Points >= 82 + Log_L10_S_per_game <= 3.9 + Pace_Gap_P10 >= 0.2 + NHL_Opp_PP_Goals_PG >= 0.55",
+        "kit_version": "points15-2026-27-iron-march-2026-11-06-v2"
+      },
+      {
+        "file": "points_return_records.json",
+        "key": "points15-2026-27-iron-march-2026-11-06-v2|env_10_0",
+        "market": "Points",
+        "line": 1.5,
+        "odds": 210.0,
+        "book": "theScore Bet",
+        "rule": "Points1.5 + Green + Conf_Points >= 82 + Log_L10_S_per_game <= 3.9 + Pace_Gap_P10 >= 0.2 + NHL_Opp_Goal_conversion_pct >= 9.9",
+        "kit_version": "points15-2026-27-iron-march-2026-11-06-v2"
+      },
+      {
+        "file": "points_return_records.json",
+        "key": "points15-2026-27-iron-march-2026-11-06-v2|env_10_1",
+        "market": "Points",
+        "line": 1.5,
+        "odds": 210.0,
+        "book": "theScore Bet",
+        "rule": "Points1.5 + Green + Conf_Points >= 82 + Log_L10_S_per_game <= 3.9 + Pace_Gap_P10 >= 0.2 + NHL_Opp_Goal_conversion_pct >= 11.2",
+        "kit_version": "points15-2026-27-iron-march-2026-11-06-v2"
+      },
+      {
+        "file": "points_return_records.json",
+        "key": "points15-2026-27-iron-march-2026-11-06-v2|gap_pp_display_0",
+        "market": "Points",
+        "line": 1.5,
+        "odds": 210.0,
+        "book": "theScore Bet",
+        "rule": "Points1.5 + Green + Conf_Points >= 82 + Log_L10_S_per_game <= 3.9 + Pace_Gap_P10 >= 0.2 + (NHL_Opp_PP_Goals_PG >= 0.55 OR NHL_Opp_PP_Success_pct >= 19)",
+        "kit_version": "points15-2026-27-iron-march-2026-11-06-v2"
+      },
+      {
+        "file": "points_return_records.json",
+        "key": "points15-2026-27-iron-march-2026-11-06-v2|gap_pp_display_1",
+        "market": "Points",
+        "line": 1.5,
+        "odds": 210.0,
+        "book": "theScore Bet",
+        "rule": "Points1.5 + Green + Conf_Points >= 82 + Log_L10_S_per_game <= 3.9 + Pace_Gap_P10 >= 0.2 + (NHL_Opp_PP_Goals_PG >= 0.55 AND NHL_Opp_PP_Success_pct >= 19)",
+        "kit_version": "points15-2026-27-iron-march-2026-11-06-v2"
+      },
+      {
+        "file": "points_return_records.json",
+        "key": "legacy-points15|DPS Tank stance",
+        "market": "Points",
+        "line": 1.5,
+        "odds": 210.0,
+        "book": "theScore Bet",
+        "rule": "Conf_Points >= 75",
+        "kit_version": null
+      }
+    ],
+    "2026020283|8480842": [],
+    "2026020283|8478013": [],
+    "2026020283|8477450": [],
+    "2026020283|8477953": [],
+    "2026020283|8477934": [
+      {
+        "file": "goal_return_records.json",
+        "key": "xg:Base Attack:III:True",
+        "market": "Goal",
+        "line": 0.5,
+        "odds": 110.0,
+        "book": "FanDuel",
+        "rule": "Goal 0.5 + Matrix_Goal Green + last-five xG/game >= 0.50 + last-five xG/game >= 0.55 + Goal profile >= 93",
+        "kit_version": "goal-2026-27-three-paths-v6"
+      },
+      {
+        "file": "goal_return_records.json",
+        "key": "xg:Star Pressure:I:True",
+        "market": "Goal",
+        "line": 0.5,
+        "odds": 110.0,
+        "book": "FanDuel",
+        "rule": "Goal 0.5 + Matrix_Goal Green + last-five xG/game >= 0.50 + last-five xG/game >= 0.55 + StarScore >= 84.5",
+        "kit_version": "goal-2026-27-three-paths-v6"
+      },
+      {
+        "file": "assist_return_records.json",
+        "key": "assist-2026-27-pp-crits-v1|Staff (Green Stance)",
+        "market": "Assists",
+        "line": 0.5,
+        "odds": -160.0,
+        "book": "BetMGM",
+        "rule": "Assist 0.5 + Matrix_Assists Green + Conf_Assists >= 81 + iXA% >= 95",
+        "kit_version": "assist-2026-27-pp-crits-v1"
+      },
+      {
+        "file": "assist_return_records.json",
+        "key": "assist-2026-27-pp-crits-v1|Rune Conduit",
+        "market": "Assists",
+        "line": 0.5,
+        "odds": -160.0,
+        "book": "BetMGM",
+        "rule": "Assist 0.5 + Matrix_Assists Green + Conf_Assists >= 81 + iXA% >= 95 + PP_TOI_per_game >= 3.75",
+        "kit_version": "assist-2026-27-pp-crits-v1"
+      },
+      {
+        "file": "assist_return_records.json",
+        "key": "assist-2026-27-pp-crits-v1|Rune Conduit Crit",
+        "market": "Assists",
+        "line": 0.5,
+        "odds": -160.0,
+        "book": "BetMGM",
+        "rule": "Assist 0.5 + Matrix_Assists Green + Conf_Assists >= 81 + iXA% >= 95 + PP_TOI_per_game >= 3.75 + Team_PP_xGF60 >= 8.3",
+        "kit_version": "assist-2026-27-pp-crits-v1"
+      },
+      {
+        "file": "assist_return_records.json",
+        "key": "assist-2026-27-pp-crits-v1|High Assist μ",
+        "market": "Assists",
+        "line": 0.5,
+        "odds": -160.0,
+        "book": "BetMGM",
+        "rule": "Assist 0.5 + Matrix_Assists Green + Conf_Assists >= 81 + iXA% >= 95 + Assists_mu >= 1.1",
+        "kit_version": "assist-2026-27-pp-crits-v1"
+      },
+      {
+        "file": "assist_return_records.json",
+        "key": "assist-2026-27-additive-2026-11-03-v1|assist-nov03-staff-of-insight",
+        "market": "Assists",
+        "line": 0.5,
+        "odds": -160.0,
+        "book": "BetMGM",
+        "rule": "Assist 0.5 + Matrix_Assists Green + Conf_Assists >=80 + iXA% >=94",
+        "kit_version": "assist-2026-27-additive-2026-11-03-v1"
+      },
+      {
+        "file": "points_return_records.json",
+        "key": "points15-2026-27-iron-march-2026-11-06-v2|gaia_measured_pressure_15",
+        "market": "Points",
+        "line": 1.5,
+        "odds": 114.0,
+        "book": "FanDuel",
+        "rule": "Points1.5 + Green + Conf_Points >= 77 + Assists_mu >= 1.1 + team_5v5_SF60 <= 24.4",
+        "kit_version": "points15-2026-27-iron-march-2026-11-06-v2"
+      }
+    ],
+    "2026020283|8478472": [],
+    "2026020283|8475218": [],
+    "2026020283|8479368": [],
+    "2026020283|8486161": [],
+    "2026020283|8476454": [
+      {
+        "file": "special_return_records.json",
+        "key": "PPP|pp-arcane-overload-v1",
+        "market": "PPP",
+        "line": 0.5,
+        "odds": 205.0,
+        "book": "Courtside",
+        "rule": "PPP line == 0.5 + PP_OnIce_xG_per_game >= 0.66 + Official_Team_OpportunitiesPG_L5 >= 3.4 + Official_Opp_SecondsPerOpportunity_L5 <= 94",
+        "kit_version": "pp-card-kit-2026-11-07-v2"
+      },
+      {
+        "file": "special_return_records.json",
+        "key": "PPP|pp-rune-rupture-v1",
+        "market": "PPP",
+        "line": 0.5,
+        "odds": 205.0,
+        "book": "Courtside",
+        "rule": "PPP line == 0.5 + PP_OnIce_xG_per_game >= 0.66 + Official_Opp_SecondsPerOpportunity_L5 <= 94",
+        "kit_version": "pp-card-kit-2026-11-07-v2"
+      },
+      {
+        "file": "special_return_records.json",
+        "key": "PPP|pp-arcane-momentum-ii-v1",
+        "market": "PPP",
+        "line": 0.5,
+        "odds": 205.0,
+        "book": "Courtside",
+        "rule": "PPP line == 0.5 + PP_OnIce_xG_per_game >= 0.66 + Official_Team_OpportunitiesPG_L5 >= 3.6",
+        "kit_version": "pp-card-kit-2026-11-07-v2"
+      },
+      {
+        "file": "special_return_records.json",
+        "key": "PPP|pp-arcane-momentum-i-v1",
+        "market": "PPP",
+        "line": 0.5,
+        "odds": 205.0,
+        "book": "Courtside",
+        "rule": "PPP line == 0.5 + PP_OnIce_xG_per_game >= 0.66 + Official_Team_OpportunitiesPG_L5 >= 3.4",
+        "kit_version": "pp-card-kit-2026-11-07-v2"
+      },
+      {
+        "file": "special_return_records.json",
+        "key": "PPP|pp-wardbreaker-v1",
+        "market": "PPP",
+        "line": 0.5,
+        "odds": 205.0,
+        "book": "Courtside",
+        "rule": "PPP line == 0.5 + PP_OnIce_xG_per_game >= 0.66 + Official_Opp_FailurePct_L5 >= 11",
+        "kit_version": "pp-card-kit-2026-11-07-v2"
+      },
+      {
+        "file": "special_return_records.json",
+        "key": "PPP|pp-mana-bolt-v1",
+        "market": "PPP",
+        "line": 0.5,
+        "odds": 205.0,
+        "book": "Courtside",
+        "rule": "PPP line == 0.5 + PP_OnIce_xG_per_game >= 0.66",
+        "kit_version": "pp-card-kit-2026-11-07-v2"
+      }
+    ],
+    "2026020283|8478854": [],
+    "2026020283|8482166": [],
+    "2026020283|8479365": [],
+    "2026020283|8480834": [],
+    "2026020283|8481617": [],
+    "2026020283|8475786": [],
+    "2026020283|8479323": [
+      {
+        "file": "assist_return_records.json",
+        "key": "assist-2026-27-pp-crits-v1|Staff (Green Stance)",
+        "market": "Assists",
+        "line": 0.5,
+        "odds": -111.0,
+        "book": "BetMGM",
+        "rule": "Assist 0.5 + Matrix_Assists Green + Conf_Assists >= 81 + iXA% >= 95",
+        "kit_version": "assist-2026-27-pp-crits-v1"
+      },
+      {
+        "file": "assist_return_records.json",
+        "key": "assist-2026-27-pp-crits-v1|Arcane Channel I",
+        "market": "Assists",
+        "line": 0.5,
+        "odds": -111.0,
+        "book": "BetMGM",
+        "rule": "Assist 0.5 + Matrix_Assists Green + Conf_Assists >= 81 + iXA% >= 95 + PP_Points60 >= 3.75 + PP_iXA60 >= 2.5",
+        "kit_version": "assist-2026-27-pp-crits-v1"
+      },
+      {
+        "file": "assist_return_records.json",
+        "key": "assist-2026-27-pp-crits-v1|Runic Infusion",
+        "market": "Assists",
+        "line": 0.5,
+        "odds": -111.0,
+        "book": "BetMGM",
+        "rule": "Assist 0.5 + Matrix_Assists Green + Conf_Assists >= 81 + iXA% >= 95 + PP_iXA60 >= 3.9",
+        "kit_version": "assist-2026-27-pp-crits-v1"
+      },
+      {
+        "file": "assist_return_records.json",
+        "key": "assist-2026-27-pp-crits-v1|Runic Infusion Crit",
+        "market": "Assists",
+        "line": 0.5,
+        "odds": -111.0,
+        "book": "BetMGM",
+        "rule": "Assist 0.5 + Matrix_Assists Green + Conf_Assists >= 81 + iXA% >= 95 + PP_iXA60 >= 3.9 + Team_PP_xGF60 >= 8.3",
+        "kit_version": "assist-2026-27-pp-crits-v1"
+      },
+      {
+        "file": "assist_return_records.json",
+        "key": "assist-2026-27-pp-crits-v1|Odin's Vigil",
+        "market": "Assists",
+        "line": 0.5,
+        "odds": -111.0,
+        "book": "BetMGM",
+        "rule": "Assist 0.5 + Matrix_Assists Green + Conf_Assists >= 81 + iXA% >= 95 + TOI_per_game >= 22",
+        "kit_version": "assist-2026-27-pp-crits-v1"
+      },
+      {
+        "file": "assist_return_records.json",
+        "key": "assist-2026-27-pp-crits-v1|Odin's Vigil Crit",
+        "market": "Assists",
+        "line": 0.5,
+        "odds": -111.0,
+        "book": "BetMGM",
+        "rule": "Assist 0.5 + Matrix_Assists Green + Conf_Assists >= 81 + iXA% >= 95 + TOI_per_game >= 22 + Team_PP_xGF60 >= 8.3",
+        "kit_version": "assist-2026-27-pp-crits-v1"
+      },
+      {
+        "file": "assist_return_records.json",
+        "key": "assist-2026-27-pp-crits-v1|High Assist μ",
+        "market": "Assists",
+        "line": 0.5,
+        "odds": -111.0,
+        "book": "BetMGM",
+        "rule": "Assist 0.5 + Matrix_Assists Green + Conf_Assists >= 81 + iXA% >= 95 + Assists_mu >= 1.1",
+        "kit_version": "assist-2026-27-pp-crits-v1"
+      },
+      {
+        "file": "assist_return_records.json",
+        "key": "assist-2026-27-pp-crits-v1|Arcane Rebound",
+        "market": "Assists",
+        "line": 0.5,
+        "odds": -111.0,
+        "book": "BetMGM",
+        "rule": "Assist 0.5 + Matrix_Assists Green + Conf_Assists >= 81 + iXA% >= 95 + Drought_G >= 2",
+        "kit_version": "assist-2026-27-pp-crits-v1"
+      },
+      {
+        "file": "assist_return_records.json",
+        "key": "assist-2026-27-additive-2026-11-03-v1|assist-nov03-staff-of-insight",
+        "market": "Assists",
+        "line": 0.5,
+        "odds": -111.0,
+        "book": "BetMGM",
+        "rule": "Assist 0.5 + Matrix_Assists Green + Conf_Assists >=80 + iXA% >=94",
+        "kit_version": "assist-2026-27-additive-2026-11-03-v1"
+      },
+      {
+        "file": "assist_return_records.json",
+        "key": "assist-2026-27-additive-2026-11-03-v1|assist-nov03-silent-invocation",
+        "market": "Assists",
+        "line": 0.5,
+        "odds": -111.0,
+        "book": "BetMGM",
+        "rule": "Assist 0.5 + Matrix_Assists Green + Conf_Assists >=80 + iXA% >=94 + L10_S <= 19",
+        "kit_version": "assist-2026-27-additive-2026-11-03-v1"
+      },
+      {
+        "file": "assist_return_records.json",
+        "key": "assist-2026-27-additive-2026-11-03-v1|assist-nov03-oracle-s-channel",
+        "market": "Assists",
+        "line": 0.5,
+        "odds": -111.0,
+        "book": "BetMGM",
+        "rule": "Assist 0.5 + Matrix_Assists Green + Conf_Assists >=80 + iXA% >=94 + Goal_mu <= 0.33",
+        "kit_version": "assist-2026-27-additive-2026-11-03-v1"
+      },
+      {
+        "file": "assist_return_records.json",
+        "key": "assist-2026-27-additive-2026-11-03-v1|assist-nov03-runic-resonance-i",
+        "market": "Assists",
+        "line": 0.5,
+        "odds": -111.0,
+        "book": "BetMGM",
+        "rule": "Assist 0.5 + Matrix_Assists Green + Conf_Assists >=80 + iXA% >=94 + Goal_mu <= 0.33 + PPP10_total >= 4",
+        "kit_version": "assist-2026-27-additive-2026-11-03-v1"
+      },
+      {
+        "file": "assist_return_records.json",
+        "key": "assist-2026-27-additive-2026-11-03-v1|assist-nov03-runic-resonance-ii",
+        "market": "Assists",
+        "line": 0.5,
+        "odds": -111.0,
+        "book": "BetMGM",
+        "rule": "Assist 0.5 + Matrix_Assists Green + Conf_Assists >=80 + iXA% >=94 + Goal_mu <= 0.33 + PPP10_total >= 4 + Team_PP_GF60 >= 5.7 + opp_5v5_HDCA60 <= 2.2",
+        "kit_version": "assist-2026-27-additive-2026-11-03-v1"
+      },
+      {
+        "file": "points_return_records.json",
+        "key": "points-2026-27-current-2026-11-05-v1|base77",
+        "market": "Points",
+        "line": 0.5,
+        "odds": -145.0,
+        "book": "theScore Bet",
+        "rule": "Points0.5+Matrix_PointsGreen+Conf_Points>=77",
+        "kit_version": "points-2026-27-current-2026-11-05-v1"
+      },
+      {
+        "file": "points_return_records.json",
+        "key": "points-2026-27-current-2026-11-05-v1|pp240",
+        "market": "Points",
+        "line": 0.5,
+        "odds": -145.0,
+        "book": "theScore Bet",
+        "rule": "Points0.5+Matrix_PointsGreen+Conf_Points>=77 + PP_TOI_per_game >= 2.4",
+        "kit_version": "points-2026-27-current-2026-11-05-v1"
+      },
+      {
+        "file": "points_return_records.json",
+        "key": "points-2026-27-current-2026-11-05-v1|assist97",
+        "market": "Points",
+        "line": 0.5,
+        "odds": -145.0,
+        "book": "theScore Bet",
+        "rule": "Points0.5+Matrix_PointsGreen+Conf_Points>=77 + iXA% >= 97",
+        "kit_version": "points-2026-27-current-2026-11-05-v1"
+      },
+      {
+        "file": "points_return_records.json",
+        "key": "points-2026-27-current-2026-11-05-v1|assist98",
+        "market": "Points",
+        "line": 0.5,
+        "odds": -145.0,
+        "book": "theScore Bet",
+        "rule": "Points0.5+Matrix_PointsGreen+Conf_Points>=77 + iXA% >= 98",
+        "kit_version": "points-2026-27-current-2026-11-05-v1"
+      },
+      {
+        "file": "points_return_records.json",
+        "key": "points-2026-27-current-2026-11-05-v1|drought1",
+        "market": "Points",
+        "line": 0.5,
+        "odds": -145.0,
+        "book": "theScore Bet",
+        "rule": "Points0.5+Matrix_PointsGreen+Conf_Points>=77 + Drought_G >= 1",
+        "kit_version": "points-2026-27-current-2026-11-05-v1"
+      },
+      {
+        "file": "points_return_records.json",
+        "key": "points-2026-27-current-2026-11-05-v1|drought2",
+        "market": "Points",
+        "line": 0.5,
+        "odds": -145.0,
+        "book": "theScore Bet",
+        "rule": "Points0.5+Matrix_PointsGreen+Conf_Points>=77 + Drought_G >= 2",
+        "kit_version": "points-2026-27-current-2026-11-05-v1"
+      },
+      {
+        "file": "points_return_records.json",
+        "key": "points-2026-27-current-2026-11-05-v1|mu110",
+        "market": "Points",
+        "line": 0.5,
+        "odds": -145.0,
+        "book": "theScore Bet",
+        "rule": "Points0.5+Matrix_PointsGreen+Conf_Points>=77 + Assists_mu >= 1.1",
+        "kit_version": "points-2026-27-current-2026-11-05-v1"
+      },
+      {
+        "file": "points_return_records.json",
+        "key": "points-2026-27-current-2026-11-05-v1|env_NHL_Opp_Goal_conversion_pct_7.4",
+        "market": "Points",
+        "line": 0.5,
+        "odds": -145.0,
+        "book": "theScore Bet",
+        "rule": "Points0.5+Matrix_PointsGreen+Conf_Points>=77 + NHL_Opp_Goal_conversion_pct >= 7.4",
+        "kit_version": "points-2026-27-current-2026-11-05-v1"
+      },
+      {
+        "file": "points_return_records.json",
+        "key": "points-2026-27-current-2026-11-05-v1|env_NHL_Opp_Goal_conversion_pct_11.2",
+        "market": "Points",
+        "line": 0.5,
+        "odds": -145.0,
+        "book": "theScore Bet",
+        "rule": "Points0.5+Matrix_PointsGreen+Conf_Points>=77 + NHL_Opp_Goal_conversion_pct >= 11.2",
+        "kit_version": "points-2026-27-current-2026-11-05-v1"
+      },
+      {
+        "file": "points_return_records.json",
+        "key": "points-2026-27-current-2026-11-05-v1|env_NHL_Opp_Goal_conversion_pct_12.3",
+        "market": "Points",
+        "line": 0.5,
+        "odds": -145.0,
+        "book": "theScore Bet",
+        "rule": "Points0.5+Matrix_PointsGreen+Conf_Points>=77 + NHL_Opp_Goal_conversion_pct >= 12.3",
+        "kit_version": "points-2026-27-current-2026-11-05-v1"
+      },
+      {
+        "file": "points_return_records.json",
+        "key": "points-2026-27-current-2026-11-05-v1|env_NHL_Opp_GF_10_PG_2.15",
+        "market": "Points",
+        "line": 0.5,
+        "odds": -145.0,
+        "book": "theScore Bet",
+        "rule": "Points0.5+Matrix_PointsGreen+Conf_Points>=77 + NHL_Opp_GF_10_PG >= 2.15",
+        "kit_version": "points-2026-27-current-2026-11-05-v1"
+      },
+      {
+        "file": "points_return_records.json",
+        "key": "points-2026-27-current-2026-11-05-v1|env_NHL_Opp_GF_10_PG_3.25",
+        "market": "Points",
+        "line": 0.5,
+        "odds": -145.0,
+        "book": "theScore Bet",
+        "rule": "Points0.5+Matrix_PointsGreen+Conf_Points>=77 + NHL_Opp_GF_10_PG >= 3.25",
+        "kit_version": "points-2026-27-current-2026-11-05-v1"
+      },
+      {
+        "file": "points_return_records.json",
+        "key": "points-2026-27-current-2026-11-05-v1|env_NHL_Opp_GF_10_PG_3.55",
+        "market": "Points",
+        "line": 0.5,
+        "odds": -145.0,
+        "book": "theScore Bet",
+        "rule": "Points0.5+Matrix_PointsGreen+Conf_Points>=77 + NHL_Opp_GF_10_PG >= 3.55",
+        "kit_version": "points-2026-27-current-2026-11-05-v1"
+      },
+      {
+        "file": "points_return_records.json",
+        "key": "points-2026-27-current-2026-11-05-v1|combo_Opponent offense",
+        "market": "Points",
+        "line": 0.5,
+        "odds": -145.0,
+        "book": "theScore Bet",
+        "rule": "Points0.5+Matrix_PointsGreen+Conf_Points>=77 + NHL_Opp_Goal_conversion_pct >= 12.3 + NHL_Opp_GF_10_PG >= 3.55",
+        "kit_version": "points-2026-27-current-2026-11-05-v1"
+      },
+      {
+        "file": "points_return_records.json",
+        "key": "points-2026-27-current-2026-11-05-v1|final_90-01",
+        "market": "Points",
+        "line": 0.5,
+        "odds": -145.0,
+        "book": "theScore Bet",
+        "rule": "Points0.5+Matrix_PointsGreen+Conf_Points>=77 + Drought_G >= 1 + NHL_Opp_PP_Goals_PG >= 0.9",
+        "kit_version": "points-2026-27-current-2026-11-05-v1"
+      },
+      {
+        "file": "points_return_records.json",
+        "key": "points-2026-27-current-2026-11-05-v1|final_90-02",
+        "market": "Points",
+        "line": 0.5,
+        "odds": -145.0,
+        "book": "theScore Bet",
+        "rule": "Points0.5+Matrix_PointsGreen+Conf_Points>=77 + Drought_G >= 1 + Team_PP_OZ_Time_Pct >= 58.8",
+        "kit_version": "points-2026-27-current-2026-11-05-v1"
+      },
+      {
+        "file": "points_return_records.json",
+        "key": "points-2026-27-current-2026-11-05-v1|final_90-03",
+        "market": "Points",
+        "line": 0.5,
+        "odds": -145.0,
+        "book": "theScore Bet",
+        "rule": "Points0.5+Matrix_PointsGreen+Conf_Points>=77 + Drought_G >= 1 + Team_EV_OZ_Rank <= 13",
+        "kit_version": "points-2026-27-current-2026-11-05-v1"
+      },
+      {
+        "file": "points_return_records.json",
+        "key": "points-2026-27-current-2026-11-05-v1|final_90-05",
+        "market": "Points",
+        "line": 0.5,
+        "odds": -145.0,
+        "book": "theScore Bet",
+        "rule": "Points0.5+Matrix_PointsGreen+Conf_Points>=77 + Drought_G >= 2 + Opp_5v5_xGA_relative_league <= 0.98",
+        "kit_version": "points-2026-27-current-2026-11-05-v1"
+      },
+      {
+        "file": "points_return_records.json",
+        "key": "points-2026-27-current-2026-11-05-v1|final_90-06",
+        "market": "Points",
+        "line": 0.5,
+        "odds": -145.0,
+        "book": "theScore Bet",
+        "rule": "Points0.5+Matrix_PointsGreen+Conf_Points>=77 + Drought_G >= 2 + Team_PP_xGF_relative_league >= 1.02",
+        "kit_version": "points-2026-27-current-2026-11-05-v1"
+      },
+      {
+        "file": "points_return_records.json",
+        "key": "points-2026-27-current-2026-11-05-v1|pprole_NHL_Opp_GA_10_PG",
+        "market": "Points",
+        "line": 0.5,
+        "odds": -145.0,
+        "book": "theScore Bet",
+        "rule": "Points0.5+Matrix_PointsGreen+Conf_Points>=77 + PP_TOI_per_game >= 2.4 + NHL_Opp_GA_10_PG <= 3.45",
+        "kit_version": "points-2026-27-current-2026-11-05-v1"
+      },
+      {
+        "file": "points_return_records.json",
+        "key": "points-2026-27-current-2026-11-05-v1|pprole_NHL_Opp_Goals_per_shot_allowed_pct",
+        "market": "Points",
+        "line": 0.5,
+        "odds": -145.0,
+        "book": "theScore Bet",
+        "rule": "Points0.5+Matrix_PointsGreen+Conf_Points>=77 + PP_TOI_per_game >= 2.4 + NHL_Opp_Goals_per_shot_allowed_pct <= 12.1",
+        "kit_version": "points-2026-27-current-2026-11-05-v1"
+      }
+    ],
+    "2026020283|8482109": [],
+    "2026020283|8482073": [],
+    "2026020283|8480009": [],
+    "2026020283|8484210": [],
+    "2026020283|8476468": [
+      {
+        "file": "goal_return_records.json",
+        "key": "xg:Base Attack:II:True",
+        "market": "Goal",
+        "line": 0.5,
+        "odds": 310.0,
+        "book": "FanDuel",
+        "rule": "Goal 0.5 + Matrix_Goal Green + last-five xG/game >= 0.50 + last-five xG/game >= 0.55 + Goal profile >= 89",
+        "kit_version": "goal-2026-27-three-paths-v6"
+      },
+      {
+        "file": "goal_return_records.json",
+        "key": "xg:Star Pressure:I:True",
+        "market": "Goal",
+        "line": 0.5,
+        "odds": 310.0,
+        "book": "FanDuel",
+        "rule": "Goal 0.5 + Matrix_Goal Green + last-five xG/game >= 0.50 + last-five xG/game >= 0.55 + StarScore >= 84.5",
+        "kit_version": "goal-2026-27-three-paths-v6"
+      },
+      {
+        "file": "goal_return_records.json",
+        "key": "xg:Shot Control:II:True",
+        "market": "Goal",
+        "line": 0.5,
+        "odds": 310.0,
+        "book": "FanDuel",
+        "rule": "Goal 0.5 + Matrix_Goal Green + last-five xG/game >= 0.50 + last-five xG/game >= 0.55 + Goal profile >= 89 + L10_S <= 38",
+        "kit_version": "goal-2026-27-three-paths-v6"
+      },
+      {
+        "file": "goal_return_records.json",
+        "key": "xg:Drought Strike:II:True",
+        "market": "Goal",
+        "line": 0.5,
+        "odds": 310.0,
+        "book": "FanDuel",
+        "rule": "Goal 0.5 + Matrix_Goal Green + last-five xG/game >= 0.50 + last-five xG/game >= 0.55 + Goal profile >= 89 + Drought_G >= 1",
+        "kit_version": "goal-2026-27-three-paths-v6"
+      },
+      {
+        "file": "goal_return_records.json",
+        "key": "xg:Measured Intent:II:True",
+        "market": "Goal",
+        "line": 0.5,
+        "odds": 310.0,
+        "book": "FanDuel",
+        "rule": "Goal 0.5 + Matrix_Goal Green + last-five xG/game >= 0.50 + last-five xG/game >= 0.55 + Goal profile >= 89 + ShotIntent_Pct <= 91.1",
+        "kit_version": "goal-2026-27-three-paths-v6"
+      },
+      {
+        "file": "goal_return_records.json",
+        "key": "xg:Reaper's Return:II:True",
+        "market": "Goal",
+        "line": 0.5,
+        "odds": 310.0,
+        "book": "FanDuel",
+        "rule": "Goal 0.5 + Matrix_Goal Green + last-five xG/game >= 0.50 + last-five xG/game >= 0.55 + Goal profile >= 89 + L10_S <= 38 + Drought_G >= 1",
+        "kit_version": "goal-2026-27-three-paths-v6"
+      }
+    ],
+    "2026020283|8482877": [],
+    "2026020283|8480813": [],
+    "2026020283|8476822": [],
+    "2026020283|8477969": [],
+    "2026020283|8482460": [],
+    "2026020283|8481525": [],
+    "2026020283|8476459": [
+      {
+        "file": "points_return_records.json",
+        "key": "legacy-points15|DPS Tank stance",
+        "market": "Points",
+        "line": 1.5,
+        "odds": 350.0,
+        "book": "FanDuel",
+        "rule": "Conf_Points >= 75",
+        "kit_version": null
+      }
+    ],
+    "2026020283|8483690": [],
+    "2026020283|8477416": [],
+    "2026020283|8481604": [],
+    "2026020283|8482666": [],
+    "2026020283|8481789": [],
+    "2026020283|8478882": [],
+    "2026020283|8482157": [],
+    "2026020284|8481546": [],
+    "2026020284|8477989": [],
+    "2026020284|8483787": [],
+    "2026020284|8483460": [],
+    "2026020284|8484142": [],
+    "2026020284|8482142": [],
+    "2026020284|8484387": [],
+    "2026020284|8478047": [],
+    "2026020284|8476372": [],
+    "2026020284|8480220": [],
+    "2026020284|8478569": [],
+    "2026020284|8484148": [],
+    "2026020284|8480015": [],
+    "2026020284|8485406": [],
+    "2026020284|8476461": [],
+    "2026020284|8481122": [],
+    "2026020284|8478439": [],
+    "2026020284|8477948": [],
+    "2026020284|8481533": [],
+    "2026020284|8482159": [],
+    "2026020284|8483395": [],
+    "2026020284|8475848": [],
+    "2026020284|8478444": [],
+    "2026020284|8482055": [],
+    "2026020284|8480012": [],
+    "2026020284|8483678": [],
+    "2026020284|8479425": [
+      {
+        "file": "points_return_records.json",
+        "key": "points-2026-27-current-2026-11-05-v1|base77",
+        "market": "Points",
+        "line": 0.5,
+        "odds": -120.0,
+        "book": "Fanatics",
+        "rule": "Points0.5+Matrix_PointsGreen+Conf_Points>=77",
+        "kit_version": "points-2026-27-current-2026-11-05-v1"
+      },
+      {
+        "file": "points_return_records.json",
+        "key": "points-2026-27-current-2026-11-05-v1|pp240",
+        "market": "Points",
+        "line": 0.5,
+        "odds": -120.0,
+        "book": "Fanatics",
+        "rule": "Points0.5+Matrix_PointsGreen+Conf_Points>=77 + PP_TOI_per_game >= 2.4",
+        "kit_version": "points-2026-27-current-2026-11-05-v1"
+      },
+      {
+        "file": "points_return_records.json",
+        "key": "points-2026-27-current-2026-11-05-v1|drought1",
+        "market": "Points",
+        "line": 0.5,
+        "odds": -120.0,
+        "book": "Fanatics",
+        "rule": "Points0.5+Matrix_PointsGreen+Conf_Points>=77 + Drought_G >= 1",
+        "kit_version": "points-2026-27-current-2026-11-05-v1"
+      },
+      {
+        "file": "points_return_records.json",
+        "key": "points-2026-27-current-2026-11-05-v1|drought2",
+        "market": "Points",
+        "line": 0.5,
+        "odds": -120.0,
+        "book": "Fanatics",
+        "rule": "Points0.5+Matrix_PointsGreen+Conf_Points>=77 + Drought_G >= 2",
+        "kit_version": "points-2026-27-current-2026-11-05-v1"
+      },
+      {
+        "file": "points_return_records.json",
+        "key": "points-2026-27-current-2026-11-05-v1|multi28",
+        "market": "Points",
+        "line": 0.5,
+        "odds": -120.0,
+        "book": "Fanatics",
+        "rule": "Points0.5+Matrix_PointsGreen+Conf_Points>=77 + Log_L20_Point2plus_pct <= 28",
+        "kit_version": "points-2026-27-current-2026-11-05-v1"
+      },
+      {
+        "file": "points_return_records.json",
+        "key": "points-2026-27-current-2026-11-05-v1|env_NHL_Opp_Goal_conversion_pct_7.4",
+        "market": "Points",
+        "line": 0.5,
+        "odds": -120.0,
+        "book": "Fanatics",
+        "rule": "Points0.5+Matrix_PointsGreen+Conf_Points>=77 + NHL_Opp_Goal_conversion_pct >= 7.4",
+        "kit_version": "points-2026-27-current-2026-11-05-v1"
+      },
+      {
+        "file": "points_return_records.json",
+        "key": "points-2026-27-current-2026-11-05-v1|env_NHL_Opp_GF_10_PG_2.15",
+        "market": "Points",
+        "line": 0.5,
+        "odds": -120.0,
+        "book": "Fanatics",
+        "rule": "Points0.5+Matrix_PointsGreen+Conf_Points>=77 + NHL_Opp_GF_10_PG >= 2.15",
+        "kit_version": "points-2026-27-current-2026-11-05-v1"
+      },
+      {
+        "file": "points_return_records.json",
+        "key": "points-2026-27-current-2026-11-05-v1|final_90-11",
+        "market": "Points",
+        "line": 0.5,
+        "odds": -120.0,
+        "book": "Fanatics",
+        "rule": "Points0.5+Matrix_PointsGreen+Conf_Points>=77 + Log_L20_Point2plus_pct <= 28 + PP_Time_Blend_PG >= 5.05",
+        "kit_version": "points-2026-27-current-2026-11-05-v1"
+      },
+      {
+        "file": "points_return_records.json",
+        "key": "points-2026-27-current-2026-11-05-v1|pprole_NHL_Opp_GA_10_PG",
+        "market": "Points",
+        "line": 0.5,
+        "odds": -120.0,
+        "book": "Fanatics",
+        "rule": "Points0.5+Matrix_PointsGreen+Conf_Points>=77 + PP_TOI_per_game >= 2.4 + NHL_Opp_GA_10_PG <= 3.45",
+        "kit_version": "points-2026-27-current-2026-11-05-v1"
+      },
+      {
+        "file": "points_return_records.json",
+        "key": "points-2026-27-current-2026-11-05-v1|pprole_NHL_Opp_Goals_per_shot_allowed_pct",
+        "market": "Points",
+        "line": 0.5,
+        "odds": -120.0,
+        "book": "Fanatics",
+        "rule": "Points0.5+Matrix_PointsGreen+Conf_Points>=77 + PP_TOI_per_game >= 2.4 + NHL_Opp_Goals_per_shot_allowed_pct <= 12.1",
+        "kit_version": "points-2026-27-current-2026-11-05-v1"
+      }
+    ],
+    "2026020284|8478465": [],
+    "2026020284|8484901": [],
+    "2026020284|8478498": [],
+    "2026020284|8476467": [],
+    "2026020284|8483476": [],
+    "2026020284|8483499": [],
+    "2026020284|8481024": [],
+    "2026020284|8474568": [],
+    "2026020284|8482079": [],
+    "2026020284|8484136": [],
+    "2026020284|8481032": [],
+    "2026020284|8483768": [],
+    "2026020284|8484798": []
+  }
+}

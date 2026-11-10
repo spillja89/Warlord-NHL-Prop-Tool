@@ -13,7 +13,8 @@ VERSION='return-grades-2026-11-09-v1'
 PRIORITY={'S':4,'A':3,'B':2,'Review':1}
 
 # User-approved disposition of the Nov9 Goal review; not a searched cutoff or
-# permanent rule. Exact record fingerprints prevent stale labels after regrading.
+# permanent rule. Preserve review caps while automatic totals grow; a new
+# rule identity/V1 generation must be reviewed separately.
 GOAL_REVIEW={
     'goal_star:controlled':('A',False,(39,68,35.7795652173913),(14,32,4.489565217391305),86.91666666666667),
     'goal_star:measured':('A',False,(58,108,46.79348463131072),(19,44,5.289565217391305),64.84987408424908),
@@ -23,16 +24,14 @@ GOAL_REVIEW={
 
 def _reviewed_goal_grade(row,grade):
     review=GOAL_REVIEW.get(row.get('key'))
-    if not review or grade['tier']!='S':return grade
+    if not review:return grade
     tier,early,full,recent,prior_roi=review
-    for saved,expected in ((row.get('full',{}),full),(row.get('since_check',{}),recent)):
-        actual=tuple(_number(saved.get(k)) for k in ('hits','plays','units'))
-        if any(a is None or not math.isclose(a,e,rel_tol=0,abs_tol=1e-9) for a,e in zip(actual,expected)):return grade
     actual_roi=_number(row.get('previous',{}).get('roi'))
     if actual_roi is None or not math.isclose(actual_roi,prior_roi,rel_tol=0,abs_tol=1e-9):return grade
-    reason=('Only 13 recent bets; strong returns, early confirmation.' if early else
-            f'Recent ROI {grade["recent_roi"]:+.1f}% versus V1 {prior_roi:+.1f}%; grade capped at A after review.')
-    return {**grade,'tier':tier,'watch':True,'watch_reason':reason,
+    reason=(f'Flagged at 13 recent bets; now {grade["recent_plays"]} bets. Confirmation review pending.' if early else
+            f'Recent ROI {grade["recent_roi"]:+.1f}% versus V1 {prior_roi:+.1f}%; A cap pending reassessment.')
+    capped='A' if tier=='A' and grade['tier']=='S' else grade['tier']
+    return {**grade,'tier':capped,'watch':True,'watch_reason':reason,
             'review_early':early,'reviewed_on':'2026-11-09'}
 
 @lru_cache(maxsize=1)
@@ -133,4 +132,3 @@ GRADE_CSS='''
 .wn-unit--return-b,.pp-w-card.rg-card-b{border-left:4px solid #b7c5d9;background:linear-gradient(110deg,#293443,#1b2739 50%)}
 .wn-unit--return-review,.wn-unit--return-watch,.pp-w-card.rg-card-watch{border-left-color:#d49b4d}
 '''
-

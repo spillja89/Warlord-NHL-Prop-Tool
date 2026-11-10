@@ -4,13 +4,10 @@ from pathlib import Path
 import json
 from goal_return_monitor import render_return_panel
 
-@lru_cache(maxsize=1)
 def records():
-    try:
-        data=json.loads(Path(__file__).with_name('special_return_records.json').read_text(encoding='utf-8'))
-        data['by_key']={r['key']:r for r in data['moves']}
-        return data
-    except (OSError,ValueError,KeyError,TypeError):return {}
+    from card_return_store import load_records
+    return load_records(Path(__file__).with_name('special_return_records.json'))
+
 
 def record_for(move,market):
     if not isinstance(move,dict):return None
@@ -32,7 +29,7 @@ def _panel(move,market,compact):
     data={**records(),**{f:row[f] for f in ('previous_through','since_from','move_version_label','wired_on')}}
     result=render_return_panel(row,data,compact=compact)
     if market=='PPP' and not compact:
-        result+='<div class="wn-gr-note">PPP additions: Nov 7 uses reconstructed pregame inputs; Nov 8 uses captured pregame tags. Each player-game is counted once per unchanged rule.</div>'
+        result+='<div class="wn-gr-note">PPP results retain captured or explicitly labeled pregame-replay provenance. Each player-game is counted once per unchanged rule.</div>'
     return result
 
 def sog_return_panel(move,*,compact=True):return _panel(move,'SOG',compact)

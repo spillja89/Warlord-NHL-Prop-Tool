@@ -4,14 +4,10 @@ from pathlib import Path
 from html import escape
 import json,math
 
-@lru_cache(maxsize=1)
 def records():
-    try:
-        data=json.loads(Path(__file__).with_name('goal_return_records.json').read_text(encoding='utf-8'))
-        data['by_key']={r['key']:r for r in data['moves']}
-        return data
-    except (OSError,ValueError,KeyError,TypeError):
-        return {}
+    from card_return_store import load_records
+    return load_records(Path(__file__).with_name('goal_return_records.json'))
+
 
 def record_for(move):
     if not isinstance(move,dict) or move.get('market')!='Goal':return None

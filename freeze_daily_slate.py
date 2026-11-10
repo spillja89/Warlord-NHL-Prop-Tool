@@ -36,6 +36,10 @@ def freeze_rows(current: pd.DataFrame, previous: pd.DataFrame, now: datetime) ->
             if not isinstance(json.loads(row['PP_Move_Catalog']),list):
                 raise ValueError('PPP catalog is missing')
             frozen_pp_tags(row)
+    if "Return_Fired_Moves" in eligible:
+        from card_returns import validate_tags
+        for row in eligible.to_dict("records"):
+            validate_tags({**row,"Frozen_At_UTC":now.astimezone(timezone.utc).isoformat()})
     eligible["Frozen_At_UTC"] = now.astimezone(timezone.utc).isoformat()
     if previous.empty:
         result = eligible
@@ -71,4 +75,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-

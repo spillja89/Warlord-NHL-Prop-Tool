@@ -1,0 +1,17 @@
+{
+  "version": "card-return-tracking-2026-11-10-v1",
+  "seed_version": "card-return-seed-2026-11-08-v1",
+  "through": "2026-11-09",
+  "source_files": {
+    "2026-11-09": "b3d624d625b7ecf1e79a25203c8e87715c3be5e508a5a1783d44f04ac19f1f08"
+  },
+  "counts": {
+    "new_memberships": 200,
+    "unsettled_rows": 11
+  },
+  "memberships": 19972,
+  "V1_fixed": true,
+  "rules_unchanged": true,
+  "generation": "08beba06fd51815b7f2cb05fd0f781886ff585b0097841429848c2d9251211d2",
+  "generated_utc": "2026-11-10T13:01:55.475712+00:00"
+}

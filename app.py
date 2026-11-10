@@ -4148,6 +4148,15 @@ st.sidebar.caption(
 
 
 @st.cache_data(ttl=300, show_spinner=False)
+def _refresh_card_returns():
+    from card_return_store import sync_published
+    return sync_published(Path(__file__).resolve().parent)
+
+
+_card_return_status = _refresh_card_returns()
+
+
+@st.cache_data(ttl=300, show_spinner=False)
 def _published_tracker_bytes() -> bytes | None:
     try:
         return fetch_tracker()
@@ -4891,6 +4900,9 @@ if source == "latest":
             st.warning("These odds were checked over 30 minutes ago. Run / Refresh slate for a new feed check, then confirm the price at the book.")
     else:
         st.caption("Odds check time was not recorded in this tracker. Refresh the slate for a timestamped quote snapshot.")
+
+if _card_return_status.get("through"):
+    st.caption("Move returns graded through **" + _card_return_status["through"] + "** · V1 fixed · totals and return tiers update after grading")
 
 if source == "latest" and "Injury_Reports_Count" in df.columns and not df.empty:
     reported = pd.to_numeric(df["Injury_Reports_Count"], errors="coerce").iloc[0]
