@@ -1417,9 +1417,9 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
             if role == 'Tank' and points_original_caption(move):
                 record_label = points_original_caption(move)
             if role == 'Jungle' and sog_return_panel(move):
-                record_label = "V1 MOVE %"
-            if record_label == "V1 MOVE %":
-                later_note = f'V1 MOVE {wins}/{picks}'
+                record_label = "V2 MOVE %" if move.get('sog_profile') else "V1 MOVE %"
+            if record_label in {"V1 MOVE %","V2 MOVE %"}:
+                later_note = f'{record_label.split()[0]} MOVE {wins}/{picks}'
             record_html = (f'<div class="wn-record"><strong>{pct:.1f}%</strong><span>{wins}/{picks}</span><em>{record_label}</em></div>'
                            if picks else '<div class="wn-record"><strong>SCOUT</strong><em>NO GOAL ATTACK</em></div>'
                            if role == "Carry" else '<div class="wn-record"><strong>BASE</strong><em>SCREEN ONLY</em></div>')
