@@ -4,9 +4,10 @@
     "seed_version": "card-return-seed-2026-11-08-v1",
     "through": "2026-11-09",
     "source_files": {
-      "2026-11-09": "b3d624d625b7ecf1e79a25203c8e87715c3be5e508a5a1783d44f04ac19f1f08"
+      "2026-11-09": "3ebd089fe1501ca914f161d4bd82075ab233a36379a37229a515380b9b577679"
     },
     "counts": {
+      "seed_outcomes_checked": 4467,
       "new_memberships": 200,
       "unsettled_rows": 11
     },
