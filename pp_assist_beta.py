@@ -89,13 +89,15 @@ def top_beta_route(data):
 def beta_summary(data):
     if not data or not data.get("routes"):
         return ""
-    names = " · ".join(route["display_name"] for route in data["routes"])
     top = top_beta_route(data)
+    remaining=len(data['routes'])-1
+    names=top['display_name']+(f' · {remaining} other matches inside Inspect' if remaining else '')
     status = " · MONITOR" if top["plays"] < 30 else ""
     return (f'<span class="pp-assist-beta-pill" title="{escape(names, quote=True)}">'
             f'<span class="pp-assist-beta-label">⚡ PPP BETA · {escape(top["display_name"])}</span>'
             f'<span class="pp-assist-beta-record">PPP {top["hits"]}/{top["plays"]}'
-            f' · {100 * top["hits"] / top["plays"]:.1f}% · sample BE {top["BE"]:.1f}%{status}</span></span>')
+            f' · {100 * top["hits"] / top["plays"]:.1f}% · sample BE {top["BE"]:.1f}%{status}'
+            + (f' · +{remaining} other matches' if remaining else '') + '</span></span>')
 
 
 def beta_details(data):
@@ -110,14 +112,21 @@ def beta_details(data):
             f'PPP {route["hits"]}/{route["plays"]} · {100 * route["hits"] / route["plays"]:.1f}%'
             f' · sample PPP BE {route["BE"]:.1f}% · {route["players"]} players'
             f'<small>{status}</small></div>')
-    return ('<div class="pp-assist-beta-details"><b>PPP BETA · ASSIST ROUTE OVERLAP</b>'
+    top=top_beta_route(data)
+    count=len(data['routes'])
+    return ('<details class="pp-assist-beta-details"><summary>'
+            '<b>PPP BETA · ASSIST ROUTE OVERLAP</b>'
+            f'<span>{escape(top["display_name"])} · {top["hits"]}/{top["plays"]}'
+            f' · {100*top["hits"]/top["plays"]:.1f}% · sample PPP BE {top["BE"]:.1f}%</span>'
+            f'<small>View {count} matching route'+('s' if count!=1 else '')+'</small></summary>'
+            '<div class="pp-assist-beta-body">'
             f'<p>PP on-ice xG/game {data["xg"]:.3f} (≥0.66) · '
             f'Over 0.5 PPP {data["ppp_odds"]:+.0f} · {escape(data["ppp_book"])}'
             f' · current PPP BE {data["ppp_be"]:.1f}%</p>'
             + ''.join(entries)
             + f'<p>2026–27 PPP results · {escape(data["sample_from"])} through '
             f'{escape(data["sample_through"])}. Overlapping frozen Assist routes; '
-            'these records grade PPP, not assists. Research samples, not tonight’s probabilities.</p></div>')
+            'these records grade PPP, not assists. Research samples, not tonight’s probabilities.</p></div></details>')
 
 
 BETA_CSS = """<style>
@@ -125,6 +134,10 @@ BETA_CSS = """<style>
 .pp-assist-beta-label,.pp-assist-beta-record{display:block;overflow-wrap:anywhere}.pp-assist-beta-label{color:#baf5ff}.pp-assist-beta-record{color:#f1fbff;font-size:12px;font-weight:650}
 .pp-assist-beta-details{padding:9px 10px;border:1px solid #4b9db1;border-radius:7px;background:#102a3c;color:#e4f5ff;font:12px/1.6 system-ui,sans-serif;overflow-wrap:anywhere}
 .pp-assist-beta-details p{margin:5px 0;color:#d4eaf5}.pp-assist-beta-details b{color:#c6f8ff}
+.pp-assist-beta-details>summary{display:flex;flex-direction:column;gap:2px;cursor:pointer;list-style:none;line-height:1.4}
+.pp-assist-beta-details>summary:before{content:'▸';color:#8de4f2;float:left}.pp-assist-beta-details[open]>summary:before{content:'▾'}
+.pp-assist-beta-details>summary>span{color:#f1fbff;font-size:12px}.pp-assist-beta-details>summary>small{color:#9ed6e2;font-size:10px}
+.pp-assist-beta-details[open]>.pp-assist-beta-body{padding-top:7px}
 .pp-assist-beta-route{padding:7px 0;border-top:1px solid #36566b}.pp-assist-beta-route small{display:block;color:#d4def1;font-size:10px}
 .pp-assist-beta-cell{min-width:230px;max-width:330px;white-space:normal}.pp-assist-beta-cell summary{cursor:pointer;list-style:none}.pp-assist-beta-cell .pp-assist-beta-details{margin-top:5px}
 </style>"""
