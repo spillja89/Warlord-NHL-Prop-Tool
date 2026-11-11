@@ -77,7 +77,7 @@ def capture_row(row,*,root=ROOT):
     """Called before saving the model tracker; does not modify its selected lines."""
     if row.get('Model_Stats_Season')!='2026-2027':return []
     if str(row.get('Roster_Watch','')).strip().lower() in ('true','1'):return []
-    from goal_moves_current import goals_moves
+    from goal_card_routes import records_for as goals_moves
     from assist_moves_current import assists_moves
     from sog_moves_current import sog_moves
     from sog_profiles_2026 import profile_moves

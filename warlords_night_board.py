@@ -21,6 +21,7 @@ from assist_routes_2026 import assist_display_tier, assist_display_name
 from points_moves_current import best_move as current_points_best, display_moves as current_points_display, prepare_row as prepare_points_row, points_moves as current_points_moves
 from pp_assist_beta import assist_ppp_beta, beta_summary, beta_details, BETA_CSS
 from goal_return_monitor import return_panel as goal_return_panel, RETURN_CSS as GOAL_RETURN_CSS
+from goal_card_routes import records_for as goal_card_records, display_moves as goal_family_display, inspect_groups as goal_inspect_groups
 from assist_return_monitor import return_panel as assist_return_panel
 from points_return_monitor import return_panel as points_return_panel, original_caption as points_original_caption
 from special_return_monitor import sog_return_panel
@@ -410,6 +411,8 @@ def _baseline_rule(row, market, line):
 
 def _display_moves(moves, market, line):
     """Keep Points 1.5 cards focused without changing saved move records."""
+    if market == 'Goal' and line == .5:
+        return goal_family_display(moves, _move_rank)
     if market=='SOG' and line==2.5:
         return sog_profile_display(moves,_move_rank)
     if market == "Points" and line in (0.5, 1.5):
@@ -456,6 +459,7 @@ def rank_warlords(frame: pd.DataFrame) -> dict[str, list[dict]]:
         if not _value(row, "Player"):
             continue
         active = fired_moves(row)
+        active['Goal'] = goal_card_records(row)
         for role, market, _, _ in CLASSES:
             moves = active[market]
             line, odds, book = _line_price(row, market)
@@ -546,6 +550,8 @@ def rank_priced_slate(frame: pd.DataFrame) -> dict[str, list[dict]]:
         team = str(_value(row, "Team") or "").strip()
         watch = str(row.get("Roster_Watch", "")).strip().casefold() in {"true", "1"}
         active = {market: [] for _, market, *_ in CLASSES} if watch else fired_moves(row)
+        if not watch:
+            active['Goal'] = goal_card_records(row)
         for role, market, _, _ in CLASSES:
             if row.get('_points15_alternate') is True and market != 'Points':
                 continue
@@ -738,8 +744,11 @@ def baseline_audit(frame: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame, pd.
                 continue
             for counts in (totals[label], bucket):
                 counts["Baseline"].add(identity)
-            named = any(move["kind"] not in {"STANCE", "CONTEXT"}
-                        for move in fired_moves(row)[market])
+            named_moves = (goal_family_display(goal_card_records(row), _move_rank)
+                           if market == 'Goal' else fired_moves(row)[market])
+            named = any(move["kind"] not in {"STANCE", "CONTEXT"} and not move.get('matchup_buff')
+                        for move in named_moves) if market == 'Goal' else any(
+                            move['kind'] not in {'STANCE', 'CONTEXT'} for move in named_moves)
             if named:
                 for counts in (totals[label], bucket):
                     counts["Named move"].add(identity)
@@ -1313,6 +1322,13 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
             fired = card.get("inspect_moves") or card.get("moves") or ([] if not move or baseline_only else [move])
             # Keep secondary Goal attacks in the full move list below.
             goal_signals = ""
+            if role == 'Carry':
+                buffs = [m for m in card.get('moves', []) if m.get('goal_visible_buff')]
+                if buffs:
+                    goal_signals = '<div class="wn-goal-signals">' + ''.join(
+                        f'<div class="wn-goal-signal"><strong>+ {_h(m["name"])}</strong>'
+                        f'<span>V1 {m["wins"]}/{m["picks"]} · {100*m["wins"]/m["picks"]:.1f}%</span></div>'
+                        for m in buffs) + '</div>'
             support_badges = ""
             assist_facts = _render_assist_facts(card, move) if role == "Support" else ""
             sog_facts = _render_sog_facts(card, move) if role == "Jungle" else ""
@@ -1362,6 +1378,7 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
                     pp_crit_note = (f'<div class="wn-crit-env">TEAM PP xGF/60 '
                                     f'{pp_rate:.2f} · PP UPGRADE GATE 8.3</div>')
             move_rows = []
+            goal_record_groups = {}
             for fired_move in fired:
                 fired_wins, fired_picks = int(fired_move["wins"]), int(fired_move["picks"])
                 fired_late_wins = int(fired_move["later_wins"])
@@ -1386,7 +1403,7 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
                 if fired_move.get("sample_book_be_pct") is not None:
                     later_text += (f' · sample BE {fired_move["sample_book_be_pct"]:.1f}%'
                                    f' · {fired_move["sample_players"]} players · {fired_move["sample_dates"]} slate dates')
-                move_rows.append(f'''<div class="wn-move-entry">
+                move_row = f'''<div class="wn-move-entry">
                   <div class="wn-move-title"><strong>{_h(fired_move["name"])}</strong>{grade_badges(fired_move)}<em>{_h(fired_label)}</em></div>
                   <div class="wn-move-record">{fired_wins}/{fired_picks} · {fired_pct:.1f}% <span>{later_text}</span></div>
                   <div class="wn-move-rule">{_h(fired_rule)}</div>
@@ -1394,7 +1411,17 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
                   {assist_return_panel(fired_move, compact=False) if role == 'Support' else ''}
                   {points_return_panel(fired_move, compact=False) if role == 'Tank' else ''}
                   {sog_return_panel(fired_move, compact=False) if role == 'Jungle' else ''}
-                </div>''')
+                </div>'''
+                if role == 'Carry':
+                    if fired_move.get('goal_retired'):
+                        move_row = move_row.replace('<div class="wn-move-rule">', '<div class="wn-move-rule"><b>RETIRED BOARD ENTRY · record preserved</b><br>', 1)
+                    group = next(iter(goal_inspect_groups([fired_move])))
+                    goal_record_groups.setdefault(group, []).append(move_row)
+                else:
+                    move_rows.append(move_row)
+            if role == 'Carry':
+                move_rows = [f'<details class="wn-goal-record-group"><summary>{_h(group)} ({len(items)})</summary>{"".join(items)}</details>'
+                             for group, items in goal_record_groups.items()]
             later_note = (f"MOVE {wins}/{picks}" +
                           (f" · MAR 15+ {late_wins}/{late_picks} ({late_pct:.1f}%)" if late_picks else
                            " · GOAL RECORD WITHOUT POINTS GATE" if card.get("goal_candidate") else "")
@@ -1423,7 +1450,8 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
             record_html = (f'<div class="wn-record"><strong>{pct:.1f}%</strong><span>{wins}/{picks}</span><em>{record_label}</em></div>'
                            if picks else '<div class="wn-record"><strong>SCOUT</strong><em>NO GOAL ATTACK</em></div>'
                            if role == "Carry" else '<div class="wn-record"><strong>BASE</strong><em>SCREEN ONLY</em></div>')
-            details_html = (f'<details class="wn-details"><summary>Full fired move list ({len(fired)})</summary>'
+            details_label = ('Move families &amp; preserved records' if role == 'Carry' else 'Full fired move list')
+            details_html = (f'<details class="wn-details"><summary>{details_label} ({len(fired)})</summary>'
                             f'<div class="wn-move-list">{"".join(move_rows)}</div></details>' if fired else
                             f'<div class="wn-details">{_h((points_tier or {}).get("rule") or card.get("move_block_reason") or card.get("baseline_rule") or (move or {}).get("rule") or "No tested move fired")}</div>')
             move_name = move["name"] if move else (
@@ -1479,7 +1507,7 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
         backdrop = f'<img class="wn-gorilla" src="{character_uri}" alt="" />' if character_uri else ""
         backdrop = _class_roster_art(role)
         count_label = "FEATURED" if cards and "confidence" in cards[0] else "PRICED"
-        lane_subtitle = ("GOAL ✦ 2026–27 MOVE % ✦ BOOK BREAK-EVEN % FROM POSTED ODDS"
+        lane_subtitle = ("GOAL ✦ 6 PLAYER FAMILIES ✦ 2 BUFF TYPES ✦ OTHER RECORDS IN INSPECT"
                          if role == "Carry" else
                          "POINTS ✦ CURRENT-SEASON MOVE % ✦ BOOK BREAK-EVEN %" if role == "Tank" else
                          f"{market.upper()} ✦ HISTORICAL MOVE % ✦ BOOK BREAK-EVEN % FROM POSTED ODDS")

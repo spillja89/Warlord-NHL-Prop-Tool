@@ -20,8 +20,9 @@ from sog_moves_current import is_current_sog25, sog_base_eligible
 from sog_confidence import sog_confidence_color, sog_confidence_style
 from points_moves_current import attach_points_moves, VERSION as POINTS_CURRENT_VERSION
 from sog_matrix import VERSION as SOG_MATRIX_VERSION
-from warlord_moves_2026 import best_move, points_moves, sog_moves, goals_moves as _goals_carry_moves, assists_moves as _assists_mapped_moves
-from goal_moves_current import goal_profile_score, goal_move_summary
+from warlord_moves_2026 import best_move, points_moves, sog_moves, assists_moves as _assists_mapped_moves
+from goal_moves_current import goal_profile_score
+from goal_card_routes import card_moves as _goals_carry_moves, summary as goal_move_summary, move_rank as _goal_family_rank
 from warlords_night_board import CLASSES, baseline_audit, rank_warlords, rank_priced_slate, featured_warlords, unfeatured_baselines, goal_display_cards, render_warlords, render_power_play_form, render_power_play_quotes_table, _character_uri
 from pp_card_context import attach_pp_card_context, VERSION as PP_CARD_CONTEXT_VERSION
 from player_form import compact_regular_log, summarize_form
@@ -1257,7 +1258,7 @@ def _probe_goals_best(r: dict) -> dict | None:
     ranked = [move for move in moves if not move["experimental"] and not move.get("matchup_buff")]
     if not ranked:
         return None
-    best = max(ranked, key=lambda m: (_adj_win(100*m["wins"]/m["picks"], m["picks"], k=20), m["picks"]))
+    best = max(ranked, key=_goal_family_rank)
     win = 100 * best["wins"] / best["picks"]
     return {"title": best["name"], "win": win, "n": best["picks"],
             "adj": _adj_win(win, best["picks"], k=20)}
@@ -2636,7 +2637,7 @@ COLUMN_HELP = {
     "Goal_Attack": "Highest-ranked current-season Goal attack fired by this player's saved pregame stats. A blank means no attack fired.",
     "Goal_Attack_Record": "Goals/plays for the displayed attack level in the saved 2026-27 research sample. This is not tonight's probability.",
     "Goal_Attack_Sample_BE": "Mean posted-price break-even percentage in the selected attack's historical sample. Compare separately with today's price; this is not a predicted edge.",
-    "Goal_All_Attacks": "Every player attack that fires, each with its own historical record. These samples overlap and must not be added together.",
+    "Goal_All_Attacks": "Approved primary Goal families. Other qualified profiles and levels retain their exact records in Inspect; overlapping samples must not be added together.",
     "Goal_Crits": "Every fired Goal crit, evaluated directly from the StarScore/drought/TOI81 parent. No confidence or recent-xG gate is inherited.",
     "Goal_Buffs": "Every fired environment buff with its parent special and exact historical record. Buffs require current-season team stats and never act as player entry gates.",
     "Drought_PPP": "Consecutive completed games without a credited power-play point. On the StarScore/TOI20 path, ≥1 unlocks Runic Barrage I and ≥2 unlocks II. Only the highest level displays; its record is the complete historical ≥ threshold sample.",
