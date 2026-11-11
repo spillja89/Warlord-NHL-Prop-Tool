@@ -2638,9 +2638,9 @@ COLUMN_HELP = {
     "Goal_Attack_Record": "Goals/plays for the displayed attack level in the saved 2026-27 research sample. This is not tonight's probability.",
     "Goal_Attack_Sample_BE": "Mean posted-price break-even percentage in the selected attack's historical sample. Compare separately with today's price; this is not a predicted edge.",
     "Goal_All_Attacks": "Approved primary Goal families. Other qualified profiles and levels retain their exact records in Inspect; overlapping samples must not be added together.",
-    "Goal_Crits": "Every fired Goal crit, evaluated directly from the StarScore/drought/TOI81 parent. No confidence or recent-xG gate is inherited.",
-    "Goal_Buffs": "Every fired environment buff with its parent special and exact historical record. Buffs require current-season team stats and never act as player entry gates.",
-    "Drought_PPP": "Consecutive completed games without a credited power-play point. On the StarScore/TOI20 path, ≥1 unlocks Runic Barrage I and ≥2 unlocks II. Only the highest level displays; its record is the complete historical ≥ threshold sample.",
+    "Goal_Crits": "Primary Goal crit family. Other qualified crit profiles retain their exact rules and records in Inspect; no recent-xG gate is inherited by star-route profiles.",
+    "Goal_Buffs": "Strongest matching exact parent record for each visible buff type: Power Surge and Barrage. Other matchup records remain in Inspect. Buffs never admit a player by themselves.",
+    "Drought_PPP": "Consecutive completed games without a credited power-play point. On the StarScore/TOI20 path, ≥1 admits Runic Barrage I. The ≥2 level remains in Inspect with its own record. Broad Star Barrage is retired as a board entry.",
     # Assists
     "PP_PROOF": "PP Proof combines PP usage, observed assist production, and matchup. It is a heuristic, not an expected-assists model.",
     "iXA%": "Legacy name: percentile of observed assists (primary + secondary) among available skaters. The current MoneyPuck feed has no expected-assists field; totals also depend on games played.",
