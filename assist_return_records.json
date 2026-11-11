@@ -1,5 +1,5 @@
 {
-  "version": "assist-returns-2026-11-09-v1+graded-through-2026-11-09",
+  "version": "assist-returns-2026-11-09-v1+graded-through-2026-11-09+graded-through-2026-11-09",
   "full_from": "2026-10-13",
   "full_through": "2026-11-09",
   "previous_through": "2026-11-02",
@@ -935,6 +935,6 @@
   "move_version_label": "Moves V1",
   "wired_on": "2026-11-03",
   "auto_update_version": "card-return-tracking-2026-11-10-v1",
-  "seed_version": "card-return-seed-2026-11-08-v1",
-  "baseline_record_version": "assist-returns-2026-11-09-v1"
+  "seed_version": "card-return-seed-2026-11-08-v1-sog-v2-added-2026-11-10",
+  "baseline_record_version": "assist-returns-2026-11-09-v1+graded-through-2026-11-09"
 }
