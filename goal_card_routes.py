@@ -14,19 +14,28 @@ def buffs_for_attack(moves,attack):
     return [m for m in moves if m.get('goal_visible_buff')
             and m.get('goal_parent')==str((attack or {}).get('id','')).removeprefix('goal_v2:')]
 
+def player_route_family(move):
+    if not move.get('matchup_buff'):return move.get('goal_family')
+    return next((s['family'] for s in catalog()['moves']
+                 if s['id']==move.get('goal_parent') and s['kind']=='player_attack'),None)
+
 def move_rank(move):
     from move_return_grades import grade_rank,stable_identity
     n=int(move['picks'])
-    if move.get('matchup_buff'):
+    if move.get('matchup_buff') and not move.get('goal_v2'):
         rank=grade_rank(move)
         return (-1,False,rank[0] if rank else 0,rank[2] if rank else move['wins']/n,rank[3] if rank else n,stable_identity(move))
     return grade_rank(move) or (0,False,move['wins']/n if n else -1,n,0,stable_identity(move))
 
 def display_moves(moves,rank=move_rank):
     selected=OrderedDict()
-    for m in sorted(moves,key=move_rank,reverse=True):
+    for m in sorted(moves,key=rank,reverse=True):
         if m.get('goal_v2'):selected.setdefault((bool(m.get('matchup_buff')),m['goal_family']),m)
     return list(selected.values()) if any(m.get('goal_primary') for m in selected.values()) else []
+
+def best_move(moves):
+    """A player route admits the card; the best qualified complete rule leads it."""
+    return max(display_moves(moves),key=move_rank,default=None)
 
 def inspect_records_for(row):
     from goal_card_routes_v1 import records_for as old_records
@@ -47,7 +56,7 @@ def inspect_groups(moves):
 
 def summary(moves):
     visible=display_moves(moves);attacks=sorted((m for m in visible if m.get('goal_primary')),key=move_rank,reverse=True)
-    best=attacks[0] if attacks else None
+    best=best_move(moves)
     def record(m):return f"{m['wins']}/{m['picks']} · {100*m['wins']/m['picks']:.1f}%"
     def entries(ms):return '\n'.join(f"{m['name']} · {record(m)}" for m in ms) or '—'
     return {'Goal_Attack':best['name'] if best else '—','Goal_Attack_Record':record(best) if best else '—',

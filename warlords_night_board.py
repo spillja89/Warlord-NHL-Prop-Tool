@@ -24,6 +24,7 @@ from pp_assist_beta import assist_ppp_beta, beta_summary, beta_details, BETA_CSS
 from goal_return_monitor import return_panel as goal_return_panel, RETURN_CSS as GOAL_RETURN_CSS
 from goal_card_routes import records_for as goal_card_records, display_moves as goal_family_display, inspect_groups as goal_inspect_groups, inspect_records_for as goal_inspect_records
 from goal_card_routes import parent_attack_name as goal_buff_parent_name, buffs_for_attack as goal_buffs_for_attack
+from goal_card_routes import best_move as goal_best_move, move_rank as goal_move_rank, player_route_family as goal_player_route_family
 from assist_return_monitor import return_panel as assist_return_panel
 from points_return_monitor import return_panel as points_return_panel, original_caption as points_original_caption
 from special_return_monitor import sog_return_panel
@@ -195,7 +196,7 @@ def _class_identity(role, card, move):
             return 'Panda', 'Warden'
         return 'Gorilla', 'Berserker'
     if (move or {}).get("goal_v2"):
-        return {"A":("Gorilla","Ravager"),"F":("Chimp","Reaper"),"P":("Panda","Executioner"),"X":("Chimp","Reaper"),"G":("Gorilla","Ravager"),"S":("Panda","Executioner")}.get(move.get("goal_family"),("Gorilla","Ravager"))
+        return {"A":("Gorilla","Ravager"),"F":("Chimp","Reaper"),"P":("Panda","Executioner"),"X":("Chimp","Reaper"),"G":("Gorilla","Ravager"),"S":("Panda","Executioner")}.get(goal_player_route_family(move),("Gorilla","Ravager"))
     text = str((move or {}).get('name', ''))
     if (move or {}).get('crit') or any(word in text for word in ('Reaper', 'Measured', 'Creator', 'Controlled', 'Patient')):
         return 'Chimp', 'Reaper'
@@ -386,6 +387,8 @@ def _price_comparison(row, market, line, odds):
 
 
 def _move_rank(move):
+    if move.get('goal_v2'):
+        return goal_move_rank(move)
     wins, picks = int(move["wins"]), int(move["picks"])
     later_wins, later_picks = int(move["later_wins"]), int(move["later_picks"])
     if move.get("matchup_buff"):
@@ -491,7 +494,7 @@ def rank_warlords(frame: pd.DataFrame) -> dict[str, list[dict]]:
                         "wins": 0, "picks": 0, "later_wins": 0, "later_picks": 0}
             else:
                 attacks = [move for move in moves if move["kind"] != "CONTEXT" and not move.get("matchup_buff")]
-                move = max(attacks or moves, key=_move_rank)
+                move = goal_best_move(moves) if market == 'Goal' else max(attacks or moves, key=_move_rank)
             player = str(row["Player"]).strip()
             team = str(_value(row, "Team") or "").strip()
             key = (team.casefold(), player.casefold())
@@ -576,7 +579,7 @@ def rank_priced_slate(frame: pd.DataFrame) -> dict[str, list[dict]]:
             tracked_moves = active[market]
             moves = _display_moves(tracked_moves, market, line)
             attacks = [move for move in moves if move["kind"] != "CONTEXT" and not move.get("matchup_buff")]
-            best = max(attacks or moves, key=_move_rank) if moves else None
+            best = (goal_best_move(moves) if market == 'Goal' else max(attacks or moves, key=_move_rank)) if moves else None
             baseline = None if watch else _baseline_rule(row, market, line)
             current_points_tier = points_current_tier(row, line, baseline) if market == "Points" else None
             confidence = _number(row.get(f"Conf_{market}"))
@@ -703,7 +706,7 @@ def goal_display_cards(cards: list[dict]) -> list[dict]:
                    if int(move["picks"]) > 0]
         if not attacks:
             continue
-        eligible.append({**card, "move": max(attacks, key=_move_rank),
+        eligible.append({**card, "move": goal_best_move(card.get('moves',[])),
                          "baseline_only": False})
     return sorted(eligible, key=lambda card: (
         card["move"] is not None,
@@ -1256,6 +1259,8 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
                 status = support_tier["label"]
             if role == "Jungle" and move and move.get("empowered"):
                 status = "EMPOWERED"
+            if role == 'Carry' and move and move.get('goal_v2') and move.get('matchup_buff'):
+                status = 'BUFFED ATTACK'
             sample = " · SMALL SAMPLE" if 0 < picks < 30 else ""
             line = f"OVER {card['line']:g} {market.upper()}" if card["line"] is not None else market.upper()
             matchup = card["game"] or card["team"]
@@ -1276,6 +1281,8 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
                                       f'<span>Routes: {_h(" · ".join(route_labels))}</span></div>')
             if role != 'Support':
                 support_route_note = (f'<div class="wn-support-route"><b>{_h(animal + " · " + character_variant)}</b></div>')
+                if role == 'Carry' and move and move.get('goal_v2') and move.get('matchup_buff'):
+                    support_route_note += f'<div class="wn-support-route"><span>Route: {_h(goal_buff_parent_name(move))} + {_h(move["name"])}</span></div>'
             name_backdrop = (f'<img class="wn-unit-ghost" src="{character_uri}" alt="" aria-hidden="true" />'
                              if character_uri else "")
             price = _odds(card["odds"])
@@ -1337,7 +1344,7 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
             # Keep secondary Goal attacks in the full move list below.
             goal_signals = ""
             if role == 'Carry':
-                buffs = [m for m in card.get('moves', []) if m.get('goal_visible_buff')]
+                buffs = [m for m in card.get('moves', []) if m.get('goal_visible_buff') and m.get('id') != (move or {}).get('id')]
                 if buffs:
                     goal_signals = ('<div class="wn-assist-sample">BUFF RECORDS · NAMED ATTACK + MATCHUP</div>'
                                     if move.get('goal_v2') else '') + '<div class="wn-goal-signals">' + ''.join(
