@@ -1127,6 +1127,10 @@ def render_power_play_form(card):
 def _character_uri(role: str, variant: str = "") -> str:
     """Inline small artwork so class cards render behind Cloud's app proxy."""
     image = Path(__file__).parent / "static" / "characters" / f"{role.lower()}-gorilla-v2.webp"
+    if role == "Support":
+        candidate = image.parent / "support-gorilla-v3.webp"
+        if candidate.is_file():
+            image = candidate
     if role == "Support" and variant in {"Runesmith", "Oracle + Runesmith", "Stormcaller"}:
         filename = ("support-chimp-stormcaller-v1.webp" if variant == "Stormcaller"
                     else "support-orangutan-runesmith-v1.webp")
