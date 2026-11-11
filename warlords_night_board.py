@@ -23,6 +23,7 @@ from points_moves_current import best_move as current_points_best, display_moves
 from pp_assist_beta import assist_ppp_beta, beta_summary, beta_details, BETA_CSS
 from goal_return_monitor import return_panel as goal_return_panel, RETURN_CSS as GOAL_RETURN_CSS
 from goal_card_routes import records_for as goal_card_records, display_moves as goal_family_display, inspect_groups as goal_inspect_groups, inspect_records_for as goal_inspect_records
+from goal_card_routes import parent_attack_name as goal_buff_parent_name, buffs_for_attack as goal_buffs_for_attack
 from assist_return_monitor import return_panel as assist_return_panel
 from points_return_monitor import return_panel as points_return_panel, original_caption as points_original_caption
 from special_return_monitor import sog_return_panel
@@ -156,7 +157,7 @@ def _render_goal_facts(card, move):
     if (move or {}).get('goal_v2'):
         for field,op,cut in move.get('all_checks',[]):checks[field]=(op,cut)
         checks.update(Pregame_xG_L5_per_game=('>=',.52),Player_Log_L5_TOI_per_game=('>=',18.8))
-        for buff in card.get('moves',[]):
+        for buff in goal_buffs_for_attack(card.get('moves',[]),move):
             if buff.get('goal_visible_buff'):
                 for field,op,cut in buff.get('checks',[]):
                     if field.startswith(('NHL_','Team_')):checks[field]=(op,cut)
@@ -1338,8 +1339,9 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
             if role == 'Carry':
                 buffs = [m for m in card.get('moves', []) if m.get('goal_visible_buff')]
                 if buffs:
-                    goal_signals = '<div class="wn-goal-signals">' + ''.join(
-                        f'<div class="wn-goal-signal"><strong>+ {_h(m["name"])}</strong>'
+                    goal_signals = ('<div class="wn-assist-sample">BUFF RECORDS · NAMED ATTACK + MATCHUP</div>'
+                                    if move.get('goal_v2') else '') + '<div class="wn-goal-signals">' + ''.join(
+                        f'<div class="wn-goal-signal"><strong>{_h(goal_buff_parent_name(m)) + " + " if m.get("goal_v2") else "+ "}{_h(m["name"])}</strong>'
                         f'<span>{"V2" if m.get("goal_v2") else "V1"} {m["wins"]}/{m["picks"]} · {100*m["wins"]/m["picks"]:.1f}%</span></div>'
                         for m in buffs) + '</div>'
             support_badges = ""

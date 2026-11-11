@@ -1,9 +1,18 @@
 """Approved Goal V2 board; immutable V1 records remain separately in Inspect."""
 from collections import OrderedDict
-from goal_routes_v2 import records_for, VERSION
+from goal_routes_v2 import records_for, VERSION, catalog
 
 GROUP_NAMES={'A':'Creator Fade · base attack','F':'Reaper’s Return · finishing','P':'Runic Barrage · PP shooting',
  'X':'Measured Strike · levels','G':'Controlled Strike · goal pace','S':'Predator’s Mark · scoring share'}
+
+def parent_attack_name(move):
+    """Name the exact attack whose population produced a buff's record."""
+    return next((s['name'] for s in catalog()['moves']
+                 if s['id']==move.get('goal_parent') and s['kind']=='player_attack'), '')
+
+def buffs_for_attack(moves,attack):
+    return [m for m in moves if m.get('goal_visible_buff')
+            and m.get('goal_parent')==str((attack or {}).get('id','')).removeprefix('goal_v2:')]
 
 def move_rank(move):
     from move_return_grades import grade_rank,stable_identity
@@ -31,7 +40,8 @@ def inspect_groups(moves):
     for m in moves:
         family=m.get('goal_family')
         name=('Archived V1 · prior rules and returns' if m.get('goal_archived') else
-              'V2 buffs · exact player-parent records' if m.get('matchup_buff') else GROUP_NAMES.get(family,'Other Goal records'))
+              f'V2 buffs · {parent_attack_name(m)}' if m.get('goal_v2') and m.get('matchup_buff') else
+              'V1 buffs · exact player-parent records' if m.get('matchup_buff') else GROUP_NAMES.get(family,'Other Goal records'))
         groups.setdefault(name,[]).append(m)
     return groups
 
