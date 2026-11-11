@@ -16,12 +16,13 @@ from sog_moves_current import is_current_sog25, sog_base_eligible, pk_duration_s
 from sog_profiles_2026 import profile_values as sog_profile_values, display_moves as sog_profile_display
 from player_availability import is_unavailable
 from player_form import summarize_form
+from goal_routes_v2 import profile_values as goal_v2_values
 from points15_research import context as points15_research_context
 from assist_routes_2026 import assist_display_tier, assist_display_name
 from points_moves_current import best_move as current_points_best, display_moves as current_points_display, prepare_row as prepare_points_row, points_moves as current_points_moves
 from pp_assist_beta import assist_ppp_beta, beta_summary, beta_details, BETA_CSS
 from goal_return_monitor import return_panel as goal_return_panel, RETURN_CSS as GOAL_RETURN_CSS
-from goal_card_routes import records_for as goal_card_records, display_moves as goal_family_display, inspect_groups as goal_inspect_groups
+from goal_card_routes import records_for as goal_card_records, display_moves as goal_family_display, inspect_groups as goal_inspect_groups, inspect_records_for as goal_inspect_records
 from assist_return_monitor import return_panel as assist_return_panel
 from points_return_monitor import return_panel as points_return_panel, original_caption as points_original_caption
 from special_return_monitor import sog_return_panel
@@ -51,6 +52,8 @@ def _value(row, *keys):
             return value
     return None
 
+
+_GOAL_V2_LABELS = {'Pregame_xG_L5_per_game': 'L5 individual xG/game', 'Player_Log_L5_TOI_per_game': 'L5 actual ice time min/game', 'Player_Log_L10_Shooting_pct': 'L10 shooting %', 'Player_Log_L20_Goal_fraction_pct': 'L20 goal share of points %', 'Player_Rebuilt_Gap_G10': 'Saved10-game goal-pace gap', 'L20_A': 'Assists L20', 'PP_SOG60': 'Individual PP SOG/60', 'i5v5_xG60': 'Individual5v5 xG/60', 'NHL_Opp_PP_L5_O_PG': 'Opp L5 earned PPO/game', 'NHL_Opp_PP_Season_SecondsPerOpportunity': 'Opp season PP seconds/opportunity', 'NHL_Team_PP_Season_G60': 'Team actual season PP goals/60', 'NHL_Opp_PP_L10_Time_PG': 'Opp L10 PP time/game', 'NHL_Team_PK_L10_SecondsPerOpportunity': 'Team L10 PK seconds/opportunity', 'NHL_Team_SA_Season_PG': 'Team season SOG allowed/game', 'NHL_Opp_SA_L5_PG': 'Opp L5 SOG allowed/game'}
 
 _CARD_LABELS = {
     'Conf_Points': 'Points profile confidence', 'Conf_Goal': 'Goal profile confidence',
@@ -111,8 +114,8 @@ def _card_usage_panel(values):
             f'Team PP time <b>{fmt("team_pp_share", "%")}</b></div>')
 
 
-def _fact_line(field, value, op=None, cutoff=None):
-    label = _CARD_LABELS.get(field, field.replace('_', ' '))
+def _fact_line(field, value, op=None, cutoff=None, *, goal_v2=False):
+    label = (_GOAL_V2_LABELS if goal_v2 else {}).get(field, _CARD_LABELS.get(field, field.replace('_', ' ')))
     value = _number(value)
     if value is None:
         actual = 'Unavailable'
@@ -150,9 +153,17 @@ def _render_goal_facts(card, move):
         if found:
             checks[field] = (found[1], float(found[2]))
     profile_fields = ['iXG%', 'StarScore', 'TOI_per_game', 'ShotIntent', 'ShotIntent_Pct', 'Avg5_SOG', 'L10_S', 'L10_G', 'Drought_G', 'Drought_PPP', 'Goal_mu', 'Points_mu']
-    profile = '<br>'.join(_fact_line(field, values.get(field), *checks.get(field, (None, None)))
+    if (move or {}).get('goal_v2'):
+        for field,op,cut in move.get('all_checks',[]):checks[field]=(op,cut)
+        checks.update(Pregame_xG_L5_per_game=('>=',.52),Player_Log_L5_TOI_per_game=('>=',18.8))
+        for buff in card.get('moves',[]):
+            if buff.get('goal_visible_buff'):
+                for field,op,cut in buff.get('checks',[]):
+                    if field.startswith(('NHL_','Team_')):checks[field]=(op,cut)
+        profile_fields=['Pregame_xG_L5_per_game','Player_Log_L5_TOI_per_game']+[f for f in checks if not f.startswith(('NHL_','Team_')) and f not in {'Pregame_xG_L5_per_game','Player_Log_L5_TOI_per_game'}]
+    profile = '<br>'.join(_fact_line(field, values.get(field), *checks.get(field, (None, None)), goal_v2=bool((move or {}).get('goal_v2')))
                           for field in profile_fields if values.get(field) is not None)
-    environment = '<br>'.join(_fact_line(field, values.get(field), op, cut)
+    environment = '<br>'.join(_fact_line(field, values.get(field), op, cut, goal_v2=bool((move or {}).get('goal_v2')))
                               for field, (op, cut) in checks.items()
                               if field.startswith(('NHL_', 'Opp_', 'opp_', 'Team_', 'team_')))
     environment = environment or 'Move-specific matchup requirements are listed in the full fired move list.'
@@ -182,6 +193,8 @@ def _class_identity(role, card, move):
         if (move or {}).get('matchup_buff'):
             return 'Panda', 'Warden'
         return 'Gorilla', 'Berserker'
+    if (move or {}).get("goal_v2"):
+        return {"A":("Gorilla","Ravager"),"F":("Chimp","Reaper"),"P":("Panda","Executioner"),"X":("Chimp","Reaper"),"G":("Gorilla","Ravager"),"S":("Panda","Executioner")}.get(move.get("goal_family"),("Gorilla","Ravager"))
     text = str((move or {}).get('name', ''))
     if (move or {}).get('crit') or any(word in text for word in ('Reaper', 'Measured', 'Creator', 'Controlled', 'Patient')):
         return 'Chimp', 'Reaper'
@@ -495,8 +508,8 @@ def rank_warlords(frame: pd.DataFrame) -> dict[str, list[dict]]:
                 "tonight_goal_xg": _number(row.get("Tonight_Goal_xG")) if market == "Goal" else None,
                 "tonight_goal_pct": _number(row.get("Tonight_Goal_1plus_pct")) if market == "Goal" else None,
                 "tonight_goal_status": str(_value(row, "Tonight_Goal_Status") or "") if market == "Goal" else "",
-                "goal_profile": {field: _number(row.get(field)) for field in
-                                 ("iXG%", "StarScore", "Drought_G", "Drought_PPP", "TOI_Pct", "ShotIntent", "ShotIntent_Pct", "Avg5_SOG", "L10_G", "L10_S", "TOI_per_game", "Goal_mu", "Points_mu")}
+                "goal_profile": {**goal_v2_values(row), **{field: _number(row.get(field)) for field in
+                                 ("iXG%", "StarScore", "Drought_G", "Drought_PPP", "TOI_Pct", "ShotIntent", "ShotIntent_Pct", "Avg5_SOG", "L10_G", "L10_S", "TOI_per_game", "Goal_mu", "Points_mu")}}
                                 if market == "Goal" else None,
                 "tonight_mu": _number(row.get(f"Tonight_{market}_mu")) if
                 row.get(f"Tonight_{market}_Version") == "2026-10-19-research-v3" else None,
@@ -515,7 +528,7 @@ def rank_warlords(frame: pd.DataFrame) -> dict[str, list[dict]]:
                 "goalie_status": str(_value(row, "Opp_Goalie_Status") or "Unknown"),
                 "lineup_status": str(_value(row, "Lineup_Status") or "Lineup pending"),
                 "baseline_only": baseline_only,
-                "inspect_moves": _inspect_moves(active[market], market, line),
+                "inspect_moves": _inspect_moves(goal_inspect_records(row) if market == "Goal" else active[market], market, line),
                 "move": move, "moves": sorted(moves, key=lambda item: (
                     item["kind"] != "STANCE", _move_rank(item)), reverse=True),
                 "move_count": len(moves),
@@ -589,8 +602,8 @@ def rank_priced_slate(frame: pd.DataFrame) -> dict[str, list[dict]]:
                 "tonight_goal_xg": _number(row.get("Tonight_Goal_xG")) if market == "Goal" else None,
                 "tonight_goal_pct": _number(row.get("Tonight_Goal_1plus_pct")) if market == "Goal" else None,
                 "tonight_goal_status": str(_value(row, "Tonight_Goal_Status") or "") if market == "Goal" else "",
-                "goal_profile": {field: _number(row.get(field)) for field in
-                                 ("iXG%", "StarScore", "Drought_G", "Drought_PPP", "TOI_Pct", "ShotIntent", "ShotIntent_Pct", "Avg5_SOG", "L10_G", "L10_S", "TOI_per_game", "Goal_mu", "Points_mu")}
+                "goal_profile": {**goal_v2_values(row), **{field: _number(row.get(field)) for field in
+                                 ("iXG%", "StarScore", "Drought_G", "Drought_PPP", "TOI_Pct", "ShotIntent", "ShotIntent_Pct", "Avg5_SOG", "L10_G", "L10_S", "TOI_per_game", "Goal_mu", "Points_mu")}}
                                 if market == "Goal" else None,
                 "tonight_mu": _number(row.get(f"Tonight_{market}_mu")) if
                 row.get(f"Tonight_{market}_Version") == "2026-10-19-research-v3" else None,
@@ -615,7 +628,7 @@ def rank_priced_slate(frame: pd.DataFrame) -> dict[str, list[dict]]:
                 "goalie_status": str(_value(row, "Opp_Goalie_Status") or "Unknown"),
                 "lineup_status": str(_value(row, "Lineup_Status") or "Lineup pending"),
                 "move": best,
-                "inspect_moves": _inspect_moves(tracked_moves, market, line),
+                "inspect_moves": _inspect_moves(goal_inspect_records(row) if market == "Goal" else tracked_moves, market, line),
                 "moves": sorted(moves, key=lambda item: (
                     item["kind"] != "STANCE", _move_rank(item)), reverse=True),
                 "move_count": len(moves),
@@ -1163,7 +1176,7 @@ def _card_quick_summary(role, card):
     values = card.get('role_context') or {}
     if role == 'Carry':
         values = {**values, **(card.get('goal_profile') or {})}
-        fields = [('iXG%', 'iXG rank', 0), ('ShotIntent', 'Shot intent', 2), ('Goal_mu', 'Goal μ', 2)]
+        fields = [('Pregame_xG_L5_per_game', 'L5 xG/g', 2), ('Player_Log_L5_TOI_per_game', 'L5 TOI', 1), ('Player_Log_L10_Shooting_pct', 'L10 shooting %', 1)] if (card.get('move') or {}).get('goal_v2') else [('iXG%', 'iXG rank', 0), ('ShotIntent', 'Shot intent', 2), ('Goal_mu', 'Goal μ', 2)]
     elif role == 'Support':
         values = {**values, **(card.get('assist_context') or {})}
         fields = [('iXA%', 'Assist rank', 0), ('Assists_mu', 'Assist μ', 2), ('PP_TOI_per_game', 'PP min/g', 1)]
@@ -1327,7 +1340,7 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
                 if buffs:
                     goal_signals = '<div class="wn-goal-signals">' + ''.join(
                         f'<div class="wn-goal-signal"><strong>+ {_h(m["name"])}</strong>'
-                        f'<span>V1 {m["wins"]}/{m["picks"]} · {100*m["wins"]/m["picks"]:.1f}%</span></div>'
+                        f'<span>{"V2" if m.get("goal_v2") else "V1"} {m["wins"]}/{m["picks"]} · {100*m["wins"]/m["picks"]:.1f}%</span></div>'
                         for m in buffs) + '</div>'
             support_badges = ""
             assist_facts = _render_assist_facts(card, move) if role == "Support" else ""
@@ -1438,7 +1451,7 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
             if points_tier:
                 record_label = "2026–27 REG MOVE"
             if role == 'Carry' and goal_return_panel(move):
-                record_label = "V1 MOVE %"
+                record_label = "V2 MOVE %" if move.get("goal_v2") else "V1 MOVE %"
             if role == 'Support' and assist_return_panel(move):
                 record_label = "V1 MOVE %"
             if role == 'Tank' and points_original_caption(move):
@@ -1507,7 +1520,7 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
         backdrop = f'<img class="wn-gorilla" src="{character_uri}" alt="" />' if character_uri else ""
         backdrop = _class_roster_art(role)
         count_label = "FEATURED" if cards and "confidence" in cards[0] else "PRICED"
-        lane_subtitle = ("GOAL ✦ 6 PLAYER FAMILIES ✦ 2 BUFF TYPES ✦ OTHER RECORDS IN INSPECT"
+        lane_subtitle = ("GOALS V2 ✦ 6 PLAYER FAMILIES ✦ 8 LEVELS ✦ OPTIONAL BUFFS ✦ ARCHIVED V1 IN INSPECT"
                          if role == "Carry" else
                          "POINTS ✦ CURRENT-SEASON MOVE % ✦ BOOK BREAK-EVEN %" if role == "Tank" else
                          f"{market.upper()} ✦ HISTORICAL MOVE % ✦ BOOK BREAK-EVEN % FROM POSTED ODDS")

@@ -1,19 +1,14 @@
 {
   "version": "card-return-tracking-2026-11-10-v1",
-  "seed_version": "card-return-seed-2026-11-08-v1-sog-v2-added-2026-11-10",
+  "seed_version": "card-return-seed-2026-11-08-v1-sog-v2-added-2026-11-10-goals-v2-2026-11-11",
   "through": "2026-11-10",
-  "source_files": {
-    "2026-11-10": "ba9ed689b547b3abe4035ada3dae6a7106685d02446445aa1d4f363479099cee"
-  },
+  "source_files": {},
   "counts": {
-    "seed_outcomes_checked": 4667,
-    "new_memberships": 845,
-    "unsettled_rows": 28,
-    "noncurrent_rows": 1
+    "seed_outcomes_checked": 686
   },
-  "memberships": 21382,
+  "memberships": 16398,
   "V1_fixed": true,
   "rules_unchanged": true,
-  "generation": "2f3f6ff85b4f21610239e3cb7856f116b49743944bb3dcfb0f8cc0561f12c176",
-  "generated_utc": "2026-11-11T18:44:38.055964+00:00"
+  "generation": "0c48d8a6ca67433647f2cdd1101816e660173f5dbaef1cf1f612409c5157a63b",
+  "generated_utc": "2026-11-11T21:12:24.022088+00:00"
 }

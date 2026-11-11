@@ -9,19 +9,26 @@ def records():
     return load_records(Path(__file__).with_name('goal_return_records.json'))
 
 
+@lru_cache(maxsize=1)
+def archived_records():
+    data=json.loads(Path(__file__).with_name('goal_v1_return_records.json').read_text(encoding='utf-8'))
+    return {**data,'by_key':{r['key']:r for r in data['moves']}}
+
+def _data_for(move):return records() if move.get('goal_v2') else archived_records()
+
 def record_for(move):
     if not isinstance(move,dict) or move.get('market')!='Goal':return None
-    data=records()
+    data=_data_for(move)
     if move.get('kit_version')!=data.get('kit'):return None
-    if move.get('route_family')=='xg':
-        key=('xg:defense' if move.get('matchup_buff') else
-             f"xg:{move.get('research_name')}:{move.get('level')}:{bool(move.get('xg_boost'))}")
+    if move.get('goal_v2'):key=move.get('goal_record_key')
+    elif move.get('route_family')=='xg':
+        key=('xg:defense' if move.get('matchup_buff') else f"xg:{move.get('research_name')}:{move.get('level')}:{bool(move.get('xg_boost'))}")
     else:key=move.get('id')
     row=data.get('by_key',{}).get(key)
-    # Same names from another lane/record generation must never inherit returns.
     if not row or row['name']!=move.get('name') or row['rule']!=move.get('rule'):return None
     if (row['original_hits'],row['original_plays'])!=(move.get('wins'),move.get('picks')):return None
     return row
+
 
 def _date(value):
     month,day=value[5:7],int(value[8:10])
@@ -38,7 +45,7 @@ def _metric(stats):
 def return_panel(move, *, compact=True):
     row=record_for(move)
     if row is None:return ''
-    return render_return_panel(row,records(),compact=compact)
+    return render_return_panel(row,_data_for(move),compact=compact)
 
 
 def render_return_panel(row,data, *, compact=True):
@@ -49,7 +56,7 @@ def render_return_panel(row,data, *, compact=True):
         delta=full['roi']-prior['roi']
         arrow='↑' if delta>1e-9 else '↓' if delta<-1e-9 else '→'
         trend='up' if delta>1e-9 else 'down' if delta<-1e-9 else 'neutral'
-        comparison='base' if row.get('legacy') else 'V1'
+        comparison='base' if row.get('legacy') else 'V2' if data.get('kit')=='goal-2026-27-moves-v2-2026-11-11' else 'V1'
         change=f'{arrow} Total ROI {delta:+.1f} pp vs {comparison}'
         status='RECENT PROFIT' if recent['units']>0 else 'RECENT LOSS' if recent['units']<0 else 'RECENT FLAT'
         tone='gain' if recent['units']>0 else 'loss' if recent['units']<0 else 'flat'
@@ -67,6 +74,9 @@ def render_return_panel(row,data, *, compact=True):
             f'Previous record through {_date(data["previous_through"])}: '
             f'{prior["units"]:+.2f}u · {prior["roi"]:+.1f}% ROI. '
             'Flat 1u at saved pregame prices. Overlapping moves are separate records.</div>')
+    if data.get('kit')=='goal-2026-27-moves-v2-2026-11-11' and not recent['plays'] and not compact:
+        detail=('<div class="wn-gr-note">V2 research baseline: '+_date(data['full_from'])+'–'+_date(data['previous_through'])+
+                '. No new settled plays since wiring. Earlier research is not live V2 performance. Flat1u at saved pregame prices.</div>')
     return (f'<div class="wn-goal-returns" data-return-version="{escape(data["version"])}">'
             +version_note+
             f'<div class="wn-gr-box"><small>{escape(row.get("baseline_label") or ("BASE RECORD %" if row.get("legacy") else "V1 MOVE %"))}</small>{_metric(prior)}</div>'

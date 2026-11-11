@@ -22,6 +22,7 @@ from points_moves_current import attach_points_moves, VERSION as POINTS_CURRENT_
 from sog_matrix import VERSION as SOG_MATRIX_VERSION
 from warlord_moves_2026 import best_move, points_moves, sog_moves, assists_moves as _assists_mapped_moves
 from goal_moves_current import goal_profile_score
+from goal_routes_v2 import profile_values as goal_v2_values
 from goal_card_routes import card_moves as _goals_carry_moves, summary as goal_move_summary, move_rank as _goal_family_rank
 from warlords_night_board import CLASSES, baseline_audit, rank_warlords, rank_priced_slate, featured_warlords, unfeatured_baselines, goal_display_cards, render_warlords, render_power_play_form, render_power_play_quotes_table, _character_uri
 from pp_card_context import attach_pp_card_context, VERSION as PP_CARD_CONTEXT_VERSION
@@ -716,7 +717,7 @@ _ROLE_INFO = {
 # One description is reused by the prop headers, move gate, and Ledger.
 # Fired counts always come from warlord_moves_2026, never from this copy.
 _CLASS_RULES = {
-    "GOALS": {"role": "Carry", "market": "Goal", "entry": "Matrix_Goal Green · Goal 0.5", "note": "Three Goal paths: xG, StarScore/goal drought, and StarScore/TOI20. Star Barrage uses StarScore ≥84.5 + TOI/game ≥20 + L10 shots ≤39. PPP drought ≥1/≥2 adds the highest Runic Barrage level. All fired attacks, crits and buffs appear in the tracker."},
+    "GOALS": {"role": "Carry", "market": "Goal", "entry": "Matrix_Goal Green · Goal 0.5", "note": "Goals Moves V2: Green + Goal0.5 + L5 individualxG>=0.52 + L5actualTOI>=18.8; one of six player families must fire. No confidence gate. Optional buffs retain exact player-parent records; V1 stays archived in Inspect."},
     "ASSISTS": {"role": "Support", "market": "Assists", "entry": "Existing moves: Conf ≥81 · assist rank ≥95. New routes: Conf ≥80 · assist rank ≥94. Both require Green · Assists 0.5.", "note": "Existing moves remain active. New facilitator, PP and shot-share routes have separate records and enhanced levels. The new Crit requires both player routes plus team PP actual GF/60 ≥5.7 and opponent 5v5 HDCA/60 ≤2.2."},
     "POINTS": {"role": "Tank", "market": "Points", "entry": "Matrix_Points Green · current-season 0.5 kit at confidence77; 1.5 approved profiles at77/82 by route", "note": "The 0.5 and 1.5 lines have separate move trees."},
     "SOG": {"role": "Jungle", "market": "SOG", "entry": "SOG2.5 · Green · confidence ≥67 base · ≥71 stronger · opponent PK ≤104s/opportunity buff", "note": "Berserker Swipe → Berserker’s Rage. Paralysis adds the PK-duration buff; both upgrades unlock Assassin’s Overdrive. Current-season records: October13–November3. Green retains the original profile/Elite paths and adds remaining shot checks with iXG ≥60. Existing3.5 rules retain their original inputs."},
@@ -921,7 +922,7 @@ def _render_class_shortlist(frame: pd.DataFrame, role: str,
     if role == "Tank":
         watch = [card for card in watch if not card.get("points_current_tier")]
     if role == "Carry":
-        st.caption("Goal kit v6 · Three paths: xG; StarScore + goal drought; StarScore + TOI20. Star Barrage needs StarScore ≥84.5, TOI/game ≥20 and L10 shots ≤39, with no goal-drought, confidence or recent-xG gate. PPP drought adds Runic Barrage I at ≥1 or II at ≥2; only the highest level is shown. Attacks and matchup buffs keep separate records. Only players with a fired Goal attack receive cards.")
+        st.caption("Goals Moves V2 · six player families · eight levels · L5 individual xG ≥0.52 + L5 actual TOI ≥18.8 · no confidence gate. Optional buffs never admit a card; archived V1 records remain in Inspect.")
         st.html(render_warlords({"Carry": goal_cards}, limit=len(goal_cards),
                                 roles=("Carry",), show_hero=False))
         st.caption("Tonight research projection is a separate matchup-adjusted estimate. It is not the historical move % and does not affect Goal card selection. It is being graded before use as a betting edge.")
@@ -2638,9 +2639,9 @@ COLUMN_HELP = {
     "Goal_Attack_Record": "Goals/plays for the displayed attack level in the saved 2026-27 research sample. This is not tonight's probability.",
     "Goal_Attack_Sample_BE": "Mean posted-price break-even percentage in the selected attack's historical sample. Compare separately with today's price; this is not a predicted edge.",
     "Goal_All_Attacks": "Approved primary Goal families. Other qualified profiles and levels retain their exact records in Inspect; overlapping samples must not be added together.",
-    "Goal_Crits": "Primary Goal crit family. Other qualified crit profiles retain their exact rules and records in Inspect; no recent-xG gate is inherited by star-route profiles.",
-    "Goal_Buffs": "Strongest matching exact parent record for each visible buff type: Power Surge and Barrage. Other matchup records remain in Inspect. Buffs never admit a player by themselves.",
-    "Drought_PPP": "Consecutive completed games without a credited power-play point. On the StarScore/TOI20 path, ≥1 admits Runic Barrage I. The ≥2 level remains in Inspect with its own record. Broad Star Barrage is retired as a board entry.",
+    "Goal_Crits": "Goal V2 has no newly assigned Crit policy. Return grades use the existing S/A/B/Watch rules; no confidence gate is required.",
+    "Goal_Buffs": "Goal V2 optional buffs, each graded on its exact player-route parent. Strongest matching level per buff family; buffs never admit a player by themselves.",
+    "Drought_PPP": "Consecutive completed games without a credited power-play point. Archived V1 Runic levels used this; Goal V2 Runic Barrage uses individual PP shots/60 instead.",
     # Assists
     "PP_PROOF": "PP Proof combines PP usage, observed assist production, and matchup. It is a heuristic, not an expected-assists model.",
     "iXA%": "Legacy name: percentile of observed assists (primary + secondary) among available skaters. The current MoneyPuck feed has no expected-assists field; totals also depend on games played.",
@@ -2663,7 +2664,7 @@ COLUMN_HELP = {
     "REG_PRESSURE": "Visual pressure meter from Reg_Gap_P10 (text bar). Pops when >=2.5.",
     "REG_DROUGHT": "🎰 Jackpot badge when Points engine is READY and Drought_P ≥ 2 (amplifier; not a gate).",
 }
-COLUMN_LABELS = {
+COLUMN_LABELS = {'GoalV2_Player_Log_L5_TOI_per_game': 'L5 TOI min/g', 'GoalV2_Player_Log_L10_Shooting_pct': 'L10 shooting %', 'GoalV2_Player_Log_L20_Goal_fraction_pct': 'L20 goal share %', 'GoalV2_Player_Rebuilt_Gap_G10': 'Saved goal-pace gap', 'GoalV2_L20_A': 'Assists L20', 'GoalV2_PP_SOG60': 'Individual PP SOG/60', 'GoalV2_i5v5_xG60': 'Individual5v5 xG/60'} | {
     "SOG_Attack": "SOG attack",
     "SOG_Fired_Profile_Routes": "Matching shot routes",
     "SOG_Profile_Player_Log_L5_TOI_per_game": "L5 TOI min/g",
@@ -4909,7 +4910,7 @@ if source == "latest":
         st.caption("Odds check time was not recorded in this tracker. Refresh the slate for a timestamped quote snapshot.")
 
 if _card_return_status.get("through"):
-    st.caption("Move returns graded through **" + _card_return_status["through"] + "** · V1 fixed · totals and return tiers update after grading")
+    st.caption("Move returns graded through **" + _card_return_status["through"] + "** · version baselines fixed · totals and return tiers update after grading")
 
 if source == "latest" and "Injury_Reports_Count" in df.columns and not df.empty:
     reported = pd.to_numeric(df["Injury_Reports_Count"], errors="coerce").iloc[0]
@@ -6163,8 +6164,12 @@ elif page == "GOALS (0.5)":
     df_g["_goal_conf"] = safe_num(df_g, "Conf_Goal", 0)
     df_g = df_g.sort_values(["_goal_conf"], ascending=[False]).drop(columns=["_goal_conf"], errors="ignore")
     df_g["Green"] = to_bool_series(column_or(df_g, "Green_Goal", False)).map(lambda x: "🟢" if x else "")
+    st.caption("Goals Moves V2 · six player families · eight levels · no confidence gate · buffs are optional")
     goal_tracker = df_g.copy()
     goal_tracker["Goal_Profile"] = [goal_profile_score(row) for _, row in goal_tracker.iterrows()]
+    _goal_v2_values = [goal_v2_values(row) for _, row in goal_tracker.iterrows()]
+    for _field in ("Player_Log_L5_TOI_per_game", "Player_Log_L10_Shooting_pct", "Player_Log_L20_Goal_fraction_pct", "Player_Rebuilt_Gap_G10", "L20_A", "PP_SOG60", "i5v5_xG60"):
+        goal_tracker["GoalV2_" + _field] = [v.get(_field) for v in _goal_v2_values]
     goal_tracker_moves = [_goals_carry_moves(row) for _, row in goal_tracker.iterrows()]
     goal_tracker_summaries = [goal_move_summary(moves) for moves in goal_tracker_moves]
     for column in ("Goal_Attack", "Goal_Attack_Record", "Goal_Attack_Sample_BE",
@@ -6191,7 +6196,7 @@ elif page == "GOALS (0.5)":
         "Player", "Pos",
         "Tier_Tag",
         "Goal_Attack", "Goal_Attack_Record", "Goal_All_Attacks", "Goal_Crits", "Goal_Buffs",
-        "Goal_Attack_Sample_BE", "StarScore", "Drought_G", "Drought_PPP", "TOI_Pct", "TOI_per_game", "Goal_Profile",
+        "Goal_Attack_Sample_BE", "Pregame_xG_L5_per_game", "GoalV2_Player_Log_L5_TOI_per_game", "GoalV2_Player_Log_L10_Shooting_pct", "GoalV2_Player_Log_L20_Goal_fraction_pct", "GoalV2_Player_Rebuilt_Gap_G10", "GoalV2_L20_A", "GoalV2_PP_SOG60", "GoalV2_i5v5_xG60", "StarScore", "Drought_G", "Drought_PPP", "TOI_Pct", "TOI_per_game", "Goal_Profile",
         "L10_S", "ShotIntent", "Points_mu", "ShotIntent_Pct", "Avg5_SOG", "L10_G",
         "team_5v5_SF60", "Opp_PK_GA60", "Team_PP_xGF60", "Pregame_xG_L5_per_game",
 
@@ -6268,7 +6273,7 @@ elif page == "GOALS (0.5)":
     st.markdown("---")
 
     goal_cols = list(dict.fromkeys(goal_cols))
-    st.caption("Goal kit v6 · Three independent paths: xG, StarScore/goal drought, and StarScore/TOI20. Star Barrage has no recent-xG or goal-drought gate. Runic Barrage shows the highest PPP-drought level only. Each record uses its complete historical threshold sample, not today's probability. All attacks, crits and buffs appear separately.")
+    st.caption("Goals Moves V2 · six player families · eight levels · L5 individual xG ≥0.52 + L5 actual TOI ≥18.8 · no confidence gate. Optional buffs never admit a card; archived V1 records remain in Inspect.")
     show_table(goal_tracker, goal_cols, f"Goal tracker · {len(goal_tracker)} skaters")
 
 

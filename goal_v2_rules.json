@@ -1,0 +1,1147 @@
+{
+  "version": "goal-2026-27-moves-v2-2026-11-11",
+  "approved_on": "2026-11-11",
+  "common": "Goal 0.5 + Matrix_Goal Green + Pregame_xG_L5_per_game >= 0.52 + Player_Log_L5_TOI_per_game >= 18.8",
+  "moves": [
+    {
+      "id": "A",
+      "name": "Creator Fade",
+      "family": "A",
+      "kind": "player_attack",
+      "parent": "COMMON",
+      "display_kind": "BASE ATTACK",
+      "icon": "base.svg",
+      "level": 1,
+      "checks": [
+        [
+          "L20_A",
+          "<=",
+          7
+        ]
+      ],
+      "all_checks": [
+        [
+          "L20_A",
+          "<=",
+          7
+        ]
+      ],
+      "rule": "Goal 0.5 + Matrix_Goal Green + Pregame_xG_L5_per_game >= 0.52 + Player_Log_L5_TOI_per_game >= 18.8 + L20_A <= 7",
+      "record": {
+        "hits": 50,
+        "plays": 94,
+        "rate": 53.191489361702125,
+        "BE": 37.20426222243172,
+        "gap": 15.987227139270402,
+        "units": 42.26896965419901,
+        "ROI": 44.966988993828735,
+        "players": 28,
+        "dates": 22,
+        "games": 67,
+        "teams": 17,
+        "opponents": 31
+      },
+      "research_recent": {
+        "hits": 8,
+        "plays": 16,
+        "rate": 50.0,
+        "BE": 37.422588553605216,
+        "gap": 12.577411446394784,
+        "units": 4.23,
+        "ROI": 26.4375,
+        "players": 8,
+        "dates": 8,
+        "games": 15,
+        "teams": 8,
+        "opponents": 14
+      }
+    },
+    {
+      "id": "F",
+      "name": "Reaper\u2019s Return",
+      "family": "F",
+      "kind": "player_attack",
+      "parent": "COMMON",
+      "display_kind": "HEAVY ATTACK",
+      "icon": "fenrir_claw.svg",
+      "level": 1,
+      "checks": [
+        [
+          "Player_Log_L10_Shooting_pct",
+          ">=",
+          18.5
+        ]
+      ],
+      "all_checks": [
+        [
+          "Player_Log_L10_Shooting_pct",
+          ">=",
+          18.5
+        ]
+      ],
+      "rule": "Goal 0.5 + Matrix_Goal Green + Pregame_xG_L5_per_game >= 0.52 + Player_Log_L5_TOI_per_game >= 18.8 + Player_Log_L10_Shooting_pct >= 18.5",
+      "record": {
+        "hits": 32,
+        "plays": 51,
+        "rate": 62.745098039215684,
+        "BE": 40.32470954893832,
+        "gap": 22.42038849027736,
+        "units": 30.358317398774417,
+        "ROI": 59.52611254661651,
+        "players": 16,
+        "dates": 22,
+        "games": 47,
+        "teams": 12,
+        "opponents": 28
+      },
+      "research_recent": {
+        "hits": 10,
+        "plays": 16,
+        "rate": 62.5,
+        "BE": 43.062663022598784,
+        "gap": 19.437336977401216,
+        "units": 6.739347744575406,
+        "ROI": 42.12092340359629,
+        "players": 6,
+        "dates": 9,
+        "games": 16,
+        "teams": 6,
+        "opponents": 15
+      }
+    },
+    {
+      "id": "P",
+      "name": "Runic Barrage",
+      "family": "P",
+      "kind": "player_attack",
+      "parent": "COMMON",
+      "display_kind": "HEAVY ATTACK",
+      "icon": "smash.svg",
+      "level": 1,
+      "checks": [
+        [
+          "PP_SOG60",
+          ">=",
+          14.4
+        ]
+      ],
+      "all_checks": [
+        [
+          "PP_SOG60",
+          ">=",
+          14.4
+        ]
+      ],
+      "rule": "Goal 0.5 + Matrix_Goal Green + Pregame_xG_L5_per_game >= 0.52 + Player_Log_L5_TOI_per_game >= 18.8 + PP_SOG60 >= 14.4",
+      "record": {
+        "hits": 38,
+        "plays": 62,
+        "rate": 61.29032258064516,
+        "BE": 39.66004773736651,
+        "gap": 21.63027484327865,
+        "units": 35.30831739877442,
+        "ROI": 56.94889903028132,
+        "players": 18,
+        "dates": 21,
+        "games": 47,
+        "teams": 15,
+        "opponents": 24
+      },
+      "research_recent": {
+        "hits": 13,
+        "plays": 20,
+        "rate": 65.0,
+        "BE": 42.39023487208273,
+        "gap": 22.60976512791727,
+        "units": 9.089347744575406,
+        "ROI": 45.44673872287703,
+        "players": 9,
+        "dates": 9,
+        "games": 19,
+        "teams": 8,
+        "opponents": 16
+      }
+    },
+    {
+      "id": "X",
+      "name": "Measured Strike I",
+      "family": "X",
+      "kind": "player_attack",
+      "parent": "COMMON",
+      "display_kind": "HEAVY ATTACK",
+      "icon": "fenrir_claw.svg",
+      "level": 1,
+      "checks": [
+        [
+          "i5v5_xG60",
+          "<=",
+          1.03
+        ]
+      ],
+      "all_checks": [
+        [
+          "i5v5_xG60",
+          "<=",
+          1.03
+        ]
+      ],
+      "rule": "Goal 0.5 + Matrix_Goal Green + Pregame_xG_L5_per_game >= 0.52 + Player_Log_L5_TOI_per_game >= 18.8 + i5v5_xG60 <= 1.03",
+      "record": {
+        "hits": 37,
+        "plays": 61,
+        "rate": 60.65573770491803,
+        "BE": 38.73920942635808,
+        "gap": 21.91652827855995,
+        "units": 34.78831739877442,
+        "ROI": 57.03002852258101,
+        "players": 25,
+        "dates": 23,
+        "games": 52,
+        "teams": 15,
+        "opponents": 26
+      },
+      "research_recent": {
+        "hits": 13,
+        "plays": 21,
+        "rate": 61.904761904761905,
+        "BE": 42.41359852954213,
+        "gap": 19.491163375219777,
+        "units": 8.389347744575407,
+        "ROI": 39.9492749741686,
+        "players": 8,
+        "dates": 9,
+        "games": 21,
+        "teams": 7,
+        "opponents": 17
+      }
+    },
+    {
+      "id": "X2",
+      "name": "Measured Strike II",
+      "family": "X",
+      "kind": "player_attack",
+      "parent": "COMMON",
+      "display_kind": "SPECIAL ATTACK",
+      "icon": "fenrir_claw.svg",
+      "level": 2,
+      "checks": [
+        [
+          "i5v5_xG60",
+          "<=",
+          0.92
+        ]
+      ],
+      "all_checks": [
+        [
+          "i5v5_xG60",
+          "<=",
+          0.92
+        ]
+      ],
+      "rule": "Goal 0.5 + Matrix_Goal Green + Pregame_xG_L5_per_game >= 0.52 + Player_Log_L5_TOI_per_game >= 18.8 + i5v5_xG60 <= 0.92",
+      "record": {
+        "hits": 23,
+        "plays": 35,
+        "rate": 65.71428571428571,
+        "BE": 37.48174536016182,
+        "gap": 28.23254035412389,
+        "units": 25.729782527184103,
+        "ROI": 73.51366436338314,
+        "players": 16,
+        "dates": 21,
+        "games": 34,
+        "teams": 12,
+        "opponents": 20
+      },
+      "research_recent": {
+        "hits": 9,
+        "plays": 11,
+        "rate": 81.81818181818181,
+        "BE": 43.00163599818198,
+        "gap": 38.81654581999983,
+        "units": 9.269782527184102,
+        "ROI": 84.2707502471282,
+        "players": 4,
+        "dates": 8,
+        "games": 11,
+        "teams": 4,
+        "opponents": 10
+      }
+    },
+    {
+      "id": "G",
+      "name": "Controlled Strike",
+      "family": "G",
+      "kind": "player_attack",
+      "parent": "COMMON",
+      "display_kind": "SPECIAL ATTACK",
+      "icon": "fenrir_claw.svg",
+      "level": 1,
+      "checks": [
+        [
+          "Player_Rebuilt_Gap_G10",
+          "<=",
+          1.3
+        ]
+      ],
+      "all_checks": [
+        [
+          "Player_Rebuilt_Gap_G10",
+          "<=",
+          1.3
+        ]
+      ],
+      "rule": "Goal 0.5 + Matrix_Goal Green + Pregame_xG_L5_per_game >= 0.52 + Player_Log_L5_TOI_per_game >= 18.8 + Player_Rebuilt_Gap_G10 <= 1.3",
+      "record": {
+        "hits": 26,
+        "plays": 39,
+        "rate": 66.66666666666667,
+        "BE": 38.35644905583208,
+        "gap": 28.31021761083459,
+        "units": 30.17740157480315,
+        "ROI": 77.37795275590551,
+        "players": 18,
+        "dates": 19,
+        "games": 36,
+        "teams": 14,
+        "opponents": 25
+      },
+      "research_recent": {
+        "hits": 7,
+        "plays": 11,
+        "rate": 63.63636363636363,
+        "BE": 40.31370401864229,
+        "gap": 23.322659617721342,
+        "units": 5.817401574803149,
+        "ROI": 52.88546886184682,
+        "players": 5,
+        "dates": 8,
+        "games": 11,
+        "teams": 5,
+        "opponents": 10
+      }
+    },
+    {
+      "id": "S",
+      "name": "Predator\u2019s Mark I",
+      "family": "S",
+      "kind": "player_attack",
+      "parent": "COMMON",
+      "display_kind": "HEAVY ATTACK",
+      "icon": "smash.svg",
+      "level": 1,
+      "checks": [
+        [
+          "Player_Log_L20_Goal_fraction_pct",
+          ">=",
+          43
+        ]
+      ],
+      "all_checks": [
+        [
+          "Player_Log_L20_Goal_fraction_pct",
+          ">=",
+          43
+        ]
+      ],
+      "rule": "Goal 0.5 + Matrix_Goal Green + Pregame_xG_L5_per_game >= 0.52 + Player_Log_L5_TOI_per_game >= 18.8 + Player_Log_L20_Goal_fraction_pct >= 43",
+      "record": {
+        "hits": 41,
+        "plays": 77,
+        "rate": 53.246753246753244,
+        "BE": 39.36928153029991,
+        "gap": 13.877471716453336,
+        "units": 29.38831739877442,
+        "ROI": 38.16664597243431,
+        "players": 21,
+        "dates": 22,
+        "games": 63,
+        "teams": 15,
+        "opponents": 29
+      },
+      "research_recent": {
+        "hits": 13,
+        "plays": 23,
+        "rate": 56.52173913043478,
+        "BE": 41.27897175839238,
+        "gap": 15.242767372042401,
+        "units": 7.039347744575406,
+        "ROI": 30.605859759023506,
+        "players": 9,
+        "dates": 9,
+        "games": 22,
+        "teams": 9,
+        "opponents": 20
+      }
+    },
+    {
+      "id": "S2",
+      "name": "Predator\u2019s Mark II",
+      "family": "S",
+      "kind": "player_attack",
+      "parent": "COMMON",
+      "display_kind": "SPECIAL ATTACK",
+      "icon": "smash.svg",
+      "level": 2,
+      "checks": [
+        [
+          "Player_Log_L20_Goal_fraction_pct",
+          ">=",
+          61
+        ]
+      ],
+      "all_checks": [
+        [
+          "Player_Log_L20_Goal_fraction_pct",
+          ">=",
+          61
+        ]
+      ],
+      "rule": "Goal 0.5 + Matrix_Goal Green + Pregame_xG_L5_per_game >= 0.52 + Player_Log_L5_TOI_per_game >= 18.8 + Player_Log_L20_Goal_fraction_pct >= 61",
+      "record": {
+        "hits": 22,
+        "plays": 34,
+        "rate": 64.70588235294117,
+        "BE": 38.73632635800923,
+        "gap": 25.969555994931945,
+        "units": 23.62896965419901,
+        "ROI": 69.49696957117357,
+        "players": 11,
+        "dates": 18,
+        "games": 30,
+        "teams": 10,
+        "opponents": 19
+      },
+      "research_recent": {
+        "hits": 6,
+        "plays": 8,
+        "rate": 75.0,
+        "BE": 37.42136664846992,
+        "gap": 37.57863335153008,
+        "units": 7.33,
+        "ROI": 91.625,
+        "players": 4,
+        "dates": 7,
+        "games": 8,
+        "teams": 4,
+        "opponents": 8
+      }
+    },
+    {
+      "id": "A_ppo1",
+      "name": "Arcane Pressure I",
+      "family": "opp_ppo",
+      "kind": "environment_buff",
+      "parent": "A",
+      "display_kind": "SPECIAL ATTACK",
+      "icon": "fenrir_claw.svg",
+      "level": 1,
+      "checks": [
+        [
+          "NHL_Opp_PP_L5_O_PG",
+          ">=",
+          3.05
+        ]
+      ],
+      "all_checks": [
+        [
+          "L20_A",
+          "<=",
+          7
+        ],
+        [
+          "NHL_Opp_PP_L5_O_PG",
+          ">=",
+          3.05
+        ]
+      ],
+      "rule": "Goal 0.5 + Matrix_Goal Green + Pregame_xG_L5_per_game >= 0.52 + Player_Log_L5_TOI_per_game >= 18.8 + L20_A <= 7 + NHL_Opp_PP_L5_O_PG >= 3.05",
+      "record": {
+        "hits": 28,
+        "plays": 45,
+        "rate": 62.22222222222222,
+        "BE": 36.93392325758415,
+        "gap": 25.288298964638074,
+        "units": 31.10153846153846,
+        "ROI": 69.11452991452991,
+        "players": 24,
+        "dates": 14,
+        "games": 35,
+        "teams": 15,
+        "opponents": 22
+      },
+      "research_recent": {
+        "hits": 6,
+        "plays": 7,
+        "rate": 85.71428571428571,
+        "BE": 38.692018548629484,
+        "gap": 47.022267165656224,
+        "units": 8.73,
+        "ROI": 124.71428571428571,
+        "players": 5,
+        "dates": 5,
+        "games": 7,
+        "teams": 5,
+        "opponents": 7
+      }
+    },
+    {
+      "id": "A_ppo2",
+      "name": "Arcane Pressure II",
+      "family": "opp_ppo",
+      "kind": "environment_buff",
+      "parent": "A",
+      "display_kind": "SPECIAL ATTACK",
+      "icon": "fenrir_claw.svg",
+      "level": 2,
+      "checks": [
+        [
+          "NHL_Opp_PP_L5_O_PG",
+          ">=",
+          3.25
+        ]
+      ],
+      "all_checks": [
+        [
+          "L20_A",
+          "<=",
+          7
+        ],
+        [
+          "NHL_Opp_PP_L5_O_PG",
+          ">=",
+          3.25
+        ]
+      ],
+      "rule": "Goal 0.5 + Matrix_Goal Green + Pregame_xG_L5_per_game >= 0.52 + Player_Log_L5_TOI_per_game >= 18.8 + L20_A <= 7 + NHL_Opp_PP_L5_O_PG >= 3.25",
+      "record": {
+        "hits": 23,
+        "plays": 32,
+        "rate": 71.875,
+        "BE": 37.84228292107635,
+        "gap": 34.03271707892365,
+        "units": 29.40153846153846,
+        "ROI": 91.8798076923077,
+        "players": 21,
+        "dates": 13,
+        "games": 26,
+        "teams": 15,
+        "opponents": 16
+      },
+      "research_recent": {
+        "hits": 6,
+        "plays": 6,
+        "rate": 100.0,
+        "BE": 38.851380130633764,
+        "gap": 61.148619869366236,
+        "units": 9.73,
+        "ROI": 162.16666666666666,
+        "players": 5,
+        "dates": 5,
+        "games": 6,
+        "teams": 5,
+        "opponents": 6
+      }
+    },
+    {
+      "id": "A_oppdur1",
+      "name": "Tempo Break I",
+      "family": "opp_pp_duration",
+      "kind": "environment_buff",
+      "parent": "A",
+      "display_kind": "SPECIAL ATTACK",
+      "icon": "fenrir_claw.svg",
+      "level": 1,
+      "checks": [
+        [
+          "NHL_Opp_PP_Season_SecondsPerOpportunity",
+          "<=",
+          99.0
+        ]
+      ],
+      "all_checks": [
+        [
+          "L20_A",
+          "<=",
+          7
+        ],
+        [
+          "NHL_Opp_PP_Season_SecondsPerOpportunity",
+          "<=",
+          99.0
+        ]
+      ],
+      "rule": "Goal 0.5 + Matrix_Goal Green + Pregame_xG_L5_per_game >= 0.52 + Player_Log_L5_TOI_per_game >= 18.8 + L20_A <= 7 + NHL_Opp_PP_Season_SecondsPerOpportunity <= 99",
+      "record": {
+        "hits": 33,
+        "plays": 57,
+        "rate": 57.89473684210526,
+        "BE": 36.48572681871717,
+        "gap": 21.409010023388092,
+        "units": 35.70153846153846,
+        "ROI": 62.634278002699055,
+        "players": 26,
+        "dates": 17,
+        "games": 44,
+        "teams": 16,
+        "opponents": 21
+      },
+      "research_recent": {
+        "hits": 4,
+        "plays": 8,
+        "rate": 50.0,
+        "BE": 37.13857324952086,
+        "gap": 12.86142675047914,
+        "units": 2.73,
+        "ROI": 34.125,
+        "players": 6,
+        "dates": 5,
+        "games": 8,
+        "teams": 6,
+        "opponents": 7
+      }
+    },
+    {
+      "id": "A_oppdur2",
+      "name": "Tempo Break II",
+      "family": "opp_pp_duration",
+      "kind": "environment_buff",
+      "parent": "A",
+      "display_kind": "SPECIAL ATTACK",
+      "icon": "fenrir_claw.svg",
+      "level": 2,
+      "checks": [
+        [
+          "NHL_Opp_PP_Season_SecondsPerOpportunity",
+          "<=",
+          96.0
+        ]
+      ],
+      "all_checks": [
+        [
+          "L20_A",
+          "<=",
+          7
+        ],
+        [
+          "NHL_Opp_PP_Season_SecondsPerOpportunity",
+          "<=",
+          96.0
+        ]
+      ],
+      "rule": "Goal 0.5 + Matrix_Goal Green + Pregame_xG_L5_per_game >= 0.52 + Player_Log_L5_TOI_per_game >= 18.8 + L20_A <= 7 + NHL_Opp_PP_Season_SecondsPerOpportunity <= 96",
+      "record": {
+        "hits": 29,
+        "plays": 45,
+        "rate": 64.44444444444444,
+        "BE": 36.54024021589367,
+        "gap": 27.904204228550775,
+        "units": 36.10153846153846,
+        "ROI": 80.22564102564102,
+        "players": 23,
+        "dates": 16,
+        "games": 35,
+        "teams": 14,
+        "opponents": 17
+      },
+      "research_recent": {
+        "hits": 4,
+        "plays": 5,
+        "rate": 80.0,
+        "BE": 38.032828310344485,
+        "gap": 41.967171689655515,
+        "units": 5.73,
+        "ROI": 114.6,
+        "players": 4,
+        "dates": 5,
+        "games": 5,
+        "teams": 4,
+        "opponents": 5
+      }
+    },
+    {
+      "id": "F_pp",
+      "name": "Power Surge",
+      "family": "own_pp_scoring",
+      "kind": "environment_buff",
+      "parent": "F",
+      "display_kind": "SPECIAL ATTACK",
+      "icon": "fenrir_claw.svg",
+      "level": 1,
+      "checks": [
+        [
+          "NHL_Team_PP_Season_G60",
+          ">=",
+          6.1
+        ]
+      ],
+      "all_checks": [
+        [
+          "Player_Log_L10_Shooting_pct",
+          ">=",
+          18.5
+        ],
+        [
+          "NHL_Team_PP_Season_G60",
+          ">=",
+          6.1
+        ]
+      ],
+      "rule": "Goal 0.5 + Matrix_Goal Green + Pregame_xG_L5_per_game >= 0.52 + Player_Log_L5_TOI_per_game >= 18.8 + Player_Log_L10_Shooting_pct >= 18.5 + NHL_Team_PP_Season_G60 >= 6.1",
+      "record": {
+        "hits": 30,
+        "plays": 44,
+        "rate": 68.18181818181819,
+        "BE": 41.220059287717966,
+        "gap": 26.96175889410022,
+        "units": 31.158317398774418,
+        "ROI": 70.81435772448731,
+        "players": 14,
+        "dates": 22,
+        "games": 40,
+        "teams": 10,
+        "opponents": 26
+      },
+      "research_recent": {
+        "hits": 10,
+        "plays": 13,
+        "rate": 76.92307692307692,
+        "BE": 44.48083740685413,
+        "gap": 32.44223951622279,
+        "units": 9.739347744575406,
+        "ROI": 74.91805957365698,
+        "players": 5,
+        "dates": 9,
+        "games": 13,
+        "teams": 5,
+        "opponents": 13
+      }
+    },
+    {
+      "id": "P_opptime1",
+      "name": "Arcane Siege",
+      "family": "opp_pp_time",
+      "kind": "environment_buff",
+      "parent": "P",
+      "display_kind": "SPECIAL ATTACK",
+      "icon": "fenrir_claw.svg",
+      "level": 1,
+      "checks": [
+        [
+          "NHL_Opp_PP_L10_Time_PG",
+          ">=",
+          4.55
+        ]
+      ],
+      "all_checks": [
+        [
+          "PP_SOG60",
+          ">=",
+          14.4
+        ],
+        [
+          "NHL_Opp_PP_L10_Time_PG",
+          ">=",
+          4.55
+        ]
+      ],
+      "rule": "Goal 0.5 + Matrix_Goal Green + Pregame_xG_L5_per_game >= 0.52 + Player_Log_L5_TOI_per_game >= 18.8 + PP_SOG60 >= 14.4 + NHL_Opp_PP_L10_Time_PG >= 4.55",
+      "record": {
+        "hits": 33,
+        "plays": 49,
+        "rate": 67.34693877551021,
+        "BE": 39.68430023542474,
+        "gap": 27.662638540085467,
+        "units": 37.008317398774416,
+        "ROI": 75.52717836484575,
+        "players": 17,
+        "dates": 18,
+        "games": 37,
+        "teams": 14,
+        "opponents": 20
+      },
+      "research_recent": {
+        "hits": 10,
+        "plays": 15,
+        "rate": 66.66666666666667,
+        "BE": 43.18563850876199,
+        "gap": 23.48102815790468,
+        "units": 7.489347744575406,
+        "ROI": 49.928984963836044,
+        "players": 8,
+        "dates": 8,
+        "games": 14,
+        "teams": 7,
+        "opponents": 12
+      }
+    },
+    {
+      "id": "P_ownpk1",
+      "name": "Iron Tempo I",
+      "family": "own_pk_duration",
+      "kind": "environment_buff",
+      "parent": "P",
+      "display_kind": "SPECIAL ATTACK",
+      "icon": "fenrir_claw.svg",
+      "level": 1,
+      "checks": [
+        [
+          "NHL_Team_PK_L10_SecondsPerOpportunity",
+          "<=",
+          104.0
+        ]
+      ],
+      "all_checks": [
+        [
+          "PP_SOG60",
+          ">=",
+          14.4
+        ],
+        [
+          "NHL_Team_PK_L10_SecondsPerOpportunity",
+          "<=",
+          104.0
+        ]
+      ],
+      "rule": "Goal 0.5 + Matrix_Goal Green + Pregame_xG_L5_per_game >= 0.52 + Player_Log_L5_TOI_per_game >= 18.8 + PP_SOG60 >= 14.4 + NHL_Team_PK_L10_SecondsPerOpportunity <= 104",
+      "record": {
+        "hits": 32,
+        "plays": 48,
+        "rate": 66.66666666666667,
+        "BE": 40.011126505667114,
+        "gap": 26.655540160999557,
+        "units": 33.008317398774416,
+        "ROI": 68.76732791411337,
+        "players": 17,
+        "dates": 18,
+        "games": 36,
+        "teams": 14,
+        "opponents": 21
+      },
+      "research_recent": {
+        "hits": 13,
+        "plays": 19,
+        "rate": 68.42105263157895,
+        "BE": 42.80641783268237,
+        "gap": 25.614634798896574,
+        "units": 10.089347744575406,
+        "ROI": 53.101830234607405,
+        "players": 9,
+        "dates": 9,
+        "games": 18,
+        "teams": 8,
+        "opponents": 16
+      }
+    },
+    {
+      "id": "P_ownpk2",
+      "name": "Iron Tempo II",
+      "family": "own_pk_duration",
+      "kind": "environment_buff",
+      "parent": "P",
+      "display_kind": "SPECIAL ATTACK",
+      "icon": "fenrir_claw.svg",
+      "level": 2,
+      "checks": [
+        [
+          "NHL_Team_PK_L10_SecondsPerOpportunity",
+          "<=",
+          103.0
+        ]
+      ],
+      "all_checks": [
+        [
+          "PP_SOG60",
+          ">=",
+          14.4
+        ],
+        [
+          "NHL_Team_PK_L10_SecondsPerOpportunity",
+          "<=",
+          103.0
+        ]
+      ],
+      "rule": "Goal 0.5 + Matrix_Goal Green + Pregame_xG_L5_per_game >= 0.52 + Player_Log_L5_TOI_per_game >= 18.8 + PP_SOG60 >= 14.4 + NHL_Team_PK_L10_SecondsPerOpportunity <= 103",
+      "record": {
+        "hits": 27,
+        "plays": 38,
+        "rate": 71.05263157894737,
+        "BE": 40.02864311739535,
+        "gap": 31.023988461552022,
+        "units": 30.459347744575407,
+        "ROI": 80.15617827519844,
+        "players": 17,
+        "dates": 17,
+        "games": 32,
+        "teams": 14,
+        "opponents": 20
+      },
+      "research_recent": {
+        "hits": 13,
+        "plays": 18,
+        "rate": 72.22222222222223,
+        "BE": 43.363058531947964,
+        "gap": 28.859163690274265,
+        "units": 11.089347744575406,
+        "ROI": 61.607487469863365,
+        "players": 9,
+        "dates": 9,
+        "games": 17,
+        "teams": 8,
+        "opponents": 15
+      }
+    },
+    {
+      "id": "X_ownsa1",
+      "name": "Iron Ward",
+      "family": "own_shot_defense",
+      "kind": "environment_buff",
+      "parent": "X",
+      "display_kind": "SPECIAL ATTACK",
+      "icon": "fenrir_claw.svg",
+      "level": 1,
+      "checks": [
+        [
+          "NHL_Team_SA_Season_PG",
+          "<=",
+          29.6
+        ]
+      ],
+      "all_checks": [
+        [
+          "i5v5_xG60",
+          "<=",
+          1.03
+        ],
+        [
+          "NHL_Team_SA_Season_PG",
+          "<=",
+          29.6
+        ]
+      ],
+      "rule": "Goal 0.5 + Matrix_Goal Green + Pregame_xG_L5_per_game >= 0.52 + Player_Log_L5_TOI_per_game >= 18.8 + i5v5_xG60 <= 1.03 + NHL_Team_SA_Season_PG <= 29.6",
+      "record": {
+        "hits": 37,
+        "plays": 56,
+        "rate": 66.07142857142857,
+        "BE": 38.94910244769306,
+        "gap": 27.12232612373551,
+        "units": 39.78831739877442,
+        "ROI": 71.05056678352575,
+        "players": 23,
+        "dates": 22,
+        "games": 48,
+        "teams": 14,
+        "opponents": 25
+      },
+      "research_recent": {
+        "hits": 13,
+        "plays": 20,
+        "rate": 65.0,
+        "BE": 42.53427845601924,
+        "gap": 22.465721543980763,
+        "units": 9.389347744575407,
+        "ROI": 46.94673872287703,
+        "players": 8,
+        "dates": 9,
+        "games": 20,
+        "teams": 7,
+        "opponents": 16
+      }
+    },
+    {
+      "id": "X_ownpp",
+      "name": "Runic Balance",
+      "family": "own_pp_xg",
+      "kind": "environment_buff",
+      "parent": "X",
+      "display_kind": "SPECIAL ATTACK",
+      "icon": "fenrir_claw.svg",
+      "level": 1,
+      "checks": [
+        [
+          "Team_PP_xGF60",
+          "<=",
+          9.35
+        ]
+      ],
+      "all_checks": [
+        [
+          "i5v5_xG60",
+          "<=",
+          1.03
+        ],
+        [
+          "Team_PP_xGF60",
+          "<=",
+          9.35
+        ]
+      ],
+      "rule": "Goal 0.5 + Matrix_Goal Green + Pregame_xG_L5_per_game >= 0.52 + Player_Log_L5_TOI_per_game >= 18.8 + i5v5_xG60 <= 1.03 + Team_PP_xGF60 <= 9.35",
+      "record": {
+        "hits": 29,
+        "plays": 41,
+        "rate": 70.73170731707317,
+        "BE": 38.929264113806475,
+        "gap": 31.802443203266698,
+        "units": 34.08831739877442,
+        "ROI": 83.14223755798639,
+        "players": 24,
+        "dates": 21,
+        "games": 34,
+        "teams": 14,
+        "opponents": 23
+      },
+      "research_recent": {
+        "hits": 10,
+        "plays": 11,
+        "rate": 90.9090909090909,
+        "BE": 44.529351973537544,
+        "gap": 46.37973893555336,
+        "units": 11.039347744575407,
+        "ROI": 100.35770676886733,
+        "players": 6,
+        "dates": 8,
+        "games": 11,
+        "teams": 5,
+        "opponents": 9
+      }
+    },
+    {
+      "id": "G_oppsa",
+      "name": "Measured Siege",
+      "family": "opp_shot_defense",
+      "kind": "environment_buff",
+      "parent": "G",
+      "display_kind": "SPECIAL ATTACK",
+      "icon": "fenrir_claw.svg",
+      "level": 1,
+      "checks": [
+        [
+          "NHL_Opp_SA_L5_PG",
+          "<=",
+          29.0
+        ]
+      ],
+      "all_checks": [
+        [
+          "Player_Rebuilt_Gap_G10",
+          "<=",
+          1.3
+        ],
+        [
+          "NHL_Opp_SA_L5_PG",
+          "<=",
+          29.0
+        ]
+      ],
+      "rule": "Goal 0.5 + Matrix_Goal Green + Pregame_xG_L5_per_game >= 0.52 + Player_Log_L5_TOI_per_game >= 18.8 + Player_Rebuilt_Gap_G10 <= 1.3 + NHL_Opp_SA_L5_PG <= 29",
+      "record": {
+        "hits": 24,
+        "plays": 32,
+        "rate": 75.0,
+        "BE": 37.908499765008855,
+        "gap": 37.091500234991145,
+        "units": 32.22740157480315,
+        "ROI": 100.71062992125984,
+        "players": 16,
+        "dates": 17,
+        "games": 30,
+        "teams": 12,
+        "opponents": 22
+      },
+      "research_recent": {
+        "hits": 6,
+        "plays": 8,
+        "rate": 75.0,
+        "BE": 41.06757668576387,
+        "gap": 33.93242331423613,
+        "units": 6.2674015748031495,
+        "ROI": 78.34251968503936,
+        "players": 4,
+        "dates": 6,
+        "games": 8,
+        "teams": 4,
+        "opponents": 8
+      }
+    },
+    {
+      "id": "S_venue",
+      "name": "Blood Tide",
+      "family": "own_venue_ga",
+      "kind": "environment_buff",
+      "parent": "S",
+      "display_kind": "SPECIAL ATTACK",
+      "icon": "fenrir_claw.svg",
+      "level": 1,
+      "checks": [
+        [
+          "NHL_Team_GA_Venue_PG",
+          ">=",
+          2.95
+        ]
+      ],
+      "all_checks": [
+        [
+          "Player_Log_L20_Goal_fraction_pct",
+          ">=",
+          43
+        ],
+        [
+          "NHL_Team_GA_Venue_PG",
+          ">=",
+          2.95
+        ]
+      ],
+      "rule": "Goal 0.5 + Matrix_Goal Green + Pregame_xG_L5_per_game >= 0.52 + Player_Log_L5_TOI_per_game >= 18.8 + Player_Log_L20_Goal_fraction_pct >= 43 + NHL_Team_GA_Venue_PG >= 2.95",
+      "record": {
+        "hits": 23,
+        "plays": 32,
+        "rate": 71.875,
+        "BE": 37.104592575501385,
+        "gap": 34.770407424498615,
+        "units": 30.16740157480315,
+        "ROI": 94.27312992125984,
+        "players": 17,
+        "dates": 18,
+        "games": 31,
+        "teams": 13,
+        "opponents": 21
+      },
+      "research_recent": {
+        "hits": 10,
+        "plays": 14,
+        "rate": 71.42857142857143,
+        "BE": 39.601039208490704,
+        "gap": 31.827532220080727,
+        "units": 10.11740157480315,
+        "ROI": 72.26715410573678,
+        "players": 7,
+        "dates": 8,
+        "games": 14,
+        "teams": 7,
+        "opponents": 13
+      }
+    }
+  ],
+  "environment_fields": [
+    "NHL_Opp_PP_L10_Time_PG",
+    "NHL_Opp_PP_L5_O_PG",
+    "NHL_Opp_PP_Season_SecondsPerOpportunity",
+    "NHL_Opp_SA_L5_PG",
+    "NHL_Team_GA_Venue_PG",
+    "NHL_Team_PK_L10_SecondsPerOpportunity",
+    "NHL_Team_PP_Season_G60",
+    "NHL_Team_SA_Season_PG"
+  ],
+  "player_fields": [
+    "Player_Log_L5_TOI_per_game",
+    "Player_Log_L10_Shooting_pct",
+    "Player_Log_L20_Goal_fraction_pct",
+    "Player_Rebuilt_Gap_G10",
+    "L20_A",
+    "PP_SOG60",
+    "i5v5_xG60",
+    "Pregame_xG_L5_per_game"
+  ]
+}

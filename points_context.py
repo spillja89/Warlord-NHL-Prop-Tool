@@ -158,6 +158,8 @@ def attach_points_context(frame, session=None, before_day=None, reports=None, co
     out = attach_pp_card_context(out, before, reports, codes or {})
     from sog_profiles_2026 import attach_context as attach_sog_profile_context
     out = attach_sog_profile_context(out, before, reports, codes or {})
+    from goal_routes_v2 import attach_context as attach_goal_v2_context
+    out = attach_goal_v2_context(out, before, reports, codes or {})
     return out
 
 

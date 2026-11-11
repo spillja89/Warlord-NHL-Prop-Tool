@@ -258,7 +258,7 @@ def _assists_mapped_moves(r) -> list[dict]:
                            "track":track})
     return active
 
-from goal_moves_current import goals_moves
+from goal_card_routes import records_for as goals_moves
 from assist_moves_current import assists_moves
 
 # Preserve the previous rules for saved-slate comparisons. Live cards use the

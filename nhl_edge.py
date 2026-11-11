@@ -5948,6 +5948,9 @@ def build_tracker(today_local: date, debug: bool = False, api_key: str | None = 
     tracker.loc[_sog25_current,"Plays_SOG"] = tracker.loc[_sog25_current,"SOG_Attack"].ne("")
     tracker.loc[_sog25_current,"SOG_Why"] = tracker.loc[_sog25_current,"SOG_Attack"]
 
+    from goal_routes_v2 import attach_routes as attach_goal_v2_routes
+    tracker = attach_goal_v2_routes(tracker)
+
     # Freeze the displayed move rules with the pregame tracker. The grader
     # reads these tags instead of applying future code to an old slate.
     tracker["Move_Kit_Version"] = MOVE_KIT_VERSION
