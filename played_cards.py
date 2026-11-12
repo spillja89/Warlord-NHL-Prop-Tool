@@ -9,18 +9,39 @@ from played_picks import PickStore, make_pick, pregame, results_for_picks
 _JS = r"""
 export default function({data, setTriggerValue}) {
   const controller = new AbortController();
+  const boxes = () => Array.from(document.querySelectorAll('[data-warlord-pick]'))
+    .filter(box => box.dataset.pickScope === data.scope);
   function attach() {
-    document.querySelectorAll('[data-warlord-pick]').forEach(box => {
+    // Acknowledgements update only existing controls, never the card DOM.
+    boxes().forEach(box => {
+      const reply = data.replies[box.dataset.warlordPick];
+      if (!reply || box.dataset.ack === reply.request_id) return;
+      box.dataset.ack = reply.request_id;
+      box.dataset.revision = String(reply.revision);
+      box.dataset.canShare = String(reply.can_share);
+      box.querySelector('[data-pick-field="played"]').checked = reply.played;
+      box.querySelector('[data-pick-field="shared"]').checked = reply.shared;
+      box.querySelector('[role="status"]').textContent = reply.message;
+      delete box.dataset.pending;
+    });
+    const busy = boxes().some(box => box.dataset.pending);
+    boxes().forEach(box => {
+      box.querySelectorAll('input[data-pick-field]').forEach(input => {
+        input.disabled = busy || (input.dataset.pickField === 'shared' && box.dataset.canShare !== 'true');
+      });
       if (box.dataset.bridge === data.token) return;
       box.dataset.bridge = data.token;
       box.querySelectorAll('input[data-pick-field]').forEach(input => {
         input.addEventListener('change', () => {
-          box.querySelectorAll('input').forEach(el => el.disabled = true);
+          if (boxes().some(item => item.dataset.pending)) return;
+          box.dataset.pending = crypto.randomUUID();
+          // Serialize writes so rapid clicks cannot replace an in-flight event.
+          boxes().forEach(item => item.querySelectorAll('input').forEach(el => el.disabled = true));
           const note = box.querySelector('[role="status"]');
           if (note) note.textContent = 'Saving…';
           setTriggerValue('action', {pick_id: box.dataset.warlordPick,
             field: input.dataset.pickField, value: input.checked,
-            revision: Number(box.dataset.revision)});
+            revision: Number(box.dataset.revision), request_id: box.dataset.pending});
         }, {signal: controller.signal});
       });
     });
@@ -53,7 +74,51 @@ def apply_card_action(store, registry, states, action, *, owner_access):
     expected = int(states.get(pick['pick_id'], {}).get('revision', 0))
     if type(action.get('revision')) is not int or action['revision'] != expected:
         raise ValueError('The mark changed. Please try again on the refreshed card.')
-    store.change(pick, action.get('field'), action.get('value'), expected)
+    return store.change(pick, action.get('field'), action.get('value'), expected)
+
+
+def save_card_mark(store, registry, states, replies, action, *, owner_access):
+    """Save once, then return only control state; never expose credentials/payloads."""
+    if not owner_access or not isinstance(action, dict) or action.get('pick_id') not in registry:
+        return
+    pick_id = action['pick_id']
+    request_id = action.get('request_id')
+    if not isinstance(request_id, str) or not 1 <= len(request_id) <= 64:
+        return
+    if replies.get(pick_id, {}).get('request_id') == request_id:
+        return
+    try:
+        states[pick_id] = apply_card_action(store, registry, states, action, owner_access=owner_access)
+        message = 'Saved ✓'
+    except Exception as exc:
+        # A stale tab must adopt the database state, rather than overwrite it.
+        if owner_access:
+            try:
+                latest = store.private_rows()
+                states[pick_id] = latest.get(pick_id, {})
+            except Exception:
+                pass
+        message = ('The mark changed or is no longer available. Please try again.'
+                   if isinstance(exc, ValueError) else 'Save not confirmed. Please try again.')
+    state = states.get(pick_id, {})
+    played, shared = bool(state.get('played')), bool(state.get('shared'))
+    replies[pick_id] = dict(request_id=request_id, played=played, shared=shared,
+                           revision=int(state.get('revision', 0)),
+                           can_share=played and (shared or pregame(registry[pick_id])), message=message)
+
+
+@st.fragment
+def _save_bridge(store, registry, states, replies, *, owner_access, key):
+    """Only this tiny fragment reruns on a checkbox event; cards stay mounted."""
+    import uuid
+
+    def on_action():
+        component_state = st.session_state.get(key, {})
+        save_card_mark(store, registry, states, replies, component_state.get('action'),
+                       owner_access=owner_access)
+
+    _bridge(data={'scope': key, 'token': uuid.uuid4().hex, 'replies': replies},
+            key=key, on_action_change=on_action)
 
 
 def render_markable_boards(boards, frame, *, render, owner_access, setting, key, **kwargs):
@@ -92,12 +157,12 @@ def render_markable_boards(boards, frame, *, render, owner_access, setting, key,
         revision = int(state.get('revision', 0))
         disabled = ' disabled' if error else ''
         share_disabled = ' disabled' if error or not played or (not shared and not pregame(pick)) else ''
-        note = 'Saved privately' if played else 'Private mark'
-        if shared:
-            note = 'Saved · shared on Tail list'
+        note = 'Saved ✓' if played else 'Private mark'
         if error:
             note = 'Saving unavailable'
-        return (f'<div class="wn-pick-controls" data-warlord-pick="{pick["pick_id"]}" data-revision="{revision}">'
+        can_share = played and (shared or pregame(pick))
+        return (f'<div class="wn-pick-controls" data-warlord-pick="{pick["pick_id"]}" data-revision="{revision}"'
+                f' data-pick-scope="{escape(key, quote=True)}" data-can-share="{str(can_share).lower()}">'
                 f'<label><input type="checkbox" data-pick-field="played" aria-label="Played: {escape(pick["player"])} {pick["market"]} over {pick["line"]}"'
                 f'{" checked" if played else ""}{disabled}>✓ Played</label>'
                 f'<label title="Publish this pick and displayed price. Your personal stakes stay private."><input type="checkbox" data-pick-field="shared" aria-label="Share to Tail list: {escape(pick["player"])} {pick["market"]} over {pick["line"]}"'
@@ -110,21 +175,7 @@ def render_markable_boards(boards, frame, *, render, owner_access, setting, key,
         if not store:
             st.caption('Use the existing private PostgreSQL ledger connection. No private picks are stored in the public repository.')
         return
-    flash = st.session_state.pop('_pick_mark_notice', '')
-    if flash:
-        st.info(flash)
-    # Reruns may remove/recreate st.html nodes, so bind to the new control nodes.
-    import uuid
-    result = _bridge(data={'token': uuid.uuid4().hex}, key=key, on_action_change=lambda: None)
-    action = result.action
-    if action:
-        try:
-            apply_card_action(store, registry, states, action, owner_access=owner_access)
-        except ValueError as exc:
-            st.session_state['_pick_mark_notice'] = str(exc)
-        except Exception:
-            st.session_state['_pick_mark_notice'] = 'Save failed. Your previous mark is unchanged; please try again.'
-        st.rerun()
+    _save_bridge(store, registry, states, {}, owner_access=owner_access, key=key)
 
 
 def _return(odds, status):

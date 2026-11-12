@@ -124,6 +124,8 @@ class PickStore:
                     public = None
             cur.execute("UPDATE warlord_pick_marks SET played=%s,shared=%s,private_pick=%s,public_pick=%s,revision=revision+1,updated_at=now() WHERE pick_id=%s",
                         (played, shared, Jsonb(private), Jsonb(public) if public else None, key))
+        # Return only after the transaction context has committed successfully.
+        return dict(private, played=played, shared=shared, revision=revision + 1)
 
 
 def results_for_picks(picks, graded_dir):
