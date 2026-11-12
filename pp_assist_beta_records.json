@@ -2,8 +2,8 @@
   "version": "pp-assist-overlap-beta-2026-11-07",
   "parent": "Priced PPP over0.5 + PPon-ice xG/game>=0.66;noLayer1",
   "sample_from": "2026-10-17",
-  "sample_through": "2026-11-05",
-  "archives_checked_through": "2026-11-06",
+  "sample_through": "2026-11-11",
+  "archives_checked_through": "2026-11-11",
   "routes": [
     {
       "name": "Arcane Channel I",
@@ -30,12 +30,34 @@
           2.5
         ]
       ],
-      "hits": 18,
-      "plays": 30,
-      "players": 8,
-      "dates": 16,
-      "available": 128,
-      "BE": 34.296498238358744
+      "hits": 23,
+      "plays": 38,
+      "players": 10,
+      "dates": 19,
+      "available": 154,
+      "BE": 34.762966634438094,
+      "original_record": {
+        "hits": 18,
+        "plays": 30,
+        "players": 8,
+        "dates": 16,
+        "available": 128,
+        "BE": 34.296498238358744,
+        "sample_through": "2026-11-05"
+      },
+      "units": 28.7,
+      "roi": 75.52631578947368,
+      "since_check": {
+        "hits": 5,
+        "plays": 8,
+        "rate": 62.5,
+        "BE": 36.51222311973565,
+        "gap": 25.98777688026435,
+        "players": 4,
+        "dates": 3,
+        "units": 5.85,
+        "roi": 73.125
+      }
     },
     {
       "name": "Runic Infusion",
@@ -57,12 +79,34 @@
           3.9
         ]
       ],
-      "hits": 13,
-      "plays": 20,
-      "players": 5,
-      "dates": 13,
-      "available": 128,
-      "BE": 35.259219171919135
+      "hits": 17,
+      "plays": 27,
+      "players": 7,
+      "dates": 16,
+      "available": 154,
+      "BE": 35.39316673072598,
+      "original_record": {
+        "hits": 13,
+        "plays": 20,
+        "players": 5,
+        "dates": 13,
+        "available": 128,
+        "BE": 35.259219171919135,
+        "sample_through": "2026-11-05"
+      },
+      "units": 22.75,
+      "roi": 84.25925925925925,
+      "since_check": {
+        "hits": 4,
+        "plays": 7,
+        "rate": 57.142857142857146,
+        "BE": 35.77587404160265,
+        "gap": 21.366983101254498,
+        "players": 4,
+        "dates": 3,
+        "units": 4.45,
+        "roi": 63.57142857142857
+      }
     },
     {
       "name": "Rune Conduit",
@@ -84,12 +128,34 @@
           3.75
         ]
       ],
-      "hits": 14,
-      "plays": 31,
-      "players": 8,
-      "dates": 17,
-      "available": 128,
-      "BE": 33.00446197362021
+      "hits": 20,
+      "plays": 40,
+      "players": 11,
+      "dates": 20,
+      "available": 154,
+      "BE": 33.99201376461391,
+      "original_record": {
+        "hits": 14,
+        "plays": 31,
+        "players": 8,
+        "dates": 17,
+        "available": 128,
+        "BE": 33.00446197362021,
+        "sample_through": "2026-11-05"
+      },
+      "units": 19.5,
+      "roi": 48.75,
+      "since_check": {
+        "hits": 6,
+        "plays": 9,
+        "rate": 66.66666666666667,
+        "BE": 37.393581044703296,
+        "gap": 29.273085621963375,
+        "players": 5,
+        "dates": 3,
+        "units": 7.1,
+        "roi": 78.88888888888889
+      }
     },
     {
       "name": "Odin's Vigil",
@@ -111,12 +177,34 @@
           22
         ]
       ],
-      "hits": 10,
-      "plays": 14,
-      "players": 4,
-      "dates": 11,
-      "available": 128,
-      "BE": 35.40403081368242
+      "hits": 13,
+      "plays": 18,
+      "players": 5,
+      "dates": 13,
+      "available": 154,
+      "BE": 35.399711052110334,
+      "original_record": {
+        "hits": 10,
+        "plays": 14,
+        "players": 4,
+        "dates": 11,
+        "available": 128,
+        "BE": 35.40403081368242,
+        "sample_through": "2026-11-05"
+      },
+      "units": 20.25,
+      "roi": 112.5,
+      "since_check": {
+        "hits": 3,
+        "plays": 4,
+        "rate": 75.0,
+        "BE": 35.384591886608014,
+        "gap": 39.615408113391986,
+        "players": 2,
+        "dates": 2,
+        "units": 4.7,
+        "roi": 117.5
+      }
     },
     {
       "name": "Runic Infusion Crit",
@@ -143,12 +231,34 @@
           8.3
         ]
       ],
-      "hits": 12,
-      "plays": 18,
-      "players": 4,
-      "dates": 11,
-      "available": 128,
-      "BE": 34.92520951074916
+      "hits": 16,
+      "plays": 24,
+      "players": 5,
+      "dates": 14,
+      "available": 154,
+      "BE": 35.16654875776908,
+      "original_record": {
+        "hits": 12,
+        "plays": 18,
+        "players": 4,
+        "dates": 11,
+        "available": 128,
+        "BE": 34.92520951074916,
+        "sample_through": "2026-11-05"
+      },
+      "units": 23.3,
+      "roi": 97.08333333333333,
+      "since_check": {
+        "hits": 4,
+        "plays": 6,
+        "rate": 66.66666666666667,
+        "BE": 35.890566498828825,
+        "gap": 30.776100167837846,
+        "players": 3,
+        "dates": 3,
+        "units": 5.45,
+        "roi": 90.83333333333333
+      }
     },
     {
       "name": "Rune Conduit Crit",
@@ -175,12 +285,34 @@
           8.3
         ]
       ],
-      "hits": 11,
-      "plays": 21,
-      "players": 6,
-      "dates": 12,
-      "available": 128,
-      "BE": 33.47744084770854
+      "hits": 17,
+      "plays": 29,
+      "players": 8,
+      "dates": 15,
+      "available": 154,
+      "BE": 34.63726785882633,
+      "original_record": {
+        "hits": 11,
+        "plays": 21,
+        "players": 6,
+        "dates": 12,
+        "available": 128,
+        "BE": 33.47744084770854,
+        "sample_through": "2026-11-05"
+      },
+      "units": 21.8,
+      "roi": 75.17241379310344,
+      "since_check": {
+        "hits": 6,
+        "plays": 8,
+        "rate": 75.0,
+        "BE": 37.68181376301051,
+        "gap": 37.31818623698949,
+        "players": 4,
+        "dates": 3,
+        "units": 8.1,
+        "roi": 101.25
+      }
     },
     {
       "name": "Odin's Vigil Crit",
@@ -207,12 +339,34 @@
           8.3
         ]
       ],
-      "hits": 9,
-      "plays": 12,
-      "players": 3,
-      "dates": 9,
-      "available": 128,
-      "BE": 34.927151595554655
+      "hits": 12,
+      "plays": 16,
+      "players": 4,
+      "dates": 11,
+      "available": 154,
+      "BE": 35.041511668318,
+      "original_record": {
+        "hits": 9,
+        "plays": 12,
+        "players": 3,
+        "dates": 9,
+        "available": 128,
+        "BE": 34.927151595554655,
+        "sample_through": "2026-11-05"
+      },
+      "units": 19.8,
+      "roi": 123.75,
+      "since_check": {
+        "hits": 3,
+        "plays": 4,
+        "rate": 75.0,
+        "BE": 35.384591886608014,
+        "gap": 39.615408113391986,
+        "players": 2,
+        "dates": 2,
+        "units": 4.7,
+        "roi": 117.5
+      }
     },
     {
       "name": "Silent Invocation",
@@ -238,8 +392,30 @@
       "plays": 6,
       "players": 3,
       "dates": 5,
-      "available": 122,
-      "BE": 37.35476744515342
+      "available": 148,
+      "BE": 37.35476744515341,
+      "original_record": {
+        "hits": 5,
+        "plays": 6,
+        "players": 3,
+        "dates": 5,
+        "available": 122,
+        "BE": 37.35476744515342,
+        "sample_through": "2026-11-05"
+      },
+      "units": 7.5,
+      "roi": 125.0,
+      "since_check": {
+        "hits": 0,
+        "plays": 0,
+        "rate": null,
+        "BE": null,
+        "gap": null,
+        "players": 0,
+        "dates": 0,
+        "units": 0,
+        "roi": null
+      }
     },
     {
       "name": "Oracle’s Channel",
@@ -261,12 +437,34 @@
           0.33
         ]
       ],
-      "hits": 12,
-      "plays": 20,
-      "players": 4,
-      "dates": 12,
-      "available": 128,
-      "BE": 33.74859712542553
+      "hits": 17,
+      "plays": 27,
+      "players": 5,
+      "dates": 15,
+      "available": 154,
+      "BE": 34.51785215437594,
+      "original_record": {
+        "hits": 12,
+        "plays": 20,
+        "players": 4,
+        "dates": 12,
+        "available": 128,
+        "BE": 33.74859712542553,
+        "sample_through": "2026-11-05"
+      },
+      "units": 24.8,
+      "roi": 91.85185185185185,
+      "since_check": {
+        "hits": 5,
+        "plays": 7,
+        "rate": 71.42857142857143,
+        "BE": 36.7157236656628,
+        "gap": 34.71284776290863,
+        "players": 3,
+        "dates": 3,
+        "units": 6.85,
+        "roi": 97.85714285714286
+      }
     },
     {
       "name": "Oracle’s Guidance",
@@ -293,12 +491,34 @@
           1.05
         ]
       ],
-      "hits": 11,
-      "plays": 16,
-      "players": 3,
-      "dates": 11,
-      "available": 128,
-      "BE": 32.80575453148929
+      "hits": 15,
+      "plays": 21,
+      "players": 4,
+      "dates": 13,
+      "available": 154,
+      "BE": 33.531728052707834,
+      "original_record": {
+        "hits": 11,
+        "plays": 16,
+        "players": 3,
+        "dates": 11,
+        "available": 128,
+        "BE": 32.80575453148929,
+        "sample_through": "2026-11-05"
+      },
+      "units": 25.5,
+      "roi": 121.42857142857143,
+      "since_check": {
+        "hits": 4,
+        "plays": 5,
+        "rate": 80.0,
+        "BE": 35.854843320607166,
+        "gap": 44.145156679392834,
+        "players": 3,
+        "dates": 2,
+        "units": 6.35,
+        "roi": 127.0
+      }
     },
     {
       "name": "Runic Resonance I",
@@ -325,12 +545,34 @@
           4
         ]
       ],
-      "hits": 12,
-      "plays": 19,
-      "players": 4,
-      "dates": 12,
-      "available": 122,
-      "BE": 33.376611367257816
+      "hits": 17,
+      "plays": 26,
+      "players": 5,
+      "dates": 15,
+      "available": 148,
+      "BE": 34.27560313990531,
+      "original_record": {
+        "hits": 12,
+        "plays": 19,
+        "players": 4,
+        "dates": 12,
+        "available": 122,
+        "BE": 33.376611367257816,
+        "sample_through": "2026-11-05"
+      },
+      "units": 25.8,
+      "roi": 99.23076923076923,
+      "since_check": {
+        "hits": 5,
+        "plays": 7,
+        "rate": 71.42857142857143,
+        "BE": 36.7157236656628,
+        "gap": 34.71284776290863,
+        "players": 3,
+        "dates": 3,
+        "units": 6.85,
+        "roi": 97.85714285714286
+      }
     },
     {
       "name": "Storm Conduit I",
@@ -357,12 +599,34 @@
           11
         ]
       ],
-      "hits": 7,
-      "plays": 10,
-      "players": 2,
-      "dates": 10,
-      "available": 122,
-      "BE": 31.23243361672154
+      "hits": 10,
+      "plays": 15,
+      "players": 4,
+      "dates": 13,
+      "available": 148,
+      "BE": 33.35657018468342,
+      "original_record": {
+        "hits": 7,
+        "plays": 10,
+        "players": 2,
+        "dates": 10,
+        "available": 122,
+        "BE": 31.23243361672154,
+        "sample_through": "2026-11-05"
+      },
+      "units": 17.1,
+      "roi": 114.0,
+      "since_check": {
+        "hits": 3,
+        "plays": 5,
+        "rate": 60.0,
+        "BE": 37.604843320607166,
+        "gap": 22.395156679392834,
+        "players": 3,
+        "dates": 3,
+        "units": 3.0,
+        "roi": 60.0
+      }
     },
     {
       "name": "Storm Conduit II",
@@ -394,12 +658,34 @@
           8
         ]
       ],
-      "hits": 5,
-      "plays": 7,
-      "players": 2,
-      "dates": 7,
-      "available": 122,
-      "BE": 31.594026499488685
+      "hits": 6,
+      "plays": 9,
+      "players": 3,
+      "dates": 9,
+      "available": 148,
+      "BE": 33.243165391858206,
+      "original_record": {
+        "hits": 5,
+        "plays": 7,
+        "players": 2,
+        "dates": 7,
+        "available": 122,
+        "BE": 31.594026499488685,
+        "sample_through": "2026-11-05"
+      },
+      "units": 10.35,
+      "roi": 115.0,
+      "since_check": {
+        "hits": 1,
+        "plays": 2,
+        "rate": 50.0,
+        "BE": 39.015151515151516,
+        "gap": 10.984848484848484,
+        "players": 1,
+        "dates": 2,
+        "units": 0.4,
+        "roi": 20.0
+      }
     },
     {
       "name": "Oracle’s Guidance II",
@@ -436,12 +722,34 @@
           2.2
         ]
       ],
-      "hits": 11,
-      "plays": 14,
-      "players": 3,
-      "dates": 10,
-      "available": 128,
-      "BE": 33.087303091558375
+      "hits": 14,
+      "plays": 18,
+      "players": 4,
+      "dates": 12,
+      "available": 154,
+      "BE": 33.958136660269616,
+      "original_record": {
+        "hits": 11,
+        "plays": 14,
+        "players": 3,
+        "dates": 10,
+        "available": 128,
+        "BE": 33.087303091558375,
+        "sample_through": "2026-11-05"
+      },
+      "units": 25.3,
+      "roi": 140.55555555555554,
+      "since_check": {
+        "hits": 3,
+        "plays": 4,
+        "rate": 75.0,
+        "BE": 37.006054150758956,
+        "gap": 37.993945849241044,
+        "players": 3,
+        "dates": 2,
+        "units": 4.15,
+        "roi": 103.75
+      }
     },
     {
       "name": "Runic Resonance II",
@@ -478,12 +786,34 @@
           2.2
         ]
       ],
-      "hits": 11,
-      "plays": 16,
-      "players": 4,
-      "dates": 10,
-      "available": 122,
-      "BE": 33.548218815100086
+      "hits": 15,
+      "plays": 21,
+      "players": 5,
+      "dates": 13,
+      "available": 148,
+      "BE": 34.51408179260177,
+      "original_record": {
+        "hits": 11,
+        "plays": 16,
+        "players": 4,
+        "dates": 10,
+        "available": 122,
+        "BE": 33.548218815100086,
+        "sample_through": "2026-11-05"
+      },
+      "units": 24.8,
+      "roi": 118.0952380952381,
+      "since_check": {
+        "hits": 4,
+        "plays": 5,
+        "rate": 80.0,
+        "BE": 37.604843320607166,
+        "gap": 42.395156679392834,
+        "players": 3,
+        "dates": 3,
+        "units": 5.65,
+        "roi": 113.0
+      }
     },
     {
       "name": "Empowered Storm Conduit",
@@ -520,12 +850,34 @@
           2.2
         ]
       ],
-      "hits": 7,
-      "plays": 9,
-      "players": 2,
-      "dates": 9,
-      "available": 122,
-      "BE": 31.434730162370343
+      "hits": 10,
+      "plays": 13,
+      "players": 4,
+      "dates": 12,
+      "available": 148,
+      "BE": 33.32314915444347,
+      "original_record": {
+        "hits": 7,
+        "plays": 9,
+        "players": 2,
+        "dates": 9,
+        "available": 122,
+        "BE": 31.434730162370343,
+        "sample_through": "2026-11-05"
+      },
+      "units": 19.1,
+      "roi": 146.92307692307693,
+      "since_check": {
+        "hits": 3,
+        "plays": 4,
+        "rate": 75.0,
+        "BE": 37.572091886608014,
+        "gap": 37.427908113391986,
+        "players": 3,
+        "dates": 3,
+        "units": 4.0,
+        "roi": 100.0
+      }
     },
     {
       "name": "Runic Orchestration Crit",
@@ -567,12 +919,38 @@
           2.2
         ]
       ],
-      "hits": 11,
-      "plays": 14,
-      "players": 3,
-      "dates": 10,
-      "available": 122,
-      "BE": 33.087303091558375
+      "hits": 14,
+      "plays": 18,
+      "players": 4,
+      "dates": 12,
+      "available": 148,
+      "BE": 33.958136660269616,
+      "original_record": {
+        "hits": 11,
+        "plays": 14,
+        "players": 3,
+        "dates": 10,
+        "available": 122,
+        "BE": 33.087303091558375,
+        "sample_through": "2026-11-05"
+      },
+      "units": 25.3,
+      "roi": 140.55555555555554,
+      "since_check": {
+        "hits": 3,
+        "plays": 4,
+        "rate": 75.0,
+        "BE": 37.006054150758956,
+        "gap": 37.993945849241044,
+        "players": 3,
+        "dates": 2,
+        "units": 4.15,
+        "roi": 103.75
+      }
     }
-  ]
+  ],
+  "record_version": "unchanged-rules-replay-through-2026-11-11",
+  "previous_sample_through": "2026-11-05",
+  "units_policy": "Flat1u per saved pregame PPP0.5 quote. Overlapping route returns are not additive.",
+  "verified_replay_source_commit": "240dbe5d84e61f26b0d07c89a76b34fc9b8e9f5c"
 }

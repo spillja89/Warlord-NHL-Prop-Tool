@@ -106,12 +106,15 @@ def beta_details(data):
     entries = []
     for route in sorted(data["routes"], key=_route_order):
         status = "MONITOR · under 30 plays" if route["plays"] < 30 else "BETA SAMPLE · 30+ plays"
+        returns = (f'<small>Saved-price 1u PPP replay · {route["units"]:+.2f}u'
+                   f' · {route["roi"]:+.1f}% ROI</small>'
+                   if route.get("units") is not None and route.get("roi") is not None else '')
         entries.append(
             '<div class="pp-assist-beta-route">'
             f'<b>{escape(route["display_name"])}</b><br>'
             f'PPP {route["hits"]}/{route["plays"]} · {100 * route["hits"] / route["plays"]:.1f}%'
             f' · sample PPP BE {route["BE"]:.1f}% · {route["players"]} players'
-            f'<small>{status}</small></div>')
+            f'{returns}<small>{status}</small></div>')
     top=top_beta_route(data)
     count=len(data['routes'])
     return ('<details class="pp-assist-beta-details"><summary>'
