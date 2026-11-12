@@ -34,6 +34,7 @@ from season_sources import (fetch_moneypuck_skaters, fetch_moneypuck_teams,
                             league_season_rows, power_play_team_ranks,
                             slate_team_matchup_rows, team_season_rows)
 from ledger_store import append_bet as _append_cloud_bet, recent_bets as _recent_cloud_bets
+from played_cards import render_markable_boards, render_pick_list
 from power_play_quotes import (fetch_current_pp_usage, format_pk_minutes_per_game,
                                format_ppp_book_prices,
                                opponent_pk_seconds_per_opportunity,
@@ -924,13 +925,16 @@ def _render_class_shortlist(frame: pd.DataFrame, role: str,
         watch = [card for card in watch if not card.get("points_current_tier")]
     if role == "Carry":
         st.caption("Goals Moves V2 · six player families · eight levels · L5 individual xG ≥0.52 + L5 actual TOI ≥18.8 · no confidence gate. Optional buffs never admit a card; archived V1 records remain in Inspect.")
-        st.html(render_warlords({"Carry": goal_cards}, limit=len(goal_cards),
-                                roles=("Carry",), show_hero=False))
+        render_markable_boards({"Carry": goal_cards}, slate_frame, render=render_warlords,
+                               owner_access=owner_access, setting=_owner_setting,
+                               key='played_carry', limit=len(goal_cards), roles=("Carry",), show_hero=False)
         st.caption("Tonight research projection is a separate matchup-adjusted estimate. It is not the historical move % and does not affect Goal card selection. It is being graded before use as a betting edge.")
     elif featured[role]:
         if role == "Tank":
             st.caption("Points 0.5 cards use the 2026–27 Base, Heavy, and Special screens. Their dated hit rates are research results; older named move records remain in each card's fired-move list. Points 1.5 keeps its separate move tree.")
-        st.html(render_warlords(featured, limit=len(featured[role]), roles=(role,), show_hero=False))
+        render_markable_boards(featured, slate_frame, render=render_warlords,
+                               owner_access=owner_access, setting=_owner_setting,
+                               key='played_' + role, limit=len(featured[role]), roles=(role,), show_hero=False)
         st.caption("Tonight research projections appear beneath book break-even on cards after a fresh run. They use a separate matchup adjustment, do not change moves or ranks, and need forward grading before they can be treated as betting probabilities.")
     else:
         st.caption("No player clears both the current baseline and a tested move at 50%+ on this slate.")
@@ -5254,7 +5258,7 @@ def _render_season_skater_form(df_f: pd.DataFrame, slate_day: str) -> None:
 # Navigation
 page = st.sidebar.radio(
     "Page",
-    ["⚔️ Warlords of the Night", "Scout Board", "Points", "Assists", "SOG", "GOALS (0.5)", "Power Play", "📊 Results", "🧪 Dagger Lab", "🪜 Ladder Alerts", "Guide", "Ledger", "Raw CSV", "📟 Calculator", "🧾 Log Bet"],
+    ["⚔️ Warlords of the Night", "Scout Board", "Points", "Assists", "SOG", "GOALS (0.5)", "Power Play", "✓ My Played picks", "📣 Tail list", "📊 Results", "🧪 Dagger Lab", "🪜 Ladder Alerts", "Guide", "Ledger", "Raw CSV", "📟 Calculator", "🧾 Log Bet"],
     index=0,
     format_func=lambda x: {
         "Points": "Points (🛡️ Tank)",
@@ -5274,6 +5278,11 @@ if page in {"⚔️ Warlords of the Night", "Scout Board", "Points", "Assists", 
     )
 
 df_f = filter_common(df)
+
+if page in {"✓ My Played picks", "📣 Tail list"}:
+    render_pick_list(public=page == "📣 Tail list", owner_access=owner_access,
+                     setting=_owner_setting, output_dir=OUTPUT_DIR)
+    st.stop()
 
 # Saved odds are a pregame snapshot. Keep historical pages intact, but remove
 # games more than 10 minutes past their listed start from today's betting boards.
@@ -5334,7 +5343,9 @@ if page == "⚔️ Warlords of the Night":
                f"{len(points_tier_cards)} current-season Points 0.5 move cards. "
                "Every priced entry is in the complete slate below.")
     if display_total:
-        st.html(render_warlords(display_boards, max(map(len, display_boards.values())), _load_svg_icon))
+        render_markable_boards(display_boards, night_df, render=render_warlords,
+                               owner_access=owner_access, setting=_owner_setting,
+                               key='played_night', limit=max(map(len, display_boards.values())), icon_loader=_load_svg_icon)
         if position_data:
             st.caption(f"Jungle matchup numbers: [Shot Propz]({POSITION_SOG_URL}) current-season YTD shots allowed by position · updated {position_data['updated']}. Context only; rankings and frozen moves are unchanged.")
         elif _position_error:

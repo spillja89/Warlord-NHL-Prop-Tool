@@ -1201,7 +1201,8 @@ def _card_quick_summary(role, card):
 
 
 def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=None,
-                    roles: tuple[str, ...] | None = None, show_hero: bool = True) -> str:
+                    roles: tuple[str, ...] | None = None, show_hero: bool = True,
+                    card_controls=None) -> str:
     """Compact, escaped HTML for the raid board or selected class lanes."""
     descriptions = {"Carry": "Finish the fight", "Support": "Set the play",
                     "Tank": "Hold the line", "Jungle": "Control the lanes"}
@@ -1497,7 +1498,7 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
                 <div class="wn-attack"><span class="wn-attack-name">{_h(move_name)}</span><span class="wn-badge">{_h(status + sample)}</span></div>
                 {support_route_note}
                 <div class="wn-unit-foot"><span>{_h(line)} <b>{_h(price)}</b>{book_note}</span><span>{_h(later_note)}{confidence_note}</span></div>
-                {book_rate_note}
+                {book_rate_note}{card_controls(card) if card_controls else ''}
                 {beta_summary(card.get('pp_assist_beta')) if role == 'Support' else ''}</div>
                 {goal_return_panel(move) if role == 'Carry' else ''}
                 {assist_return_panel(move) if role == 'Support' else ''}
