@@ -17,6 +17,7 @@ import streamlit as st
 from published_output import fetch_grade_file, fetch_tracker, is_newer_tracker, list_grade_files, local_matches_sha, save_if_changed
 from warlord_moves_2026 import VERSION as MOVE_KIT_VERSION
 from sog_moves_current import is_current_sog25, sog_base_eligible
+from sog_profiles_2026 import active_moves as active_sog_moves
 from sog_confidence import sog_confidence_color, sog_confidence_style
 from points_moves_current import attach_points_moves, VERSION as POINTS_CURRENT_VERSION
 from sog_matrix import VERSION as SOG_MATRIX_VERSION
@@ -1267,7 +1268,7 @@ def _probe_goals_best(r: dict) -> dict | None:
 
 def _probe_sog_best(r: dict) -> dict | None:
     """Use the same graded Jungle move kit as the card."""
-    move = best_move(sog_moves(r))
+    move = best_move(active_sog_moves(sog_moves(r)))
     if move is None:
         return None
     win = 100.0 * move["wins"] / move["picks"]
@@ -1291,7 +1292,7 @@ def _render_graded_market_hud(r, market: str) -> None:
     """Render one rule set for the card, with the exact sample behind each move."""
     is_points = market == "POINTS"
     all_moves = points_moves(r) if is_points else sog_moves(r)
-    moves = _points_display_moves(r) if is_points else all_moves
+    moves = _points_display_moves(r) if is_points else active_sog_moves(all_moves)
     line_key = "Points_Line" if is_points else "SOG_Line"
     line = _safe_float(r.get(line_key))
     if is_points:
@@ -6005,7 +6006,7 @@ elif page == "SOG":
     st.caption("Shot routes V2 · wired Nov 10 · player profiles and environment upgrades · high-rate research monitors stay off the cards.")
 
     if "Conf_SOG_Version" in df_f and df_f["Conf_SOG_Version"].eq("sog-profile-v2-2026-11-04").any():
-        st.caption("SOG2.5 Jungle kit · Swipe: Green + confidence67 · Rage: confidence71 · Paralysis: opponent PK duration ≤104s/opportunity · Overdrive: Rage + Paralysis. Current-season research records through November3; profile confidence is not hit probability.")
+        st.caption("SOG2.5 Jungle kit · Swipe: Green + confidence67 · Rage: confidence71 · Paralysis: opponent PK duration ≤104s/opportunity. Assassin’s Overdrive is archived in Inspect and cannot lead or qualify a card. Profile confidence is not hit probability.")
     else:
         st.caption("This saved tracker predates Shot Profile v2. Run / Refresh slate calculates the new SOG confidence.")
 
@@ -6015,7 +6016,8 @@ elif page == "SOG":
     else:
         st.caption("Saved shot matrix uses the earlier gate. Run / Refresh slate to calculate Green v2 and its updated move records.")
 
-    df_s = df_f.copy()
+    from sog_moves_current import attach_sog_route_context
+    df_s = attach_sog_route_context(df_f)
     df_s["_cs"] = safe_num(df_s, "Conf_SOG", 0)
     df_s = df_s.sort_values(["_cs"], ascending=[False]).drop(columns=["_cs"], errors="ignore")
 

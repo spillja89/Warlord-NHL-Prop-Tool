@@ -14,6 +14,7 @@ import pandas as pd
 from warlord_moves_2026 import fired_moves
 from sog_moves_current import is_current_sog25, sog_base_eligible, pk_duration_seconds
 from sog_profiles_2026 import profile_values as sog_profile_values, display_moves as sog_profile_display
+from sog_profiles_2026 import inspect_moves as sog_profile_inspect
 from player_availability import is_unavailable
 from player_form import summarize_form
 from goal_routes_v2 import profile_values as goal_v2_values
@@ -446,7 +447,7 @@ def _display_moves(moves, market, line):
 def _inspect_moves(moves, market, line):
     """Preserve every matched current definition behind Inspect, including nested steps."""
     if market=='SOG' and line==2.5:
-        return sorted(sog_profile_display(moves,_move_rank),key=_move_rank,reverse=True)
+        return sog_profile_inspect(moves,_move_rank)
     if market == 'Points':
         current = [move for move in moves if move.get('points_current')]
         moves = current or _display_moves(moves, market, line)
@@ -1419,6 +1420,9 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
                                          .replace("iXA%", "observed assist rank %"))
                 fired_label = ("TRACK" if fired_move.get("track") else
                                "LAB" if fired_move.get("experimental") else fired_move["kind"])
+                if role == 'Jungle' and fired_move.get('sog_retired'):
+                    fired_label = 'ARCHIVED · NOT A CARD SIGNAL'
+                    fired_rule = 'Retired from featured cards Nov 11 · history preserved. ' + fired_rule
                 if role == "Support" and not fired_move.get("track"):
                     fired_label = assist_display_tier(fired_move)["label"]
                 later_text = (f"Mar 15+ {fired_late_wins}/{fired_late_picks} · {fired_late_pct:.1f}%"

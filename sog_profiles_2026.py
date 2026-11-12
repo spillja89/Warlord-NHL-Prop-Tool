@@ -122,11 +122,23 @@ def profile_moves(row,*,monitors=False):
     values=profile_values(row)
     return [_move(s,monitors) for s in catalog()['monitors' if monitors else 'moves'] if _passed(values,s)]
 
+def retired_from_cards(move):
+    """User-approved Nov11 display retirement; raw evaluation/tracking stays intact."""
+    return bool(move.get('sog_current') and not move.get('sog_profile')
+                and move.get('name')=='Assassin’s Overdrive')
+
+def active_moves(moves):
+    return [m for m in moves if not retired_from_cards(m)]
+
+def inspect_moves(moves,rank):
+    archived=[{**m,'sog_retired':True} for m in moves if retired_from_cards(m)]
+    return sorted(display_moves(moves,rank),key=rank,reverse=True)+archived
+
 def display_moves(moves,rank):
     """One lead per route family. Frozen captures still retain every rule."""
     chosen={}
     for move in sorted(moves,key=rank,reverse=True):
-        if move.get('research_monitor'):continue
+        if move.get('research_monitor') or retired_from_cards(move):continue
         family=move.get('sog_family') or ('legacy_environment' if move.get('matchup_buff') else 'legacy_sog')
         chosen.setdefault(family,move)
     return list(chosen.values())

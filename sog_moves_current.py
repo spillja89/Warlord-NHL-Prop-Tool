@@ -97,8 +97,9 @@ def attach_sog_route_context(frame):
     out["Opp_PK_Duration_Source"] = [SOURCE if v is not None else "unavailable" for v in durations]
     moves = [sog_moves(row) for row in rows]
     from move_return_grades import grade_rank
+    from sog_profiles_2026 import active_moves
     def attack(items):
-        active=[m for m in items if not m.get('matchup_buff')]
+        active=[m for m in active_moves(items) if not m.get('matchup_buff')]
         return max(active,key=lambda m:grade_rank(m) or (0,False,m['wins']/m['picks'],0,m['picks'],m['name'])) if active else None
     attacks = [attack(items) for items in moves]
     out["SOG_Attack"] = [m["name"] if m else "" for m in attacks]
