@@ -18,6 +18,7 @@ import requests
 
 from odds_ev_bdl import _norm_name, _safe_float
 from points_primary import select_primary, VERSION as POINTS_PRIMARY_VERSION
+from sportsbook_preferences import preferred_book, prepare_quote_frame
 
 
 BASE = "https://api.the-odds-api.com/v4/sports/icehockey_nhl"
@@ -116,7 +117,10 @@ def merge_odds_api_props(
     Provider requests are limited to games on the Chicago slate date.  Prices
     merge with any BallDontLie prices already present; the better price wins.
     """
-    if tracker.empty or not api_key.strip():
+    if tracker.empty:
+        return tracker
+    tracker = prepare_quote_frame(tracker)
+    if not api_key.strip():
         return tracker
     events = _get("events", api_key)
     if not isinstance(events, list):
@@ -167,7 +171,7 @@ def merge_odds_api_props(
                 if debug:
                     print("[odds-api] targeted PPP check unavailable; using regional quotes")
         for book in books:
-            book_name = str(book.get("title") or book.get("key") or "").strip()
+            book_name = preferred_book(book.get("key")) or preferred_book(book.get("title"))
             if not book_name:
                 continue
             for market in book.get("markets", []):

@@ -46,6 +46,7 @@ except Exception:
     _VERIFY = True  # requests will use system CA bundle
 
 import pandas as pd
+from sportsbook_preferences import preferred_book, prepare_quote_frame
 
 __BDL_EV_ENGINE__ = "ALTLINE_NB_v1_2026-01-18"
 
@@ -577,7 +578,7 @@ def merge_bdl_props_altlines(
     target line.
     """
 
-    df = tracker.copy()
+    df = prepare_quote_frame(tracker)
     if df.empty:
         return df
 
@@ -630,7 +631,8 @@ def merge_bdl_props_altlines(
         return df
 
     keep_types = set(_MARKETS.keys())
-    props = [p for p in all_props if str(p.get("prop_type") or "") in keep_types]
+    props = [p for p in all_props if str(p.get("prop_type") or "") in keep_types
+             and preferred_book(p.get("vendor"))]
     if not props:
         return df
 
@@ -743,7 +745,7 @@ def merge_bdl_props_altlines(
 
         key = (_norm_name(full_name), team, mkt_name, float(lv))
         curr = best_per_line.get(key)
-        vendor = str(pr.get("vendor") or "")
+        vendor = preferred_book(pr.get("vendor"))
         if curr is None or float(odds) > float(curr[0]):
             best_per_line[key] = (float(odds), vendor)
 
