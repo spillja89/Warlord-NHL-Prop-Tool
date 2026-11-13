@@ -2179,6 +2179,7 @@ def normalize_teams_5v5(df: pd.DataFrame, debug: bool = False) -> pd.DataFrame:
 # ============================
 def normalize_goalies(df: pd.DataFrame) -> pd.DataFrame:
     col_name = find_col(df, ["name", "goalie", "playername", "playerName"])
+    col_id = find_col(df, ["playerId", "playerid", "player_id"])
     col_team = find_col(df, ["team", "teamabbrev", "teamAbbrev", "team_abbrev"])
     col_sit  = find_col(df, ["situation"])
     col_gp   = find_col(df, ["games_played", "gamesplayed", "gp"])
@@ -2196,6 +2197,7 @@ def normalize_goalies(df: pd.DataFrame) -> pd.DataFrame:
 
     out = df[[col_name, col_team, col_sit, col_gp, col_it, col_ongoal, col_goals]].copy()
     out.columns = ["Goalie", "Team", "situation", "GP", "icetime", "SOG_Against", "GA"]
+    out["playerId"] = pd.to_numeric(df.loc[out.index, col_id], errors="coerce") if col_id else np.nan
     out["xGA"] = pd.to_numeric(df.loc[out.index, col_xgoals], errors="coerce") if col_xgoals else np.nan
 
     out["Team"] = out["Team"].apply(norm_team)
@@ -2359,6 +2361,8 @@ def resolve_goalie_for_team(
     team_goalie_map: dict[str, dict[str, Any]],
     team_abbr: str,
     starter_name: str | None,
+    *, starter_id: int | None = None,
+    goalie_id_by_name: dict[str, int] | None = None,
 ) -> dict[str, Any]:
     team_abbr = norm_team(team_abbr)
     starter_name = (starter_name or "").strip()
@@ -2380,10 +2384,20 @@ def resolve_goalie_for_team(
                 "GAA": None, "SOG_Against": None, "GA": None, "xGA": None,
                 "Source": "dailyfaceoff_name_only"}
 
-    want = _norm_name(starter_name)
-    sub["__n"] = sub["Goalie"].astype(str).map(_norm_name)
-
-    hit = sub[sub["__n"] == want]
+    from goalie_identity import goalie_name_key, VERIFIED_NAME_IDS
+    names = VERIFIED_NAME_IDS if goalie_id_by_name is None else goalie_id_by_name
+    wanted_id = starter_id if starter_id is not None else names.get(goalie_name_key(starter_name))
+    match_method = "exact_name"
+    if wanted_id is not None and "playerId" in sub.columns:
+        # The official ID wins over spelling; never borrow another team/goalie's stats.
+        hit = sub[pd.to_numeric(sub["playerId"], errors="coerce") == int(wanted_id)]
+        match_method = "nhl_player_id"
+    else:
+        want = _norm_name(starter_name)
+        sub["__n"] = sub["Goalie"].astype(str).map(_norm_name)
+        hit = sub[sub["__n"] == want]
+    if "playerId" in hit.columns and hit["playerId"].dropna().nunique() > 1:
+        hit = hit.iloc[0:0]  # Shared names are ambiguous, not a highest-GP contest.
 
     if hit.empty:
         # Never attach a different goalie's save percentage/GAA to this name.
@@ -2394,6 +2408,9 @@ def resolve_goalie_for_team(
     hit_row = hit.sort_values("GP", ascending=False).iloc[0]
     return {
         "Goalie": starter_name,
+        "Goalie_ID": safe_float(hit_row.get("playerId")),
+        "Match_Method": match_method,
+        "Stats_Name": str(hit_row.get("Goalie", "")),
         "GP": safe_float(hit_row.get("GP")),
         "SV": safe_float(hit_row.get("SV")),
         "GAA": safe_float(hit_row.get("GAA")),
@@ -3801,6 +3818,8 @@ def build_tracker(today_local: date, debug: bool = False, api_key: str | None = 
     g_raw = load_moneypuck_best_effort(sess, "goalies", teams_playing, today_local)
     goalie_stats_year = int(g_raw.attrs.get("moneypuck_start_year", current_season_start_year(today_local)))
     gdf = normalize_goalies(g_raw)
+    from goalie_identity import fetch_goalie_name_ids, VERSION as GOALIE_IDENTITY_VERSION
+    goalie_id_by_name = fetch_goalie_name_ids(sess, current_season_start_year(today_local))
     league_shots = pd.to_numeric(gdf["SOG_Against"], errors="coerce").sum()
     league_goals = pd.to_numeric(gdf["GA"], errors="coerce").sum()
     league_seconds = pd.to_numeric(gdf["icetime"], errors="coerce").sum()
@@ -3813,7 +3832,8 @@ def build_tracker(today_local: date, debug: bool = False, api_key: str | None = 
     goalie_check_utc = datetime.now(timezone.utc).isoformat(timespec="seconds")
     for team, lineup in official_lineups.items():
         if lineup.get("status") == "Official lineup" and lineup.get("starter_name"):
-            dfo_map[team] = {"goalie": lineup["starter_name"], "status": "Official"}
+            dfo_map[team] = {"goalie": lineup["starter_name"], "status": "Official",
+                             "goalie_id": lineup.get("starter_id")}
 
     # Check both injury sources: DFO's line-combo list can omit confirmed absences.
     inj_df = combine_injury_reports(
@@ -3839,9 +3859,16 @@ def build_tracker(today_local: date, debug: bool = False, api_key: str | None = 
     def _goalie_pack(r: pd.Series) -> pd.Series:
         opp_team = norm_team(str(r.get("Opp", "")).strip())
         starter_name = dfo_map.get(opp_team, {}).get("goalie", "")
-        g = resolve_goalie_for_team(gdf, team_goalie, opp_team, starter_name)
+        g = resolve_goalie_for_team(
+            gdf, team_goalie, opp_team, starter_name,
+            starter_id=dfo_map.get(opp_team, {}).get("goalie_id"),
+            goalie_id_by_name=goalie_id_by_name,
+        )
         return pd.Series({
             "Opp_Goalie": g.get("Goalie", ""),
+            "Opp_Goalie_ID": g.get("Goalie_ID"),
+            "Opp_Goalie_Match": g.get("Match_Method", "unmatched"),
+            "Opp_Goalie_Stats_Name": g.get("Stats_Name", ""),
             "Opp_GP": g.get("GP", None),
             "Opp_SV": g.get("SV", None),
             "Opp_GAA": g.get("GAA", None),
@@ -5139,9 +5166,13 @@ def build_tracker(today_local: date, debug: bool = False, api_key: str | None = 
         "Lineup_Status": sk.get("Lineup_Status"),
         "Lineup_Check_UTC": sk.get("Lineup_Check_UTC"),
         "Goalie_Check_UTC": sk.get("Goalie_Check_UTC"),
+        "Goalie_Identity_Version": GOALIE_IDENTITY_VERSION,
 
         "Opp": sk["Opp"].fillna(""),
         "Opp_Goalie": sk["Opp_Goalie"].fillna(""),
+        "Opp_Goalie_ID": sk.get("Opp_Goalie_ID"),
+        "Opp_Goalie_Match": sk.get("Opp_Goalie_Match"),
+        "Opp_Goalie_Stats_Name": sk.get("Opp_Goalie_Stats_Name"),
         "Opp_GP": sk["Opp_GP"],
         "Opp_SV": sk["Opp_SV"],
         "Opp_GAA": sk["Opp_GAA"],
