@@ -9,11 +9,20 @@ from played_picks import PickStore, make_pick, pregame, results_for_picks
 _JS = r"""
 export default function({data, setTriggerValue}) {
   const controller = new AbortController();
-  const boxes = () => Array.from(document.querySelectorAll('[data-warlord-pick]'))
-    .filter(box => box.dataset.pickScope === data.scope);
+  let timer;
+  let attempts = 0;
   function attach() {
+    if (controller.signal.aborted) return;
+    const boxes = Array.from(document.querySelectorAll('[data-warlord-pick]'))
+      .filter(box => box.dataset.pickScope === data.scope);
+    // st.html can mount just after the bridge. Retry briefly, never observe the
+    // whole document: Streamlit's own rendering must not trigger more scans.
+    if (!boxes.length && data.has_cards && attempts++ < 20) {
+      timer = setTimeout(attach, 50);
+      return;
+    }
     // Acknowledgements update only existing controls, never the card DOM.
-    boxes().forEach(box => {
+    boxes.forEach(box => {
       const reply = data.replies[box.dataset.warlordPick];
       if (!reply || box.dataset.ack === reply.request_id) return;
       box.dataset.ack = reply.request_id;
@@ -24,8 +33,8 @@ export default function({data, setTriggerValue}) {
       box.querySelector('[role="status"]').textContent = reply.message;
       delete box.dataset.pending;
     });
-    const busy = boxes().some(box => box.dataset.pending);
-    boxes().forEach(box => {
+    const busy = boxes.some(box => box.dataset.pending);
+    boxes.forEach(box => {
       box.querySelectorAll('input[data-pick-field]').forEach(input => {
         input.disabled = busy || (input.dataset.pickField === 'shared' && box.dataset.canShare !== 'true');
       });
@@ -33,10 +42,10 @@ export default function({data, setTriggerValue}) {
       box.dataset.bridge = data.token;
       box.querySelectorAll('input[data-pick-field]').forEach(input => {
         input.addEventListener('change', () => {
-          if (boxes().some(item => item.dataset.pending)) return;
+          if (boxes.some(item => item.dataset.pending)) return;
           box.dataset.pending = crypto.randomUUID();
           // Serialize writes so rapid clicks cannot replace an in-flight event.
-          boxes().forEach(item => item.querySelectorAll('input').forEach(el => el.disabled = true));
+          boxes.forEach(item => item.querySelectorAll('input').forEach(el => el.disabled = true));
           const note = box.querySelector('[role="status"]');
           if (note) note.textContent = 'Saving…';
           setTriggerValue('action', {pick_id: box.dataset.warlordPick,
@@ -47,9 +56,7 @@ export default function({data, setTriggerValue}) {
     });
   }
   attach();
-  const observer = new MutationObserver(attach);
-  observer.observe(document.body, {childList:true, subtree:true});
-  return () => { controller.abort(); observer.disconnect(); };
+  return () => { clearTimeout(timer); controller.abort(); };
 }
 """
 _bridge = st.components.v2.component('warlord_pick_marks', js=_JS)
@@ -117,7 +124,8 @@ def _save_bridge(store, registry, states, replies, *, owner_access, key):
         save_card_mark(store, registry, states, replies, component_state.get('action'),
                        owner_access=owner_access)
 
-    _bridge(data={'scope': key, 'token': uuid.uuid4().hex, 'replies': replies},
+    _bridge(data={'scope': key, 'token': uuid.uuid4().hex, 'replies': replies,
+                  'has_cards': bool(registry)},
             key=key, on_action_change=on_action)
 
 
