@@ -73,6 +73,10 @@ class PickStore:
 
     @staticmethod
     def _ensure(cursor):
+        # Bound lock/statement waits inside this pick transaction. A blocked
+        # share must return an honest failure rather than hang the save bridge.
+        cursor.execute("SET LOCAL lock_timeout = '3s'")
+        cursor.execute("SET LOCAL statement_timeout = '10s'")
         cursor.execute("""CREATE TABLE IF NOT EXISTS warlord_pick_marks (
             pick_id text PRIMARY KEY, played boolean NOT NULL DEFAULT false,
             shared boolean NOT NULL DEFAULT false, private_pick jsonb NOT NULL,

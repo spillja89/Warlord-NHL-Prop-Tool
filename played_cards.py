@@ -10,6 +10,7 @@ _JS = r"""
 export default function({data, setTriggerValue}) {
   const controller = new AbortController();
   let timer;
+  let recoveryTimer;
   let attempts = 0;
   function attach() {
     if (controller.signal.aborted) return;
@@ -23,6 +24,10 @@ export default function({data, setTriggerValue}) {
     }
     // Acknowledgements update only existing controls, never the card DOM.
     boxes.forEach(box => {
+      if (box.dataset.savedPlayed === undefined) {
+        box.dataset.savedPlayed = String(box.querySelector('[data-pick-field="played"]').checked);
+        box.dataset.savedShared = String(box.querySelector('[data-pick-field="shared"]').checked);
+      }
       const reply = data.replies[box.dataset.warlordPick];
       if (!reply || box.dataset.ack === reply.request_id) return;
       box.dataset.ack = reply.request_id;
@@ -30,9 +35,32 @@ export default function({data, setTriggerValue}) {
       box.dataset.canShare = String(reply.can_share);
       box.querySelector('[data-pick-field="played"]').checked = reply.played;
       box.querySelector('[data-pick-field="shared"]').checked = reply.shared;
+      box.dataset.savedPlayed = String(reply.played);
+      box.dataset.savedShared = String(reply.shared);
       box.querySelector('[role="status"]').textContent = reply.message;
       delete box.dataset.pending;
+      delete box.dataset.pendingSince;
     });
+    // A dropped acknowledgement must not permanently lock every pick. Restore
+    // the last acknowledged display, never claim the uncertain write succeeded.
+    const pending = boxes.filter(box => box.dataset.pending);
+    if (pending.length) {
+      const remaining = Math.max(0, 12000 - (Date.now() - Math.min(...pending.map(box => Number(box.dataset.pendingSince) || Date.now()))));
+      recoveryTimer = setTimeout(() => {
+        if (controller.signal.aborted) return;
+        pending.forEach(box => {
+          if (!box.dataset.pending) return;
+          box.querySelector('[data-pick-field="played"]').checked = box.dataset.savedPlayed === 'true';
+          box.querySelector('[data-pick-field="shared"]').checked = box.dataset.savedShared === 'true';
+          box.querySelector('[role="status"]').textContent = 'Save not confirmed · retry';
+          delete box.dataset.pending;
+          delete box.dataset.pendingSince;
+        });
+        boxes.forEach(box => box.querySelectorAll('input[data-pick-field]').forEach(input => {
+          input.disabled = input.dataset.pickField === 'shared' && box.dataset.canShare !== 'true';
+        }));
+      }, remaining);
+    }
     const busy = boxes.some(box => box.dataset.pending);
     boxes.forEach(box => {
       box.querySelectorAll('input[data-pick-field]').forEach(input => {
@@ -44,6 +72,19 @@ export default function({data, setTriggerValue}) {
         input.addEventListener('change', () => {
           if (boxes.some(item => item.dataset.pending)) return;
           box.dataset.pending = crypto.randomUUID();
+          box.dataset.pendingSince = String(Date.now());
+          clearTimeout(recoveryTimer);
+          recoveryTimer = setTimeout(() => {
+            if (controller.signal.aborted || !box.dataset.pending) return;
+            box.querySelector('[data-pick-field="played"]').checked = box.dataset.savedPlayed === 'true';
+            box.querySelector('[data-pick-field="shared"]').checked = box.dataset.savedShared === 'true';
+            box.querySelector('[role="status"]').textContent = 'Save not confirmed · retry';
+            delete box.dataset.pending;
+            delete box.dataset.pendingSince;
+            boxes.forEach(item => item.querySelectorAll('input[data-pick-field]').forEach(el => {
+              el.disabled = el.dataset.pickField === 'shared' && item.dataset.canShare !== 'true';
+            }));
+          }, 12000);
           // Serialize writes so rapid clicks cannot replace an in-flight event.
           boxes.forEach(item => item.querySelectorAll('input').forEach(el => el.disabled = true));
           const note = box.querySelector('[role="status"]');
@@ -56,7 +97,7 @@ export default function({data, setTriggerValue}) {
     });
   }
   attach();
-  return () => { clearTimeout(timer); controller.abort(); };
+  return () => { clearTimeout(timer); clearTimeout(recoveryTimer); controller.abort(); };
 }
 """
 _bridge = st.components.v2.component('warlord_pick_marks', js=_JS)

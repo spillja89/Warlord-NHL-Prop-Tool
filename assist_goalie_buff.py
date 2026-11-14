@@ -59,16 +59,23 @@ def context(row, moves):
     sv = sv if sv is not None and 0 <= sv <= 1 else None
     gp = gp if gp is not None and gp >= 0 else None
     matched_records = [identity(move) for move in moves if record_for(move)]
-    qualifies = (number(row.get("Assists_Line")) == .5
+    profile_matches = (number(row.get("Assists_Line")) == .5
                  and text(row.get("Matrix_Assists")).casefold() in {"green", "🟢"}
                  and row.get("Model_Stats_Season") == "2026-2027"
-                 and status.casefold() in {"confirmed", "official"}
                  and gaa is not None and gaa >= CUTOFF and bool(matched_records))
+    confirmed = status.casefold() in {"confirmed", "official"}
+    source = text(row.get("Opp_Goalie_Source"))
+    source_label = "DailyFaceoff" if source.startswith("dailyfaceoff") else "NHL" if source.startswith("nhl") else "Saved goalie source"
     return dict(name=name, status=status, gaa=gaa, sv=sv, gp=gp,
-                qualifies=bool(qualifies), matched_records=matched_records)
+                qualifies=bool(profile_matches and confirmed), pending=bool(profile_matches and not confirmed),
+                source=source_label, matched_records=matched_records)
 
 
 def badge_html(value):
+    if value and value.get("pending"):
+        return ('<span class="wn-goalie-buff wn-goalie-buff--pending" title="The saved goalie clears GAA 2.95. '
+                'Our saved source has not confirmed this starter; other sources may differ.">'
+                '◇ GAA CUTOFF MET <b>Starter confirmation pending</b></span>')
     if not value or not value.get("qualifies"):
         return ""
     return ('<span class="wn-goalie-buff" title="Optional matchup buff: confirmed opposing goalie GAA ≥2.95. '
@@ -83,13 +90,18 @@ def goalie_html(value):
     sv = f'{value["sv"]:.3f}' if value.get("sv") is not None else "—"
     gp = f'{value["gp"]:g}' if value.get("gp") is not None else "—"
     return ('<div class="wn-goalie-strip"><span>OPP GOALIE</span> '
-            f'<strong>{escape(value["name"])}</strong> <em>{escape(value["status"])}</em>'
+            f'<strong>{escape(value["name"])}</strong> <em>{escape(value["status"])} · {escape(value.get("source", "Saved source"))}</em>'
             f'<span class="wn-goalie-stat">GAA <b>{gaa}</b></span>'
             f'<span class="wn-goalie-stat">SV <b>{sv}</b></span>'
             f'<span class="wn-goalie-stat">GP <b>{gp}</b></span></div>')
 
 
 def inspect_html(value, move):
+    if value and value.get("pending"):
+        return ('<section class="wn-goalie-buff-detail"><strong>◇ GOALIE EXPOSURE · confirmation pending</strong>'
+                f'<p>{escape(value["name"])} clears GAA ≥2.95. Our saved {escape(value.get("source", "source"))} '
+                f'status is {escape(value["status"])}. The confirmed-starter buff is not active. '
+                'The tested buff records use saved confirmed/official starters; they are not applied to this provisional start.</p></section>')
     if not value or not value.get("qualifies"):
         return ""
     record = record_for(move)
@@ -124,6 +136,7 @@ def inspect_html(value, move):
 CSS = """
 .wn-goalie-buff{display:inline-flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:8px;padding:7px 11px;border:1px solid #f9d875;border-radius:7px;background:linear-gradient(105deg,#6137a7,#35235e 64%,#6b4e24);color:#fff3bf;font-size:12px;font-weight:950;letter-spacing:.045em;box-shadow:0 0 12px #a477ff55,inset 0 0 12px #fbd87522;animation:wnGoalieBuffPulse 2.8s ease-in-out infinite}
 .wn-goalie-buff>span{font-size:19px;color:#ffe995;text-shadow:0 0 9px #f8d678}.wn-goalie-buff>b{padding-left:7px;border-left:1px solid #e9cd8f88;color:#fff;letter-spacing:0}
+.wn-goalie-buff--pending{animation:none;background:#292b43;border-color:#a9a4d6;color:#e3dcff;box-shadow:none}
 @keyframes wnGoalieBuffPulse{0%,100%{box-shadow:0 0 9px #a477ff44,inset 0 0 10px #fbd87515}50%{box-shadow:0 0 18px #c28eff88,inset 0 0 15px #fbd87533}}
 @media(prefers-reduced-motion:reduce){.wn-goalie-buff{animation:none}}
 .wn-goalie-strip{display:flex;align-items:center;flex-wrap:wrap;gap:5px 10px;margin:5px 0 1px;padding:7px 9px;background:#111b2d;border:1px solid #65728c;border-radius:6px;color:#e6eeff;font-size:12px;line-height:1.5}.wn-goalie-strip>span:first-child{font-size:10px;font-weight:850;letter-spacing:.07em;color:#d9c1ff}.wn-goalie-strip>strong,.wn-goalie-stat>b{color:#fff}.wn-goalie-strip>em{font-size:11px;font-style:normal;color:#c5d0e5}.wn-goalie-stat{white-space:nowrap}
