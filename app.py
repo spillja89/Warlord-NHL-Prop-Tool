@@ -14,6 +14,7 @@ import numpy as np
 import pandas as pd
 import streamlit as st
 from matchup_display import matchup_label, start_time_text, with_matchup_times
+from battle_roster import render_battle_roster
 
 from published_output import fetch_grade_file, fetch_tracker, is_newer_tracker, list_grade_files, local_matches_sha, save_if_changed
 from warlord_moves_2026 import VERSION as MOVE_KIT_VERSION
@@ -5321,6 +5322,7 @@ if page == "⚔️ Warlords of the Night":
     if slate_sort != "Top ranked":
         display_boards = _sort_slate_boards(display_boards, slate_sort, starts_by_game)
     display_total = sum(len(cards) for cards in display_boards.values())
+    render_battle_roster(slate_day, priced_boards, owner_access=owner_access, setting=_owner_setting)
     st.caption(f"Current view: {night_df['Game'].nunique() if 'Game' in night_df else 0} games · "
                f"{night_df['Team'].nunique() if 'Team' in night_df else 0} teams · "
                f"{len(night_df)} roster skaters · {priced_total} priced prop entries · "
