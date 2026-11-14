@@ -56,7 +56,7 @@ def roster_html(picks, boards):
 def render_battle_roster(day, boards, *, owner_access, setting):
     from played_cards import storage_url
     from played_picks import PickStore
-    st.subheader("⚔️ Chosen for Battle")
+    st.subheader("⚔️ The Warlord’s Chosen for Battle")
     st.caption('Champions deployed to cook the books.')
     st.button('↻ Update the Chosen',key='refresh_battle_roster',help='Refreshes only this roster, without rebuilding the board or running the slate.')
     url=storage_url(setting)
