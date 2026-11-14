@@ -56,20 +56,20 @@ def roster_html(picks, boards):
 def render_battle_roster(day, boards, *, owner_access, setting):
     from played_cards import storage_url
     from played_picks import PickStore
-    st.subheader("⚔️ Tonight’s Warband")
-    st.caption('Chosen to battle the books · Played champions, deployed for tonight.')
-    st.button('↻ Update warband',key='refresh_battle_roster',help='Refreshes only this roster, without rebuilding the board or running the slate.')
+    st.subheader("⚔️ Chosen for Battle")
+    st.caption('Champions deployed to cook the books.')
+    st.button('↻ Update the Chosen',key='refresh_battle_roster',help='Refreshes only this roster, without rebuilding the board or running the slate.')
     url=storage_url(setting)
     if not url:
-        st.info('Your warband will appear here once pick storage is connected.')
+        st.info('Your chosen champions will appear here once pick storage is connected.')
         return
     try:
         picks=roster_picks(PickStore(url),day,owner_access=owner_access)
     except Exception:
-        st.info('The warband is temporarily unavailable. Your saved picks have not changed.')
+        st.info('The chosen roster is temporarily unavailable. Your saved picks have not changed.')
         return
     if not picks:
-        st.caption('Mark Played on a card, then Update warband to deploy your champions here.'
+        st.caption('Mark Played on a card, then Update the Chosen to deploy your champions here.'
                    if owner_access else 'No champions shared for this slate yet.')
         return
     unique={(pick.get('game_id'),pick.get('player_id')) for pick in picks}
