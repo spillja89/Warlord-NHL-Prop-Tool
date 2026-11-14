@@ -4312,11 +4312,12 @@ if df.columns.duplicated().any():
 # Goalie confirmations can arrive after the saved model run. Refresh the
 # displayed status independently, but only for the same named goalie; a
 # changed starter requires a new model run for the matchup inputs.
-@st.cache_data(ttl=300, show_spinner=False)
+@st.cache_data(ttl=60, show_spinner=False)
 def _current_goalie_reports(day: date) -> dict:
     try:
         from nhl_edge import fetch_dailyfaceoff_starters
-        return fetch_dailyfaceoff_starters(day)
+        from goalie_reports import fetch_reports
+        return fetch_reports(day, fetch_dailyfaceoff_starters)
     except Exception:
         return {}
 
@@ -4325,24 +4326,10 @@ if source == "latest" and {"Date", "Opp", "Opp_Goalie", "Opp_Goalie_Status"}.iss
     today_ct = datetime.now(ZoneInfo("America/Chicago")).date()
     if df["Date"].astype(str).eq(today_ct.isoformat()).any():
         live_goalies = _current_goalie_reports(today_ct)
-        confirmed_now = 0
-        changed_starters = []
-        for team, report in live_goalies.items():
-            goalie = str(report.get("goalie") or "").strip().casefold()
-            status = str(report.get("status") or "").strip()
-            if not goalie or status.casefold() not in {"confirmed", "likely", "expected"}:
-                continue
-            same_goalie = (df["Opp"].astype(str).eq(team)
-                           & df["Opp_Goalie"].astype(str).str.strip().str.casefold().eq(goalie))
-            if same_goalie.any():
-                old = df.loc[same_goalie, "Opp_Goalie_Status"].astype(str)
-                if status.casefold() == "confirmed" and not old.str.casefold().eq("confirmed").all():
-                    confirmed_now += 1
-                df.loc[same_goalie, "Opp_Goalie_Status"] = status
-            elif df["Opp"].astype(str).eq(team).any():
-                changed_starters.append(team)
+        from goalie_reports import apply_live_reports
+        df, confirmed_now, changed_starters = apply_live_reports(df, live_goalies, today_ct)
         if confirmed_now:
-            st.caption(f"{confirmed_now} goalie confirmation(s) updated from DailyFaceoff. "
+            st.caption(f"{confirmed_now} goalie confirmation(s) updated from DailyFaceoff / GoaliePost. "
                        "Saved matchup calculations still use the goalie from the model run.")
         if changed_starters:
             st.warning("A different goalie is now reported for "
@@ -5375,7 +5362,7 @@ if page == "⚔️ Warlords of the Night":
         statuses = goalie_teams["Opp_Goalie_Status"].astype(str).str.casefold()
         official = int(statuses.eq("official").sum())
         reported = int(statuses.eq("confirmed").sum())
-        st.caption(f"Goalie snapshot: {official} official NHL starter(s), {reported} DailyFaceoff-confirmed report(s), "
+        st.caption(f"Goalie snapshot: {official} official NHL starter(s), {reported} confirmed report(s), "
                    f"{len(goalie_teams)-official-reported} provisional. Status is from the saved run; rerun near puck drop to check for changes.")
 
     summary, by_team, baseline_roster = baseline_audit(night_df)

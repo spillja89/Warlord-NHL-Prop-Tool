@@ -65,7 +65,7 @@ def context(row, moves):
                  and gaa is not None and gaa >= CUTOFF and bool(matched_records))
     confirmed = status.casefold() in {"confirmed", "official"}
     source = text(row.get("Opp_Goalie_Source"))
-    source_label = "DailyFaceoff" if source.startswith("dailyfaceoff") else "NHL" if source.startswith("nhl") else "Saved goalie source"
+    source_label = text(row.get("Opp_Goalie_Report_Source")) or ("DailyFaceoff" if source.startswith("dailyfaceoff") else "NHL" if source.startswith("nhl") else "Saved goalie source")
     return dict(name=name, status=status, gaa=gaa, sv=sv, gp=gp,
                 qualifies=bool(profile_matches and confirmed), pending=bool(profile_matches and not confirmed),
                 source=source_label, matched_records=matched_records)

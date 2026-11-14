@@ -1096,6 +1096,11 @@ def dfo_team_to_abbr(team_full: str) -> str | None:
 # ============================
 # DailyFaceoff starting goalies
 # ============================
+def fetch_starter_reports(today_local: date, debug: bool = False) -> dict:
+    from goalie_reports import fetch_reports
+    return fetch_reports(today_local, lambda day: fetch_dailyfaceoff_starters(day, debug=debug))
+
+
 def fetch_dailyfaceoff_starters(today_local: date, debug: bool = False) -> dict[str, dict[str, str]]:
     # The undated landing page follows the site's current day, which may not
     # match the slate being built (especially the night before puck drop).
@@ -3828,7 +3833,7 @@ def build_tracker(today_local: date, debug: bool = False, api_key: str | None = 
     team_goalie = build_team_goalie_map(gdf)
 
     # DFO starter map
-    dfo_map = fetch_dailyfaceoff_starters(today_local, debug=debug)
+    dfo_map = fetch_starter_reports(today_local, debug=debug)
     goalie_check_utc = datetime.now(timezone.utc).isoformat(timespec="seconds")
     for team, lineup in official_lineups.items():
         if lineup.get("status") == "Official lineup" and lineup.get("starter_name"):
@@ -3880,6 +3885,9 @@ def build_tracker(today_local: date, debug: bool = False, api_key: str | None = 
                                  if dfo_map.get(opp_team, {}).get("status") == "Official"
                                  else g.get("Source", ""),
             "Opp_Goalie_Status": dfo_map.get(opp_team, {}).get("status", ""),
+            "Opp_Goalie_Report_Source": dfo_map.get(opp_team, {}).get("source", "NHL" if dfo_map.get(opp_team, {}).get("status") == "Official" else "DailyFaceoff"),
+            "Opp_Goalie_Report_URL": dfo_map.get(opp_team, {}).get("url", ""),
+            "Opp_Goalie_Report_UTC": dfo_map.get(opp_team, {}).get("reported_at", ""),
         })
 
     # attach to skaters
@@ -5184,6 +5192,9 @@ def build_tracker(today_local: date, debug: bool = False, api_key: str | None = 
         "Goalie_Context_Status": sk.get("Goalie_Context_Status"),
         "Goalie_Weak": sk["Goalie_Weak"],
         "Opp_Goalie_Status": sk.get("Opp_Goalie_Status", ""),
+        "Opp_Goalie_Report_Source": sk.get("Opp_Goalie_Report_Source", ""),
+        "Opp_Goalie_Report_URL": sk.get("Opp_Goalie_Report_URL", ""),
+        "Opp_Goalie_Report_UTC": sk.get("Opp_Goalie_Report_UTC", ""),
                 "Opp_Goalie_Source": sk.get("Opp_Goalie_Source", ""),
 
         # Big 3 (SOG defense context + 5v5 share proxy) — used for ladder explainability
