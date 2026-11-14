@@ -7,9 +7,8 @@ ROLES={'Goal':'Carry','Assists':'Support','Points':'Tank','SOG':'Jungle','PPP':'
 
 
 def roster_picks(store, day, *, owner_access):
-    # Public rendering must never fetch or infer the owner's private marks.
-    rows=([row for row in store.private_rows().values() if row.get('played')]
-          if owner_access else store.public_rows())
+    # One shared deployment view for everyone. Never publish older private history.
+    rows=store.public_rows()
     return [row for row in rows if row.get('date')==day]
 
 
@@ -58,8 +57,7 @@ def render_battle_roster(day, boards, *, owner_access, setting):
     from played_cards import storage_url
     from played_picks import PickStore
     st.subheader("⚔️ Tonight’s Warband")
-    st.caption('Chosen to battle the books · Private deployment. Visitors see only picks you share to Tail.'
-               if owner_access else 'Chosen to battle the books · Picks explicitly shared by the owner.')
+    st.caption('Chosen to battle the books · Played champions, deployed for tonight.')
     st.button('↻ Update warband',key='refresh_battle_roster',help='Refreshes only this roster, without rebuilding the board or running the slate.')
     url=storage_url(setting)
     if not url:

@@ -116,7 +116,14 @@ class PickStore:
                 if value and not played:
                     private = dict(pick, marked_at=now.isoformat(), timing="pregame" if pregame(pick, now) else "after start / start unknown")
                 played = value
-                if not played:
+                if played:
+                    if not shared:
+                        # One explicit Played click both saves and deploys the pick.
+                        private = dict(pick, marked_at=private.get('marked_at', now.isoformat()),
+                                       timing=private.get('timing', 'after start / start unknown'))
+                        public = public_projection(pick, now.isoformat())
+                    shared = True
+                else:
                     shared, public = False, None
             else:
                 if value and not played:

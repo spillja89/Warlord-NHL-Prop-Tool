@@ -27,17 +27,14 @@ export default function({data, setTriggerValue}) {
     boxes.forEach(box => {
       if (box.dataset.savedPlayed === undefined) {
         box.dataset.savedPlayed = String(box.querySelector('[data-pick-field="played"]').checked);
-        box.dataset.savedShared = String(box.querySelector('[data-pick-field="shared"]').checked);
       }
       const reply = data.replies[box.dataset.warlordPick];
       if (!reply || box.dataset.ack === reply.request_id) return;
       box.dataset.ack = reply.request_id;
       box.dataset.revision = String(reply.revision);
       box.dataset.canShare = String(reply.can_share);
-      box.querySelector('[data-pick-field="played"]').checked = reply.played;
-      box.querySelector('[data-pick-field="shared"]').checked = reply.shared;
-      box.dataset.savedPlayed = String(reply.played);
-      box.dataset.savedShared = String(reply.shared);
+      box.querySelector('[data-pick-field="played"]').checked = reply.played && reply.shared;
+      box.dataset.savedPlayed = String(reply.played && reply.shared);
       box.querySelector('[role="status"]').textContent = reply.message;
       delete box.dataset.pending;
       delete box.dataset.pendingSince;
@@ -52,7 +49,6 @@ export default function({data, setTriggerValue}) {
         pending.forEach(box => {
           if (!box.dataset.pending) return;
           box.querySelector('[data-pick-field="played"]').checked = box.dataset.savedPlayed === 'true';
-          box.querySelector('[data-pick-field="shared"]').checked = box.dataset.savedShared === 'true';
           box.querySelector('[role="status"]').textContent = 'Save not confirmed · retry';
           delete box.dataset.pending;
           delete box.dataset.pendingSince;
@@ -78,7 +74,6 @@ export default function({data, setTriggerValue}) {
           recoveryTimer = setTimeout(() => {
             if (controller.signal.aborted || !box.dataset.pending) return;
             box.querySelector('[data-pick-field="played"]').checked = box.dataset.savedPlayed === 'true';
-            box.querySelector('[data-pick-field="shared"]').checked = box.dataset.savedShared === 'true';
             box.querySelector('[role="status"]').textContent = 'Save not confirmed · retry';
             delete box.dataset.pending;
             delete box.dataset.pendingSince;
@@ -208,17 +203,15 @@ def render_markable_boards(boards, frame, *, render, owner_access, setting, key,
         played, shared = bool(state.get('played')), bool(state.get('shared'))
         revision = int(state.get('revision', 0))
         disabled = ' disabled' if error else ''
-        share_disabled = ' disabled' if error or not played else ''
-        note = 'Saved ✓' if played else 'Private mark'
+        deployed = played and shared
+        note = 'Saved ✓ · Shared' if deployed else 'Older saved pick · check to deploy' if played else 'Save & share'
         if error:
             note = 'Saving unavailable'
         can_share = played
         return (f'<div class="wn-pick-controls" data-warlord-pick="{pick["pick_id"]}" data-revision="{revision}"'
                 f' data-pick-scope="{escape(key, quote=True)}" data-can-share="{str(can_share).lower()}">'
-                f'<label><input type="checkbox" data-pick-field="played" aria-label="Played: {escape(pick["player"])} {pick["market"]} over {pick["line"]}"'
-                f'{" checked" if played else ""}{disabled}>✓ Played</label>'
-                f'<label title="Publish this pick and displayed price. Your personal stakes stay private."><input type="checkbox" data-pick-field="shared" aria-label="Share to Tail list: {escape(pick["player"])} {pick["market"]} over {pick["line"]}"'
-                f'{" checked" if shared else ""}{share_disabled}>Share to Tail list</label>'
+                f'<label title="Save this played pick and share it to the Tail list."><input type="checkbox" data-pick-field="played" aria-label="Played: {escape(pick["player"])} {pick["market"]} over {pick["line"]}"'
+                f'{" checked" if deployed else ""}{disabled}>✓ Played · shared to Tail</label>'
                 f'<span role="status">{note}</span></div>')
 
     st.html(_CSS + render(boards, card_controls=controls, **kwargs))
@@ -256,16 +249,13 @@ def pp_controls_html(pick, state, error, key):
     revision = int(state.get('revision', 0))
     can_share = played
     disabled = ' disabled' if error else ''
-    share_disabled = ' disabled' if error or not can_share else ''
-    note = 'Saving unavailable' if error else 'Saved ✓' if played else 'Private mark'
+    deployed = played and shared
+    note = 'Saving unavailable' if error else 'Saved ✓ · Shared' if deployed else 'Older saved pick · check to deploy' if played else 'Save & share'
     player = escape(pick['player'], quote=True)
     return (f'<div class="wn-pick-controls" data-warlord-pick="{pick["pick_id"]}" data-revision="{revision}"'
             f' data-pick-scope="{escape(key, quote=True)}" data-can-share="{str(can_share).lower()}">'
-            f'<label><input type="checkbox" data-pick-field="played" aria-label="Played: {player} PPP over {pick["line"]}"'
-            f'{" checked" if played else ""}{disabled}>✓ Played</label>'
-            '<label title="Publish this pick and displayed price. Your personal stakes stay private.">'
-            f'<input type="checkbox" data-pick-field="shared" aria-label="Share to Tail list: {player} PPP over {pick["line"]}"'
-            f'{" checked" if shared else ""}{share_disabled}>Share to Tail list</label>'
+            f'<label title="Save this played pick and share it to the Tail list."><input type="checkbox" data-pick-field="played" aria-label="Played: {player} PPP over {pick["line"]}"'
+            f'{" checked" if deployed else ""}{disabled}>✓ Played · shared to Tail</label>'
             f'<span role="status">{note}</span></div>')
 
 
@@ -322,7 +312,7 @@ def share_timing(pick):
 def render_pick_list(*, public, owner_access, setting, output_dir):
     st.subheader('📣 Tail list' if public else '✓ My Played picks')
     if not public and not owner_access:
-        st.info('Unlock Owner controls to see your private Played picks.')
+        st.info('Unlock Owner controls to manage your Played picks.')
         return
     url = storage_url(setting)
     if not url:
@@ -335,7 +325,7 @@ def render_pick_list(*, public, owner_access, setting, output_dir):
         st.info('Pick storage is temporarily unavailable. Please try again shortly.')
         return
     st.caption('Only picks explicitly shared by the owner appear here. Prices are saved reference quotes, not live odds. Shares after the scheduled start are labeled; no bets are placed by this page.' if public else
-               'Private marks only. The saved card price is a reference quote, not a claim about the odds or stake you actually bet. Unchecking Played also removes it from the Tail list.')
+               'Played saves and shares the pick to Tail in one click. Unchecking removes it from both. Saved prices are reference quotes; stakes stay private.')
     if not picks:
         st.info('No shared picks yet.' if public else 'Check Played on a card to keep it here.')
         return
@@ -372,15 +362,9 @@ def render_pick_list(*, public, owner_access, setting, output_dir):
             pick_id = st.selectbox('Saved pick',list(by_id),format_func=lambda k:
                                   f'{by_id[k]["player"]} · Over {by_id[k]["line"]:g} {by_id[k]["market"]} · {by_id[k]["date"]}')
             pick = by_id[pick_id]
-            remove_tail, unmark = st.columns(2)
-            action = None
-            if remove_tail.button('Remove from Tail list', disabled=not pick['shared']):
-                action = 'shared'
-            if unmark.button('Unmark Played'):
-                action = 'played'
-            if action:
+            if st.button('Unmark Played · remove from Tail'):
                 try:
-                    store.change(pick, action, False, pick['revision'])
+                    store.change(pick, 'played', False, pick['revision'])
                 except Exception:
                     st.error('Could not update this pick. Reload and try again.')
                 else:
