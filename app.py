@@ -13,6 +13,7 @@ from zoneinfo import ZoneInfo
 import numpy as np
 import pandas as pd
 import streamlit as st
+from matchup_display import matchup_label, start_time_text, with_matchup_times
 
 from published_output import fetch_grade_file, fetch_tracker, is_newer_tracker, list_grade_files, local_matches_sha, save_if_changed
 from warlord_moves_2026 import VERSION as MOVE_KIT_VERSION
@@ -841,7 +842,7 @@ def _priced_pool_table(cards: list[dict]) -> pd.DataFrame:
         performance = move_grade(move)
         featured = bool(card.get("baseline_rule") and (qualified or points_tier))
         row = {
-            "Player": card["player"], "Team": card["team"], "Game": card["game"],
+            "Player": card["player"], "Team": card["team"], "Game": f'{card["game"]} · {card.get("time") or "Start TBD"}' + (' CT' if card.get('time') and 'CT' not in card['time'] else ''),
             "Start (CT)": card.get("time") or "",
             "Lineup": card.get("lineup_status") or "Lineup pending",
             "Opp goalie": card.get("goalie_status") or "Unknown",
@@ -3522,11 +3523,9 @@ def load_csv(path: str) -> pd.DataFrame:
     df.columns = [c.strip() for c in df.columns]
 
     # Add local game time (for table + matchup filter)
-    if "StartTimeLocal" in df.columns and "Time" not in df.columns:
-        dt = pd.to_datetime(df["StartTimeLocal"], errors="coerce")
-        # Use a portable format and strip leading zero (07:00 PM -> 7:00 PM)
-        df["Time"] = dt.dt.strftime("%I:%M %p").astype(str).str.lstrip("0")
-        df.loc[dt.isna(), "Time"] = ""
+    if "StartTimeUTC" in df.columns or "StartTimeLocal" in df.columns:
+        df["Time"] = [start_time_text(row.get("StartTimeUTC"), row.get("StartTimeLocal"))
+                      for row in df.to_dict("records")]
 
     return df
 def filter_common(df: pd.DataFrame) -> pd.DataFrame:
@@ -3629,7 +3628,7 @@ def show_games_times(df: pd.DataFrame):
         g = g.sort_values("StartTimeLocal")
 
     st.subheader("Games & Start Times")
-    st.dataframe(g, width="stretch", hide_index=True)
+    st.dataframe(with_matchup_times(g), width="stretch", hide_index=True)
 
 
 # ---------------------------------
@@ -4084,6 +4083,7 @@ def show_table(df: pd.DataFrame, cols: list[str], title: str):
         df = df.loc[:, ~df.columns.duplicated()].copy()
     df = _sort_slate_rows(df, globals().get("slate_sort", "Top ranked"),
                           globals().get("slate_start_by_game", {}))
+    df = with_matchup_times(df, globals().get("df"))
 
     # de-dupe requested cols while preserving order
     cols = list(dict.fromkeys(cols))
@@ -5376,7 +5376,7 @@ if page == "⚔️ Warlords of the Night":
                 if shown.empty:
                     st.info("No priced player meets this class baseline on this slate.")
                 else:
-                    st.dataframe(shown.drop(columns="Prop"), hide_index=True,
+                    st.dataframe(with_matchup_times(shown.drop(columns="Prop"), df_f), hide_index=True,
                                  use_container_width=True)
     with st.expander("By team: priced → supported line → Green → baseline → named move"):
         st.dataframe(by_team, hide_index=True, use_container_width=True)
@@ -6365,7 +6365,7 @@ elif page == "Power Play":
                            "EV is even strength, not strictly 5v5; PP is matched with opponent PK. "
                            "These are observed pressure measures, not tested PP-point move rates. "
                            "xG−G shows chances created versus goals scored; early samples can swing.")
-                st.dataframe(matchup_frame, hide_index=True, width="stretch", height=320)
+                st.dataframe(with_matchup_times(matchup_frame, df_f), hide_index=True, width="stretch", height=320)
             with st.expander("All teams · current-season PP and defense stats"):
                 st.dataframe(pd.DataFrame(current_teams), hide_index=True, width="stretch", height=360)
         else:
@@ -6474,6 +6474,13 @@ elif page == "Power Play":
     if ppp_quotes.empty:
         st.info("No matching over 0.5 power-play-point prices are in this view. Check the PP2 switch or refresh after books post them.")
     else:
+        pp_display_by_team = {str(record.get("Team") or "").upper(): record
+                              for record in df_f.to_dict("records")}
+        for display_column, tracker_column in (("Opp PK %", "NHL_Opp_PK_Success_pct"),
+                                               ("StartTimeUTC", "StartTimeUTC"),
+                                               ("StartTimeLocal", "StartTimeLocal")):
+            ppp_quotes[display_column] = ppp_quotes["Team"].map(
+                lambda team: pp_display_by_team.get(str(team).upper(), {}).get(tracker_column))
         ppp_quotes["Team PP goal research"] = ppp_quotes["Team"].map(
             lambda team: pp_goal_research_by_team.get(str(team).upper(), "PK time unavailable"))
         ppp_quotes["Opp PK sec/opportunity"] = ppp_quotes["Team"].map(
@@ -6614,17 +6621,17 @@ elif page == "Power Play":
             st.caption("All priced players shown have recorded PP ice time this season.")
         else:
             with st.expander(f"No recorded PP ice time or PP time unavailable · {len(without_pp_time)}"):
-                st.dataframe(without_pp_time[["Player", "Team", "Game", "PP unit",
-                                               "PP usage status", "Best feed price"]],
+                st.dataframe(with_matchup_times(without_pp_time[["Player", "Team", "Game", "PP unit",
+                                               "PP usage status", "Best feed price"]], df_f),
                              hide_index=True, width="stretch")
         if pp_view.empty:
             st.info("No priced players with recorded PP ice time in this team view. Check the separate list above.")
             pp_view = without_pp_time
         display_quotes = pp_view[["PP rank", "Player", "PP on-ice xG/game",
                                   "PP matchup stack",
-                                  "Best feed price", "Game", "PP unit",
+                                  "Best feed price", "Game", "Opp PK %", "Opp PK xGA/60 now", "PP unit",
                                   "Current PP min/game", "PP research signals",
-                                  "Team PP xGF/60 now", "Opp PK xGA/60 now",
+                                  "Team PP xGF/60 now",
                                   "Opp PK time/game", "Opp PK sec/opportunity",
                                   "PP boost", "Current PPP L5",
                                   "PPP drought (games)",
@@ -6643,6 +6650,8 @@ elif page == "Power Play":
                                       "Team PP time share %": "Team PP time %",
                                       "PP boost": "Boost",
                                   })
+        display_quotes = with_matchup_times(display_quotes, df_f)
+        display_quotes["Opp PK %"] = pd.to_numeric(display_quotes["Opp PK %"], errors="coerce").round(1)
         display_quotes["Boost"] = display_quotes["Boost"].map({True: "ON", False: "—"})
         display_quotes["PPP drought"] = pd.to_numeric(
             display_quotes["PPP drought"], errors="coerce").astype("Int64")
@@ -6685,7 +6694,7 @@ elif page == "Power Play":
                    "Opportunity and PK goals-allowed tags are pregame team context; "
                    "these are historical team-goal patterns, not a player's chance of a PP point. "
                    "Opp PK sec/opportunity is a separate team-goal research stat.")
-        player_options = [f'{row.Player} · {row.Team} · {row.Game}'
+        player_options = [f'{row.Player} · {row.Team} · {matchup_label(row.Game, row.StartTimeUTC, row.StartTimeLocal)}'
                           for row in pp_view.itertuples(index=False)]
         selected_player = st.selectbox("Open player power play log", player_options,
                                        key=f"pp_player_log_{selected_team}")
@@ -6694,7 +6703,7 @@ elif page == "Power Play":
             (str(selected["Team"]).casefold(), str(selected["Player"]).casefold()),
             (None, None))
         st.html(render_power_play_form({
-            "player": selected["Player"], "game": selected["Game"],
+            "player": selected["Player"], "game": matchup_label(selected["Game"], selected.get("StartTimeUTC"), selected.get("StartTimeLocal")),
             "odds": selected["Over odds"], "book": selected["Book"],
             "form_log": form_log, "form_season": selected_form.get("season") if selected_form else None,
             "team_pp_rank": selected["Team PP rank"],
@@ -7182,7 +7191,7 @@ elif page == "🪜 Ladder Alerts":
             cols = ["Player","Team","Game","Market","Line","Odds","Book","Model%","EV%","Rung","DefV","SlotSA60","5v5Share%","OppSOG_L10","OppSOG_L50","Why"]
             cols = [c for c in cols if c in ladd.columns]
             cfg = build_column_config(ladd, cols)
-            st.dataframe(ladd[cols], width="stretch", hide_index=True, column_config=cfg)
+            st.dataframe(with_matchup_times(ladd, df_f)[cols], width="stretch", hide_index=True, column_config=cfg)
 
 
 elif page == "📟 Calculator":
@@ -7800,7 +7809,7 @@ elif page == "📊 Results":
                 "SOG_Line", "Outcome_SOG", "Goal_Line", "Outcome_Goal", "ATG_Line", "Outcome_ATG",
                 "BDL_PPP_Line", "BDL_PPP_Odds", "BDL_PPP_Book", "Outcome_PPP",
             ) if column in graded.columns]
-            st.dataframe(graded[result_columns], width="stretch", hide_index=True)
+            st.dataframe(with_matchup_times(graded)[result_columns], width="stretch", hide_index=True)
 
 elif page == "Guide":
     st.subheader("📘 Guide — How to use")
@@ -7990,5 +7999,5 @@ elif page == "Ledger":
 # =========================
 else:
     st.subheader("Raw CSV (all columns)")
-    st.dataframe(df_f, width="stretch", height=620, hide_index=True)
+    st.dataframe(with_matchup_times(df_f), width="stretch", height=620, hide_index=True)
 

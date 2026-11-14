@@ -10,6 +10,7 @@ from html import escape
 from pathlib import Path
 
 import pandas as pd
+from matchup_display import matchup_label
 
 from warlord_moves_2026 import fired_moves
 from sog_moves_current import is_current_sog25, sog_base_eligible, pk_duration_seconds
@@ -890,9 +891,6 @@ def render_power_play_quotes_table(rows, signals_by_team, *, row_controls=None):
 
     def sort_value(label, row, signals):
         key = next((field for title, field, _ in columns if title == label), None)
-        if label == "PPP Assist beta":
-            routes = (row.get("PP Assist beta") or {}).get("routes", [])
-            return str(max(100 * route["hits"] / route["plays"] for route in routes)) if routes else ""
         if label == "Team PP matchup signals":
             return str(len(signals))
         if label == "Player signals":
@@ -931,7 +929,8 @@ def render_power_play_quotes_table(rows, signals_by_team, *, row_controls=None):
         ("Game", "Game", cell),
         ("Best price", "Best feed price", cell),
         ("PP on-ice xG/g", "PP on-ice xG/game", lambda value: decimal(value, 3)),
-        ("PPP Assist beta", "PP Assist beta", lambda value: ('<details class="pp-assist-beta-cell"><summary>' + beta_summary(value) + '</summary>' + beta_details(value) + '</details>') if value else "—"),
+        ("Opp PK %", "Opp PK %", decimal),
+        ("Opp PK xGA/60", "Opp PK xGA/60 now", lambda value: decimal(value, 2)),
         ("Team PP matchup signals", None, None),
         ("Player signals", "PP research signals", cell),
         ("PP unit", "PP unit", cell),
@@ -945,7 +944,6 @@ def render_power_play_quotes_table(rows, signals_by_team, *, row_controls=None):
         ("Tonight PPP mean", "Tonight PPP mean", lambda value: decimal(value, 3)),
         ("Tonight PPP 1+ %", "Tonight PPP 1+ %", decimal),
         ("Team PP xGF/60", "Team PP xGF/60 now", lambda value: decimal(value, 2)),
-        ("Opp PK xGA/60", "Opp PK xGA/60 now", lambda value: decimal(value, 2)),
         ("Opp PK time/g", "Opp PK time/game", cell),
         ("Opp PK sec/opp", "Opp PK sec/opportunity", decimal),
         ("Boost", "PP boost", lambda value: "ON" if value else "—"),
@@ -964,6 +962,12 @@ def render_power_play_quotes_table(rows, signals_by_team, *, row_controls=None):
         for label, key, render in columns:
             css = ' class="pp-player"' if label == "Player" else ' class="pp-signals"' if key is None else ""
             content = stack if key is None else render(row.get(key))
+            if label == "Game":
+                content = cell(matchup_label(row.get("Game"), row.get("StartTimeUTC"), row.get("StartTimeLocal")))
+            if label == "Player" and row.get("PP Assist beta"):
+                beta = row["PP Assist beta"]
+                content += ('<details class="pp-assist-beta-cell pp-assist-beta-under-player"><summary>'
+                            + beta_summary(beta) + '</summary>' + beta_details(beta) + '</details>')
             if label == "Player" and row_controls:
                 content += row_controls(row)
             if label == "Player signals" and row.get("PP research count"):
@@ -988,6 +992,7 @@ def render_power_play_quotes_table(rows, signals_by_team, *, row_controls=None):
       .pp-scout thead th{position:sticky;top:0;z-index:2;background:#eef2f7;white-space:nowrap;font-weight:700}
       .pp-scout .pp-player{position:sticky;left:0;z-index:1;background:#fff;font-weight:700;min-width:145px}
       .pp-scout thead .pp-player{z-index:3;background:#eef2f7}
+      .pp-scout .pp-assist-beta-under-player{min-width:0;width:250px;max-width:250px;margin:5px 0;font-weight:400}
       .pp-scout .pp-signals{min-width:260px;max-width:340px;white-space:normal;line-height:1.35}
       .pp-player-checks{display:grid;gap:4px;margin-top:7px;min-width:245px;white-space:normal;font-size:12px;line-height:1.4}
       .pp-player-check{padding:4px 7px;border-radius:4px;background:#152237;color:#f1f5fb;border-left:3px solid #7d8ba0}
@@ -1282,7 +1287,7 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
             line = f"OVER {card['line']:g} {market.upper()}" if card["line"] is not None else market.upper()
             matchup = card["game"] or card["team"]
             if card.get("time"):
-                matchup = f'{matchup} · {card["time"]} CT'
+                matchup = f'{matchup} · {card["time"]}' + ('' if 'CT' in card['time'] else ' CT')
             portrait = (f'<img src="{character_uri}" alt="" />' if character_uri else symbol)
             route_style = ""
             support_route_note = ""

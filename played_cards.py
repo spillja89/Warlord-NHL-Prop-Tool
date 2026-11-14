@@ -4,6 +4,7 @@ from pathlib import Path
 import json
 
 import streamlit as st
+from matchup_display import matchup_label
 from played_picks import PickStore, make_pick, pregame, results_for_picks
 
 _JS = r"""
@@ -352,7 +353,7 @@ def render_pick_list(*, public, owner_access, setting, output_dir):
     table = []
     for p in selected:
         status = outcomes.get(p['pick_id'], 'Pending')
-        table.append({'Player': p['player'], 'Game': p['game'], 'Date': p['date'],
+        table.append({'Player': p['player'], 'Game': matchup_label(p['game'], p.get('start_utc')), 'Date': p['date'],
                       'Pick': f'Over {p["line"]:g} {p["market"]}',
                       'Saved quote': f'{p["odds"]:+g} · {p["book"]}', 'Result': status,
                       **({'Shared timing': share_timing(p), 'Shared at (UTC)': p['shared_at']} if public else
