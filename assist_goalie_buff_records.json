@@ -1,0 +1,1955 @@
+{
+  "version": "assist-goalie-gaa295-2026-11-13-v1",
+  "cutoff": 2.95,
+  "season": "2026-27",
+  "full_from": "2026-10-13",
+  "full_through": "2026-11-12",
+  "recent_from": "2026-11-01",
+  "recent_through": "2026-11-12",
+  "units_policy": "Flat 1u saved pregame Assist0.5 prices. Recent included in full. Overlapping move records not additive.",
+  "condition": "Existing current Assist move + confirmed/official matched current-season opponent goalie GAA>=2.95; no GP minimum, no defense condition",
+  "moves": [
+    {
+      "key": "assist-2026-27-pp-crits-v1|Staff (Green Stance)",
+      "name": "Staff (Green Stance)",
+      "rule": "Assist 0.5 + Matrix_Assists Green + Conf_Assists >= 81 + iXA% >= 95",
+      "available_route": {
+        "full": {
+          "hits": 98,
+          "plays": 168,
+          "rate": 58.333333333333336,
+          "BE": 52.40927614496988,
+          "gap": 5.924057188363456,
+          "players": 38,
+          "units": 19.891703514603645,
+          "ROI": 11.840299711073598,
+          "dates": 25,
+          "goalie_games": 115,
+          "goalies": 54
+        },
+        "recent": {
+          "hits": 57,
+          "plays": 87,
+          "rate": 65.51724137931035,
+          "BE": 52.96560707819615,
+          "gap": 12.551634301114198,
+          "players": 32,
+          "units": 21.13947559282939,
+          "ROI": 24.298247807849872,
+          "dates": 12,
+          "goalie_games": 57,
+          "goalies": 40
+        }
+      },
+      "with_buff": {
+        "full": {
+          "hits": 48,
+          "plays": 73,
+          "rate": 65.75342465753425,
+          "BE": 53.235456055813465,
+          "gap": 12.517968601720789,
+          "players": 32,
+          "units": 18.042840500794362,
+          "ROI": 24.71621986410187,
+          "dates": 23,
+          "goalie_games": 52,
+          "goalies": 28
+        },
+        "recent": {
+          "hits": 29,
+          "plays": 38,
+          "rate": 76.3157894736842,
+          "BE": 53.77903175100023,
+          "gap": 22.536757722683973,
+          "players": 22,
+          "units": 16.30181874373089,
+          "ROI": 42.89952300981814,
+          "dates": 12,
+          "goalie_games": 27,
+          "goalies": 20
+        }
+      },
+      "without_buff": {
+        "full": {
+          "hits": 50,
+          "plays": 95,
+          "rate": 52.63157894736842,
+          "BE": 51.774422108216385,
+          "gap": 0.857156839152033,
+          "players": 32,
+          "units": 1.84886301380928,
+          "ROI": 1.9461715934834527,
+          "dates": 23,
+          "goalie_games": 63,
+          "goalies": 36
+        },
+        "recent": {
+          "hits": 28,
+          "plays": 49,
+          "rate": 57.142857142857146,
+          "BE": 52.334787944184825,
+          "gap": 4.808069198672321,
+          "players": 24,
+          "units": 4.837656849098496,
+          "ROI": 9.87276907979285,
+          "dates": 11,
+          "goalie_games": 30,
+          "goalies": 20
+        }
+      },
+      "original_hits": 124,
+      "original_plays": 215
+    },
+    {
+      "key": "assist-2026-27-pp-crits-v1|Arcane Channel I",
+      "name": "Arcane Channel I",
+      "rule": "Assist 0.5 + Matrix_Assists Green + Conf_Assists >= 81 + iXA% >= 95 + PP_Points60 >= 3.75 + PP_iXA60 >= 2.5",
+      "available_route": {
+        "full": {
+          "hits": 75,
+          "plays": 120,
+          "rate": 62.5,
+          "BE": 52.07089211318658,
+          "gap": 10.42910788681342,
+          "players": 31,
+          "units": 23.69558921521705,
+          "ROI": 19.74632434601421,
+          "dates": 25,
+          "goalie_games": 91,
+          "goalies": 45
+        },
+        "recent": {
+          "hits": 45,
+          "plays": 62,
+          "rate": 72.58064516129032,
+          "BE": 53.03397877306155,
+          "gap": 19.546666388228772,
+          "players": 24,
+          "units": 23.315489170949956,
+          "ROI": 37.60562769508058,
+          "dates": 12,
+          "goalie_games": 45,
+          "goalies": 33
+        }
+      },
+      "with_buff": {
+        "full": {
+          "hits": 36,
+          "plays": 53,
+          "rate": 67.9245283018868,
+          "BE": 52.893402485542154,
+          "gap": 15.031125816344641,
+          "players": 25,
+          "units": 15.318605764398358,
+          "ROI": 28.903029744147847,
+          "dates": 21,
+          "goalie_games": 41,
+          "goalies": 24
+        },
+        "recent": {
+          "hits": 23,
+          "plays": 28,
+          "rate": 82.14285714285714,
+          "BE": 53.10946066514727,
+          "gap": 29.03339647770987,
+          "players": 17,
+          "units": 15.710874413245955,
+          "ROI": 56.11026576159269,
+          "dates": 11,
+          "goalie_games": 21,
+          "goalies": 16
+        }
+      },
+      "without_buff": {
+        "full": {
+          "hits": 39,
+          "plays": 67,
+          "rate": 58.208955223880594,
+          "BE": 51.420249579830674,
+          "gap": 6.788705644049919,
+          "players": 27,
+          "units": 8.376983450818694,
+          "ROI": 12.50296037435626,
+          "dates": 22,
+          "goalie_games": 50,
+          "goalies": 28
+        },
+        "recent": {
+          "hits": 22,
+          "plays": 34,
+          "rate": 64.70588235294117,
+          "BE": 52.971817214873305,
+          "gap": 11.73406513806787,
+          "players": 18,
+          "units": 7.604614757704002,
+          "ROI": 22.366513993247068,
+          "dates": 11,
+          "goalie_games": 24,
+          "goalies": 17
+        }
+      },
+      "original_hits": 90,
+      "original_plays": 148
+    },
+    {
+      "key": "assist-2026-27-pp-crits-v1|High Assist μ",
+      "name": "High Assist μ",
+      "rule": "Assist 0.5 + Matrix_Assists Green + Conf_Assists >= 81 + iXA% >= 95 + Assists_mu >= 1.1",
+      "available_route": {
+        "full": {
+          "hits": 90,
+          "plays": 150,
+          "rate": 60.0,
+          "BE": 52.673591975095896,
+          "gap": 7.326408024904104,
+          "players": 32,
+          "units": 22.804642427542557,
+          "ROI": 15.203094951695038,
+          "dates": 25,
+          "goalie_games": 111,
+          "goalies": 54
+        },
+        "recent": {
+          "hits": 53,
+          "plays": 78,
+          "rate": 67.94871794871794,
+          "BE": 53.09433340664701,
+          "gap": 14.854384542070932,
+          "players": 28,
+          "units": 22.77968723304103,
+          "ROI": 29.204727221847474,
+          "dates": 12,
+          "goalie_games": 54,
+          "goalies": 40
+        }
+      },
+      "with_buff": {
+        "full": {
+          "hits": 42,
+          "plays": 65,
+          "rate": 64.61538461538461,
+          "BE": 53.49700801772573,
+          "gap": 11.11837659765888,
+          "players": 30,
+          "units": 14.773961231915095,
+          "ROI": 22.729171126023225,
+          "dates": 23,
+          "goalie_games": 50,
+          "goalies": 28
+        },
+        "recent": {
+          "hits": 25,
+          "plays": 33,
+          "rate": 75.75757575757575,
+          "BE": 53.741364374557186,
+          "gap": 22.016211383018565,
+          "players": 20,
+          "units": 13.942030383942532,
+          "ROI": 42.24857692103798,
+          "dates": 12,
+          "goalie_games": 25,
+          "goalies": 20
+        }
+      },
+      "without_buff": {
+        "full": {
+          "hits": 48,
+          "plays": 85,
+          "rate": 56.470588235294116,
+          "BE": 52.04392088367309,
+          "gap": 4.4266673516210275,
+          "players": 27,
+          "units": 8.030681195627462,
+          "ROI": 9.447860230149955,
+          "dates": 22,
+          "goalie_games": 61,
+          "goalies": 36
+        },
+        "recent": {
+          "hits": 28,
+          "plays": 45,
+          "rate": 62.22222222222222,
+          "BE": 52.61984403017955,
+          "gap": 9.602378192042671,
+          "players": 22,
+          "units": 8.837656849098497,
+          "ROI": 19.639237442441104,
+          "dates": 10,
+          "goalie_games": 29,
+          "goalies": 20
+        }
+      },
+      "original_hits": 115,
+      "original_plays": 195
+    },
+    {
+      "key": "assist-2026-27-additive-2026-11-03-v1|assist-nov03-staff-of-insight",
+      "name": "Staff of Insight",
+      "rule": "Assist 0.5 + Matrix_Assists Green + Conf_Assists >=80 + iXA% >=94",
+      "available_route": {
+        "full": {
+          "hits": 108,
+          "plays": 184,
+          "rate": 58.69565217391305,
+          "BE": 52.083406172580005,
+          "gap": 6.612246001333041,
+          "players": 41,
+          "units": 24.08992485847716,
+          "ROI": 13.092350466563675,
+          "dates": 25,
+          "goalie_games": 121,
+          "goalies": 54
+        },
+        "recent": {
+          "hits": 65,
+          "plays": 99,
+          "rate": 65.65656565656566,
+          "BE": 52.41226951354655,
+          "gap": 13.244296143019113,
+          "players": 38,
+          "units": 25.368131719311602,
+          "ROI": 25.624375474052123,
+          "dates": 12,
+          "goalie_games": 62,
+          "goalies": 44
+        }
+      },
+      "with_buff": {
+        "full": {
+          "hits": 54,
+          "plays": 81,
+          "rate": 66.66666666666667,
+          "BE": 52.77927281973449,
+          "gap": 13.887393846932184,
+          "players": 36,
+          "units": 22.40193140988527,
+          "ROI": 27.656705444302805,
+          "dates": 23,
+          "goalie_games": 54,
+          "goalies": 29
+        },
+        "recent": {
+          "hits": 34,
+          "plays": 44,
+          "rate": 77.27272727272727,
+          "BE": 53.169600449739235,
+          "gap": 24.10312682298803,
+          "players": 26,
+          "units": 20.560909652821802,
+          "ROI": 46.72934012004955,
+          "dates": 12,
+          "goalie_games": 29,
+          "goalies": 22
+        }
+      },
+      "without_buff": {
+        "full": {
+          "hits": 54,
+          "plays": 103,
+          "rate": 52.42718446601942,
+          "BE": 51.53617123646822,
+          "gap": 0.8910132295511985,
+          "players": 34,
+          "units": 1.6879934485918888,
+          "ROI": 1.6388285908659115,
+          "dates": 23,
+          "goalie_games": 67,
+          "goalies": 37
+        },
+        "recent": {
+          "hits": 31,
+          "plays": 55,
+          "rate": 56.36363636363637,
+          "BE": 51.80640476459239,
+          "gap": 4.557231599043973,
+          "players": 27,
+          "units": 4.807222066489801,
+          "ROI": 8.740403757254184,
+          "dates": 11,
+          "goalie_games": 33,
+          "goalies": 23
+        }
+      },
+      "original_hits": 133,
+      "original_plays": 233
+    },
+    {
+      "key": "assist-2026-27-pp-crits-v1|Runic Infusion",
+      "name": "Runic Infusion",
+      "rule": "Assist 0.5 + Matrix_Assists Green + Conf_Assists >= 81 + iXA% >= 95 + PP_iXA60 >= 3.9",
+      "available_route": {
+        "full": {
+          "hits": 49,
+          "plays": 80,
+          "rate": 61.25,
+          "BE": 53.11167871804373,
+          "gap": 8.138321281956273,
+          "players": 23,
+          "units": 12.614326508039014,
+          "ROI": 15.767908135048767,
+          "dates": 22,
+          "goalie_games": 65,
+          "goalies": 38
+        },
+        "recent": {
+          "hits": 30,
+          "plays": 41,
+          "rate": 73.17073170731707,
+          "BE": 53.62273148842007,
+          "gap": 19.548000218897002,
+          "players": 17,
+          "units": 15.637934597743211,
+          "ROI": 38.14130389693466,
+          "dates": 11,
+          "goalie_games": 34,
+          "goalies": 27
+        }
+      },
+      "with_buff": {
+        "full": {
+          "hits": 24,
+          "plays": 38,
+          "rate": 63.1578947368421,
+          "BE": 53.602886137610476,
+          "gap": 9.555008599231627,
+          "players": 18,
+          "units": 7.180349248052598,
+          "ROI": 18.895655915927886,
+          "dates": 16,
+          "goalie_games": 29,
+          "goalies": 20
+        },
+        "recent": {
+          "hits": 16,
+          "plays": 20,
+          "rate": 80.0,
+          "BE": 53.764286907604586,
+          "gap": 26.235713092395414,
+          "players": 12,
+          "units": 10.083901788447243,
+          "ROI": 50.41950894223621,
+          "dates": 9,
+          "goalie_games": 15,
+          "goalies": 14
+        }
+      },
+      "without_buff": {
+        "full": {
+          "hits": 25,
+          "plays": 42,
+          "rate": 59.523809523809526,
+          "BE": 52.667252957483335,
+          "gap": 6.856556566326191,
+          "players": 21,
+          "units": 5.433977259986416,
+          "ROI": 12.938041095205753,
+          "dates": 21,
+          "goalie_games": 36,
+          "goalies": 22
+        },
+        "recent": {
+          "hits": 14,
+          "plays": 21,
+          "rate": 66.66666666666667,
+          "BE": 53.48791680348244,
+          "gap": 13.17874986318423,
+          "players": 12,
+          "units": 5.554032809295967,
+          "ROI": 26.44777528236175,
+          "dates": 11,
+          "goalie_games": 19,
+          "goalies": 13
+        }
+      },
+      "original_hits": 65,
+      "original_plays": 109
+    },
+    {
+      "key": "assist-2026-27-pp-crits-v1|Arcane Rebound",
+      "name": "Arcane Rebound",
+      "rule": "Assist 0.5 + Matrix_Assists Green + Conf_Assists >= 81 + iXA% >= 95 + Drought_G >= 2",
+      "available_route": {
+        "full": {
+          "hits": 46,
+          "plays": 72,
+          "rate": 63.888888888888886,
+          "BE": 52.127568354834985,
+          "gap": 11.761320534053901,
+          "players": 32,
+          "units": 15.663227192907993,
+          "ROI": 21.75448221237221,
+          "dates": 23,
+          "goalie_games": 62,
+          "goalies": 41
+        },
+        "recent": {
+          "hits": 26,
+          "plays": 39,
+          "rate": 66.66666666666667,
+          "BE": 52.46304842787514,
+          "gap": 14.203618238791535,
+          "players": 25,
+          "units": 10.012026790697833,
+          "ROI": 25.67186356589188,
+          "dates": 11,
+          "goalie_games": 34,
+          "goalies": 30
+        }
+      },
+      "with_buff": {
+        "full": {
+          "hits": 22,
+          "plays": 33,
+          "rate": 66.66666666666667,
+          "BE": 52.17303319778849,
+          "gap": 14.49363346887818,
+          "players": 24,
+          "units": 9.44181623532762,
+          "ROI": 28.611564349477632,
+          "dates": 18,
+          "goalie_games": 30,
+          "goalies": 21
+        },
+        "recent": {
+          "hits": 13,
+          "plays": 17,
+          "rate": 76.47058823529412,
+          "BE": 53.43378933457761,
+          "gap": 23.036798900716505,
+          "players": 13,
+          "units": 7.405580338599207,
+          "ROI": 43.562237285877686,
+          "dates": 9,
+          "goalie_games": 16,
+          "goalies": 15
+        }
+      },
+      "without_buff": {
+        "full": {
+          "hits": 24,
+          "plays": 39,
+          "rate": 61.53846153846154,
+          "BE": 52.089098103105094,
+          "gap": 9.449363435356446,
+          "players": 24,
+          "units": 6.221410957580373,
+          "ROI": 15.952335788667623,
+          "dates": 18,
+          "goalie_games": 32,
+          "goalies": 25
+        },
+        "recent": {
+          "hits": 13,
+          "plays": 22,
+          "rate": 59.09090909090909,
+          "BE": 51.71293045451413,
+          "gap": 7.377978636394964,
+          "players": 15,
+          "units": 2.606446452098626,
+          "ROI": 11.847483873175573,
+          "dates": 9,
+          "goalie_games": 18,
+          "goalies": 15
+        }
+      },
+      "original_hits": 64,
+      "original_plays": 96
+    },
+    {
+      "key": "assist-2026-27-additive-2026-11-03-v1|assist-nov03-silent-invocation",
+      "name": "Silent Invocation",
+      "rule": "Assist 0.5 + Matrix_Assists Green + Conf_Assists >=80 + iXA% >=94 + L10_S <= 19",
+      "available_route": {
+        "full": {
+          "hits": 15,
+          "plays": 25,
+          "rate": 60.0,
+          "BE": 50.96735126873186,
+          "gap": 9.03264873126814,
+          "players": 11,
+          "units": 4.069366058977043,
+          "ROI": 16.277464235908173,
+          "dates": 14,
+          "goalie_games": 22,
+          "goalies": 20
+        },
+        "recent": {
+          "hits": 8,
+          "plays": 15,
+          "rate": 53.333333333333336,
+          "BE": 50.65142300771996,
+          "gap": 2.681910325613373,
+          "players": 9,
+          "units": 0.3275882393731364,
+          "ROI": 2.1839215958209093,
+          "dates": 8,
+          "goalie_games": 12,
+          "goalies": 12
+        }
+      },
+      "with_buff": {
+        "full": {
+          "hits": 8,
+          "plays": 12,
+          "rate": 66.66666666666667,
+          "BE": 52.383454709220835,
+          "gap": 14.283211957445836,
+          "players": 8,
+          "units": 3.3727762092979483,
+          "ROI": 28.106468410816237,
+          "dates": 9,
+          "goalie_games": 11,
+          "goalies": 9
+        },
+        "recent": {
+          "hits": 6,
+          "plays": 8,
+          "rate": 75.0,
+          "BE": 52.896138691541665,
+          "gap": 22.103861308458335,
+          "players": 6,
+          "units": 3.400395256916996,
+          "ROI": 42.50494071146245,
+          "dates": 6,
+          "goalie_games": 7,
+          "goalies": 7
+        }
+      },
+      "without_buff": {
+        "full": {
+          "hits": 7,
+          "plays": 13,
+          "rate": 53.84615384615385,
+          "BE": 49.66017886212665,
+          "gap": 4.185974984027197,
+          "players": 7,
+          "units": 0.6965898496790945,
+          "ROI": 5.358383459069958,
+          "dates": 8,
+          "goalie_games": 11,
+          "goalies": 11
+        },
+        "recent": {
+          "hits": 2,
+          "plays": 7,
+          "rate": 28.571428571428573,
+          "BE": 48.08603365478088,
+          "gap": -19.514605083352304,
+          "players": 6,
+          "units": -3.0728070175438598,
+          "ROI": -43.89724310776943,
+          "dates": 3,
+          "goalie_games": 5,
+          "goalies": 5
+        }
+      },
+      "original_hits": 34,
+      "original_plays": 54
+    },
+    {
+      "key": "assist-2026-27-additive-2026-11-03-v1|assist-nov03-oracle-s-channel",
+      "name": "Oracle’s Channel",
+      "rule": "Assist 0.5 + Matrix_Assists Green + Conf_Assists >=80 + iXA% >=94 + Goal_mu <= 0.33",
+      "available_route": {
+        "full": {
+          "hits": 52,
+          "plays": 75,
+          "rate": 69.33333333333333,
+          "BE": 53.003838164609334,
+          "gap": 16.329495168723994,
+          "players": 20,
+          "units": 23.090894316583107,
+          "ROI": 30.787859088777473,
+          "dates": 22,
+          "goalie_games": 60,
+          "goalies": 40
+        },
+        "recent": {
+          "hits": 34,
+          "plays": 48,
+          "rate": 70.83333333333333,
+          "BE": 52.73418033871993,
+          "gap": 18.099152994613398,
+          "players": 20,
+          "units": 16.103761665546564,
+          "ROI": 33.54950346988867,
+          "dates": 11,
+          "goalie_games": 36,
+          "goalies": 29
+        }
+      },
+      "with_buff": {
+        "full": {
+          "hits": 29,
+          "plays": 41,
+          "rate": 70.73170731707317,
+          "BE": 53.43155926301117,
+          "gap": 17.300148054062007,
+          "players": 18,
+          "units": 13.673925818605452,
+          "ROI": 33.35103858196452,
+          "dates": 18,
+          "goalie_games": 31,
+          "goalies": 23
+        },
+        "recent": {
+          "hits": 20,
+          "plays": 26,
+          "rate": 76.92307692307692,
+          "BE": 53.24060658238661,
+          "gap": 23.68247034069031,
+          "players": 15,
+          "units": 11.652478359000098,
+          "ROI": 44.81722445769269,
+          "dates": 10,
+          "goalie_games": 18,
+          "goalies": 16
+        }
+      },
+      "without_buff": {
+        "full": {
+          "hits": 23,
+          "plays": 34,
+          "rate": 67.6470588235294,
+          "BE": 52.48805684006596,
+          "gap": 15.159001983463448,
+          "players": 16,
+          "units": 9.416968497977654,
+          "ROI": 27.69696617052251,
+          "dates": 18,
+          "goalie_games": 29,
+          "goalies": 22
+        },
+        "recent": {
+          "hits": 14,
+          "plays": 22,
+          "rate": 63.63636363636363,
+          "BE": 52.13567659620477,
+          "gap": 11.500687040158866,
+          "players": 13,
+          "units": 4.451283306546465,
+          "ROI": 20.233105938847565,
+          "dates": 10,
+          "goalie_games": 18,
+          "goalies": 14
+        }
+      },
+      "original_hits": 67,
+      "original_plays": 101
+    },
+    {
+      "key": "assist-2026-27-additive-2026-11-03-v1|assist-nov03-oracle-s-guidance",
+      "name": "Oracle’s Guidance",
+      "rule": "Assist 0.5 + Matrix_Assists Green + Conf_Assists >=80 + iXA% >=94 + Goal_mu <= 0.33 + i5v5_primaryAssists60 <= 1.05",
+      "available_route": {
+        "full": {
+          "hits": 42,
+          "plays": 54,
+          "rate": 77.77777777777777,
+          "BE": 52.48691259233848,
+          "gap": 25.290865185439294,
+          "players": 17,
+          "units": 25.768302932206826,
+          "ROI": 47.719079504086714,
+          "dates": 21,
+          "goalie_games": 44,
+          "goalies": 32
+        },
+        "recent": {
+          "hits": 26,
+          "plays": 34,
+          "rate": 76.47058823529412,
+          "BE": 52.3708780670819,
+          "gap": 24.09971016821222,
+          "players": 16,
+          "units": 15.291141791141792,
+          "ROI": 44.97394644453468,
+          "dates": 11,
+          "goalie_games": 27,
+          "goalies": 24
+        }
+      },
+      "with_buff": {
+        "full": {
+          "hits": 25,
+          "plays": 31,
+          "rate": 80.64516129032258,
+          "BE": 52.68509033474125,
+          "gap": 27.96007095558133,
+          "players": 14,
+          "units": 16.69654088469878,
+          "ROI": 53.859809305479935,
+          "dates": 14,
+          "goalie_games": 23,
+          "goalies": 18
+        },
+        "recent": {
+          "hits": 17,
+          "plays": 20,
+          "rate": 85.0,
+          "BE": 52.64707729279535,
+          "gap": 32.35292270720465,
+          "players": 12,
+          "units": 12.444324194324194,
+          "ROI": 62.22162097162097,
+          "dates": 7,
+          "goalie_games": 14,
+          "goalies": 13
+        }
+      },
+      "without_buff": {
+        "full": {
+          "hits": 17,
+          "plays": 23,
+          "rate": 73.91304347826087,
+          "BE": 52.219803461273884,
+          "gap": 21.69324001698699,
+          "players": 12,
+          "units": 9.071762047508045,
+          "ROI": 39.44244368481759,
+          "dates": 16,
+          "goalie_games": 21,
+          "goalies": 16
+        },
+        "recent": {
+          "hits": 9,
+          "plays": 14,
+          "rate": 64.28571428571429,
+          "BE": 51.9763077446341,
+          "gap": 12.309406541080193,
+          "players": 9,
+          "units": 2.846817596817597,
+          "ROI": 20.334411405839976,
+          "dates": 9,
+          "goalie_games": 13,
+          "goalies": 11
+        }
+      },
+      "original_hits": 50,
+      "original_plays": 67
+    },
+    {
+      "key": "assist-2026-27-additive-2026-11-03-v1|assist-nov03-runic-resonance-i",
+      "name": "Runic Resonance I",
+      "rule": "Assist 0.5 + Matrix_Assists Green + Conf_Assists >=80 + iXA% >=94 + Goal_mu <= 0.33 + PPP10_total >= 4",
+      "available_route": {
+        "full": {
+          "hits": 37,
+          "plays": 51,
+          "rate": 72.54901960784314,
+          "BE": 54.03394335928511,
+          "gap": 18.515076248558024,
+          "players": 15,
+          "units": 18.014721730799536,
+          "ROI": 35.32298378588145,
+          "dates": 19,
+          "goalie_games": 41,
+          "goalies": 30
+        },
+        "recent": {
+          "hits": 26,
+          "plays": 34,
+          "rate": 76.47058823529412,
+          "BE": 53.60705834712574,
+          "gap": 22.86352988816838,
+          "players": 15,
+          "units": 14.987895037895038,
+          "ROI": 44.082044229103055,
+          "dates": 11,
+          "goalie_games": 27,
+          "goalies": 23
+        }
+      },
+      "with_buff": {
+        "full": {
+          "hits": 21,
+          "plays": 30,
+          "rate": 70.0,
+          "BE": 53.93780909250059,
+          "gap": 16.062190907499406,
+          "players": 15,
+          "units": 9.294343082500978,
+          "ROI": 30.98114360833659,
+          "dates": 15,
+          "goalie_games": 22,
+          "goalies": 18
+        },
+        "recent": {
+          "hits": 15,
+          "plays": 19,
+          "rate": 78.94736842105263,
+          "BE": 53.18407894214244,
+          "gap": 25.76328947891019,
+          "players": 12,
+          "units": 9.372895622895623,
+          "ROI": 49.33102959418749,
+          "dates": 9,
+          "goalie_games": 13,
+          "goalies": 12
+        }
+      },
+      "without_buff": {
+        "full": {
+          "hits": 16,
+          "plays": 21,
+          "rate": 76.19047619047619,
+          "BE": 54.17127802612014,
+          "gap": 22.019198164356048,
+          "players": 12,
+          "units": 8.72037864829856,
+          "ROI": 41.52561261094552,
+          "dates": 14,
+          "goalie_games": 19,
+          "goalies": 16
+        },
+        "recent": {
+          "hits": 11,
+          "plays": 15,
+          "rate": 73.33333333333333,
+          "BE": 54.14283226010458,
+          "gap": 19.190501073228745,
+          "players": 9,
+          "units": 5.614999414999415,
+          "ROI": 37.43332943332943,
+          "dates": 10,
+          "goalie_games": 14,
+          "goalies": 12
+        }
+      },
+      "original_hits": 42,
+      "original_plays": 55
+    },
+    {
+      "key": "assist-2026-27-additive-2026-11-03-v1|assist-nov03-storm-conduit-i",
+      "name": "Storm Conduit I",
+      "rule": "Assist 0.5 + Matrix_Assists Green + Conf_Assists >=80 + iXA% >=94 + Goal_mu <= 0.33 + Player_SOG_Share_Proxy >= 11",
+      "available_route": {
+        "full": {
+          "hits": 32,
+          "plays": 41,
+          "rate": 78.04878048780488,
+          "BE": 54.1193787391755,
+          "gap": 23.929401748629374,
+          "players": 13,
+          "units": 18.96994036253991,
+          "ROI": 46.26814722570709,
+          "dates": 21,
+          "goalie_games": 40,
+          "goalies": 31
+        },
+        "recent": {
+          "hits": 22,
+          "plays": 27,
+          "rate": 81.48148148148148,
+          "BE": 53.472307287727446,
+          "gap": 28.009174193754035,
+          "players": 13,
+          "units": 14.582196388718128,
+          "ROI": 54.0081347730301,
+          "dates": 11,
+          "goalie_games": 26,
+          "goalies": 23
+        }
+      },
+      "with_buff": {
+        "full": {
+          "hits": 19,
+          "plays": 25,
+          "rate": 76.0,
+          "BE": 54.006683689034794,
+          "gap": 21.993316310965206,
+          "players": 12,
+          "units": 10.639172103851738,
+          "ROI": 42.55668841540695,
+          "dates": 16,
+          "goalie_games": 24,
+          "goalies": 20
+        },
+        "recent": {
+          "hits": 12,
+          "plays": 15,
+          "rate": 80.0,
+          "BE": 53.45119437559138,
+          "gap": 26.548805624408622,
+          "players": 10,
+          "units": 7.538625545147284,
+          "ROI": 50.25750363431523,
+          "dates": 9,
+          "goalie_games": 14,
+          "goalies": 14
+        }
+      },
+      "without_buff": {
+        "full": {
+          "hits": 13,
+          "plays": 16,
+          "rate": 81.25,
+          "BE": 54.29546475502036,
+          "gap": 26.95453524497964,
+          "players": 8,
+          "units": 8.33076825868817,
+          "ROI": 52.06730161680106,
+          "dates": 13,
+          "goalie_games": 16,
+          "goalies": 12
+        },
+        "recent": {
+          "hits": 10,
+          "plays": 12,
+          "rate": 83.33333333333333,
+          "BE": 53.49869842789753,
+          "gap": 29.8346349054358,
+          "players": 7,
+          "units": 7.043570843570843,
+          "ROI": 58.69642369642369,
+          "dates": 9,
+          "goalie_games": 12,
+          "goalies": 9
+        }
+      },
+      "original_hits": 40,
+      "original_plays": 53
+    },
+    {
+      "key": "assist-2026-27-additive-2026-11-03-v1|assist-nov03-storm-conduit-ii",
+      "name": "Storm Conduit II",
+      "rule": "Assist 0.5 + Matrix_Assists Green + Conf_Assists >=80 + iXA% >=94 + Goal_mu <= 0.33 + Player_SOG_Share_Proxy >= 11 + Player_5v5_SOG_Share >= 8",
+      "available_route": {
+        "full": {
+          "hits": 17,
+          "plays": 22,
+          "rate": 77.27272727272727,
+          "BE": 56.40410453500511,
+          "gap": 20.868622737722156,
+          "players": 7,
+          "units": 8.389539925617731,
+          "ROI": 38.13427238917151,
+          "dates": 16,
+          "goalie_games": 22,
+          "goalies": 19
+        },
+        "recent": {
+          "hits": 10,
+          "plays": 12,
+          "rate": 83.33333333333333,
+          "BE": 56.28703421146631,
+          "gap": 27.046299121867015,
+          "players": 5,
+          "units": 5.871026721026721,
+          "ROI": 48.92522267522268,
+          "dates": 8,
+          "goalie_games": 12,
+          "goalies": 11
+        }
+      },
+      "with_buff": {
+        "full": {
+          "hits": 9,
+          "plays": 13,
+          "rate": 69.23076923076923,
+          "BE": 56.61713204415613,
+          "gap": 12.613637186613097,
+          "players": 6,
+          "units": 2.836044394202289,
+          "ROI": 21.815726109248377,
+          "dates": 11,
+          "goalie_games": 13,
+          "goalies": 12
+        },
+        "recent": {
+          "hits": 5,
+          "plays": 6,
+          "rate": 83.33333333333333,
+          "BE": 56.96072112191882,
+          "gap": 26.372612211414506,
+          "players": 4,
+          "units": 2.6047286047286047,
+          "ROI": 43.412143412143415,
+          "dates": 5,
+          "goalie_games": 6,
+          "goalies": 6
+        }
+      },
+      "without_buff": {
+        "full": {
+          "hits": 8,
+          "plays": 9,
+          "rate": 88.88888888888889,
+          "BE": 56.09639813289808,
+          "gap": 32.792490755990805,
+          "players": 5,
+          "units": 5.553495531415442,
+          "ROI": 61.705505904616025,
+          "dates": 8,
+          "goalie_games": 9,
+          "goalies": 8
+        },
+        "recent": {
+          "hits": 5,
+          "plays": 6,
+          "rate": 83.33333333333333,
+          "BE": 55.613347301013796,
+          "gap": 27.719986032319532,
+          "players": 4,
+          "units": 3.2662981162981164,
+          "ROI": 54.43830193830194,
+          "dates": 5,
+          "goalie_games": 6,
+          "goalies": 5
+        }
+      },
+      "original_hits": 32,
+      "original_plays": 40
+    },
+    {
+      "key": "assist-2026-27-pp-crits-v1|Rune Conduit",
+      "name": "Rune Conduit",
+      "rule": "Assist 0.5 + Matrix_Assists Green + Conf_Assists >= 81 + iXA% >= 95 + PP_TOI_per_game >= 3.75",
+      "available_route": {
+        "full": {
+          "hits": 53,
+          "plays": 88,
+          "rate": 60.22727272727273,
+          "BE": 52.23861280203521,
+          "gap": 7.9886599252375134,
+          "players": 26,
+          "units": 14.282792914031427,
+          "ROI": 16.23044649321753,
+          "dates": 23,
+          "goalie_games": 67,
+          "goalies": 41
+        },
+        "recent": {
+          "hits": 27,
+          "plays": 39,
+          "rate": 69.23076923076923,
+          "BE": 54.36350117811767,
+          "gap": 14.867268052651553,
+          "players": 17,
+          "units": 11.412601617864775,
+          "ROI": 29.26308107144814,
+          "dates": 11,
+          "goalie_games": 29,
+          "goalies": 24
+        }
+      },
+      "with_buff": {
+        "full": {
+          "hits": 26,
+          "plays": 39,
+          "rate": 66.66666666666667,
+          "BE": 52.64860313113988,
+          "gap": 14.018063535526792,
+          "players": 21,
+          "units": 10.534595459824818,
+          "ROI": 27.011783230320045,
+          "dates": 17,
+          "goalie_games": 31,
+          "goalies": 22
+        },
+        "recent": {
+          "hits": 14,
+          "plays": 17,
+          "rate": 82.3529411764706,
+          "BE": 56.20712280622975,
+          "gap": 26.145818370240846,
+          "players": 11,
+          "units": 8.294651644651644,
+          "ROI": 48.79206849795085,
+          "dates": 8,
+          "goalie_games": 13,
+          "goalies": 12
+        }
+      },
+      "without_buff": {
+        "full": {
+          "hits": 27,
+          "plays": 49,
+          "rate": 55.10204081632653,
+          "BE": 51.91229396866619,
+          "gap": 3.189746847660338,
+          "players": 22,
+          "units": 3.74819745420661,
+          "ROI": 7.649382559605327,
+          "dates": 21,
+          "goalie_games": 36,
+          "goalies": 24
+        },
+        "recent": {
+          "hits": 13,
+          "plays": 22,
+          "rate": 59.09090909090909,
+          "BE": 52.938884465485614,
+          "gap": 6.152024625423479,
+          "players": 13,
+          "units": 3.1179499732131313,
+          "ROI": 14.172499878241505,
+          "dates": 10,
+          "goalie_games": 16,
+          "goalies": 12
+        }
+      },
+      "original_hits": 66,
+      "original_plays": 112
+    },
+    {
+      "key": "assist-2026-27-pp-crits-v1|Runic Infusion Crit",
+      "name": "Runic Infusion Crit",
+      "rule": "Assist 0.5 + Matrix_Assists Green + Conf_Assists >= 81 + iXA% >= 95 + PP_iXA60 >= 3.9 + Team_PP_xGF60 >= 8.3",
+      "available_route": {
+        "full": {
+          "hits": 35,
+          "plays": 57,
+          "rate": 61.40350877192982,
+          "BE": 53.2492040535711,
+          "gap": 8.154304718358723,
+          "players": 15,
+          "units": 8.773599674486093,
+          "ROI": 15.392280130677356,
+          "dates": 19,
+          "goalie_games": 43,
+          "goalies": 29
+        },
+        "recent": {
+          "hits": 22,
+          "plays": 29,
+          "rate": 75.86206896551724,
+          "BE": 54.017867172221756,
+          "gap": 21.844201793295483,
+          "players": 12,
+          "units": 12.280863890672503,
+          "ROI": 42.34780651956036,
+          "dates": 10,
+          "goalie_games": 23,
+          "goalies": 21
+        }
+      },
+      "with_buff": {
+        "full": {
+          "hits": 16,
+          "plays": 27,
+          "rate": 59.25925925925926,
+          "BE": 53.7860413080144,
+          "gap": 5.473217951244862,
+          "players": 12,
+          "units": 2.802369450072799,
+          "ROI": 10.379146111380738,
+          "dates": 10,
+          "goalie_games": 19,
+          "goalies": 16
+        },
+        "recent": {
+          "hits": 10,
+          "plays": 12,
+          "rate": 83.33333333333333,
+          "BE": 53.51370628410239,
+          "gap": 29.819627049230938,
+          "players": 7,
+          "units": 6.785921990467445,
+          "ROI": 56.549349920562044,
+          "dates": 4,
+          "goalie_games": 8,
+          "goalies": 8
+        }
+      },
+      "without_buff": {
+        "full": {
+          "hits": 19,
+          "plays": 30,
+          "rate": 63.333333333333336,
+          "BE": 52.76605052457213,
+          "gap": 10.567282808761206,
+          "players": 15,
+          "units": 5.9712302244132935,
+          "ROI": 19.90410074804431,
+          "dates": 15,
+          "goalie_games": 24,
+          "goalies": 16
+        },
+        "recent": {
+          "hits": 12,
+          "plays": 17,
+          "rate": 70.58823529411765,
+          "BE": 54.373745446188366,
+          "gap": 16.214489847929286,
+          "players": 10,
+          "units": 5.494941900205058,
+          "ROI": 32.32318764826505,
+          "dates": 9,
+          "goalie_games": 15,
+          "goalies": 13
+        }
+      },
+      "original_hits": 46,
+      "original_plays": 73
+    },
+    {
+      "key": "assist-2026-27-pp-crits-v1|Rune Conduit Crit",
+      "name": "Rune Conduit Crit",
+      "rule": "Assist 0.5 + Matrix_Assists Green + Conf_Assists >= 81 + iXA% >= 95 + PP_TOI_per_game >= 3.75 + Team_PP_xGF60 >= 8.3",
+      "available_route": {
+        "full": {
+          "hits": 25,
+          "plays": 41,
+          "rate": 60.97560975609756,
+          "BE": 51.625991543992455,
+          "gap": 9.349618212105106,
+          "players": 14,
+          "units": 7.307387132548423,
+          "ROI": 17.822895445240057,
+          "dates": 17,
+          "goalie_games": 30,
+          "goalies": 20
+        },
+        "recent": {
+          "hits": 15,
+          "plays": 19,
+          "rate": 78.94736842105263,
+          "BE": 53.33444970756238,
+          "gap": 25.612918713490252,
+          "players": 9,
+          "units": 9.763003263003263,
+          "ROI": 51.38422770001717,
+          "dates": 9,
+          "goalie_games": 14,
+          "goalies": 12
+        }
+      },
+      "with_buff": {
+        "full": {
+          "hits": 10,
+          "plays": 16,
+          "rate": 62.5,
+          "BE": 52.216255954243195,
+          "gap": 10.283744045756805,
+          "players": 9,
+          "units": 2.9305597605597606,
+          "ROI": 18.315998503498502,
+          "dates": 8,
+          "goalie_games": 13,
+          "goalies": 11
+        },
+        "recent": {
+          "hits": 5,
+          "plays": 5,
+          "rate": 100.0,
+          "BE": 54.423067089887155,
+          "gap": 45.576932910112845,
+          "players": 4,
+          "units": 4.34042809042809,
+          "ROI": 86.8085618085618,
+          "dates": 2,
+          "goalie_games": 4,
+          "goalies": 4
+        }
+      },
+      "without_buff": {
+        "full": {
+          "hits": 15,
+          "plays": 25,
+          "rate": 60.0,
+          "BE": 51.24822232143199,
+          "gap": 8.751777678568011,
+          "players": 13,
+          "units": 4.376827371988663,
+          "ROI": 17.50730948795465,
+          "dates": 13,
+          "goalie_games": 17,
+          "goalies": 12
+        },
+        "recent": {
+          "hits": 10,
+          "plays": 14,
+          "rate": 71.42857142857143,
+          "BE": 52.94565778530353,
+          "gap": 18.4829136432679,
+          "players": 8,
+          "units": 5.422575172575173,
+          "ROI": 38.73267980410838,
+          "dates": 8,
+          "goalie_games": 10,
+          "goalies": 8
+        }
+      },
+      "original_hits": 32,
+      "original_plays": 52
+    },
+    {
+      "key": "assist-2026-27-pp-crits-v1|Odin's Vigil",
+      "name": "Odin's Vigil",
+      "rule": "Assist 0.5 + Matrix_Assists Green + Conf_Assists >= 81 + iXA% >= 95 + TOI_per_game >= 22",
+      "available_route": {
+        "full": {
+          "hits": 39,
+          "plays": 54,
+          "rate": 72.22222222222223,
+          "BE": 54.7387684223345,
+          "gap": 17.483453799887727,
+          "players": 14,
+          "units": 17.701085279792938,
+          "ROI": 32.779787555172106,
+          "dates": 22,
+          "goalie_games": 52,
+          "goalies": 34
+        },
+        "recent": {
+          "hits": 25,
+          "plays": 33,
+          "rate": 75.75757575757575,
+          "BE": 55.465619585344726,
+          "gap": 20.291956172231025,
+          "players": 13,
+          "units": 12.201534996338761,
+          "ROI": 36.97434847375382,
+          "dates": 11,
+          "goalie_games": 31,
+          "goalies": 26
+        }
+      },
+      "with_buff": {
+        "full": {
+          "hits": 21,
+          "plays": 28,
+          "rate": 75.0,
+          "BE": 54.757008653651745,
+          "gap": 20.242991346348255,
+          "players": 13,
+          "units": 10.758840206538709,
+          "ROI": 38.42442930906682,
+          "dates": 15,
+          "goalie_games": 28,
+          "goalies": 19
+        },
+        "recent": {
+          "hits": 14,
+          "plays": 17,
+          "rate": 82.3529411764706,
+          "BE": 54.954704010093344,
+          "gap": 27.39823716637725,
+          "players": 11,
+          "units": 8.575143464684071,
+          "ROI": 50.44202038049454,
+          "dates": 8,
+          "goalie_games": 17,
+          "goalies": 15
+        }
+      },
+      "without_buff": {
+        "full": {
+          "hits": 18,
+          "plays": 26,
+          "rate": 69.23076923076923,
+          "BE": 54.719125096300544,
+          "gap": 14.511644134468682,
+          "players": 11,
+          "units": 6.942245073254229,
+          "ROI": 26.700942589439343,
+          "dates": 17,
+          "goalie_games": 24,
+          "goalies": 18
+        },
+        "recent": {
+          "hits": 11,
+          "plays": 16,
+          "rate": 68.75,
+          "BE": 56.00846738404932,
+          "gap": 12.741532615950682,
+          "players": 8,
+          "units": 3.6263915316546895,
+          "ROI": 22.66494707284181,
+          "dates": 9,
+          "goalie_games": 14,
+          "goalies": 11
+        }
+      },
+      "original_hits": 45,
+      "original_plays": 66
+    },
+    {
+      "key": "assist-2026-27-pp-crits-v1|Odin's Vigil Crit",
+      "name": "Odin's Vigil Crit",
+      "rule": "Assist 0.5 + Matrix_Assists Green + Conf_Assists >= 81 + iXA% >= 95 + TOI_per_game >= 22 + Team_PP_xGF60 >= 8.3",
+      "available_route": {
+        "full": {
+          "hits": 20,
+          "plays": 28,
+          "rate": 71.42857142857143,
+          "BE": 57.037978698098755,
+          "gap": 14.390592730472676,
+          "players": 6,
+          "units": 7.0691960970588,
+          "ROI": 25.24712891806714,
+          "dates": 15,
+          "goalie_games": 26,
+          "goalies": 20
+        },
+        "recent": {
+          "hits": 14,
+          "plays": 18,
+          "rate": 77.77777777777777,
+          "BE": 57.23274927200678,
+          "gap": 20.545028505770993,
+          "players": 6,
+          "units": 6.63068289246779,
+          "ROI": 36.837127180376605,
+          "dates": 8,
+          "goalie_games": 16,
+          "goalies": 15
+        }
+      },
+      "with_buff": {
+        "full": {
+          "hits": 9,
+          "plays": 14,
+          "rate": 64.28571428571429,
+          "BE": 55.99214004048289,
+          "gap": 8.293574245231405,
+          "players": 5,
+          "units": 2.1237889684686024,
+          "ROI": 15.16992120334716,
+          "dates": 9,
+          "goalie_games": 14,
+          "goalies": 13
+        },
+        "recent": {
+          "hits": 6,
+          "plays": 8,
+          "rate": 75.0,
+          "BE": 54.713561725145844,
+          "gap": 20.286438274854156,
+          "players": 4,
+          "units": 2.972473178994918,
+          "ROI": 37.155914737436476,
+          "dates": 4,
+          "goalie_games": 8,
+          "goalies": 8
+        }
+      },
+      "without_buff": {
+        "full": {
+          "hits": 11,
+          "plays": 14,
+          "rate": 78.57142857142857,
+          "BE": 58.08381735571462,
+          "gap": 20.487611215713947,
+          "players": 6,
+          "units": 4.9454071285901975,
+          "ROI": 35.32433663278712,
+          "dates": 9,
+          "goalie_games": 12,
+          "goalies": 10
+        },
+        "recent": {
+          "hits": 8,
+          "plays": 10,
+          "rate": 80.0,
+          "BE": 59.24809930949552,
+          "gap": 20.751900690504478,
+          "players": 5,
+          "units": 3.6582097134728713,
+          "ROI": 36.58209713472871,
+          "dates": 6,
+          "goalie_games": 8,
+          "goalies": 7
+        }
+      },
+      "original_hits": 31,
+      "original_plays": 39
+    },
+    {
+      "key": "assist-2026-27-additive-2026-11-03-v1|assist-nov03-oracle-s-guidance-ii",
+      "name": "Oracle’s Guidance II",
+      "rule": "Assist 0.5 + Matrix_Assists Green + Conf_Assists >=80 + iXA% >=94 + Goal_mu <= 0.33 + i5v5_primaryAssists60 <= 1.05 + Team_PP_GF60 >= 5.7 + opp_5v5_HDCA60 <= 2.2",
+      "available_route": {
+        "full": {
+          "hits": 35,
+          "plays": 40,
+          "rate": 87.5,
+          "BE": 53.74546699326217,
+          "gap": 33.75453300673783,
+          "players": 14,
+          "units": 25.98345444735834,
+          "ROI": 64.95863611839584,
+          "dates": 19,
+          "goalie_games": 34,
+          "goalies": 27
+        },
+        "recent": {
+          "hits": 22,
+          "plays": 26,
+          "rate": 84.61538461538461,
+          "BE": 53.28276077720109,
+          "gap": 31.332623838183522,
+          "players": 12,
+          "units": 15.665384215384215,
+          "ROI": 60.25147775147775,
+          "dates": 10,
+          "goalie_games": 21,
+          "goalies": 20
+        }
+      },
+      "with_buff": {
+        "full": {
+          "hits": 21,
+          "plays": 23,
+          "rate": 91.30434782608695,
+          "BE": 53.27788643262197,
+          "gap": 38.026461393464984,
+          "players": 12,
+          "units": 17.120783308941203,
+          "ROI": 74.43818829974437,
+          "dates": 12,
+          "goalie_games": 17,
+          "goalies": 15
+        },
+        "recent": {
+          "hits": 14,
+          "plays": 15,
+          "rate": 93.33333333333333,
+          "BE": 52.53208748606816,
+          "gap": 40.80124584726517,
+          "players": 9,
+          "units": 11.868566618566618,
+          "ROI": 79.12377745711079,
+          "dates": 6,
+          "goalie_games": 10,
+          "goalies": 10
+        }
+      },
+      "without_buff": {
+        "full": {
+          "hits": 14,
+          "plays": 17,
+          "rate": 82.3529411764706,
+          "BE": 54.3780759870695,
+          "gap": 27.974865189401093,
+          "players": 8,
+          "units": 8.862671138417136,
+          "ROI": 52.13335963774786,
+          "dates": 15,
+          "goalie_games": 17,
+          "goalies": 13
+        },
+        "recent": {
+          "hits": 8,
+          "plays": 11,
+          "rate": 72.72727272727273,
+          "BE": 54.306406174200546,
+          "gap": 18.420866553072187,
+          "players": 6,
+          "units": 3.796817596817597,
+          "ROI": 34.516523607432696,
+          "dates": 9,
+          "goalie_games": 11,
+          "goalies": 10
+        }
+      },
+      "original_hits": 36,
+      "original_plays": 44
+    },
+    {
+      "key": "assist-2026-27-additive-2026-11-03-v1|assist-nov03-empowered-storm-conduit",
+      "name": "Empowered Storm Conduit",
+      "rule": "Assist 0.5 + Matrix_Assists Green + Conf_Assists >=80 + iXA% >=94 + Goal_mu <= 0.33 + Player_SOG_Share_Proxy >= 11 + Team_PP_GF60 >= 5.7 + opp_5v5_HDCA60 <= 2.2",
+      "available_route": {
+        "full": {
+          "hits": 27,
+          "plays": 32,
+          "rate": 84.375,
+          "BE": 54.78305886158694,
+          "gap": 29.591941138413063,
+          "players": 12,
+          "units": 18.51802995410776,
+          "ROI": 57.86884360658675,
+          "dates": 18,
+          "goalie_games": 31,
+          "goalies": 25
+        },
+        "recent": {
+          "hits": 18,
+          "plays": 21,
+          "rate": 85.71428571428571,
+          "BE": 53.577994012164275,
+          "gap": 32.13629170212143,
+          "players": 11,
+          "units": 13.130285980285981,
+          "ROI": 62.525171334695145,
+          "dates": 10,
+          "goalie_games": 20,
+          "goalies": 18
+        }
+      },
+      "with_buff": {
+        "full": {
+          "hits": 16,
+          "plays": 19,
+          "rate": 84.21052631578948,
+          "BE": 54.98146883199561,
+          "gap": 29.229057483793866,
+          "players": 10,
+          "units": 11.005443513601408,
+          "ROI": 57.92338691369162,
+          "dates": 13,
+          "goalie_games": 18,
+          "goalies": 16
+        },
+        "recent": {
+          "hits": 10,
+          "plays": 11,
+          "rate": 90.9090909090909,
+          "BE": 53.44685435296219,
+          "gap": 37.462236556128715,
+          "players": 7,
+          "units": 7.904896954896955,
+          "ROI": 71.86269958997232,
+          "dates": 7,
+          "goalie_games": 10,
+          "goalies": 10
+        }
+      },
+      "without_buff": {
+        "full": {
+          "hits": 11,
+          "plays": 13,
+          "rate": 84.61538461538461,
+          "BE": 54.49307505868196,
+          "gap": 30.122309556702653,
+          "players": 8,
+          "units": 7.512586440506351,
+          "ROI": 57.789126465433476,
+          "dates": 12,
+          "goalie_games": 13,
+          "goalies": 10
+        },
+        "recent": {
+          "hits": 8,
+          "plays": 10,
+          "rate": 80.0,
+          "BE": 53.722247637286564,
+          "gap": 26.277752362713436,
+          "players": 7,
+          "units": 5.225389025389026,
+          "ROI": 52.253890253890255,
+          "dates": 9,
+          "goalie_games": 10,
+          "goalies": 8
+        }
+      },
+      "original_hits": 31,
+      "original_plays": 37
+    },
+    {
+      "key": "assist-2026-27-additive-2026-11-03-v1|assist-nov03-runic-resonance-ii",
+      "name": "Runic Resonance II",
+      "rule": "Assist 0.5 + Matrix_Assists Green + Conf_Assists >=80 + iXA% >=94 + Goal_mu <= 0.33 + PPP10_total >= 4 + Team_PP_GF60 >= 5.7 + opp_5v5_HDCA60 <= 2.2",
+      "available_route": {
+        "full": {
+          "hits": 32,
+          "plays": 41,
+          "rate": 78.04878048780488,
+          "BE": 54.777913128962595,
+          "gap": 23.27086735884228,
+          "players": 15,
+          "units": 18.404115670193477,
+          "ROI": 44.88808700047189,
+          "dates": 18,
+          "goalie_games": 35,
+          "goalies": 27
+        },
+        "recent": {
+          "hits": 22,
+          "plays": 29,
+          "rate": 75.86206896551724,
+          "BE": 53.82978498610395,
+          "gap": 22.032283979413286,
+          "players": 15,
+          "units": 12.286379886379887,
+          "ROI": 42.3668271944134,
+          "dates": 11,
+          "goalie_games": 24,
+          "goalies": 20
+        }
+      },
+      "with_buff": {
+        "full": {
+          "hits": 19,
+          "plays": 24,
+          "rate": 79.16666666666667,
+          "BE": 54.639372616698985,
+          "gap": 24.527294049967686,
+          "players": 13,
+          "units": 11.551918840076734,
+          "ROI": 48.1329951669864,
+          "dates": 13,
+          "goalie_games": 18,
+          "goalies": 16
+        },
+        "recent": {
+          "hits": 13,
+          "plays": 16,
+          "rate": 81.25,
+          "BE": 53.13017005507976,
+          "gap": 28.11982994492024,
+          "players": 11,
+          "units": 8.63047138047138,
+          "ROI": 53.940446127946124,
+          "dates": 8,
+          "goalie_games": 11,
+          "goalies": 10
+        }
+      },
+      "without_buff": {
+        "full": {
+          "hits": 13,
+          "plays": 17,
+          "rate": 76.47058823529412,
+          "BE": 54.973499734511215,
+          "gap": 21.4970885007829,
+          "players": 10,
+          "units": 6.852196830116741,
+          "ROI": 40.3070401771573,
+          "dates": 14,
+          "goalie_games": 17,
+          "goalies": 14
+        },
+        "recent": {
+          "hits": 9,
+          "plays": 13,
+          "rate": 69.23076923076923,
+          "BE": 54.69084951659526,
+          "gap": 14.53991971417397,
+          "players": 8,
+          "units": 3.655908505908506,
+          "ROI": 28.122373122373123,
+          "dates": 10,
+          "goalie_games": 13,
+          "goalies": 11
+        }
+      },
+      "original_hits": 33,
+      "original_plays": 40
+    },
+    {
+      "key": "assist-2026-27-additive-2026-11-03-v1|assist-nov03-runic-orchestration-crit",
+      "name": "Runic Orchestration Crit",
+      "rule": "Assist 0.5 + Matrix_Assists Green + Conf_Assists >=80 + iXA% >=94 + Goal_mu <= 0.33 + i5v5_primaryAssists60 <= 1.05 + PPP10_total >= 4 + Team_PP_GF60 >= 5.7 + opp_5v5_HDCA60 <= 2.2",
+      "available_route": {
+        "full": {
+          "hits": 28,
+          "plays": 31,
+          "rate": 90.3225806451613,
+          "BE": 54.83405979927619,
+          "gap": 35.488520845885105,
+          "players": 10,
+          "units": 21.011508277586085,
+          "ROI": 67.77905895995511,
+          "dates": 16,
+          "goalie_games": 26,
+          "goalies": 24
+        },
+        "recent": {
+          "hits": 19,
+          "plays": 21,
+          "rate": 90.47619047619048,
+          "BE": 54.11710475806187,
+          "gap": 36.35908571812861,
+          "players": 10,
+          "units": 14.663003263003263,
+          "ROI": 69.8238250619203,
+          "dates": 10,
+          "goalie_games": 17,
+          "goalies": 16
+        }
+      },
+      "with_buff": {
+        "full": {
+          "hits": 17,
+          "plays": 19,
+          "rate": 89.47368421052632,
+          "BE": 54.031052746484775,
+          "gap": 35.44263146404154,
+          "players": 9,
+          "units": 13.06840235656025,
+          "ROI": 68.78106503452764,
+          "dates": 10,
+          "goalie_games": 14,
+          "goalies": 14
+        },
+        "recent": {
+          "hits": 12,
+          "plays": 13,
+          "rate": 92.3076923076923,
+          "BE": 52.827830776607726,
+          "gap": 39.47986153108458,
+          "players": 8,
+          "units": 9.916185666185665,
+          "ROI": 76.27835127835128,
+          "dates": 6,
+          "goalie_games": 9,
+          "goalies": 9
+        }
+      },
+      "without_buff": {
+        "full": {
+          "hits": 11,
+          "plays": 12,
+          "rate": 91.66666666666667,
+          "BE": 56.10548763286259,
+          "gap": 35.56117903380408,
+          "players": 6,
+          "units": 7.943105921025832,
+          "ROI": 66.19254934188193,
+          "dates": 12,
+          "goalie_games": 12,
+          "goalies": 11
+        },
+        "recent": {
+          "hits": 7,
+          "plays": 8,
+          "rate": 87.5,
+          "BE": 56.21217497792485,
+          "gap": 31.287825022075147,
+          "players": 4,
+          "units": 4.746817596817597,
+          "ROI": 59.33521996021996,
+          "dates": 8,
+          "goalie_games": 8,
+          "goalies": 7
+        }
+      },
+      "original_hits": 27,
+      "original_plays": 31
+    }
+  ],
+  "combined": {
+    "with_buff": {
+      "full": {
+        "hits": 54,
+        "plays": 81,
+        "rate": 66.66666666666667,
+        "BE": 52.77927281973449,
+        "gap": 13.887393846932184,
+        "players": 36,
+        "units": 22.40193140988527,
+        "ROI": 27.656705444302805,
+        "dates": 23,
+        "goalie_games": 54,
+        "goalies": 29
+      },
+      "recent": {
+        "hits": 34,
+        "plays": 44,
+        "rate": 77.27272727272727,
+        "BE": 53.169600449739235,
+        "gap": 24.10312682298803,
+        "players": 26,
+        "units": 20.560909652821802,
+        "ROI": 46.72934012004955,
+        "dates": 12,
+        "goalie_games": 29,
+        "goalies": 22
+      }
+    }
+  },
+  "research_source_commit": "1c13859017b93084a081665a6759054017f2d63b"
+}

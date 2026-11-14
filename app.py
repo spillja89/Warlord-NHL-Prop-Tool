@@ -34,7 +34,7 @@ from season_sources import (fetch_moneypuck_skaters, fetch_moneypuck_teams,
                             league_season_rows, power_play_team_ranks,
                             slate_team_matchup_rows, team_season_rows)
 from ledger_store import append_bet as _append_cloud_bet, recent_bets as _recent_cloud_bets
-from played_cards import render_markable_boards, render_pick_list
+from played_cards import render_markable_boards, render_markable_pp_table, render_pick_list
 from power_play_quotes import (fetch_current_pp_usage, format_pk_minutes_per_game,
                                format_ppp_book_prices,
                                opponent_pk_seconds_per_opportunity,
@@ -6679,8 +6679,10 @@ elif page == "Power Play":
 
         # PP remains a research table; the user retired the pick-card display.
         st.caption("Click any column heading to sort low to high; click again to reverse it.")
-        st.html(render_power_play_quotes_table(pp_view.to_dict("records"), pp_signals_by_team),
-                unsafe_allow_javascript=True)
+        render_markable_pp_table(pp_view.to_dict("records"), df_f, pp_signals_by_team,
+                                 render=render_power_play_quotes_table,
+                                 owner_access=owner_access, setting=_owner_setting,
+                                 key='played_pp_table')
         with st.expander("Detailed sortable PP columns"):
             st.dataframe(display_quotes.style.map(_pp_research_flag_color, subset=["PP matchup stack"]),
                          hide_index=True, width="stretch")

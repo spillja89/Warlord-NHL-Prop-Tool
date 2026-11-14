@@ -27,6 +27,8 @@ from goal_card_routes import records_for as goal_card_records, display_moves as 
 from goal_card_routes import parent_attack_name as goal_buff_parent_name, buffs_for_attack as goal_buffs_for_attack
 from goal_card_routes import best_move as goal_best_move, move_rank as goal_move_rank, player_route_family as goal_player_route_family
 from assist_return_monitor import return_panel as assist_return_panel
+from assist_goalie_buff import context as assist_goalie_context, badge_html as assist_goalie_badge
+from assist_goalie_buff import goalie_html as assist_goalie_stats, inspect_html as assist_goalie_details, CSS as ASSIST_GOALIE_CSS
 from points_return_monitor import return_panel as points_return_panel, original_caption as points_original_caption
 from special_return_monitor import sog_return_panel
 from move_return_grades import grade_rank, move_grade, grade_badges, stable_identity, GRADE_CSS
@@ -539,6 +541,8 @@ def rank_warlords(frame: pd.DataFrame) -> dict[str, list[dict]]:
                 "move_count": len(moves),
             }
             candidate["pp_assist_beta"] = assist_ppp_beta(row) if market == "Assists" else None
+            if market == "Assists":
+                candidate["assist_goalie_buff"] = assist_goalie_context(row, moves)
             previous = boards[role].get(key)
             if previous is None or _move_rank(move) > _move_rank(previous["move"]):
                 boards[role][key] = candidate
@@ -642,6 +646,8 @@ def rank_priced_slate(frame: pd.DataFrame) -> dict[str, list[dict]]:
                 "roster_watch": watch,
             }
             candidate["pp_assist_beta"] = assist_ppp_beta(row) if market == "Assists" and not watch else None
+            if market == "Assists":
+                candidate["assist_goalie_buff"] = assist_goalie_context(row, moves)
             key = (team.casefold(), player.casefold(), line) if market == 'Points' else (team.casefold(), player.casefold())
             previous = boards[role].get(key)
             if previous is None or (
@@ -869,7 +875,7 @@ def _render_pp_player_signal_details(details):
     return '<div class="pp-player-checks">' + "".join(result) + '</div>' if result else ""
 
 
-def render_power_play_quotes_table(rows, signals_by_team):
+def render_power_play_quotes_table(rows, signals_by_team, *, row_controls=None):
     """Full PP scouting table with clickable, typed column sorting."""
     def cell(value):
         if value is None or pd.isna(value):
@@ -956,6 +962,8 @@ def render_power_play_quotes_table(rows, signals_by_team):
         for label, key, render in columns:
             css = ' class="pp-player"' if label == "Player" else ' class="pp-signals"' if key is None else ""
             content = stack if key is None else render(row.get(key))
+            if label == "Player" and row_controls:
+                content += row_controls(row)
             if label == "Player signals" and row.get("PP research count"):
                 content = f'<span class="pp-player-move">{content}</span>'
             if label == "Player signals":
@@ -1197,7 +1205,8 @@ def _card_quick_summary(role, card):
         fields = [('TOI_per_game', 'TOI min/g', 1), ('Player_5v5_SOG_Share', '5v5 shot share %', 1), ('Opp_SOG_Against_L10', 'Opp SOG/g', 1)]
     pieces = [f'{_h(label)} <b>{value:.{digits}f}</b>' for field, label, digits in fields
               if (value := _number(values.get(field))) is not None]
-    return '<div class="wn-quick-summary">' + ' · '.join(pieces) + '</div>' if pieces else ''
+    goalie_stats = assist_goalie_stats(card.get('assist_goalie_buff')) if role == 'Support' else ''
+    return '<div class="wn-quick-summary">' + ' · '.join(pieces) + goalie_stats + '</div>' if pieces or goalie_stats else ''
 
 
 def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=None,
@@ -1340,6 +1349,8 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
                            f' · {int(goalie_gp)} GP' if goalie_gp is not None else '')
             goalie_note = (f'<div class="wn-goalie">Opp goalie: {_h(goalie_name)} · {_h(goalie_status)}{sample_note}</div>'
                            if goalie_name else '<div class="wn-goalie">Opp goalie: unknown</div>')
+            if role == 'Support' and card.get('assist_goalie_buff'):
+                goalie_note = ''  # Full named goalie stats already stay visible on the closed card.
             lineup_note = f'<div class="wn-goalie">Player lineup: {_h(card.get("lineup_status") or "Lineup pending")}</div>'
             positional = card.get("position_sog") if role == "Jungle" else None
             position_note = (f'<div class="wn-position-sog">{_h(positional["opponent"])} allows '
@@ -1498,7 +1509,7 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
                 <div class="wn-attack"><span class="wn-attack-name">{_h(move_name)}</span><span class="wn-badge">{_h(status + sample)}</span></div>
                 {support_route_note}
                 <div class="wn-unit-foot"><span>{_h(line)} <b>{_h(price)}</b>{book_note}</span><span>{_h(later_note)}{confidence_note}</span></div>
-                {book_rate_note}{card_controls(card) if card_controls else ''}
+                {book_rate_note}{assist_goalie_badge(card.get('assist_goalie_buff')) if role == 'Support' else ''}{card_controls(card) if card_controls else ''}
                 {beta_summary(card.get('pp_assist_beta')) if role == 'Support' else ''}</div>
                 {goal_return_panel(move) if role == 'Carry' else ''}
                 {assist_return_panel(move) if role == 'Support' else ''}
@@ -1509,7 +1520,7 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
               {_card_quick_summary(role, card)}
               <details class="wn-card-inspect"><summary>Inspect player · profile, matchup &amp; recent form</summary>
               <div class="wn-unit-info">
-                {beta_details(card.get('pp_assist_beta')) if role == 'Support' else ''}
+                {assist_goalie_details(card.get('assist_goalie_buff'), move) if role == 'Support' else ''}{beta_details(card.get('pp_assist_beta')) if role == 'Support' else ''}
                 {pp_crit_note}
                 {assist_facts}
                 {sog_facts}
@@ -1698,7 +1709,8 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
       <div class="wn-hero-foot">{_h(hero_foot)} · HISTORICAL MOVE RATE IS NOT A FORECAST</div></div>"""
     board_class = "wn-board" if show_hero else "wn-board wn-board--compact"
     goal_return_styles = '<style>' + GOAL_RETURN_CSS + '</style>' if any(item[0] in ('Carry', 'Support', 'Tank') for item in selected) else ''
-    return BETA_CSS + '<style>' + GRADE_CSS + '</style>' + styles + goal_return_styles + f'<div class="{board_class}">' + (hero if show_hero else "") + '<div class="wn-grid">' + ''.join(lanes) + '</div></div>'
+    assist_goalie_styles = '<style>' + ASSIST_GOALIE_CSS + '</style>' if any(item[0] == 'Support' for item in selected) else ''
+    return BETA_CSS + '<style>' + GRADE_CSS + '</style>' + styles + goal_return_styles + assist_goalie_styles + f'<div class="{board_class}">' + (hero if show_hero else "") + '<div class="wn-grid">' + ''.join(lanes) + '</div></div>'
 
 
 

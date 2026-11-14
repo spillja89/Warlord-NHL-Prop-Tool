@@ -186,6 +186,77 @@ def render_markable_boards(boards, frame, *, render, owner_access, setting, key,
     _save_bridge(store, registry, states, {}, owner_access=owner_access, key=key)
 
 
+def pp_pick_for_quote(quote, rows):
+    """Bind a displayed PPP quote to exactly one trusted tracker identity."""
+    candidates = [row for row in rows
+                  if str(row.get('Player', '')).strip() == str(quote.get('Player', '')).strip()
+                  and str(row.get('Team', '')).strip() == str(quote.get('Team', '')).strip()
+                  and str(row.get('Game', '')).strip() == str(quote.get('Game', '')).strip()]
+    card = dict(player=quote.get('Player'), team=quote.get('Team'), game=quote.get('Game'),
+                market='PPP', line=quote.get('PPP line'), odds=quote.get('Over odds'),
+                book=quote.get('Book'), move={})
+    picks = []
+    for row in candidates:
+        try:
+            picks.append(make_pick(card, row))
+        except (ValueError, TypeError, KeyError):
+            continue
+    if not picks or len({pick['pick_id'] for pick in picks}) != 1:
+        raise ValueError('Missing or ambiguous player/game identity')
+    return picks[0]
+
+
+def pp_controls_html(pick, state, error, key):
+    """The same scoped, fragment-backed controls used on cards, inside a PP row."""
+    played, shared = bool(state.get('played')), bool(state.get('shared'))
+    revision = int(state.get('revision', 0))
+    can_share = played and (shared or pregame(pick))
+    disabled = ' disabled' if error else ''
+    share_disabled = ' disabled' if error or not can_share else ''
+    note = 'Saving unavailable' if error else 'Saved ✓' if played else 'Private mark'
+    player = escape(pick['player'], quote=True)
+    return (f'<div class="wn-pick-controls" data-warlord-pick="{pick["pick_id"]}" data-revision="{revision}"'
+            f' data-pick-scope="{escape(key, quote=True)}" data-can-share="{str(can_share).lower()}">'
+            f'<label><input type="checkbox" data-pick-field="played" aria-label="Played: {player} PPP over {pick["line"]}"'
+            f'{" checked" if played else ""}{disabled}>✓ Played</label>'
+            '<label title="Publish this pick and displayed price. Your personal stakes stay private.">'
+            f'<input type="checkbox" data-pick-field="shared" aria-label="Share to Tail list: {player} PPP over {pick["line"]}"'
+            f'{" checked" if shared else ""}{share_disabled}>Share to Tail list</label>'
+            f'<span role="status">{note}</span></div>')
+
+
+def render_markable_pp_table(quotes, frame, signals_by_team, *, render, owner_access, setting, key):
+    """One bridge for the whole sortable table. Public viewers never load marks."""
+    if not owner_access:
+        st.html(render(quotes, signals_by_team), unsafe_allow_javascript=True)
+        return
+    url = storage_url(setting)
+    store, states, error = (PickStore(url) if url else None), {}, ''
+    if store:
+        try:
+            states = store.private_rows()
+        except Exception:
+            error = 'Pick storage is unavailable. Nothing was marked or shared. Try again shortly.'
+    else:
+        error = 'Played marks need private storage connected before they can save across reboots.'
+    registry = {}
+    rows = frame.to_dict('records')
+
+    def controls(quote):
+        try:
+            pick = pp_pick_for_quote(quote, rows)
+        except (ValueError, TypeError, KeyError):
+            return '<div class="wn-pick-controls">Played unavailable · missing player/game identity</div>'
+        registry[pick['pick_id']] = pick
+        return pp_controls_html(pick, states.get(pick['pick_id'], {}), error, key)
+
+    st.html(_CSS + render(quotes, signals_by_team, row_controls=controls), unsafe_allow_javascript=True)
+    if error:
+        st.warning(error)
+        return
+    _save_bridge(store, registry, states, {}, owner_access=owner_access, key=key)
+
+
 def _return(odds, status):
     if status == 'Win':
         return odds / 100 if odds > 0 else 100 / abs(odds)

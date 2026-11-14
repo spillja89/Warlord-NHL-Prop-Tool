@@ -10,7 +10,7 @@ import json
 import math
 from datetime import datetime, timezone
 
-MARKETS = {"Points", "Assists", "SOG", "Goal"}
+MARKETS = {"Points", "Assists", "SOG", "Goal", "PPP"}
 PUBLIC_FIELDS = ("pick_id", "date", "game_id", "player_id", "player", "team", "game",
                  "market", "line", "side", "odds", "book", "start_utc", "shared_at")
 
