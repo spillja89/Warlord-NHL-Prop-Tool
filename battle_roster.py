@@ -71,6 +71,7 @@ def champion_details_html(pick, boards, frame):
         quotes=priced_ppp_quotes(pd.DataFrame([row]),line_filter=.5)
         quote=quotes.iloc[0].to_dict() if not quotes.empty else {}
         view=dict(player=pick['player'],game=matchup_label(pick.get('game'),pick.get('start_utc')),
+                  portrait_variant='Celestial Sage',
                   odds=quote.get('Over odds',pick['odds']),book=quote.get('Book',pick.get('book')),
                   form_log=row.get('Form_Log'),form_season=row.get('Form_Season'),
                   pp_unit=quote.get('PP unit'),pp_research=quote.get('PP research signals'),
@@ -119,7 +120,7 @@ def roster_html(picks, boards, *, scope='chosen_champion_details'):
         card=next((card for card in cards if card.get('player')==lead.get('player')
                    and card.get('game')==lead.get('game') and card.get('market')==lead.get('market')
                    and card.get('line')==lead.get('line')),None)
-        variant='Stormcaller' if lead.get('market')=='PPP' else ''
+        variant='Celestial Sage' if lead.get('market')=='PPP' else ''
         if card:
             _,variant=_class_identity(role,card,card.get('points_current_tier') or card.get('move'))
         elif lead.get('market')!='PPP':

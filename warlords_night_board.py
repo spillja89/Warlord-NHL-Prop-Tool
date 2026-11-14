@@ -1047,7 +1047,10 @@ def render_power_play_quotes_table(rows, signals_by_team, *, row_controls=None):
 
 def render_power_play_form(card):
     """Show the same dated player form card on the separate PPP scouting page."""
-    portrait = _character_uri("Support")
+    portrait_variant = str(card.get('portrait_variant') or '')
+    portrait = _character_uri("Support", portrait_variant)
+    celestial_class = ' ppp-card--celestial' if portrait_variant == 'Celestial Sage' else ''
+    character_label = '<div class="ppp-character">Panda · Celestial Sage · Power Play Support</div>' if celestial_class else ''
     image = f'<img src="{portrait}" alt="" />' if portrait else "🪄"
     price = _odds(card.get("odds"))
     form = _form_html({**card, "market": "PPP", "line": 0.5}, expanded=True)
@@ -1107,6 +1110,8 @@ def render_power_play_form(card):
       .ppp-head{{display:flex;align-items:center;gap:12px;margin-bottom:8px}}
       .ppp-portrait{{width:50px;height:50px;flex:none;overflow:hidden;border-radius:9px;border:1px solid #8d72c4;background:#172039}}
       .ppp-portrait img{{width:100%;height:100%;object-fit:cover;object-position:center top}}
+      .ppp-card--celestial .ppp-portrait{{width:105px;height:130px;border-color:#8de3b4;box-shadow:0 0 13px #58dca53b}}
+      .ppp-character{{font-size:12px;font-weight:800;color:#b6f2d0;margin:6px 0}}
       .ppp-title{{min-width:0;flex:1}}.ppp-title strong{{display:block;font-size:17px;color:#fff}}.ppp-title span{{font-size:11px;color:#b9c9dc}}
       .ppp-price{{text-align:right;white-space:nowrap;color:#e9d5ff;font-size:20px;font-weight:900}}.ppp-price small{{display:block;color:#aebbd0;font-size:10px;font-weight:600}}
       .ppp-research{{display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px;margin:8px 0;padding:8px 10px;border-radius:7px;border:1px solid #5884a1;background:#123044;color:#d1f1ff}}
@@ -1129,8 +1134,8 @@ def render_power_play_form(card):
       .wn-form,.wn-form-empty{{color:#b9c9dc;border-top:1px solid #ffffff24;padding-top:8px;font-size:12px}}.wn-form summary{{cursor:pointer;color:#e4c892;font-weight:800}}.wn-form p{{margin:7px 0;color:#aebbd0}}
       .wn-form-tiles{{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:5px;margin:8px 0}}.wn-form-tiles>div{{border:1px solid #ffffff1d;border-radius:5px;padding:7px;background:#0b1629a8}}.wn-form-tiles small{{display:block;color:#98adc6;font-size:9px}}.wn-form-tiles strong{{display:block;color:#fff;font-size:12px;margin-top:3px}}
       .wn-form-meta{{margin:4px 0}}.wn-form-strip{{display:flex;flex-wrap:wrap;gap:5px;margin:8px 0}}.wn-form-strip span{{border-radius:4px;padding:5px 7px;text-align:center;min-width:42px}}.wn-form-strip span b,.wn-form-strip span small{{display:block}}.wn-form-strip span small{{font-size:9px;opacity:.85}}.wn-form-strip .hit{{background:#1d6145;color:#c4ffde}}.wn-form-strip .miss{{background:#603036;color:#ffd7d7}}
-    </style><section class="ppp-card"><div class="ppp-head"><div class="ppp-portrait">{image}</div>
-      <div class="ppp-title"><strong>{_h(card.get("player") or "Player")}</strong><span>{_h(card.get("game") or "")} · Over 0.5 power-play points · {_h(card.get("book") or "Book pending")}</span></div>
+    </style><section class="ppp-card{celestial_class}"><div class="ppp-head"><div class="ppp-portrait">{image}</div>
+      <div class="ppp-title"><strong>{_h(card.get("player") or "Player")}</strong><span>{_h(card.get("game") or "")} · Over 0.5 power-play points · {_h(card.get("book") or "Book pending")}</span>{character_label}</div>
       <div class="ppp-price">{_h(price)}<small>BEST FEED PRICE</small></div></div>
       {research_banner}
       <div class="ppp-matchup">{matchup}</div>
@@ -1154,6 +1159,7 @@ def _character_uri(role: str, variant: str = "") -> str:
         if candidate.is_file():
             image = candidate
     variants = {
+        ('Support', 'Celestial Sage'): 'support-panda-celestial-v1.webp',
         ('Tank', 'Siegebreaker'): 'tank-orangutan-hammer-v1.webp',
         ('Tank', 'War Drummer'): 'tank-panda-drum-v1.webp',
         ('Jungle', 'Ranger'): 'jungle-orangutan-ranger-v1.webp',
