@@ -148,11 +148,13 @@ def save_card_mark(store, registry, states, replies, action, *, owner_access):
                 pass
         message = ('The mark changed or is no longer available. Please try again.'
                    if isinstance(exc, ValueError) else 'Save not confirmed. Please try again.')
+        if isinstance(exc, ValueError) and str(exc) == 'Mark Played before sharing this pick.':
+            message = 'Mark Played before sharing this pick.'
     state = states.get(pick_id, {})
     played, shared = bool(state.get('played')), bool(state.get('shared'))
     replies[pick_id] = dict(request_id=request_id, played=played, shared=shared,
                            revision=int(state.get('revision', 0)),
-                           can_share=played and (shared or pregame(registry[pick_id])), message=message)
+                           can_share=played, message=message)
 
 
 @st.fragment
@@ -205,11 +207,11 @@ def render_markable_boards(boards, frame, *, render, owner_access, setting, key,
         played, shared = bool(state.get('played')), bool(state.get('shared'))
         revision = int(state.get('revision', 0))
         disabled = ' disabled' if error else ''
-        share_disabled = ' disabled' if error or not played or (not shared and not pregame(pick)) else ''
+        share_disabled = ' disabled' if error or not played else ''
         note = 'Saved ✓' if played else 'Private mark'
         if error:
             note = 'Saving unavailable'
-        can_share = played and (shared or pregame(pick))
+        can_share = played
         return (f'<div class="wn-pick-controls" data-warlord-pick="{pick["pick_id"]}" data-revision="{revision}"'
                 f' data-pick-scope="{escape(key, quote=True)}" data-can-share="{str(can_share).lower()}">'
                 f'<label><input type="checkbox" data-pick-field="played" aria-label="Played: {escape(pick["player"])} {pick["market"]} over {pick["line"]}"'
@@ -251,7 +253,7 @@ def pp_controls_html(pick, state, error, key):
     """The same scoped, fragment-backed controls used on cards, inside a PP row."""
     played, shared = bool(state.get('played')), bool(state.get('shared'))
     revision = int(state.get('revision', 0))
-    can_share = played and (shared or pregame(pick))
+    can_share = played
     disabled = ' disabled' if error else ''
     share_disabled = ' disabled' if error or not can_share else ''
     note = 'Saving unavailable' if error else 'Saved ✓' if played else 'Private mark'
@@ -304,6 +306,18 @@ def _return(odds, status):
     return -1.0 if status == 'Loss' else 0.0
 
 
+def share_timing(pick):
+    from datetime import datetime
+    try:
+        shared = datetime.fromisoformat(pick['shared_at'].replace('Z', '+00:00'))
+        start = datetime.fromisoformat(pick['start_utc'].replace('Z', '+00:00'))
+        if shared.tzinfo is None or start.tzinfo is None:
+            return 'Start timing unavailable'
+        return 'Shared before scheduled start' if shared < start else 'Shared after scheduled start'
+    except (KeyError, TypeError, ValueError):
+        return 'Start timing unavailable'
+
+
 def render_pick_list(*, public, owner_access, setting, output_dir):
     st.subheader('📣 Tail list' if public else '✓ My Played picks')
     if not public and not owner_access:
@@ -319,7 +333,7 @@ def render_pick_list(*, public, owner_access, setting, output_dir):
     except Exception:
         st.info('Pick storage is temporarily unavailable. Please try again shortly.')
         return
-    st.caption('Only picks explicitly shared by the owner appear here. Prices are the saved published quotes; no bets are placed by this page.' if public else
+    st.caption('Only picks explicitly shared by the owner appear here. Prices are saved reference quotes, not live odds. Shares after the scheduled start are labeled; no bets are placed by this page.' if public else
                'Private marks only. The saved card price is a reference quote, not a claim about the odds or stake you actually bet. Unchecking Played also removes it from the Tail list.')
     if not picks:
         st.info('No shared picks yet.' if public else 'Check Played on a card to keep it here.')
@@ -341,7 +355,7 @@ def render_pick_list(*, public, owner_access, setting, output_dir):
         table.append({'Player': p['player'], 'Game': p['game'], 'Date': p['date'],
                       'Pick': f'Over {p["line"]:g} {p["market"]}',
                       'Saved quote': f'{p["odds"]:+g} · {p["book"]}', 'Result': status,
-                      **({'Shared at (UTC)': p['shared_at']} if public else
+                      **({'Shared timing': share_timing(p), 'Shared at (UTC)': p['shared_at']} if public else
                          {'On Tail list': 'Yes' if p['shared'] else 'No', 'Marked at (UTC)': p.get('marked_at', '')})})
     import pandas as pd
     st.dataframe(pd.DataFrame(table), hide_index=True, width='stretch')

@@ -119,8 +119,8 @@ class PickStore:
                 if not played:
                     shared, public = False, None
             else:
-                if value and (not played or not pregame(pick, now)):
-                    raise ValueError("Only a marked pregame pick can be shared.")
+                if value and not played:
+                    raise ValueError("Mark Played before sharing this pick.")
                 if value and not shared:
                     public = public_projection(pick, now.isoformat())
                 shared = value
