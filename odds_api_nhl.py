@@ -11,6 +11,7 @@ from collections import defaultdict
 from datetime import date, datetime
 from zoneinfo import ZoneInfo
 import json
+import time
 from typing import Any
 
 import pandas as pd
@@ -52,26 +53,48 @@ TEAM_NAMES = {
 
 
 def _get(path: str, key: str, **params: Any) -> Any:
-    try:
-        response = requests.get(
-            f"{BASE}/{path}",
-            params={"apiKey": key, **params},
-            headers={"Accept": "application/json"},
-            timeout=35,
-        )
-    except requests.RequestException as exc:
-        raise RuntimeError("The Odds API could not be reached; retry the slate run.") from None
-    # Avoid exposing a secret embedded in the request URL in exceptions or logs.
-    if response.status_code != 200:
+    """Retry only this GET on temporary feed/transport failures, at most three times."""
+    attempts = 3
+    retryable_http = {408, 500, 502, 503, 504}
+    for attempt in range(attempts):
+        response = None
+        retryable = True
         try:
-            message = str(response.json().get("message") or "")[:180]
-        except (ValueError, AttributeError):
-            message = ""
-        raise RuntimeError(f"The Odds API HTTP {response.status_code}: {message}")
-    try:
-        return response.json()
-    except ValueError:
-        raise RuntimeError("The Odds API returned invalid data.") from None
+            try:
+                response = requests.get(
+                    f"{BASE}/{path}",
+                    params={"apiKey": key, **params},
+                    headers={"Accept": "application/json"},
+                    timeout=35,
+                )
+            except requests.RequestException:
+                # Request exceptions can contain a credential-bearing URL.
+                error = "The Odds API could not be reached"
+            else:
+                if response.status_code != 200:
+                    try:
+                        message = str(response.json().get("message") or "")
+                    except (ValueError, AttributeError):
+                        message = ""
+                    if key:
+                        message = message.replace(key, "[redacted]")
+                    error = f"The Odds API HTTP {response.status_code}"
+                    if message:
+                        error += f": {message[:180]}"
+                    retryable = response.status_code in retryable_http
+                else:
+                    try:
+                        return response.json()
+                    except ValueError:
+                        error = "The Odds API returned invalid data"
+        finally:
+            if response is not None:
+                response.close()
+        if not retryable or attempt == attempts - 1:
+            suffix = f" after {attempt + 1} attempts" if attempt else ""
+            hint = "; retry the slate refresh shortly." if retryable else "."
+            raise RuntimeError(error + suffix + hint) from None
+        time.sleep(attempt + 1)
 
 
 def _event_on_date(event: dict, day: date) -> bool:
