@@ -15,7 +15,7 @@ export default function({data,setTriggerValue}) {
       .filter(button=>button.dataset.battleScope===data.scope);
     if(!buttons.length&&data.has_champions&&attempts++<20){timer=setTimeout(attach,50);return;}
     buttons.forEach(button=>button.addEventListener('click',()=>{
-      setTriggerValue('selection',{champion:button.dataset.battleChampion,nonce:crypto.randomUUID()});
+      setTriggerValue('selection',{champion:button.dataset.battleChampion,pick_id:button.dataset.battlePick,nonce:crypto.randomUUID()});
     },{signal:controller.signal}));
   }
   attach();
@@ -27,6 +27,11 @@ _champion_bridge=st.components.v2.component('warlord_champion_details',js=_CHAMP
 
 def champion_key(pick):
     return str(pick.get('game_id') or '')+':'+str(pick.get('player_id') or '')
+
+
+def default_pick(selections):
+    """Open a selected regular-prop card before a PP research panel."""
+    return next((pick for pick in selections if pick.get('market')!='PPP'),selections[0])
 
 
 def selected_card(pick, boards, frame):
@@ -83,10 +88,12 @@ def champion_details_html(pick, boards, frame):
 
 
 @st.dialog('Champion details',width='large')
-def _open_champion(selections, boards, frame):
+def _open_champion(selections, boards, frame, initial_pick_id=None, request_key='default'):
     by_id={pick['pick_id']:pick for pick in selections}
-    selected=st.selectbox('Selected prop',list(by_id),format_func=lambda key:
-                          f'Over {by_id[key]["line"]:g} {by_id[key]["market"]} · {by_id[key]["odds"]:+g} · {by_id[key].get("book","")}')
+    initial=initial_pick_id if initial_pick_id in by_id else default_pick(selections)['pick_id']
+    selected=st.radio('Played prop',list(by_id),index=list(by_id).index(initial),horizontal=True,
+                      key='chosen_prop_'+request_key,format_func=lambda key:
+                      f'Over {by_id[key]["line"]:g} {"Power-play point" if by_id[key]["market"]=="PPP" else by_id[key]["market"]} · {by_id[key]["odds"]:+g} · {by_id[key].get("book","")}')
     pick=by_id[selected]
     st.caption(f'{pick["player"]} · Played selection at the saved quote above. Card details use the loaded slate snapshot.')
     st.html(champion_details_html(pick,boards,frame))
@@ -107,7 +114,7 @@ def roster_html(picks, boards, *, scope='chosen_champion_details'):
         champions.setdefault(key,[]).append(pick)
     tiles=[]
     for selections in champions.values():
-        lead=selections[0]
+        lead=default_pick(selections)
         role=ROLES.get(lead.get('market'),'Support')
         card=next((card for card in cards if card.get('player')==lead.get('player')
                    and card.get('game')==lead.get('game') and card.get('market')==lead.get('market')
@@ -122,20 +129,28 @@ def roster_html(picks, boards, *, scope='chosen_champion_details'):
         props=[]
         for pick in selections:
             market='Power-play point' if pick['market']=='PPP' else pick['market']
-            props.append(f'<span class="battle-prop">Over {float(pick["line"]):g} {escape(market)}'
-                         f' <b>{float(pick["odds"]):+g}</b> · {escape(str(pick.get("book") or ""))}</span>')
-        tiles.append(f'<button type="button" class="battle-champion" data-battle-champion="{escape(champion_key(lead),quote=True)}"'
-                     f' data-battle-scope="{escape(scope,quote=True)}" aria-label="Open {escape(str(lead.get("player") or "champion"),quote=True)} champion card">'+art+'<div>'
+            props.append(f'<button type="button" class="battle-prop" data-battle-champion="{escape(champion_key(pick),quote=True)}"'
+                         f' data-battle-pick="{escape(pick["pick_id"],quote=True)}" data-battle-scope="{escape(scope,quote=True)}"'
+                         f' aria-label="Open {escape(str(pick.get("player") or "champion"),quote=True)} over {float(pick["line"]):g} {escape(market,quote=True)}">'
+                         f'Over {float(pick["line"]):g} {escape(market)}'
+                         f' <b>{float(pick["odds"]):+g}</b> · {escape(str(pick.get("book") or ""))}</button>')
+        tiles.append(f'<article class="battle-champion"><button type="button" class="battle-champion-main" data-battle-champion="{escape(champion_key(lead),quote=True)}"'
+                     f' data-battle-pick="{escape(lead["pick_id"],quote=True)}" data-battle-scope="{escape(scope,quote=True)}"'
+                     f' aria-label="Open {escape(str(lead.get("player") or "champion"),quote=True)} champion card"></button>'+art+'<div class="battle-body">'
                      f'<strong>{escape(str(lead.get("player") or "Champion"))}</strong>'
                      f'<small>{escape(matchup_label(lead.get("game"),lead.get("start_utc")))}</small>'
-                     +''.join(props)+'<span class="battle-open">Inspect champion →</span></div></button>')
+                     +''.join(props)+'<span class="battle-open">Click a prop to inspect →</span></div></article>')
     return '''<style>
       .battle-roster{display:grid;grid-template-columns:repeat(auto-fit,minmax(285px,1fr));gap:10px;margin:8px 0 18px}
       .battle-champion{display:flex;gap:12px;align-items:center;background:linear-gradient(125deg,#172436,#2c2634);border:1px solid #88734c;border-left:3px solid #e8bb55;border-radius:10px;padding:10px;color:#f1f5fb;font:13px/1.45 system-ui,sans-serif;min-width:0}
       .battle-champion img{width:82px;height:100px;object-fit:cover;object-position:center top;border:1px solid #b69b62;border-radius:7px;flex:none}
       .battle-champion strong{display:block;font-size:17px;color:#fff}.battle-champion small{display:block;color:#c2d1e5;margin:3px 0 7px}
-      .battle-prop{display:block;color:#e1e9f7;font-size:12px}.battle-prop b{color:#ffd982}
-      .battle-champion{width:100%;text-align:left;cursor:pointer}.battle-champion:hover,.battle-champion:focus-visible{border-color:#ffda7d;box-shadow:0 0 14px #e9ba5540;outline:2px solid #ffda7d;outline-offset:2px}
+      .battle-prop{display:block;width:100%;text-align:left;background:none;border:0;padding:2px 0;color:#e1e9f7;font:12px/1.45 system-ui,sans-serif;cursor:pointer;pointer-events:auto}.battle-prop b{color:#ffd982}
+      .battle-prop:hover,.battle-prop:focus-visible{color:#fff2c9;text-decoration:underline;outline:1px solid #f4d78f;outline-offset:2px}
+      .battle-champion{position:relative;width:100%;text-align:left}.battle-champion:hover,.battle-champion:focus-within{border-color:#ffda7d;box-shadow:0 0 14px #e9ba5540}
+      .battle-champion-main{position:absolute;inset:0;z-index:1;width:100%;height:100%;border:0;border-radius:10px;background:none;cursor:pointer}
+      .battle-champion-main:focus-visible{outline:2px solid #ffda7d;outline-offset:2px}
+      .battle-body,.battle-champion img{position:relative;z-index:2;pointer-events:none}
       .battle-open{display:block;margin-top:7px;font-size:11px;font-weight:800;color:#f4d78f}
       @media(max-width:450px){.battle-roster{grid-template-columns:1fr}}
     </style><div class="battle-roster">'''+''.join(tiles)+'</div>'
@@ -176,6 +191,13 @@ def render_battle_roster(day, boards, frame=None, *, owner_access, setting):
             return
         selections=registry.get(action.get('champion'))
         if selections:
-            _open_champion(selections,boards,frame)
+            pick_id=action.get('pick_id')
+            request_key=action.get('nonce')
+            if pick_id not in {pick['pick_id'] for pick in selections} or not isinstance(request_key,str) or len(request_key)>64:
+                return
+            st.session_state['chosen_open_request']={'champion':action['champion'],'pick_id':pick_id,'nonce':request_key}
     _champion_bridge(data={'scope':bridge_key,'has_champions':bool(registry)},
                      key=bridge_key,on_selection_change=on_selection)
+    request=st.session_state.pop('chosen_open_request',None)
+    if request and request['champion'] in registry:
+        _open_champion(registry[request['champion']],boards,frame,request['pick_id'],request['nonce'])
