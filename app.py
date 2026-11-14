@@ -5322,7 +5322,7 @@ if page == "⚔️ Warlords of the Night":
     if slate_sort != "Top ranked":
         display_boards = _sort_slate_boards(display_boards, slate_sort, starts_by_game)
     display_total = sum(len(cards) for cards in display_boards.values())
-    render_battle_roster(slate_day, priced_boards, owner_access=owner_access, setting=_owner_setting)
+    render_battle_roster(slate_day, priced_boards, night_df, owner_access=owner_access, setting=_owner_setting)
     st.caption(f"Current view: {night_df['Game'].nunique() if 'Game' in night_df else 0} games · "
                f"{night_df['Team'].nunique() if 'Team' in night_df else 0} teams · "
                f"{len(night_df)} roster skaters · {priced_total} priced prop entries · "
