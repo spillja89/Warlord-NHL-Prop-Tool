@@ -15,6 +15,7 @@ import pandas as pd
 import streamlit as st
 from matchup_display import matchup_label, start_time_text, with_matchup_times
 from battle_roster import render_battle_roster
+from slate_browsing import BOARD_ORDERS, frame_slots, slot_options, start_stamp, sort_cards, sort_rows
 
 from published_output import fetch_grade_file, fetch_tracker, is_newer_tracker, list_grade_files, local_matches_sha, save_if_changed
 from warlord_moves_2026 import VERSION as MOVE_KIT_VERSION
@@ -740,37 +741,25 @@ def _class_slate_frame(frame: pd.DataFrame) -> tuple[pd.DataFrame, str]:
 
 def _slate_start_times(frame: pd.DataFrame) -> dict[str, pd.Timestamp]:
     """One UTC start per game; invalid or unknown starts sort last."""
-    if not {"Game", "StartTimeUTC"}.issubset(frame.columns):
+    if "Game" not in frame.columns:
         return {}
-    starts = pd.to_datetime(frame["StartTimeUTC"], utc=True, errors="coerce")
+    starts = [start_stamp(row.get("StartTimeUTC"), row.get("StartTimeLocal"))
+              for row in frame.to_dict("records")]
     return {str(game): start for game, start in zip(frame["Game"], starts)
             if pd.notna(start) and str(game).strip()}
 
 
 def _sort_slate_rows(frame: pd.DataFrame, order: str,
                      starts_by_game: dict[str, pd.Timestamp] | None = None) -> pd.DataFrame:
-    if order == "Top ranked" or frame.empty:
-        return frame
-    starts = (pd.to_datetime(frame["StartTimeUTC"], utc=True, errors="coerce")
-              if "StartTimeUTC" in frame.columns else
-              frame["Game"].astype(str).map(starts_by_game or {})
-              if "Game" in frame.columns else pd.Series(pd.NaT, index=frame.index))
-    return (frame.assign(_slate_start=starts)
-            .sort_values("_slate_start", ascending=order == "Earliest start",
-                         kind="stable", na_position="last")
-            .drop(columns="_slate_start"))
+    odds_field = {"Points":"Points_Odds_Over", "Assists":"Assists_Odds_Over",
+                  "SOG":"SOG_Odds_Over", "GOALS (0.5)":"Goal_Odds_Over",
+                  "Power Play":"BDL_PPP_Odds"}.get(globals().get("page"))
+    return sort_rows(frame, order, starts_by_game, odds_field=odds_field)
 
 
 def _sort_slate_cards(cards: list[dict], order: str,
                       starts_by_game: dict[str, pd.Timestamp]) -> list[dict]:
-    if order == "Top ranked":
-        return cards
-    def key(card):
-        start = starts_by_game.get(str(card.get("game") or ""))
-        if start is None:
-            return (True, 0)
-        return (False, start.value if order == "Earliest start" else -start.value)
-    return sorted(cards, key=key)
+    return sort_cards(cards, order, starts_by_game)
 
 
 def _sort_slate_boards(boards: dict[str, list[dict]], order: str,
@@ -788,7 +777,7 @@ def _render_class_header(mkt: str, frame: pd.DataFrame) -> None:
     cards = rank_priced_slate(slate_frame)[role]
     moves = sum(card["move_count"] for card in cards)
     order_label = ("Posted lines ranked by current model confidence" if slate_sort == "Top ranked"
-                   else f"Posted lines sorted by {slate_sort.lower()} · same-game ranks retained")
+                   else f"Posted lines sorted by {slate_sort.lower()}")
     from warlords_night_board import _class_roster_art
     art = _class_roster_art(role)
     st.html(f"""<style>
@@ -3538,6 +3527,18 @@ def filter_common(df: pd.DataFrame) -> pd.DataFrame:
 
     st.sidebar.subheader("Filters")
 
+    if page in {"⚔️ Warlords of the Night", "Scout Board", "Points", "Assists", "SOG", "GOALS (0.5)", "Power Play"}:
+        slots = frame_slots(out)
+        labels = slot_options(slots)
+        selected = st.sidebar.multiselect(
+            "Start times (CT)", list(labels), format_func=labels.get,
+            key="board_start_slots", placeholder="All start times",
+            help="Choose one or several puck-drop times. Applies to the board, cards and tracker; clear to show all. The Chosen has its own filters.",
+        )
+        if selected:
+            out = out.loc[slots.isin(selected)].copy()
+            st.sidebar.caption(f"{out['Game'].nunique() if 'Game' in out else 0} games at selected start times")
+
     # Search player
     q = st.sidebar.text_input("Search player", value="").strip().lower()
     if q:
@@ -5264,8 +5265,8 @@ slate_sort = "Top ranked"
 if page in {"⚔️ Warlords of the Night", "Scout Board", "Points", "Assists", "SOG",
             "GOALS (0.5)", "Power Play"}:
     slate_sort = st.sidebar.selectbox(
-        "Slate order", ("Top ranked", "Earliest start", "Latest start"),
-        help="Game times use the tracker's UTC start. Players in the same game keep their current rank order.",
+        "Slate order", BOARD_ORDERS,
+        help="Reorders cards and tables without changing any moves. You can also click table headings to sort a column.",
         key="slate_order",
     )
 
@@ -5303,12 +5304,13 @@ if page != "⚔️ Warlords of the Night":
 if page == "⚔️ Warlords of the Night":
     if source == "upload":
         st.caption("Uploaded tracker · historical move records · pregame slate tags must be frozen for forward grading")
-    dates = pd.to_datetime(df_f.get("Date", pd.Series(dtype=str)), errors="coerce").dropna().dt.date
+    dates = pd.to_datetime(df.get("Date", pd.Series(dtype=str)), errors="coerce").dropna().dt.date
     night = None
     if not dates.empty:
         nights = sorted(dates.unique(), reverse=True)
         night = st.selectbox("Slate night", nights, index=0, key="warlords_night_date")
-    night_df = df_f.loc[dates.eq(night)] if night is not None else df_f
+    filtered_dates = pd.to_datetime(df_f.get("Date", pd.Series(index=df_f.index, dtype=str)), errors="coerce").dt.date
+    night_df = df_f.loc[filtered_dates.eq(night)] if night is not None else df_f
     slate_day = night.isoformat() if night is not None else datetime.now(ZoneInfo("America/Chicago")).date().isoformat()
     priced_boards = rank_priced_slate(night_df)
     position_data, _position_error = _position_sog_for_day(slate_day)
@@ -5326,7 +5328,11 @@ if page == "⚔️ Warlords of the Night":
     if slate_sort != "Top ranked":
         display_boards = _sort_slate_boards(display_boards, slate_sort, starts_by_game)
     display_total = sum(len(cards) for cards in display_boards.values())
-    render_battle_roster(slate_day, priced_boards, night_df, owner_access=owner_access, setting=_owner_setting)
+    # Saved champions have independent filters, including already-started games.
+    # Resolve their exact cards from the full saved day, not a filtered board.
+    chosen_frame = df.loc[pd.to_datetime(df.get("Date", pd.Series(index=df.index, dtype=str)), errors="coerce").dt.strftime("%Y-%m-%d").eq(slate_day)]
+    chosen_boards = rank_priced_slate(chosen_frame)
+    render_battle_roster(slate_day, chosen_boards, chosen_frame, owner_access=owner_access, setting=_owner_setting)
     st.caption(f"Current view: {night_df['Game'].nunique() if 'Game' in night_df else 0} games · "
                f"{night_df['Team'].nunique() if 'Team' in night_df else 0} teams · "
                f"{len(night_df)} roster skaters · {priced_total} priced prop entries · "
@@ -5344,7 +5350,7 @@ if page == "⚔️ Warlords of the Night":
         elif _position_error:
             st.caption(f"Positional SOG matchup feed unavailable ({_position_error}); saved cards and moves are unaffected.")
         order_note = ("Goal cards rank by their strongest fired current-season attack" if slate_sort == "Top ranked"
-                      else f"Cards are sorted by {slate_sort.lower()}; same-game move ranks stay intact")
+                      else f"Cards are sorted by {slate_sort.lower()}")
         st.caption(f"{len(goal_cards)} named Goal attack cards. "
                    f"{featured_total-len(featured_boards['Carry'])} other featured prop cards include current-season Points moves. "
                    f"{order_note}. Move histories are not forecasts.")

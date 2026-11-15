@@ -2,6 +2,7 @@
 from html import escape
 import streamlit as st
 from matchup_display import matchup_label
+from slate_browsing import CHOSEN_ORDERS, TIER_ORDER, browse_picks, prop_label, slot_key, slot_options
 
 ROLES={'Goal':'Carry','Assists':'Support','Points':'Tank','SOG':'Jungle','PPP':'Support'}
 
@@ -106,7 +107,19 @@ def roster_picks(store, day, *, owner_access):
     return [row for row in rows if row.get('date')==day]
 
 
-def roster_html(picks, boards, *, scope='chosen_champion_details'):
+def pick_metadata(picks, boards, frame):
+    from move_return_grades import move_grade
+    metadata = {}
+    for pick in picks:
+        card, _ = selected_card(pick, boards, frame) if frame is not None else (None, None)
+        move = (card.get('move') or card.get('points_current_tier')) if card else None
+        grade = move_grade(move) if move else None
+        metadata[pick['pick_id']] = {'tier': grade['tier'] if grade else 'Unrated',
+                                     'watch': bool(grade and grade['watch'])}
+    return metadata
+
+
+def roster_html(picks, boards, *, scope='chosen_champion_details', metadata=None):
     from warlords_night_board import _class_identity, _character_uri
     cards=[card for lane in boards.values() for card in lane]
     champions={}
@@ -130,11 +143,14 @@ def roster_html(picks, boards, *, scope='chosen_champion_details'):
         props=[]
         for pick in selections:
             market='Power-play point' if pick['market']=='PPP' else pick['market']
+            info = (metadata or {}).get(pick['pick_id'], {})
+            tier = info.get('tier', 'Unrated')
+            badge = f'<span class="battle-tier battle-tier-{tier.lower()}">{escape(tier)}' + (' · WATCH' if info.get('watch') else '') + '</span>'
             props.append(f'<button type="button" class="battle-prop" data-battle-champion="{escape(champion_key(pick),quote=True)}"'
                          f' data-battle-pick="{escape(pick["pick_id"],quote=True)}" data-battle-scope="{escape(scope,quote=True)}"'
                          f' aria-label="Open {escape(str(pick.get("player") or "champion"),quote=True)} over {float(pick["line"]):g} {escape(market,quote=True)}">'
                          f'Over {float(pick["line"]):g} {escape(market)}'
-                         f' <b>{float(pick["odds"]):+g}</b> · {escape(str(pick.get("book") or ""))}</button>')
+                         f' <b>{float(pick["odds"]):+g}</b> · {escape(str(pick.get("book") or ""))} {badge}</button>')
         tiles.append(f'<article class="battle-champion"><button type="button" class="battle-champion-main" data-battle-champion="{escape(champion_key(lead),quote=True)}"'
                      f' data-battle-pick="{escape(lead["pick_id"],quote=True)}" data-battle-scope="{escape(scope,quote=True)}"'
                      f' aria-label="Open {escape(str(lead.get("player") or "champion"),quote=True)} champion card"></button>'+art+'<div class="battle-body">'
@@ -148,6 +164,8 @@ def roster_html(picks, boards, *, scope='chosen_champion_details'):
       .battle-champion strong{display:block;font-size:17px;color:#fff}.battle-champion small{display:block;color:#c2d1e5;margin:3px 0 7px}
       .battle-prop{display:block;width:100%;text-align:left;background:none;border:0;padding:2px 0;color:#e1e9f7;font:12px/1.45 system-ui,sans-serif;cursor:pointer;pointer-events:auto}.battle-prop b{color:#ffd982}
       .battle-prop:hover,.battle-prop:focus-visible{color:#fff2c9;text-decoration:underline;outline:1px solid #f4d78f;outline-offset:2px}
+      .battle-tier{display:inline-block;margin:3px 0 0 4px;padding:1px 5px;border-radius:4px;background:#34455d;color:#e3eaf6;font-size:10px;font-weight:850}
+      .battle-tier-s{background:#f3ce6c;color:#211b0c}.battle-tier-a{background:#8bdbc9;color:#102b29}.battle-tier-b{background:#b7c5d9;color:#172337}.battle-tier-review{background:#4d341d;color:#ffe0a0}
       .battle-champion{position:relative;width:100%;text-align:left}.battle-champion:hover,.battle-champion:focus-within{border-color:#ffda7d;box-shadow:0 0 14px #e9ba5540}
       .battle-champion-main{position:absolute;inset:0;z-index:1;width:100%;height:100%;border:0;border-radius:10px;background:none;cursor:pointer}
       .battle-champion-main:focus-visible{outline:2px solid #ffda7d;outline-offset:2px}
@@ -177,11 +195,35 @@ def render_battle_roster(day, boards, frame=None, *, owner_access, setting):
         st.caption('Mark Played on a card, then Update the Chosen to deploy your champions here.'
                    if owner_access else 'No champions shared for this slate yet.')
         return
-    unique={(pick.get('game_id'),pick.get('player_id')) for pick in picks}
+    metadata = pick_metadata(picks, boards, frame)
+    first, second, third = st.columns(3)
+    with first:
+        props = st.multiselect('Chosen props', sorted({prop_label(pick) for pick in picks}),
+                               key='chosen_props', placeholder='All props')
+    with second:
+        tiers = st.multiselect('Chosen tiers', [tier for tier in TIER_ORDER if any(info['tier'] == tier for info in metadata.values())],
+                               key='chosen_tiers', placeholder='All tiers',
+                               help='The current tier for that exact prop. Unrated includes PP research picks and picks without a matching current move.')
+    with third:
+        labels = slot_options(slot_key(pick.get('start_utc')) for pick in picks)
+        slots = st.multiselect('Chosen start times (CT)', list(labels), format_func=labels.get,
+                               key='chosen_slots', placeholder='All start times')
+    first, second = st.columns(2)
+    with first:
+        group = st.selectbox('Group champions by', ('Prop', 'Tier', 'Start time', 'Champion'), key='chosen_group')
+    with second:
+        order = st.selectbox('Sort champions by', CHOSEN_ORDERS, key='chosen_order')
+    groups = browse_picks(picks, metadata, props=props, tiers=tiers, slots=slots, order=order, group=group)
+    visible = [pick for selections in groups.values() for pick in selections]
+    unique={(pick.get('game_id'),pick.get('player_id')) for pick in visible}
     st.caption(f'{len(unique)} champion' + ('s' if len(unique)!=1 else '')
-               + f' deployed · {len(picks)} selected prop' + ('s' if len(picks)!=1 else '')
-               + ' · Saved reference prices')
-    st.html(roster_html(picks,boards))
+               + f' shown · {len(visible)} of {len(picks)} selected props · Saved reference prices · Independent of board filters')
+    if not visible:
+        st.info('No chosen props match these filters. Clear a filter to see more; your saved picks are unchanged.')
+    for label, selections in groups.items():
+        if group != 'Champion':
+            st.markdown(f'#### {label} · {len(selections)} prop' + ('s' if len(selections) != 1 else ''))
+        st.html(roster_html(selections, boards, metadata=metadata))
     registry={}
     for pick in picks:
         registry.setdefault(champion_key(pick),[]).append(pick)
