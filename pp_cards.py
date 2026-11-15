@@ -6,6 +6,7 @@ from pathlib import Path
 import json
 import math
 
+from move_combo import combo_html
 from pp_card_context import VERSION as CONTEXT_VERSION
 from pp_lower_context import VERSION as LOWER_CONTEXT_VERSION
 from special_return_monitor import pp_return_panel
@@ -227,6 +228,7 @@ def render_pp_cards(cards, portrait_uri='', form_renderer=None):
             f'<p class="pp-w-quick">PP on-ice xG/game <b>{card["xg"]:.3f}</b> · '
             f'PP <b>{_value(quote.get("PP TOI/game"), 1)} min/game</b> · {_h(quote.get("PP unit", "Unit unknown"))}'
             f' · <b>{len(families)}</b> route {"family" if len(families) == 1 else "families"}</p>'
+            f'{combo_html(move, {k:v[0] for k,v in LABELS.items()})}'
             f'<p class="pp-w-l10-quick">PPP L10 <b>{_h(ppp_l10_label(row))}</b> · dated chart in Inspect</p>{pp_return_panel(move)}</div>'
             f'<div class="pp-w-record"><strong>{record["rate"]:.1f}%</strong>'
             f'<b>{record["hits"]}/{record["plays"]}</b><small>V1 MOVE %</small></div>{image}</div>'

@@ -59,7 +59,14 @@ def return_record(move):
         else:return None
     except (TypeError,ValueError,KeyError):return None
     # Old-season fallback headlines cannot inherit a current-season performance grade.
-    return row if row and not row.get('legacy') else None
+    if row and not row.get('legacy'):
+        # A record rollover must not erase already-observed recent health or
+        # demote S solely because the new V2 tracking counter starts at zero.
+        if market == 'Assists' and 'health_since_check' in row:
+            return {**row, 'since_check':row['health_since_check'],
+                    'previous':row['health_previous'], 'health_since_from':row['health_since_from']}
+        return row
+    return None
 
 def grade_record(row):
     if not isinstance(row,dict):return None
@@ -108,6 +115,10 @@ def grade_badges(move):
     explanation=(f'Total {grade["roi"]:+.1f}% ROI · {grade["units"]:+.2f}u · {grade["plays"]} plays. '
                  +(f'Since check {grade["recent_roi"]:+.1f}% ROI · {grade["recent_plays"]} plays.'
                    if grade['recent_plays'] else 'No new graded plays.'))
+    if move.get('market') == 'Assists':
+        record = return_record(move)
+        if record and record.get('health_since_from'):
+            explanation = explanation.replace('Since check ', 'Health period from '+record['health_since_from']+' ')
     if grade['early']:explanation+=' Fewer than10 new plays; S confirmation pending.'
     if grade.get('watch_reason'):explanation+=' '+grade['watch_reason']
     watch_reason=grade.get('watch_reason','Recent graded plays have negative net units; the move remains eligible')

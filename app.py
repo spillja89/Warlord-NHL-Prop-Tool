@@ -815,6 +815,7 @@ def _render_class_header(mkt: str, frame: pd.DataFrame) -> None:
 
 def _priced_pool_table(cards: list[dict]) -> pd.DataFrame:
     from assist_routes_2026 import assist_display_tier, assist_display_name
+    from assist_return_monitor import display_stats as assist_display_stats
     from move_return_grades import move_grade
     rows = []
     has_position_data = any(card.get("position_sog") for card in cards)
@@ -840,6 +841,7 @@ def _priced_pool_table(cards: list[dict]) -> pd.DataFrame:
             move = points_tier
         elif card.get('move') is not None:
             move = card['move']
+        shown_assist = assist_display_stats(move) if move and card.get('market') == 'Assists' else None
         performance = move_grade(move)
         featured = bool(card.get("baseline_rule") and (qualified or points_tier))
         row = {
@@ -859,8 +861,8 @@ def _priced_pool_table(cards: list[dict]) -> pd.DataFrame:
             "Watch": "⚠ Recent loss" if performance and performance['watch'] else "",
             "Total ROI %": round(performance['roi'], 1) if performance else None,
             "Total units": round(performance['units'], 2) if performance else None,
-            "Move record": f'{move["wins"]}/{move["picks"]}' if move else "",
-            "Move %": round(100 * int(move["wins"]) / int(move["picks"]), 1) if move else None,
+            "Move record": (f'{shown_assist["hits"]}/{shown_assist["plays"]}' if shown_assist else f'{move["wins"]}/{move["picks"]}') if move else "",
+            "Move %": round(100 * (shown_assist["hits"] / shown_assist["plays"] if shown_assist else int(move["wins"]) / int(move["picks"])), 1) if move else None,
             "Later record": f'{move["later_wins"]}/{move["later_picks"]}' if move and int(move["later_picks"]) else "",
             "Later %": round(100 * int(move["later_wins"]) / int(move["later_picks"]), 1)
             if move and int(move["later_picks"]) else None,
@@ -1247,15 +1249,17 @@ def _probe_points_best(r: dict) -> dict | None:
 def _probe_assists_best(r: dict) -> dict | None:
     """Use the current Support tier for both cards and sorting."""
     from assist_routes_2026 import assist_display_tier, assist_display_name
+    from assist_return_monitor import display_stats as assist_display_stats
     moves = [m for m in _assists_mapped_moves(r) if m["kind"] != "CONTEXT"]
     if not moves:
         return None
     move = max(moves, key=lambda m: (assist_display_tier(m)["priority"],
-                                     _adj_win(100*m["wins"]/m["picks"], m["picks"], k=20),
+                                     _adj_win(100*assist_display_stats(m)["hits"]/assist_display_stats(m)["plays"], assist_display_stats(m)["plays"], k=20),
                                      m["picks"]))
-    win = 100.0 * move["wins"] / move["picks"]
-    return {"title": assist_display_name(move), "win": win, "n": move["picks"],
-            "adj": _adj_win(win, move["picks"], k=20)}
+    shown = assist_display_stats(move)
+    win = 100.0 * shown["hits"] / shown["plays"]
+    return {"title": assist_display_name(move), "win": win, "n": shown["plays"],
+            "adj": _adj_win(win, shown["plays"], k=20)}
 
 
 def _probe_goals_best(r: dict) -> dict | None:

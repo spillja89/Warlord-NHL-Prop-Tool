@@ -232,7 +232,9 @@ def refresh(root=ROOT):
             if not s or any(s.get(k)!=row.get(k) for k in ('name','rule','original_hits','original_plays')):raise ValueError('Seed does not match current move kit')
             cutoff=row.get('previous_through',doc.get('previous_through'));group=groups[filename,row['key']]
             row['full']=stats(group);row['since_check']=stats([m for m in group if m[2]>cutoff])
-            # row['previous'] is the exact immutable approved V1 object.
+            if filename == 'assist_return_records.json' and row.get('health_since_from'):
+                row['health_since_check'] = stats([m for m in group if m[2] >= row['health_since_from']])
+            # Baseline records are immutable; display versions are separate from rule identity.
         doc.update(full_through=through,since_through=through,auto_update_version=VERSION,seed_version=seed['version'],baseline_record_version=seed['files'][filename]['version'],version=seed['files'][filename]['version']+'+graded-through-'+through)
         _write(root/filename,doc)
     manifest={'version':VERSION,'seed_version':seed['version'],'through':through,'source_files':sources,'counts':dict(counts),'memberships':len(members),'V1_fixed':True,'rules_unchanged':True}

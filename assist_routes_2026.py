@@ -30,8 +30,10 @@ def matches(row, field, op, cutoff):
 
 def assist_display_tier(move):
     """Shared old/new presentation tiers; no eligibility or record changes."""
-    picks = number(move.get("picks")) or 0
-    wins = number(move.get("wins")) or 0
+    from assist_return_monitor import display_stats
+    current = display_stats(move)
+    picks = current['plays']
+    wins = current['hits']
     kind = move.get("kind", "")
     if kind == "CONTEXT":
         return {"label": "CONTEXT", "priority": 0, "crit": False}

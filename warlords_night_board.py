@@ -11,6 +11,7 @@ from pathlib import Path
 
 import pandas as pd
 from matchup_display import matchup_label
+from move_combo import combo_html
 
 from warlord_moves_2026 import fired_moves
 from sog_moves_current import is_current_sog25, sog_base_eligible, pk_duration_seconds
@@ -21,6 +22,7 @@ from player_form import summarize_form
 from goal_routes_v2 import profile_values as goal_v2_values
 from points15_research import context as points15_research_context
 from assist_routes_2026 import assist_display_tier, assist_display_name
+from assist_return_monitor import display_stats as assist_display_stats, record_for as assist_record_for
 from points_moves_current import best_move as current_points_best, display_moves as current_points_display, prepare_row as prepare_points_row, points_moves as current_points_moves
 from pp_assist_beta import assist_ppp_beta, beta_summary, beta_details, BETA_CSS
 from goal_return_monitor import return_panel as goal_return_panel, RETURN_CSS as GOAL_RETURN_CSS
@@ -1290,6 +1292,9 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
             wins, picks = (int(move["wins"]), int(move["picks"])) if move else (0, 0)
             late_wins, late_picks = ((int(move["later_wins"]), int(move["later_picks"]))
                                      if move else (0, 0))
+            if role == 'Support' and move:
+                shown = assist_display_stats(move)
+                wins, picks = shown['hits'], shown['plays']
             pct = 100 * wins / picks if picks else 0
             late_pct = 100 * late_wins / late_picks if late_picks else 0
             status = (("NO GOAL ATTACK" if role == "Carry" else
@@ -1458,6 +1463,9 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
                 fired_wins, fired_picks = int(fired_move["wins"]), int(fired_move["picks"])
                 fired_late_wins = int(fired_move["later_wins"])
                 fired_late_picks = int(fired_move["later_picks"])
+                if role == 'Support':
+                    shown = assist_display_stats(fired_move)
+                    fired_wins, fired_picks = shown['hits'], shown['plays']
                 fired_pct = 100 * fired_wins / fired_picks if fired_picks else 0
                 fired_late_pct = 100 * fired_late_wins / fired_late_picks if fired_late_picks else 0
                 fired_rule = str(fired_move.get("rule", fired_move.get("condition", "")))
@@ -1481,6 +1489,11 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
                 if fired_move.get("sample_book_be_pct") is not None:
                     later_text += (f' · sample BE {fired_move["sample_book_be_pct"]:.1f}%'
                                    f' · {fired_move["sample_players"]} players · {fired_move["sample_dates"]} slate dates')
+                if role == 'Support':
+                    rec = assist_record_for(fired_move)
+                    if rec:
+                        s = rec['full']
+                        later_text = f"Assist V2 · current combined record · sample BE {s['be']:.1f}% · {s['players']} players · {s['dates']} slate dates"
                 move_row = f'''<div class="wn-move-entry">
                   <div class="wn-move-title"><strong>{_h(fired_move["name"])}</strong>{grade_badges(fired_move)}<em>{_h(fired_label)}</em></div>
                   <div class="wn-move-record">{fired_wins}/{fired_picks} · {fired_pct:.1f}% <span>{later_text}</span></div>
@@ -1499,7 +1512,7 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
                     group = ('V2 · '+fired_move['display_family']) if fired_move.get('points15_v2') else 'V1 · Preserved moves'
                     points_record_groups.setdefault(group, []).append((fired_move,move_row))
                 elif role == 'Support':
-                    group=('V2 · '+fired_move['display_family']) if fired_move.get('assist_v2') else 'V1 · Preserved moves'
+                    group=('V2 · '+fired_move['display_family']) if fired_move.get('assist_v2') else 'V2 · Established routes'
                     assist_record_groups.setdefault(group,[]).append((fired_move,move_row))
                 else:
                     move_rows.append(move_row)
@@ -1537,7 +1550,7 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
             if role == 'Carry' and goal_return_panel(move):
                 record_label = "V2 MOVE %" if move.get("goal_v2") else "V1 MOVE %"
             if role == 'Support' and assist_return_panel(move):
-                record_label = "V2 MOVE %" if move.get('assist_v2') else "V1 MOVE %"
+                record_label = "V2 MOVE %"
             if role == 'Tank' and points_original_caption(move):
                 record_label = points_original_caption(move)
             if role == 'Jungle' and sog_return_panel(move):
@@ -1566,6 +1579,7 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
                 <div class="wn-unit-foot"><span>{_h(line)} <b>{_h(price)}</b>{book_note}</span><span>{_h(later_note)}{confidence_note}</span></div>
                 {book_rate_note}{assist_goalie_badge(card.get('assist_goalie_buff')) if role == 'Support' else ''}{card_controls(card) if card_controls else ''}
                 {beta_summary(card.get('pp_assist_beta')) if role == 'Support' else ''}</div>
+                {combo_html(move, {**_CARD_LABELS, **_GOAL_V2_LABELS})}
                 {goal_return_panel(move) if role == 'Carry' else ''}
                 {assist_return_panel(move) if role == 'Support' else ''}
                 {points_return_panel(move) if role == 'Tank' else ''}
@@ -1611,6 +1625,7 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
         if role == "Jungle" and any((card.get("move") or {}).get("sog_current") for card in cards):
             lane_subtitle = "SOG2.5 ✦ 2026–27 MOVE % ✦ BASE67 · STRONGER71 · PK BUFF ≤104s/OPPORTUNITY"
         if role == "Support":
+            lane_subtitle = "ASSISTS V2 · CURRENT COMBINED RECORD · BOOK BREAK-EVEN %"
             lane_subtitle += " · CRIT I 75–79.9% · CRIT II 80%+ · MINIMUM 30 PLAYS; SMALLER SAMPLES MONITOR"
         lanes.append(f"""<section class="wn-lane wn-lane--{role.lower()}" style="--accent:{color}">
           <header class="wn-lane-head">{backdrop}<div class="wn-class-icon" aria-hidden="true">{class_icon}</div>
