@@ -127,8 +127,8 @@ def inspect_html(value, move):
             f'<div class="wn-goalie-buff-route">{escape(label)} + goalie buff</div>'
             '<div class="wn-goalie-buff-table"><table><thead><tr><th>Window</th><th>Hits / plays</th>'
             '<th>Hit rate</th><th>Book BE</th><th>Gap</th><th>Players</th><th>Units</th><th>ROI</th>'
-            '</tr></thead><tbody>' + ''.join(rows) + '</tbody></table></div>'
-            '<p>Full: Oct 13–Nov 12, 2026 · Recent: Nov 1–12, included in full. '
+            '</tr></thead><tbody>' + ''.join(rows) + '</tbody></table></div>' +
+            (f'<p>Full: {record["full_from"]}–{record["full_through"]} · Recent: {record["recent_from"]}–{record["recent_through"]}, included in full. ' if record.get('context_only') else '<p>Full: Oct 13–Nov 12, 2026 · Recent: Nov 1–12, included in full. ') +
             'Saved pregame prices, flat 1u. These are the move’s buffed historical appearances; '
             'the original move and its record stay unchanged.</p></section>')
 

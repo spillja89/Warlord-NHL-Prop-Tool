@@ -95,5 +95,6 @@ def existing_assists_moves(row):
 def assists_moves(row):
     """Preserve the existing kit and add independently gated November routes."""
     from assist_routes_2026 import new_assists_moves
-    return existing_assists_moves(row) + new_assists_moves(row)
+    from assist_additions import fired as v2_additions
+    return existing_assists_moves(row) + new_assists_moves(row) + v2_additions(row)
 

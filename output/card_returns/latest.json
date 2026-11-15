@@ -1,7 +1,7 @@
 {
   "manifest": {
     "version": "card-return-tracking-2026-11-10-v1",
-    "seed_version": "card-return-seed-2026-11-08-v1-sog-v2-added-2026-11-10-goals-v2-2026-11-11-points15-v2-2026-11-14",
+    "seed_version": "card-return-seed-2026-11-08-v1-sog-v2-added-2026-11-10-goals-v2-2026-11-11-points15-v2-2026-11-14-assist-v2-2026-11-15",
     "through": "2026-11-13",
     "source_files": {
       "2026-11-11": "98a20468268ef10f34cb1fe570e318c6980c32fb42cc7291f96597fec7eee555",
@@ -15,11 +15,11 @@
       "other_kit_tags": 71,
       "noncurrent_rows": 1
     },
-    "memberships": 19258,
+    "memberships": 20101,
     "V1_fixed": true,
     "rules_unchanged": true,
-    "generation": "69ce524bb6f84c7a9cb617d2928aff19d6d80e5b795efa2b0e2b8c4f303fcd98",
-    "generated_utc": "2026-11-15T00:20:51.451420+00:00"
+    "generation": "a69366da7fff5ceec10ee8fb28d824c489b53154e1e43141b0593d23d010eb60",
+    "generated_utc": "2026-11-15T09:05:29.229363+00:00"
   },
   "records": {
     "goal_return_records.json": {
@@ -89,7 +89,7 @@
           "research_recent": {
             "hits": 8,
             "plays": 16,
-            "hit_rate": 50.0,
+            "hit_rate": 50,
             "be": 37.422588553605216,
             "gap": 12.577411446394784,
             "units": 4.23,
@@ -135,14 +135,14 @@
           "since_check": {
             "hits": 1,
             "plays": 1,
-            "hit_rate": 100.0,
+            "hit_rate": 100,
             "be": 48.78048780487805,
             "gap": 51.21951219512195,
             "players": 1,
             "dates": 1,
             "games": 1,
             "units": 1.05,
-            "roi": 105.0
+            "roi": 105
           },
           "previous_through": "2026-11-10",
           "baseline_label": "V2 MOVE %",
@@ -195,21 +195,21 @@
           "since_check": {
             "hits": 3,
             "plays": 5,
-            "hit_rate": 60.0,
+            "hit_rate": 60,
             "be": 38.972340255479175,
             "gap": 21.027659744520825,
             "players": 5,
             "dates": 2,
             "games": 5,
             "units": 1.95,
-            "roi": 39.0
+            "roi": 39
           },
           "previous_through": "2026-11-10",
           "baseline_label": "V2 MOVE %",
           "research_recent": {
             "hits": 13,
             "plays": 20,
-            "hit_rate": 65.0,
+            "hit_rate": 65,
             "be": 42.39023487208273,
             "gap": 22.60976512791727,
             "units": 9.089347744575406,
@@ -315,7 +315,7 @@
           "since_check": {
             "hits": 3,
             "plays": 4,
-            "hit_rate": 75.0,
+            "hit_rate": 75,
             "be": 41.770980874904524,
             "gap": 33.229019125095476,
             "players": 4,
@@ -375,7 +375,7 @@
           "since_check": {
             "hits": 1,
             "plays": 2,
-            "hit_rate": 50.0,
+            "hit_rate": 50,
             "be": 46.129374337221634,
             "gap": 3.870625662778366,
             "players": 2,
@@ -435,14 +435,14 @@
           "since_check": {
             "hits": 3,
             "plays": 4,
-            "hit_rate": 75.0,
+            "hit_rate": 75,
             "be": 40.08900440641802,
             "gap": 34.91099559358198,
             "players": 4,
             "dates": 2,
             "games": 4,
             "units": 3.2,
-            "roi": 80.0
+            "roi": 80
           },
           "previous_through": "2026-11-10",
           "baseline_label": "V2 MOVE %",
@@ -495,21 +495,21 @@
           "since_check": {
             "hits": 2,
             "plays": 2,
-            "hit_rate": 100.0,
+            "hit_rate": 100,
             "be": 43.99808703969393,
             "gap": 56.00191296030607,
             "players": 2,
             "dates": 2,
             "games": 2,
             "units": 2.6,
-            "roi": 130.0
+            "roi": 130
           },
           "previous_through": "2026-11-10",
           "baseline_label": "V2 MOVE %",
           "research_recent": {
             "hits": 6,
             "plays": 8,
-            "hit_rate": 75.0,
+            "hit_rate": 75,
             "be": 37.42136664846992,
             "gap": 37.57863335153008,
             "units": 7.33,
@@ -555,14 +555,14 @@
           "since_check": {
             "hits": 1,
             "plays": 1,
-            "hit_rate": 100.0,
+            "hit_rate": 100,
             "be": 48.78048780487805,
             "gap": 51.21951219512195,
             "players": 1,
             "dates": 1,
             "games": 1,
             "units": 1.05,
-            "roi": 105.0
+            "roi": 105
           },
           "previous_through": "2026-11-10",
           "baseline_label": "V2 MOVE %",
@@ -615,21 +615,21 @@
           "since_check": {
             "hits": 1,
             "plays": 1,
-            "hit_rate": 100.0,
+            "hit_rate": 100,
             "be": 48.78048780487805,
             "gap": 51.21951219512195,
             "players": 1,
             "dates": 1,
             "games": 1,
             "units": 1.05,
-            "roi": 105.0
+            "roi": 105
           },
           "previous_through": "2026-11-10",
           "baseline_label": "V2 MOVE %",
           "research_recent": {
             "hits": 6,
             "plays": 6,
-            "hit_rate": 100.0,
+            "hit_rate": 100,
             "be": 38.851380130633764,
             "gap": 61.148619869366236,
             "units": 9.73,
@@ -675,21 +675,21 @@
           "since_check": {
             "hits": 1,
             "plays": 1,
-            "hit_rate": 100.0,
+            "hit_rate": 100,
             "be": 48.78048780487805,
             "gap": 51.21951219512195,
             "players": 1,
             "dates": 1,
             "games": 1,
             "units": 1.05,
-            "roi": 105.0
+            "roi": 105
           },
           "previous_through": "2026-11-10",
           "baseline_label": "V2 MOVE %",
           "research_recent": {
             "hits": 4,
             "plays": 8,
-            "hit_rate": 50.0,
+            "hit_rate": 50,
             "be": 37.13857324952086,
             "gap": 12.86142675047914,
             "units": 2.73,
@@ -735,21 +735,21 @@
           "since_check": {
             "hits": 1,
             "plays": 1,
-            "hit_rate": 100.0,
+            "hit_rate": 100,
             "be": 48.78048780487805,
             "gap": 51.21951219512195,
             "players": 1,
             "dates": 1,
             "games": 1,
             "units": 1.05,
-            "roi": 105.0
+            "roi": 105
           },
           "previous_through": "2026-11-10",
           "baseline_label": "V2 MOVE %",
           "research_recent": {
             "hits": 4,
             "plays": 5,
-            "hit_rate": 80.0,
+            "hit_rate": 80,
             "be": 38.032828310344485,
             "gap": 41.967171689655515,
             "units": 5.73,
@@ -795,14 +795,14 @@
           "since_check": {
             "hits": 1,
             "plays": 1,
-            "hit_rate": 100.0,
+            "hit_rate": 100,
             "be": 48.78048780487805,
             "gap": 51.21951219512195,
             "players": 1,
             "dates": 1,
             "games": 1,
             "units": 1.05,
-            "roi": 105.0
+            "roi": 105
           },
           "previous_through": "2026-11-10",
           "baseline_label": "V2 MOVE %",
@@ -862,7 +862,7 @@
             "dates": 2,
             "games": 3,
             "units": 1.65,
-            "roi": 55.0
+            "roi": 55
           },
           "previous_through": "2026-11-10",
           "baseline_label": "V2 MOVE %",
@@ -915,7 +915,7 @@
           "since_check": {
             "hits": 3,
             "plays": 3,
-            "hit_rate": 100.0,
+            "hit_rate": 100,
             "be": 43.573429045327245,
             "gap": 56.426570954672755,
             "players": 3,
@@ -975,7 +975,7 @@
           "since_check": {
             "hits": 3,
             "plays": 3,
-            "hit_rate": 100.0,
+            "hit_rate": 100,
             "be": 43.573429045327245,
             "gap": 56.426570954672755,
             "players": 3,
@@ -1035,21 +1035,21 @@
           "since_check": {
             "hits": 3,
             "plays": 5,
-            "hit_rate": 60.0,
+            "hit_rate": 60,
             "be": 38.295793159494735,
             "gap": 21.704206840505265,
             "players": 5,
             "dates": 3,
             "games": 5,
             "units": 2.25,
-            "roi": 45.0
+            "roi": 45
           },
           "previous_through": "2026-11-10",
           "baseline_label": "V2 MOVE %",
           "research_recent": {
             "hits": 13,
             "plays": 20,
-            "hit_rate": 65.0,
+            "hit_rate": 65,
             "be": 42.53427845601924,
             "gap": 22.465721543980763,
             "units": 9.389347744575407,
@@ -1095,14 +1095,14 @@
           "since_check": {
             "hits": 3,
             "plays": 5,
-            "hit_rate": 60.0,
+            "hit_rate": 60,
             "be": 37.58196592392837,
             "gap": 22.418034076071628,
             "players": 5,
             "dates": 3,
             "games": 5,
             "units": 1.95,
-            "roi": 39.0
+            "roi": 39
           },
           "previous_through": "2026-11-10",
           "baseline_label": "V2 MOVE %",
@@ -1143,7 +1143,7 @@
           "previous": {
             "hits": 24,
             "plays": 32,
-            "hit_rate": 75.0,
+            "hit_rate": 75,
             "be": 37.908499765008855,
             "gap": 37.091500234991145,
             "players": 16,
@@ -1155,21 +1155,21 @@
           "since_check": {
             "hits": 1,
             "plays": 1,
-            "hit_rate": 100.0,
+            "hit_rate": 100,
             "be": 48.78048780487805,
             "gap": 51.21951219512195,
             "players": 1,
             "dates": 1,
             "games": 1,
             "units": 1.05,
-            "roi": 105.0
+            "roi": 105
           },
           "previous_through": "2026-11-10",
           "baseline_label": "V2 MOVE %",
           "research_recent": {
             "hits": 6,
             "plays": 8,
-            "hit_rate": 75.0,
+            "hit_rate": 75,
             "be": 41.06757668576387,
             "gap": 33.93242331423613,
             "units": 6.2674015748031495,
@@ -1215,14 +1215,14 @@
           "since_check": {
             "hits": 3,
             "plays": 3,
-            "hit_rate": 100.0,
+            "hit_rate": 100,
             "be": 42.152570846975436,
             "gap": 57.847429153024564,
             "players": 3,
             "dates": 2,
             "games": 3,
             "units": 4.2,
-            "roi": 140.0
+            "roi": 140
           },
           "previous_through": "2026-11-10",
           "baseline_label": "V2 MOVE %",
@@ -2176,6 +2176,600 @@
             "units": 9.878921061679682,
             "roi": 31.86748729574091
           }
+        },
+        {
+          "key": "assist-2026-27-additions-v2-2026-11-15|assist-v2-f1",
+          "name": "Runebinder’s Cadence",
+          "rule": "Assist0.5 + Matrix_Assists Green + Conf_Assists >=82 + i5v5_SOG60 <= 7.9 + PP_ActualPoints60 >= 4.3",
+          "kit_version": "assist-2026-27-additions-v2-2026-11-15",
+          "line": 0.5,
+          "original_hits": 127,
+          "original_plays": 192,
+          "previous_through": "2026-11-13",
+          "since_from": "2026-11-14",
+          "full": {
+            "hits": 127,
+            "plays": 192,
+            "hit_rate": 66.14583333333333,
+            "be": 53.10170893720981,
+            "gap": 13.044124396123522,
+            "players": 36,
+            "dates": 28,
+            "games": 108,
+            "units": 48.019532028215146,
+            "roi": 25.010172931362057
+          },
+          "previous": {
+            "hits": 127,
+            "plays": 192,
+            "hit_rate": 66.14583333333333,
+            "be": 53.10170893720981,
+            "gap": 13.044124396123522,
+            "players": 36,
+            "dates": 28,
+            "games": 108,
+            "units": 48.019532028215146,
+            "roi": 25.010172931362057
+          },
+          "since_check": {
+            "hits": 0,
+            "plays": 0,
+            "hit_rate": null,
+            "be": null,
+            "gap": null,
+            "players": 0,
+            "dates": 0,
+            "games": 0,
+            "units": null,
+            "roi": null
+          },
+          "move_version_label": "Moves V2",
+          "wired_on": "2026-11-15",
+          "baseline_label": "V2 MOVE %",
+          "research_recent": {
+            "hits": 67,
+            "plays": 101,
+            "hit_rate": 66.33663366336634,
+            "be": 53.122212333021366,
+            "gap": 13.214421330344976,
+            "players": 30,
+            "dates": 11,
+            "games": 54,
+            "teams": 17,
+            "opponents": 30,
+            "units": 25.34973707386099,
+            "roi": 25.098749578080188
+          },
+          "research_recent_from": "2026-11-03",
+          "research_recent_through": "2026-11-13"
+        },
+        {
+          "key": "assist-2026-27-additions-v2-2026-11-15|assist-v2-f2",
+          "name": "Runebinder’s Aegis",
+          "rule": "Assist0.5 + Matrix_Assists Green + Conf_Assists >=82 + i5v5_SOG60 <= 7.9 + PP_ActualPoints60 >= 4.3 + NHL_Team_PK_Seconds_per_opportunity <= 108",
+          "kit_version": "assist-2026-27-additions-v2-2026-11-15",
+          "line": 0.5,
+          "original_hits": 120,
+          "original_plays": 169,
+          "previous_through": "2026-11-13",
+          "since_from": "2026-11-14",
+          "full": {
+            "hits": 120,
+            "plays": 169,
+            "hit_rate": 71.00591715976331,
+            "be": 53.57292921334096,
+            "gap": 17.43298794642235,
+            "players": 33,
+            "dates": 28,
+            "games": 97,
+            "units": 56.39377445245757,
+            "roi": 33.36909730914649
+          },
+          "previous": {
+            "hits": 120,
+            "plays": 169,
+            "hit_rate": 71.00591715976331,
+            "be": 53.57292921334096,
+            "gap": 17.43298794642235,
+            "players": 33,
+            "dates": 28,
+            "games": 97,
+            "units": 56.39377445245757,
+            "roi": 33.36909730914649
+          },
+          "since_check": {
+            "hits": 0,
+            "plays": 0,
+            "hit_rate": null,
+            "be": null,
+            "gap": null,
+            "players": 0,
+            "dates": 0,
+            "games": 0,
+            "units": null,
+            "roi": null
+          },
+          "move_version_label": "Moves V2",
+          "wired_on": "2026-11-15",
+          "baseline_label": "V2 MOVE %",
+          "research_recent": {
+            "hits": 65,
+            "plays": 90,
+            "hit_rate": 72.22222222222223,
+            "be": 53.599039045326585,
+            "gap": 18.623183176895644,
+            "players": 27,
+            "dates": 11,
+            "games": 48,
+            "teams": 16,
+            "opponents": 30,
+            "units": 31.49973707386099,
+            "roi": 34.99970785984554
+          },
+          "research_recent_from": "2026-11-03",
+          "research_recent_through": "2026-11-13"
+        },
+        {
+          "key": "assist-2026-27-additions-v2-2026-11-15|assist-v2-f3",
+          "name": "Runebinder’s Dominion",
+          "rule": "Assist0.5 + Matrix_Assists Green + Conf_Assists >=82 + i5v5_SOG60 <= 7.9 + PP_ActualPoints60 >= 4.3 + NHL_Team_PK_Seconds_per_opportunity <= 108 + NHL_Team_SA_Venue_PG <= 28.2",
+          "kit_version": "assist-2026-27-additions-v2-2026-11-15",
+          "line": 0.5,
+          "original_hits": 107,
+          "original_plays": 142,
+          "previous_through": "2026-11-13",
+          "since_from": "2026-11-14",
+          "full": {
+            "hits": 107,
+            "plays": 142,
+            "hit_rate": 75.35211267605634,
+            "be": 54.33129596578417,
+            "gap": 21.020816710272165,
+            "players": 26,
+            "dates": 28,
+            "games": 84,
+            "units": 57.18983505851818,
+            "roi": 40.27453173135083
+          },
+          "previous": {
+            "hits": 107,
+            "plays": 142,
+            "hit_rate": 75.35211267605634,
+            "be": 54.33129596578417,
+            "gap": 21.020816710272165,
+            "players": 26,
+            "dates": 28,
+            "games": 84,
+            "units": 57.18983505851818,
+            "roi": 40.27453173135083
+          },
+          "since_check": {
+            "hits": 0,
+            "plays": 0,
+            "hit_rate": null,
+            "be": null,
+            "gap": null,
+            "players": 0,
+            "dates": 0,
+            "games": 0,
+            "units": null,
+            "roi": null
+          },
+          "move_version_label": "Moves V2",
+          "wired_on": "2026-11-15",
+          "baseline_label": "V2 MOVE %",
+          "research_recent": {
+            "hits": 60,
+            "plays": 77,
+            "hit_rate": 77.92207792207792,
+            "be": 54.559110902043216,
+            "gap": 23.362967020034702,
+            "players": 24,
+            "dates": 11,
+            "games": 44,
+            "teams": 14,
+            "opponents": 29,
+            "units": 34.55731283143675,
+            "roi": 44.879627053813955
+          },
+          "research_recent_from": "2026-11-03",
+          "research_recent_through": "2026-11-13"
+        },
+        {
+          "key": "assist-2026-27-additions-v2-2026-11-15|assist-v2-p1",
+          "name": "Oracle’s Weave",
+          "rule": "Assist0.5 + Matrix_Assists Green + Conf_Assists >=82 + Current_Goal_Profile <= 85 + Log_L10_P_2plus_pct <= 40 + iXA% >= 96",
+          "kit_version": "assist-2026-27-additions-v2-2026-11-15",
+          "line": 0.5,
+          "original_hits": 71,
+          "original_plays": 91,
+          "previous_through": "2026-11-13",
+          "since_from": "2026-11-14",
+          "full": {
+            "hits": 71,
+            "plays": 91,
+            "hit_rate": 78.02197802197803,
+            "be": 53.040148266104374,
+            "gap": 24.981829755873655,
+            "players": 21,
+            "dates": 27,
+            "games": 75,
+            "units": 44.02744584704821,
+            "roi": 48.381808623129906
+          },
+          "previous": {
+            "hits": 71,
+            "plays": 91,
+            "hit_rate": 78.02197802197803,
+            "be": 53.040148266104374,
+            "gap": 24.981829755873655,
+            "players": 21,
+            "dates": 27,
+            "games": 75,
+            "units": 44.02744584704821,
+            "roi": 48.381808623129906
+          },
+          "since_check": {
+            "hits": 0,
+            "plays": 0,
+            "hit_rate": null,
+            "be": null,
+            "gap": null,
+            "players": 0,
+            "dates": 0,
+            "games": 0,
+            "units": null,
+            "roi": null
+          },
+          "move_version_label": "Moves V2",
+          "wired_on": "2026-11-15",
+          "baseline_label": "V2 MOVE %",
+          "research_recent": {
+            "hits": 33,
+            "plays": 40,
+            "hit_rate": 82.5,
+            "be": 54.71064533798481,
+            "gap": 27.789354662015192,
+            "players": 14,
+            "dates": 10,
+            "games": 34,
+            "teams": 12,
+            "opponents": 23,
+            "units": 20.527620567325375,
+            "roi": 51.319051418313435
+          },
+          "research_recent_from": "2026-11-03",
+          "research_recent_through": "2026-11-13"
+        },
+        {
+          "key": "assist-2026-27-additions-v2-2026-11-15|assist-v2-p2",
+          "name": "Oracle’s Ascension",
+          "rule": "Assist0.5 + Matrix_Assists Green + Conf_Assists >=82 + Current_Goal_Profile <= 85 + Log_L10_P_2plus_pct <= 40 + iXA% >= 96 + NHL_Team_PPO_PG >= 2.85",
+          "kit_version": "assist-2026-27-additions-v2-2026-11-15",
+          "line": 0.5,
+          "original_hits": 65,
+          "original_plays": 78,
+          "previous_through": "2026-11-13",
+          "since_from": "2026-11-14",
+          "full": {
+            "hits": 65,
+            "plays": 78,
+            "hit_rate": 83.33333333333333,
+            "be": 53.291051932373705,
+            "gap": 30.042281400959624,
+            "players": 18,
+            "dates": 24,
+            "games": 66,
+            "units": 45.068982031638214,
+            "roi": 57.78074619440796
+          },
+          "previous": {
+            "hits": 65,
+            "plays": 78,
+            "hit_rate": 83.33333333333333,
+            "be": 53.291051932373705,
+            "gap": 30.042281400959624,
+            "players": 18,
+            "dates": 24,
+            "games": 66,
+            "units": 45.068982031638214,
+            "roi": 57.78074619440796
+          },
+          "since_check": {
+            "hits": 0,
+            "plays": 0,
+            "hit_rate": null,
+            "be": null,
+            "gap": null,
+            "players": 0,
+            "dates": 0,
+            "games": 0,
+            "units": null,
+            "roi": null
+          },
+          "move_version_label": "Moves V2",
+          "wired_on": "2026-11-15",
+          "baseline_label": "V2 MOVE %",
+          "research_recent": {
+            "hits": 29,
+            "plays": 33,
+            "hit_rate": 87.87878787878788,
+            "be": 54.56816701605329,
+            "gap": 33.31062086273459,
+            "players": 13,
+            "dates": 8,
+            "games": 28,
+            "teams": 11,
+            "opponents": 19,
+            "units": 20.371537704296326,
+            "roi": 61.73193243726159
+          },
+          "research_recent_from": "2026-11-03",
+          "research_recent_through": "2026-11-13"
+        },
+        {
+          "key": "assist-2026-27-additions-v2-2026-11-15|assist-v2-p3",
+          "name": "Oracle’s Convergence",
+          "rule": "Assist0.5 + Matrix_Assists Green + Conf_Assists >=82 + Current_Goal_Profile <= 85 + Log_L10_P_2plus_pct <= 40 + iXA% >= 96 + NHL_Team_PPO_PG >= 2.85 + NHL_Team_PP_G60 >= 8.65",
+          "kit_version": "assist-2026-27-additions-v2-2026-11-15",
+          "line": 0.5,
+          "original_hits": 45,
+          "original_plays": 49,
+          "previous_through": "2026-11-13",
+          "since_from": "2026-11-14",
+          "full": {
+            "hits": 45,
+            "plays": 49,
+            "hit_rate": 91.83673469387755,
+            "be": 54.22785510877745,
+            "gap": 37.6088795851001,
+            "players": 12,
+            "dates": 19,
+            "games": 42,
+            "units": 35.08750356015974,
+            "roi": 71.60715012277498
+          },
+          "previous": {
+            "hits": 45,
+            "plays": 49,
+            "hit_rate": 91.83673469387755,
+            "be": 54.22785510877745,
+            "gap": 37.6088795851001,
+            "players": 12,
+            "dates": 19,
+            "games": 42,
+            "units": 35.08750356015974,
+            "roi": 71.60715012277498
+          },
+          "since_check": {
+            "hits": 0,
+            "plays": 0,
+            "hit_rate": null,
+            "be": null,
+            "gap": null,
+            "players": 0,
+            "dates": 0,
+            "games": 0,
+            "units": null,
+            "roi": null
+          },
+          "move_version_label": "Moves V2",
+          "wired_on": "2026-11-15",
+          "baseline_label": "V2 MOVE %",
+          "research_recent": {
+            "hits": 23,
+            "plays": 24,
+            "hit_rate": 95.83333333333333,
+            "be": 54.800943334469885,
+            "gap": 41.032389998863444,
+            "players": 9,
+            "dates": 8,
+            "games": 20,
+            "teams": 7,
+            "opponents": 16,
+            "units": 18.314827747586367,
+            "roi": 76.31178228160987
+          },
+          "research_recent_from": "2026-11-03",
+          "research_recent_through": "2026-11-13"
+        },
+        {
+          "key": "assist-2026-27-additions-v2-2026-11-15|assist-v2-t1",
+          "name": "Stormkeeper’s Vigil",
+          "rule": "Assist0.5 + Matrix_Assists Green + Conf_Assists >=82 + TOI_per_game >= 23.6",
+          "kit_version": "assist-2026-27-additions-v2-2026-11-15",
+          "line": 0.5,
+          "original_hits": 46,
+          "original_plays": 58,
+          "previous_through": "2026-11-13",
+          "since_from": "2026-11-14",
+          "full": {
+            "hits": 46,
+            "plays": 58,
+            "hit_rate": 79.3103448275862,
+            "be": 56.179511334566925,
+            "gap": 23.13083349301928,
+            "players": 9,
+            "dates": 26,
+            "games": 52,
+            "units": 24.876139597535566,
+            "roi": 42.889895857819944
+          },
+          "previous": {
+            "hits": 46,
+            "plays": 58,
+            "hit_rate": 79.3103448275862,
+            "be": 56.179511334566925,
+            "gap": 23.13083349301928,
+            "players": 9,
+            "dates": 26,
+            "games": 52,
+            "units": 24.876139597535566,
+            "roi": 42.889895857819944
+          },
+          "since_check": {
+            "hits": 0,
+            "plays": 0,
+            "hit_rate": null,
+            "be": null,
+            "gap": null,
+            "players": 0,
+            "dates": 0,
+            "games": 0,
+            "units": null,
+            "roi": null
+          },
+          "move_version_label": "Moves V2",
+          "wired_on": "2026-11-15",
+          "baseline_label": "V2 MOVE %",
+          "research_recent": {
+            "hits": 20,
+            "plays": 24,
+            "hit_rate": 83.33333333333333,
+            "be": 55.964238026369074,
+            "gap": 27.369095306964255,
+            "players": 8,
+            "dates": 10,
+            "games": 24,
+            "teams": 8,
+            "opponents": 18,
+            "units": 11.950321305584463,
+            "roi": 49.793005439935264
+          },
+          "research_recent_from": "2026-11-03",
+          "research_recent_through": "2026-11-13"
+        },
+        {
+          "key": "assist-2026-27-additions-v2-2026-11-15|assist-v2-g1",
+          "name": "Oracle’s Eclipse",
+          "rule": "Assist0.5 + Matrix_Assists Green + Conf_Assists >=82 + Current_Goal_Profile <= 85 + Log_L10_P_2plus_pct <= 40 + iXA% >= 96 + NHL_Team_PPO_PG >= 2.85 + Goalie_GSAx_per_game >= -0.15",
+          "kit_version": "assist-2026-27-additions-v2-2026-11-15",
+          "line": 0.5,
+          "original_hits": 29,
+          "original_plays": 30,
+          "previous_through": "2026-11-13",
+          "since_from": "2026-11-14",
+          "full": {
+            "hits": 29,
+            "plays": 30,
+            "hit_rate": 96.66666666666667,
+            "be": 54.04013645081039,
+            "gap": 42.626530215856285,
+            "players": 13,
+            "dates": 14,
+            "games": 26,
+            "units": 23.946535824455736,
+            "roi": 79.82178608151912
+          },
+          "previous": {
+            "hits": 29,
+            "plays": 30,
+            "hit_rate": 96.66666666666667,
+            "be": 54.04013645081039,
+            "gap": 42.626530215856285,
+            "players": 13,
+            "dates": 14,
+            "games": 26,
+            "units": 23.946535824455736,
+            "roi": 79.82178608151912
+          },
+          "since_check": {
+            "hits": 0,
+            "plays": 0,
+            "hit_rate": null,
+            "be": null,
+            "gap": null,
+            "players": 0,
+            "dates": 0,
+            "games": 0,
+            "units": null,
+            "roi": null
+          },
+          "move_version_label": "Moves V2",
+          "wired_on": "2026-11-15",
+          "baseline_label": "V2 MOVE %",
+          "research_recent": {
+            "hits": 19,
+            "plays": 19,
+            "hit_rate": 100.0,
+            "be": 54.33166278002714,
+            "gap": 45.66833721997286,
+            "players": 11,
+            "dates": 7,
+            "games": 16,
+            "teams": 9,
+            "opponents": 12,
+            "units": 16.329501579501578,
+            "roi": 85.94474515527148
+          },
+          "research_recent_from": "2026-11-03",
+          "research_recent_through": "2026-11-13"
+        },
+        {
+          "key": "assist-2026-27-additions-v2-2026-11-15|assist-v2-c1",
+          "name": "Stormcaller’s Tempest",
+          "rule": "Assist0.5 + Matrix_Assists Green + Conf_Assists >=82 + Current_Goal_Profile <= 85 + Log_L10_P_2plus_pct <= 40 + iXA% >= 96 + NHL_Team_PPO_PG >= 2.85 + NHL_Opp_Goal_conversion_pct >= 11.8",
+          "kit_version": "assist-2026-27-additions-v2-2026-11-15",
+          "line": 0.5,
+          "original_hits": 33,
+          "original_plays": 34,
+          "previous_through": "2026-11-13",
+          "since_from": "2026-11-14",
+          "full": {
+            "hits": 33,
+            "plays": 34,
+            "hit_rate": 97.05882352941177,
+            "be": 54.19323905003779,
+            "gap": 42.86558447937398,
+            "players": 16,
+            "dates": 18,
+            "games": 31,
+            "units": 27.518806574050476,
+            "roi": 80.9376663942661
+          },
+          "previous": {
+            "hits": 33,
+            "plays": 34,
+            "hit_rate": 97.05882352941177,
+            "be": 54.19323905003779,
+            "gap": 42.86558447937398,
+            "players": 16,
+            "dates": 18,
+            "games": 31,
+            "units": 27.518806574050476,
+            "roi": 80.9376663942661
+          },
+          "since_check": {
+            "hits": 0,
+            "plays": 0,
+            "hit_rate": null,
+            "be": null,
+            "gap": null,
+            "players": 0,
+            "dates": 0,
+            "games": 0,
+            "units": null,
+            "roi": null
+          },
+          "move_version_label": "Moves V2",
+          "wired_on": "2026-11-15",
+          "baseline_label": "V2 MOVE %",
+          "research_recent": {
+            "hits": 18,
+            "plays": 19,
+            "hit_rate": 94.73684210526316,
+            "be": 54.52086208880404,
+            "gap": 40.21598001645913,
+            "players": 12,
+            "dates": 7,
+            "games": 16,
+            "teams": 10,
+            "opponents": 9,
+            "units": 14.26002106002106,
+            "roi": 75.05274242116347
+          },
+          "research_recent_from": "2026-11-03",
+          "research_recent_through": "2026-11-13"
         }
       ],
       "move_version_label": "Moves V1",
@@ -2548,7 +3142,7 @@
           "full": {
             "hits": 140,
             "plays": 200,
-            "hit_rate": 70.0,
+            "hit_rate": 70,
             "be": 57.85868530093715,
             "gap": 12.141314699062853,
             "players": 63,
@@ -2560,7 +3154,7 @@
           "previous": {
             "hits": 96,
             "plays": 128,
-            "hit_rate": 75.0,
+            "hit_rate": 75,
             "be": 56.72420477403609,
             "gap": 18.27579522596391,
             "players": 52,
@@ -3013,7 +3607,7 @@
           "since_check": {
             "hits": 20,
             "plays": 25,
-            "hit_rate": 80.0,
+            "hit_rate": 80,
             "be": 61.982667502806954,
             "gap": 18.017332497193046,
             "players": 9,
@@ -3209,7 +3803,7 @@
           "since_check": {
             "hits": 12,
             "plays": 15,
-            "hit_rate": 80.0,
+            "hit_rate": 80,
             "be": 60.994178975369174,
             "gap": 19.005821024630826,
             "players": 6,
@@ -3552,7 +4146,7 @@
           "since_check": {
             "hits": 21,
             "plays": 35,
-            "hit_rate": 60.0,
+            "hit_rate": 60,
             "be": 61.18493371713482,
             "gap": -1.1849337171348182,
             "players": 24,
@@ -3773,7 +4367,7 @@
           "full": {
             "hits": 37,
             "plays": 50,
-            "hit_rate": 74.0,
+            "hit_rate": 74,
             "be": 60.1345883706549,
             "gap": 13.865411629345097,
             "players": 32,
@@ -3785,7 +4379,7 @@
           "previous": {
             "hits": 27,
             "plays": 30,
-            "hit_rate": 90.0,
+            "hit_rate": 90,
             "be": 61.06846799788979,
             "gap": 28.93153200211021,
             "players": 24,
@@ -3797,7 +4391,7 @@
           "since_check": {
             "hits": 10,
             "plays": 20,
-            "hit_rate": 50.0,
+            "hit_rate": 50,
             "be": 58.733768929802565,
             "gap": -8.733768929802565,
             "players": 17,
@@ -3993,7 +4587,7 @@
           "since_check": {
             "hits": 12,
             "plays": 24,
-            "hit_rate": 50.0,
+            "hit_rate": 50,
             "be": 58.936377618300966,
             "gap": -8.936377618300966,
             "players": 16,
@@ -4042,7 +4636,7 @@
           "since_check": {
             "hits": 18,
             "plays": 25,
-            "hit_rate": 72.0,
+            "hit_rate": 72,
             "be": 61.89138196832914,
             "gap": 10.108618031670858,
             "players": 8,
@@ -4385,7 +4979,7 @@
           "since_check": {
             "hits": 17,
             "plays": 25,
-            "hit_rate": 68.0,
+            "hit_rate": 68,
             "be": 61.835949678876425,
             "gap": 6.164050321123575,
             "players": 20,
@@ -4667,7 +5261,7 @@
           "previous": {
             "hits": 50,
             "plays": 100,
-            "hit_rate": 50.0,
+            "hit_rate": 50,
             "be": 37.01885543922554,
             "gap": 12.98114456077446,
             "players": 28,
@@ -4704,7 +5298,7 @@
           "full": {
             "hits": 34,
             "plays": 68,
-            "hit_rate": 50.0,
+            "hit_rate": 50,
             "be": 42.19547197500966,
             "gap": 7.80452802499034,
             "players": 10,
@@ -5022,7 +5616,7 @@
           "since_check": {
             "hits": 2,
             "plays": 8,
-            "hit_rate": 25.0,
+            "hit_rate": 25,
             "be": 29.3607646292227,
             "gap": -4.3607646292227,
             "players": 8,
@@ -5176,7 +5770,7 @@
             "dates": 6,
             "games": 17,
             "units": -8.4,
-            "roi": -30.0
+            "roi": -30
           },
           "move_version_label": "Moves V1",
           "wired_on": "2026-11-06"
@@ -5255,7 +5849,7 @@
           "previous": {
             "hits": 32,
             "plays": 50,
-            "hit_rate": 64.0,
+            "hit_rate": 64,
             "be": 36.48026940968911,
             "gap": 27.519730590310893,
             "players": 22,
@@ -5304,7 +5898,7 @@
           "previous": {
             "hits": 52,
             "plays": 104,
-            "hit_rate": 50.0,
+            "hit_rate": 50,
             "be": 36.134880147130076,
             "gap": 13.865119852869924,
             "players": 29,
@@ -5414,7 +6008,7 @@
           "since_check": {
             "hits": 7,
             "plays": 28,
-            "hit_rate": 25.0,
+            "hit_rate": 25,
             "be": 32.423450134978516,
             "gap": -7.423450134978516,
             "players": 15,
@@ -5806,7 +6400,7 @@
           "since_check": {
             "hits": 10,
             "plays": 25,
-            "hit_rate": 40.0,
+            "hit_rate": 40,
             "be": 36.52967136891342,
             "gap": 3.4703286310865806,
             "players": 18,
@@ -5843,7 +6437,7 @@
           "previous": {
             "hits": 21,
             "plays": 30,
-            "hit_rate": 70.0,
+            "hit_rate": 70,
             "be": 39.30944182963633,
             "gap": 30.690558170363673,
             "players": 14,
@@ -5929,7 +6523,7 @@
           "full": {
             "hits": 33,
             "plays": 55,
-            "hit_rate": 60.0,
+            "hit_rate": 60,
             "be": 36.895314356497764,
             "gap": 23.104685643502236,
             "players": 21,
@@ -6088,7 +6682,7 @@
           "previous": {
             "hits": 28,
             "plays": 40,
-            "hit_rate": 70.0,
+            "hit_rate": 70,
             "be": 36.78973389954811,
             "gap": 33.21026610045189,
             "players": 20,
@@ -6125,7 +6719,7 @@
           "full": {
             "hits": 54,
             "plays": 100,
-            "hit_rate": 54.0,
+            "hit_rate": 54,
             "be": 37.77668156121606,
             "gap": 16.22331843878394,
             "players": 25,
@@ -6235,7 +6829,7 @@
           "previous": {
             "hits": 42,
             "plays": 70,
-            "hit_rate": 60.0,
+            "hit_rate": 60,
             "be": 37.29645075582289,
             "gap": 22.70354924417711,
             "players": 18,
@@ -6296,7 +6890,7 @@
           "since_check": {
             "hits": 7,
             "plays": 20,
-            "hit_rate": 35.0,
+            "hit_rate": 35,
             "be": 38.71642643961948,
             "gap": -3.7164264396194824,
             "players": 13,
@@ -6492,7 +7086,7 @@
           "since_check": {
             "hits": 4,
             "plays": 16,
-            "hit_rate": 25.0,
+            "hit_rate": 25,
             "be": 41.13065610957746,
             "gap": -16.13065610957746,
             "players": 9,
@@ -6982,7 +7576,7 @@
           "since_check": {
             "hits": 11,
             "plays": 25,
-            "hit_rate": 44.0,
+            "hit_rate": 44,
             "be": 38.61893482060177,
             "gap": 5.381065179398227,
             "players": 13,
@@ -7105,7 +7699,7 @@
           "full": {
             "hits": 35,
             "plays": 50,
-            "hit_rate": 70.0,
+            "hit_rate": 70,
             "be": 39.751852885125274,
             "gap": 30.248147114874726,
             "players": 13,
@@ -7278,7 +7872,7 @@
           "since_check": {
             "hits": 6,
             "plays": 25,
-            "hit_rate": 24.0,
+            "hit_rate": 24,
             "be": 32.76562562574208,
             "gap": -8.765625625742082,
             "players": 17,
@@ -7672,7 +8266,7 @@
           "research_recent": {
             "hits": 9,
             "plays": 12,
-            "hit_rate": 75.0,
+            "hit_rate": 75,
             "be": 40.38069758378723,
             "gap": 34.61930241621277,
             "players": 7,
@@ -7738,7 +8332,7 @@
           "research_recent": {
             "hits": 18,
             "plays": 30,
-            "hit_rate": 60.0,
+            "hit_rate": 60,
             "be": 36.516279255480946,
             "gap": 23.483720744519054,
             "players": 17,
@@ -7897,7 +8491,7 @@
           "full": {
             "hits": 21,
             "plays": 30,
-            "hit_rate": 70.0,
+            "hit_rate": 70,
             "be": 41.125029692152985,
             "gap": 28.874970307847015,
             "players": 6,
@@ -7909,7 +8503,7 @@
           "previous": {
             "hits": 21,
             "plays": 30,
-            "hit_rate": 70.0,
+            "hit_rate": 70,
             "be": 41.125029692152985,
             "gap": 28.874970307847015,
             "players": 6,
@@ -7936,7 +8530,7 @@
           "research_recent": {
             "hits": 8,
             "plays": 10,
-            "hit_rate": 80.0,
+            "hit_rate": 80,
             "be": 41.91376814121248,
             "gap": 38.08623185878752,
             "players": 5,
@@ -7945,7 +8539,7 @@
             "teams": 4,
             "opponents": 9,
             "units": 9.7,
-            "roi": 97.0
+            "roi": 97
           },
           "research_recent_from": "2026-11-06",
           "research_recent_through": "2026-11-13"
@@ -8200,7 +8794,7 @@
           "research_recent": {
             "hits": 9,
             "plays": 12,
-            "hit_rate": 75.0,
+            "hit_rate": 75,
             "be": 35.520256022022046,
             "gap": 39.479743977977954,
             "players": 9,
@@ -8359,7 +8953,7 @@
           "full": {
             "hits": 24,
             "plays": 32,
-            "hit_rate": 75.0,
+            "hit_rate": 75,
             "be": 35.44558023470873,
             "gap": 39.55441976529127,
             "players": 19,
@@ -8371,7 +8965,7 @@
           "previous": {
             "hits": 24,
             "plays": 32,
-            "hit_rate": 75.0,
+            "hit_rate": 75,
             "be": 35.44558023470873,
             "gap": 39.55441976529127,
             "players": 19,
@@ -8438,7 +9032,7 @@
           "full": {
             "hits": 64,
             "plays": 128,
-            "hit_rate": 50.0,
+            "hit_rate": 50,
             "be": 50.22950484974923,
             "gap": -0.22950484974923313,
             "players": 35,
@@ -8756,7 +9350,7 @@
           "since_check": {
             "hits": 10,
             "plays": 25,
-            "hit_rate": 40.0,
+            "hit_rate": 40,
             "be": 33.76717408782897,
             "gap": 6.23282591217103,
             "players": 13,
@@ -8805,7 +9399,7 @@
           "since_check": {
             "hits": 10,
             "plays": 25,
-            "hit_rate": 40.0,
+            "hit_rate": 40,
             "be": 33.76717408782897,
             "gap": 6.23282591217103,
             "players": 13,
@@ -8879,7 +9473,7 @@
           "full": {
             "hits": 28,
             "plays": 50,
-            "hit_rate": 56.0,
+            "hit_rate": 56,
             "be": 32.897488713155894,
             "gap": 23.102511286844106,
             "players": 23,
@@ -8898,12 +9492,12 @@
             "dates": 8,
             "games": 9,
             "units": 28.8,
-            "roi": 90.0
+            "roi": 90
           },
           "since_check": {
             "hits": 9,
             "plays": 18,
-            "hit_rate": 50.0,
+            "hit_rate": 50,
             "be": 34.399695885062606,
             "gap": 15.600304114937394,
             "players": 13,
@@ -8952,7 +9546,7 @@
           "since_check": {
             "hits": 8,
             "plays": 20,
-            "hit_rate": 40.0,
+            "hit_rate": 40,
             "be": 34.0288342979372,
             "gap": 5.971165702062798,
             "players": 14,
@@ -9155,7 +9749,7 @@
             "dates": 2,
             "games": 2,
             "units": -4.8,
-            "roi": -60.0
+            "roi": -60
           }
         },
         {
@@ -9344,7 +9938,7 @@
           "since_check": {
             "hits": 6,
             "plays": 15,
-            "hit_rate": 40.0,
+            "hit_rate": 40,
             "be": 27.333407626173727,
             "gap": 12.666592373826273,
             "players": 15,
@@ -9393,14 +9987,14 @@
           "since_check": {
             "hits": 3,
             "plays": 6,
-            "hit_rate": 50.0,
+            "hit_rate": 50,
             "be": 27.051999872592784,
             "gap": 22.948000127407216,
             "players": 6,
             "dates": 1,
             "games": 1,
             "units": 3.9,
-            "roi": 65.0
+            "roi": 65
           }
         },
         {
@@ -9796,7 +10390,7 @@
           "since_check": {
             "hits": 3,
             "plays": 5,
-            "hit_rate": 60.0,
+            "hit_rate": 60,
             "be": 52.955404056431114,
             "gap": 7.044595943568886,
             "players": 5,
@@ -9836,7 +10430,7 @@
           "previous": {
             "hits": 33,
             "plays": 44,
-            "hit_rate": 75.0,
+            "hit_rate": 75,
             "gap": 25.92591183516342,
             "players": 16,
             "units": 26.27202592934492,
@@ -9848,7 +10442,7 @@
           "since_check": {
             "hits": 3,
             "plays": 5,
-            "hit_rate": 60.0,
+            "hit_rate": 60,
             "be": 52.955404056431114,
             "gap": 7.044595943568886,
             "players": 5,
@@ -9900,14 +10494,14 @@
           "since_check": {
             "hits": 1,
             "plays": 4,
-            "hit_rate": 25.0,
+            "hit_rate": 25,
             "be": 50.5047513375569,
             "gap": -25.504751337556897,
             "players": 4,
             "dates": 3,
             "games": 4,
             "units": -1.88,
-            "roi": -47.0
+            "roi": -47
           },
           "research_monitor": false
         },
@@ -9952,14 +10546,14 @@
           "since_check": {
             "hits": 0,
             "plays": 3,
-            "hit_rate": 0.0,
+            "hit_rate": 0,
             "be": 52.01498859352034,
             "gap": -52.01498859352034,
             "players": 3,
             "dates": 2,
             "games": 2,
-            "units": -3.0,
-            "roi": -100.0
+            "units": -3,
+            "roi": -100
           },
           "research_monitor": false
         },
@@ -10108,7 +10702,7 @@
           "since_check": {
             "hits": 4,
             "plays": 5,
-            "hit_rate": 80.0,
+            "hit_rate": 80,
             "be": 49.334952363160845,
             "gap": 30.665047636839155,
             "players": 5,
@@ -10160,14 +10754,14 @@
           "since_check": {
             "hits": 1,
             "plays": 1,
-            "hit_rate": 100.0,
-            "be": 50.0,
-            "gap": 50.0,
+            "hit_rate": 100,
+            "be": 50,
+            "gap": 50,
             "players": 1,
             "dates": 1,
             "games": 1,
-            "units": 1.0,
-            "roi": 100.0
+            "units": 1,
+            "roi": 100
           },
           "research_monitor": false
         },
@@ -10240,7 +10834,7 @@
           "full": {
             "hits": 27,
             "plays": 30,
-            "hit_rate": 90.0,
+            "hit_rate": 90,
             "be": 49.34244588719655,
             "gap": 40.65755411280345,
             "players": 20,
@@ -10252,7 +10846,7 @@
           "previous": {
             "hits": 27,
             "plays": 30,
-            "hit_rate": 90.0,
+            "hit_rate": 90,
             "gap": 40.657554112803446,
             "players": 20,
             "units": 25.6840187608071,
