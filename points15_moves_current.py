@@ -65,4 +65,5 @@ def points15_moves(row):
         moves.append({**spec,'rule':rule,'market':'Points','points_current':True,'points15_current':True,
           'track':False,'later_wins':0,'later_picks':0,'kit_version':VERSION,'record_version':VERSION,
           'sample_season':'2026-27','sample_from':KIT['sample_from'],'sample_through':KIT['sample_through']})
-    return moves
+    from points15_additions import fired as additions
+    return moves + additions(row)

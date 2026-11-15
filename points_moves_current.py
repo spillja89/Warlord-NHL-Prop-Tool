@@ -73,6 +73,15 @@ def points_moves(row):
 
 def display_moves(moves):
     """One visible badge/record per nested family; every rule remains frozen."""
+    if any(move.get('points15_v2') for move in moves):
+        from move_return_grades import grade_rank, stable_identity
+        selected={}
+        def rank(move):
+            return grade_rank(move) or (0,False,move['wins']/move['picks'],move['picks'],0,stable_identity(move))
+        for move in sorted(moves,key=rank,reverse=True):
+            if move.get('points_current') and not move.get('suppress_badge'):
+                selected.setdefault(move['family'],move)
+        return list(selected.values())
     selected = {}
     for move in moves:
         if not move.get('points_current') or move.get('suppress_badge'):
@@ -95,13 +104,19 @@ def attach_points_moves(frame):
     records = out.to_dict('records')
     all_moves = [display_moves(points_moves(row)) for row in records]
     best = [max((m for m in moves if m['kind'] != 'CONTEXT'), key=lambda m: (m['wins'] / m['picks'], m['picks']), default=None) for moves in all_moves]
+    # V2 additions use the same return rank as cards; V1-only rows stay identical.
+    from move_return_grades import grade_rank, stable_identity
+    for i,moves in enumerate(all_moves):
+        if any(m.get('points15_v2') for m in moves):
+            best[i]=max((m for m in moves if m['kind']!='CONTEXT'),
+                        key=lambda m:grade_rank(m) or (0,False,m['wins']/m['picks'],m['picks'],0,stable_identity(m)),default=None)
     out['Points_Attack'] = [m['name'] if m else '' for m in best]
     out['Points_Move_Record'] = [f"{m['wins']}/{m['picks']}" if m else '' for m in best]
     out['Points_Move_Pct'] = [100 * m['wins'] / m['picks'] if m else None for m in best]
     out['Points_Sample_BE_Pct'] = [m['sample_book_be_pct'] if m else None for m in best]
     out['Points_Profile_Routes'] = [' · '.join(m['name'] for m in moves if m['kind'] != 'CONTEXT' and m['id'] != 'base77') for moves in all_moves]
     from points15_moves_current import VERSION as VERSION15
-    out['Points_Move_Kit_Version'] = [VERSION15 if number(row.get('Points_Line')) == 1.5 else VERSION for row in records]
+    out['Points_Move_Kit_Version'] = [m['kit_version'] if m and m.get('points15_v2') else VERSION15 if number(row.get('Points_Line')) == 1.5 else VERSION for row,m in zip(records,best)]
     for field in ['Log_L10_S_per_game','Log_L20_P_per_game','Log_L5_P_per_game','Pace_Gap_P10']:
         out[field] = pd.Series([prepare_row(row).get(field) for row in records], index=out.index, dtype='Float64')
     for field in ['Log_L20_Point2plus_pct', 'Log_L20_PPP_hit_pct', 'Team_PP_xGF_relative_league', 'Opp_PK_xGA_relative_league', 'Opp_5v5_xGA_relative_league']:

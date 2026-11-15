@@ -23,14 +23,23 @@ def record_for(move):
 
 def original_caption(move):
     row=record_for(move)
-    return 'V1 MOVE %' if row and not row.get('legacy') else ''
+    return (row.get('baseline_label') or 'V1 MOVE %') if row and not row.get('legacy') else ''
 
 def return_panel(move, *, compact=True):
     row=record_for(move)
     if row is None:return ''
     data={**records(),'previous_through':row['previous_through'],'since_from':row['since_from'],
           'move_version_label':row.get('move_version_label'),'wired_on':row.get('wired_on')}
+    if move.get('points15_v2'):
+        data={**data,'full_from':'2026-10-13','previous_through':'2026-11-13','since_from':'2026-11-14'}
     result=render_return_panel(row,data,compact=compact)
+    if move.get('points15_v2'):
+        result=result.replace('vs V1','vs V2')
+        if not compact and not row['since_check']['plays']:
+            start=result.find('<div class="wn-gr-note">Full record:')
+            end=result.find('</div>',start)
+            if start>=0 and end>=0:
+                result=result[:start]+'<div class="wn-gr-note">V2 research baseline through Nov 13. No new settled plays since wiring Nov 14. Earlier research is not live V2 performance; flat 1u at saved pregame prices.</div>'+result[end+6:]
     if not compact and row['line']==1.5:
         result+='<div class="wn-gr-note">'+escape(data['quote_policy15'])+'</div>'
     if row.get('legacy'):

@@ -1431,6 +1431,7 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
                                     f'{pp_rate:.2f} · PP UPGRADE GATE 8.3</div>')
             move_rows = []
             goal_record_groups = {}
+            points_record_groups = {}
             for fired_move in fired:
                 fired_wins, fired_picks = int(fired_move["wins"]), int(fired_move["picks"])
                 fired_late_wins = int(fired_move["later_wins"])
@@ -1472,8 +1473,18 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
                         move_row = move_row.replace('<div class="wn-move-rule">', '<div class="wn-move-rule"><b>RETIRED BOARD ENTRY · record preserved</b><br>', 1)
                     group = next(iter(goal_inspect_groups([fired_move])))
                     goal_record_groups.setdefault(group, []).append(move_row)
+                elif role == 'Tank' and card.get('line') == 1.5:
+                    group = ('V2 · '+fired_move['display_family']) if fired_move.get('points15_v2') else 'V1 · Preserved moves'
+                    points_record_groups.setdefault(group, []).append((fired_move,move_row))
                 else:
                     move_rows.append(move_row)
+            if points_record_groups:
+                for group,entries in points_record_groups.items():
+                    entries.sort(key=lambda item:_move_rank(item[0]),reverse=True)
+                    lead,lead_html=entries[0]
+                    rest=''.join(html for _,html in entries[1:])
+                    nested=(f'<details class="wn-details"><summary>Other matched levels &amp; buffs ({len(entries)-1})</summary>{rest}</details>' if rest else '')
+                    move_rows.append(f'<details class="wn-goal-record-group"><summary>{_h(group)} · {_h(lead["name"])} ({len(entries)})</summary>{lead_html}{nested}</details>')
             if role == 'Carry':
                 move_rows = [f'<details class="wn-goal-record-group"><summary>{_h(group)} ({len(items)})</summary>{"".join(items)}</details>'
                              for group, items in goal_record_groups.items()]
@@ -1505,7 +1516,7 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
             record_html = (f'<div class="wn-record"><strong>{pct:.1f}%</strong><span>{wins}/{picks}</span><em>{record_label}</em></div>'
                            if picks else '<div class="wn-record"><strong>SCOUT</strong><em>NO GOAL ATTACK</em></div>'
                            if role == "Carry" else '<div class="wn-record"><strong>BASE</strong><em>SCREEN ONLY</em></div>')
-            details_label = ('Move families &amp; preserved records' if role == 'Carry' else 'Full fired move list')
+            details_label = ('Move families &amp; preserved records' if role == 'Carry' or points_record_groups else 'Full fired move list')
             details_html = (f'<details class="wn-details"><summary>{details_label} ({len(fired)})</summary>'
                             f'<div class="wn-move-list">{"".join(move_rows)}</div></details>' if fired else
                             f'<div class="wn-details">{_h((points_tier or {}).get("rule") or card.get("move_block_reason") or card.get("baseline_rule") or (move or {}).get("rule") or "No tested move fired")}</div>')

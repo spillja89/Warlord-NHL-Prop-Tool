@@ -214,6 +214,7 @@ def refresh(root=ROOT):
             for tag in tags:
                 s=specs.get((tag['file'],tag['key']))
                 if not s:counts['other_kit_tags']+=1;continue
+                if day<=s.get('previous_through',seed['through']):continue
                 if tag['rule']!=s['rule'] or tag['kit_version']!=s['kit'] or tag['line']!=s['line']:raise ValueError('Captured rule identity changed')
                 actual=number(r.get(MARKET_ACTUAL[s['market']]))
                 if actual is None:counts['missing_actuals']+=1;continue
