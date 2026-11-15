@@ -274,9 +274,14 @@ def _render_assist_facts(card, move):
 def _render_points_facts(card, move):
     move = move or {}
     values = {**(card.get('role_context') or {}), **(card.get('points_context') or {})}
+    if move.get('points15_v2'):
+        from points15_additions import prepare as prepare_additions
+        values = prepare_additions(values)
     profile = [f'Saved points μ <b>{_number(values.get("Points_mu")):.2f}</b>'
                if _number(values.get('Points_mu')) is not None else 'Saved points μ <b>Unavailable</b>']
     environment = []
+    if move.get('points15_v2'):
+        profile.append(_fact_line('Conf_Points', values.get('Conf_Points'), '>=', 82))
     for field, op, cut in move.get('conditions', []):
         line = _fact_line(field, values.get(field), op, cut)
         target = environment if field.startswith(('NHL_', 'Opp_', 'opp_', 'Team_', 'team_')) else profile
