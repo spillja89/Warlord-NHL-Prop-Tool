@@ -2,6 +2,7 @@
 from __future__ import annotations
 import json
 import math
+from datetime import date, timedelta
 from concurrent.futures import ThreadPoolExecutor
 import pandas as pd
 
@@ -34,6 +35,50 @@ def log_context(row):
         pass
     return result
 
+def _skater_pp_history(session, season, team_history):
+    """Bound every game-level request below the NHL API's silent 10k cap.
+
+    Team reports cover the complete schedule. Seven-day inclusive windows
+    cover its dates without gaps or overlaps, even as the season grows.
+    """
+    if team_history.empty or 'gameDate' not in team_history:
+        return pd.DataFrame()
+    dates = team_history.gameDate.astype(str).str[:10]
+    first, last = date.fromisoformat(dates.min()), date.fromisoformat(dates.max())
+    windows = []
+    while first <= last:
+        end = min(first + timedelta(days=6), last)
+        windows.append((first, end))
+        first = end + timedelta(days=1)
+    def fetch_window(window):
+        begin, end = window
+        params = {'cayenneExp': f'seasonId={season} and gameTypeId=2 and gameDate>="{begin}" and gameDate<="{end}"',
+                  'isAggregate': 'false', 'isGame': 'true', 'limit': -1, 'start': 0}
+        response = session.get('https://api.nhle.com/stats/rest/en/skater/powerplay', params=params, timeout=20)
+        response.raise_for_status()
+        payload = response.json()
+        rows = payload.get('data', [])
+        total = int(payload.get('total', len(rows)))
+        if len(rows) != total or total >= 10000:
+            raise ValueError('Incomplete official skater PP history window')
+        data = pd.DataFrame(rows)
+        if not data.empty:
+            if not {'gameDate', 'gameId', 'playerId'}.issubset(data.columns):
+                raise ValueError('Missing official skater PP game identity')
+            days = data.gameDate.astype(str).str[:10]
+            if not days.between(str(begin), str(end)).all():
+                raise ValueError('Official skater PP history outside requested dates')
+        return data
+    with ThreadPoolExecutor(max_workers=4) as pool:
+        frames = [data for data in pool.map(fetch_window, windows) if not data.empty]
+    if not frames:
+        return pd.DataFrame()
+    data = pd.concat(frames, ignore_index=True)
+    if data.duplicated(['gameId', 'playerId']).any():
+        raise ValueError('Duplicate official skater PP game identity')
+    return data.sort_values(['gameDate', 'gameId', 'playerId']).reset_index(drop=True)
+
+
 def fetch_reports(session, season):
     base = 'https://api.nhle.com/stats/rest/en/team'
     lookup = session.get(base, timeout=20)
@@ -51,14 +96,12 @@ def fetch_reports(session, season):
             raise ValueError('Incomplete official team-game report: ' + name)
         return name, pd.DataFrame(rows)
     with ThreadPoolExecutor(max_workers=4) as pool:
-        skater_future = pool.submit(fetch, 'skater_powerplay')
         reports = dict(pool.map(fetch, ['summary', 'powerplay', 'penaltykill']))
-        try:
-            name, data = skater_future.result()
-            reports[name] = data
-        except Exception as error:
-            # Existing team context survives an unavailable player-credit report.
-            print('[PP spellbook] Player-credit history unavailable: ' + type(error).__name__)
+    try:
+        reports['skater_powerplay'] = _skater_pp_history(session, season, reports['summary'])
+    except Exception as error:
+        # Existing team context survives an unavailable player-credit report.
+        print('[PP spellbook] Player-credit history unavailable: ' + type(error).__name__)
     return reports, codes
 
 def attach_points_context(frame, session=None, before_day=None, reports=None, codes=None):
@@ -161,6 +204,7 @@ def attach_points_context(frame, session=None, before_day=None, reports=None, co
     from goal_routes_v2 import attach_context as attach_goal_v2_context
     out = attach_goal_v2_context(out, before, reports, codes or {})
     return out
+
 
 
 
