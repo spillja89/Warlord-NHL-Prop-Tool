@@ -1,22 +1,23 @@
 {
   "version": "card-return-tracking-2026-11-10-v1",
   "seed_version": "card-return-seed-2026-11-08-v1-sog-v2-added-2026-11-10-goals-v2-2026-11-11-points15-v2-2026-11-14-assist-v2-2026-11-15-assist-all-v2-baseline-2026-11-15",
-  "through": "2026-11-13",
+  "through": "2026-11-14",
   "source_files": {
     "2026-11-11": "98a20468268ef10f34cb1fe570e318c6980c32fb42cc7291f96597fec7eee555",
     "2026-11-12": "1b9dc353de2948627c7f2abf7160dc3c75a22b010aa26bb7d45764527834c31e",
-    "2026-11-13": "e0d4c63776b83dacddb7f5b44ecb0d91cc1dd31d6d77da13bb8f5a1201dfe4ee"
+    "2026-11-13": "e0d4c63776b83dacddb7f5b44ecb0d91cc1dd31d6d77da13bb8f5a1201dfe4ee",
+    "2026-11-14": "2443992831e868c3b3092fea48ad856a8e235d9cd0fe58f54b552d13569545a5"
   },
   "counts": {
-    "seed_outcomes_checked": 3817,
-    "new_memberships": 1680,
-    "unsettled_rows": 85,
+    "seed_outcomes_checked": 2887,
+    "new_memberships": 2694,
+    "unsettled_rows": 148,
     "other_kit_tags": 71,
-    "noncurrent_rows": 1
+    "noncurrent_rows": 3
   },
-  "memberships": 20101,
+  "memberships": 21435,
   "V1_fixed": true,
   "rules_unchanged": true,
-  "generation": "7e44697ae5a4317dbabde1b4f0db527f8d1d00ea8036d1c938f1b03f98d2a08c",
-  "generated_utc": "2026-11-15T09:05:29.229363+00:00"
+  "generation": "e6ac4ad4934000e69eab8d170f6f453d15eaf22f0561827559fd19bb8f9e11ec",
+  "generated_utc": "2026-11-15T17:46:57.189942+00:00"
 }

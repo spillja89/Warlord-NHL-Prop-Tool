@@ -1,10 +1,10 @@
 {
-  "version": "assist-record-baseline-v2-2026-11-15",
+  "version": "assist-record-baseline-v2-2026-11-15+graded-through-2026-11-14",
   "full_from": "2026-10-13",
-  "full_through": "2026-11-13",
+  "full_through": "2026-11-14",
   "previous_through": "2026-11-13",
   "since_from": "2026-11-14",
-  "since_through": "2026-11-13",
+  "since_through": "2026-11-14",
   "units_policy": "Flat1u at saved pregame Assist0.5 prices; separate overlapping move records, not summed portfolio.",
   "moves": [
     {
@@ -15,16 +15,16 @@
       "original_hits": 124,
       "original_plays": 215,
       "full": {
-        "hits": 209,
-        "plays": 351,
-        "hit_rate": 59.54415954415954,
-        "be": 52.69145554654067,
-        "gap": 6.8527039976188675,
-        "players": 47,
-        "dates": 32,
-        "games": 177,
-        "units": 46.842574274542486,
-        "roi": 13.345462756279911
+        "hits": 220,
+        "plays": 377,
+        "hit_rate": 58.355437665782496,
+        "be": 52.605445875711766,
+        "gap": 5.74999179007073,
+        "players": 49,
+        "dates": 33,
+        "games": 189,
+        "units": 41.36685969181528,
+        "roi": 10.972641828067713
       },
       "previous": {
         "hits": 209,
@@ -39,16 +39,16 @@
         "roi": 13.345462756279911
       },
       "since_check": {
-        "hits": 0,
-        "plays": 0,
-        "hit_rate": null,
-        "be": null,
-        "gap": null,
-        "players": 0,
-        "dates": 0,
-        "games": 0,
-        "units": null,
-        "roi": null
+        "hits": 11,
+        "plays": 26,
+        "hit_rate": 42.30769230769231,
+        "be": 51.444315319521515,
+        "gap": -9.136623011829208,
+        "players": 26,
+        "dates": 1,
+        "games": 12,
+        "units": -5.475714582727205,
+        "roi": -21.060440702796946
       },
       "archived_v1": {
         "baseline": {
@@ -100,16 +100,16 @@
       "since_from": "2026-11-14",
       "health_since_from": "2026-11-03",
       "health_since_check": {
-        "hits": 85,
-        "plays": 136,
-        "hit_rate": 62.5,
-        "be": 53.00063023456366,
-        "gap": 9.499369765436342,
-        "players": 36,
-        "dates": 11,
-        "games": 65,
-        "units": 22.867900878754984,
-        "roi": 16.814632999084548
+        "hits": 96,
+        "plays": 162,
+        "hit_rate": 59.25925925925926,
+        "be": 52.75085129758158,
+        "gap": 6.508407961677676,
+        "players": 39,
+        "dates": 12,
+        "games": 77,
+        "units": 17.39218629602778,
+        "roi": 10.735917466683814
       },
       "health_previous": {
         "hits": 124,
@@ -132,16 +132,16 @@
       "original_hits": 90,
       "original_plays": 148,
       "full": {
-        "hits": 154,
-        "plays": 247,
-        "hit_rate": 62.34817813765182,
-        "be": 52.47967358474436,
-        "gap": 9.86850455290746,
-        "players": 36,
-        "dates": 31,
-        "games": 149,
-        "units": 45.90456779184502,
-        "roi": 18.584845259856284
+        "hits": 160,
+        "plays": 265,
+        "hit_rate": 60.37735849056604,
+        "be": 52.378830650841465,
+        "gap": 7.998527839724574,
+        "players": 37,
+        "dates": 32,
+        "games": 159,
+        "units": 38.939339471777984,
+        "roi": 14.694090366708675
       },
       "previous": {
         "hits": 154,
@@ -156,16 +156,16 @@
         "roi": 18.584845259856284
       },
       "since_check": {
-        "hits": 0,
-        "plays": 0,
-        "hit_rate": null,
-        "be": null,
-        "gap": null,
-        "players": 0,
-        "dates": 0,
-        "games": 0,
-        "units": null,
-        "roi": null
+        "hits": 6,
+        "plays": 18,
+        "hit_rate": 33.333333333333336,
+        "be": 50.995041502285076,
+        "gap": -17.66170816895174,
+        "players": 18,
+        "dates": 1,
+        "games": 10,
+        "units": -6.9652283200670295,
+        "roi": -38.69571288926127
       },
       "archived_v1": {
         "baseline": {
@@ -217,16 +217,16 @@
       "since_from": "2026-11-14",
       "health_since_from": "2026-11-03",
       "health_since_check": {
-        "hits": 64,
-        "plays": 99,
-        "hit_rate": 64.64646464646465,
-        "be": 52.87699022315707,
-        "gap": 11.769474423307578,
-        "players": 27,
-        "dates": 11,
-        "games": 55,
-        "units": 20.307270607813777,
-        "roi": 20.51239455334725
+        "hits": 70,
+        "plays": 117,
+        "hit_rate": 59.82905982905983,
+        "be": 52.587459650715225,
+        "gap": 7.241600178344605,
+        "players": 30,
+        "dates": 12,
+        "games": 65,
+        "units": 13.342042287746747,
+        "roi": 11.403454946792092
       },
       "health_previous": {
         "hits": 90,
@@ -249,16 +249,16 @@
       "original_hits": 115,
       "original_plays": 195,
       "full": {
-        "hits": 189,
-        "plays": 310,
-        "hit_rate": 60.96774193548387,
-        "be": 53.30646125934327,
-        "gap": 7.661280676140599,
-        "players": 36,
-        "dates": 32,
-        "games": 171,
-        "units": 47.13962762376975,
-        "roi": 15.206331491538629
+        "hits": 199,
+        "plays": 332,
+        "hit_rate": 59.93975903614458,
+        "be": 53.26659473939514,
+        "gap": 6.673164296749441,
+        "players": 39,
+        "dates": 33,
+        "games": 183,
+        "units": 43.56391304104254,
+        "roi": 13.121660554530886
       },
       "previous": {
         "hits": 189,
@@ -273,16 +273,16 @@
         "roi": 15.206331491538629
       },
       "since_check": {
-        "hits": 0,
-        "plays": 0,
-        "hit_rate": null,
-        "be": null,
-        "gap": null,
-        "players": 0,
-        "dates": 0,
-        "games": 0,
-        "units": null,
-        "roi": null
+        "hits": 10,
+        "plays": 22,
+        "hit_rate": 45.45454545454545,
+        "be": 52.70483923103504,
+        "gap": -7.250293776489585,
+        "players": 22,
+        "dates": 1,
+        "games": 12,
+        "units": -3.5757145827272057,
+        "roi": -16.25324810330548
       },
       "archived_v1": {
         "baseline": {
@@ -334,16 +334,16 @@
       "since_from": "2026-11-14",
       "health_since_from": "2026-11-03",
       "health_since_check": {
-        "hits": 74,
-        "plays": 115,
-        "hit_rate": 64.34782608695652,
-        "be": 53.518841281140396,
-        "gap": 10.82898480581612,
-        "players": 30,
-        "dates": 11,
-        "games": 61,
-        "units": 23.103698816726837,
-        "roi": 20.09017288411029
+        "hits": 84,
+        "plays": 137,
+        "hit_rate": 61.31386861313869,
+        "be": 53.38812562345924,
+        "gap": 7.925742989679449,
+        "players": 34,
+        "dates": 12,
+        "games": 73,
+        "units": 19.527984233999632,
+        "roi": 14.254003090510679
       },
       "health_previous": {
         "hits": 115,
@@ -366,16 +366,16 @@
       "original_hits": 133,
       "original_plays": 233,
       "full": {
-        "hits": 227,
-        "plays": 384,
-        "hit_rate": 59.114583333333336,
-        "be": 52.29107005756684,
-        "gap": 6.823513275766494,
-        "players": 54,
-        "dates": 32,
-        "games": 186,
-        "units": 51.63689592496407,
-        "roi": 13.447108313792727
+        "hits": 240,
+        "plays": 412,
+        "hit_rate": 58.25242718446602,
+        "be": 52.1975728725489,
+        "gap": 6.0548543119171185,
+        "players": 56,
+        "dates": 33,
+        "games": 198,
+        "units": 48.741181342236864,
+        "roi": 11.830383820931278
       },
       "previous": {
         "hits": 227,
@@ -390,16 +390,16 @@
         "roi": 13.447108313792727
       },
       "since_check": {
-        "hits": 0,
-        "plays": 0,
-        "hit_rate": null,
-        "be": null,
-        "gap": null,
-        "players": 0,
-        "dates": 0,
-        "games": 0,
-        "units": null,
-        "roi": null
+        "hits": 13,
+        "plays": 28,
+        "hit_rate": 46.42857142857143,
+        "be": 50.915325763731516,
+        "gap": -4.486754335160086,
+        "players": 28,
+        "dates": 1,
+        "games": 12,
+        "units": -2.8957145827272055,
+        "roi": -10.341837795454305
       },
       "archived_v1": {
         "baseline": {
@@ -451,16 +451,16 @@
       "since_from": "2026-11-14",
       "health_since_from": "2026-11-03",
       "health_since_check": {
-        "hits": 94,
-        "plays": 151,
-        "hit_rate": 62.25165562913907,
-        "be": 52.58677339645573,
-        "gap": 9.66488223268334,
-        "players": 41,
-        "dates": 11,
-        "games": 69,
-        "units": 26.17820683688703,
-        "roi": 17.336560819130483
+        "hits": 107,
+        "plays": 179,
+        "hit_rate": 59.77653631284916,
+        "be": 52.325317900834065,
+        "gap": 7.451218412015095,
+        "players": 44,
+        "dates": 12,
+        "games": 81,
+        "units": 23.282492254159823,
+        "roi": 13.006978912938449
       },
       "health_previous": {
         "hits": 133,
@@ -483,16 +483,16 @@
       "original_hits": 65,
       "original_plays": 109,
       "full": {
-        "hits": 111,
-        "plays": 179,
-        "hit_rate": 62.01117318435754,
-        "be": 53.10545310017358,
-        "gap": 8.905720084183962,
-        "players": 29,
-        "dates": 30,
-        "games": 123,
-        "units": 31.295318420259647,
-        "roi": 17.483418111876897
+        "hits": 116,
+        "plays": 193,
+        "hit_rate": 60.10362694300518,
+        "be": 52.990820577562616,
+        "gap": 7.112806365442566,
+        "players": 31,
+        "dates": 31,
+        "games": 131,
+        "units": 26.33009010019262,
+        "roi": 13.64253373066975
       },
       "previous": {
         "hits": 111,
@@ -507,16 +507,16 @@
         "roi": 17.483418111876897
       },
       "since_check": {
-        "hits": 0,
-        "plays": 0,
-        "hit_rate": null,
-        "be": null,
-        "gap": null,
-        "players": 0,
-        "dates": 0,
-        "games": 0,
-        "units": null,
-        "roi": null
+        "hits": 5,
+        "plays": 14,
+        "hit_rate": 35.714285714285715,
+        "be": 51.52516189560814,
+        "gap": -15.810876181322428,
+        "players": 14,
+        "dates": 1,
+        "games": 8,
+        "units": -4.9652283200670295,
+        "roi": -35.46591657190736
       },
       "archived_v1": {
         "baseline": {
@@ -568,16 +568,16 @@
       "since_from": "2026-11-14",
       "health_since_from": "2026-11-03",
       "health_since_check": {
-        "hits": 46,
-        "plays": 70,
-        "hit_rate": 65.71428571428571,
-        "be": 53.252438406347416,
-        "gap": 12.461847307938292,
-        "players": 20,
-        "dates": 11,
-        "games": 46,
-        "units": 16.083198224931326,
-        "roi": 22.975997464187607
+        "hits": 51,
+        "plays": 84,
+        "hit_rate": 60.714285714285715,
+        "be": 52.964558987890875,
+        "gap": 7.74972672639484,
+        "players": 23,
+        "dates": 12,
+        "games": 54,
+        "units": 11.117969904864296,
+        "roi": 13.23567845817178
       },
       "health_previous": {
         "hits": 65,
@@ -600,16 +600,16 @@
       "original_hits": 64,
       "original_plays": 96,
       "full": {
-        "hits": 102,
-        "plays": 160,
-        "hit_rate": 63.75,
-        "be": 52.73767985996158,
-        "gap": 11.012320140038419,
-        "players": 41,
-        "dates": 31,
-        "games": 123,
-        "units": 32.91845173282014,
-        "roi": 20.574032333012585
+        "hits": 107,
+        "plays": 171,
+        "hit_rate": 62.57309941520468,
+        "be": 52.5702580419593,
+        "gap": 10.002841373245381,
+        "players": 42,
+        "dates": 32,
+        "games": 129,
+        "units": 30.90560436513406,
+        "roi": 18.07345284510764
       },
       "previous": {
         "hits": 102,
@@ -624,16 +624,16 @@
         "roi": 20.574032333012585
       },
       "since_check": {
-        "hits": 0,
-        "plays": 0,
-        "hit_rate": null,
-        "be": null,
-        "gap": null,
-        "players": 0,
-        "dates": 0,
-        "games": 0,
-        "units": null,
-        "roi": null
+        "hits": 5,
+        "plays": 11,
+        "hit_rate": 45.45454545454545,
+        "be": 50.13503159828974,
+        "gap": -4.6804861437442895,
+        "players": 11,
+        "dates": 1,
+        "games": 6,
+        "units": -2.0128473676860774,
+        "roi": -18.298612433509795
       },
       "archived_v1": {
         "baseline": {
@@ -685,16 +685,16 @@
       "since_from": "2026-11-14",
       "health_since_from": "2026-11-03",
       "health_since_check": {
-        "hits": 38,
-        "plays": 64,
-        "hit_rate": 59.375,
-        "be": 52.051761498654166,
-        "gap": 7.323238501345834,
-        "players": 33,
-        "dates": 11,
-        "games": 47,
-        "units": 6.958816730914856,
-        "roi": 10.873151142054462
+        "hits": 43,
+        "plays": 75,
+        "hit_rate": 57.333333333333336,
+        "be": 51.77064111326738,
+        "gap": 5.562692220065955,
+        "players": 34,
+        "dates": 12,
+        "games": 53,
+        "units": 4.9459693632287784,
+        "roi": 6.594625817638372
       },
       "health_previous": {
         "hits": 64,
@@ -717,16 +717,16 @@
       "original_hits": 34,
       "original_plays": 54,
       "full": {
-        "hits": 50,
-        "plays": 78,
-        "hit_rate": 64.1025641025641,
-        "be": 51.66691960197884,
-        "gap": 12.435644500585262,
-        "players": 24,
-        "dates": 22,
-        "games": 62,
-        "units": 19.358148163040415,
-        "roi": 24.818138670564636
+        "hits": 51,
+        "plays": 83,
+        "hit_rate": 61.44578313253012,
+        "be": 51.555683378642165,
+        "gap": 9.890099753887952,
+        "players": 25,
+        "dates": 23,
+        "games": 65,
+        "units": 16.267239072131325,
+        "roi": 19.59908321943533
       },
       "previous": {
         "hits": 50,
@@ -741,16 +741,16 @@
         "roi": 24.818138670564636
       },
       "since_check": {
-        "hits": 0,
-        "plays": 0,
-        "hit_rate": null,
-        "be": null,
-        "gap": null,
-        "players": 0,
-        "dates": 0,
-        "games": 0,
-        "units": null,
-        "roi": null
+        "hits": 1,
+        "plays": 5,
+        "hit_rate": 20.0,
+        "be": 49.820398294590014,
+        "gap": -29.820398294590014,
+        "players": 5,
+        "dates": 1,
+        "games": 3,
+        "units": -3.090909090909091,
+        "roi": -61.81818181818182
       },
       "archived_v1": {
         "baseline": {
@@ -802,16 +802,16 @@
       "since_from": "2026-11-14",
       "health_since_from": "2026-11-03",
       "health_since_check": {
-        "hits": 16,
-        "plays": 24,
-        "hit_rate": 66.66666666666667,
-        "be": 52.33844090576057,
-        "gap": 14.3282257609061,
-        "players": 10,
-        "dates": 8,
-        "games": 20,
-        "units": 5.761375504169557,
-        "roi": 24.005731267373154
+        "hits": 17,
+        "plays": 29,
+        "hit_rate": 58.62068965517241,
+        "be": 51.904295627972544,
+        "gap": 6.716394027199868,
+        "players": 12,
+        "dates": 9,
+        "games": 23,
+        "units": 2.670466413260466,
+        "roi": 9.208504873311952
       },
       "health_previous": {
         "hits": 34,
@@ -834,16 +834,16 @@
       "original_hits": 67,
       "original_plays": 101,
       "full": {
-        "hits": 121,
-        "plays": 181,
-        "hit_rate": 66.85082872928177,
-        "be": 52.64170901177719,
-        "gap": 14.209119717504585,
-        "players": 31,
-        "dates": 30,
-        "games": 123,
-        "units": 51.43408475641442,
-        "roi": 28.41662141238366
+        "hits": 126,
+        "plays": 191,
+        "hit_rate": 65.96858638743456,
+        "be": 52.58878454838891,
+        "gap": 13.379801839045648,
+        "players": 32,
+        "dates": 31,
+        "games": 130,
+        "units": 51.077427864918825,
+        "roi": 26.74210882980043
       },
       "previous": {
         "hits": 121,
@@ -858,16 +858,16 @@
         "roi": 28.41662141238366
       },
       "since_check": {
-        "hits": 0,
-        "plays": 0,
-        "hit_rate": null,
-        "be": null,
-        "gap": null,
-        "players": 0,
-        "dates": 0,
-        "games": 0,
-        "units": null,
-        "roi": null
+        "hits": 5,
+        "plays": 10,
+        "hit_rate": 50.0,
+        "be": 51.63085176106096,
+        "gap": -1.6308517610609599,
+        "players": 10,
+        "dates": 1,
+        "games": 7,
+        "units": -0.35665689149560115,
+        "roi": -3.5665689149560116
       },
       "archived_v1": {
         "baseline": {
@@ -919,16 +919,16 @@
       "since_from": "2026-11-14",
       "health_since_from": "2026-11-03",
       "health_since_check": {
-        "hits": 54,
-        "plays": 80,
-        "hit_rate": 67.5,
-        "be": 53.02461301605661,
-        "gap": 14.475386983943388,
-        "players": 23,
-        "dates": 11,
-        "games": 51,
-        "units": 20.86285225656164,
-        "roi": 26.07856532070205
+        "hits": 59,
+        "plays": 90,
+        "hit_rate": 65.55555555555556,
+        "be": 52.86975065439043,
+        "gap": 12.685804901165127,
+        "players": 25,
+        "dates": 12,
+        "games": 58,
+        "units": 20.50619536506604,
+        "roi": 22.784661516740044
       },
       "health_previous": {
         "hits": 67,
@@ -951,16 +951,16 @@
       "original_hits": 50,
       "original_plays": 67,
       "full": {
-        "hits": 89,
-        "plays": 122,
-        "hit_rate": 72.95081967213115,
-        "be": 52.28961796137928,
-        "gap": 20.661201710751868,
+        "hits": 93,
+        "plays": 131,
+        "hit_rate": 70.99236641221374,
+        "be": 52.271488441388996,
+        "gap": 18.720877970824745,
         "players": 25,
-        "dates": 28,
-        "games": 90,
-        "units": 50.34911859258379,
-        "roi": 41.26976933818344
+        "dates": 29,
+        "games": 96,
+        "units": 48.91246170108819,
+        "roi": 37.33775702373144
       },
       "previous": {
         "hits": 89,
@@ -975,16 +975,16 @@
         "roi": 41.26976933818344
       },
       "since_check": {
-        "hits": 0,
-        "plays": 0,
-        "hit_rate": null,
-        "be": null,
-        "gap": null,
-        "players": 0,
-        "dates": 0,
-        "games": 0,
-        "units": null,
-        "roi": null
+        "hits": 4,
+        "plays": 9,
+        "hit_rate": 44.44444444444444,
+        "be": 52.02573272596517,
+        "gap": -7.581288281520727,
+        "players": 9,
+        "dates": 1,
+        "games": 6,
+        "units": -1.4366568914956013,
+        "roi": -15.962854349951124
       },
       "archived_v1": {
         "baseline": {
@@ -1036,16 +1036,16 @@
       "since_from": "2026-11-14",
       "health_since_from": "2026-11-03",
       "health_since_check": {
-        "hits": 39,
-        "plays": 55,
-        "hit_rate": 70.9090909090909,
-        "be": 53.11186175650564,
-        "gap": 17.797229152585267,
-        "players": 18,
-        "dates": 11,
-        "games": 39,
-        "units": 18.100835586683452,
-        "roi": 32.91061015760628
+        "hits": 43,
+        "plays": 64,
+        "hit_rate": 67.1875,
+        "be": 52.959124861585885,
+        "gap": 14.228375138414115,
+        "players": 19,
+        "dates": 12,
+        "games": 45,
+        "units": 16.66417869518785,
+        "roi": 26.03777921123102
       },
       "health_previous": {
         "hits": 50,
@@ -1068,16 +1068,16 @@
       "original_hits": 42,
       "original_plays": 55,
       "full": {
-        "hits": 78,
-        "plays": 109,
-        "hit_rate": 71.55963302752293,
-        "be": 53.73821573667804,
-        "gap": 17.82141729084489,
-        "players": 19,
-        "dates": 29,
-        "games": 83,
-        "units": 36.806879740502936,
-        "roi": 33.76777957844306
+        "hits": 81,
+        "plays": 117,
+        "hit_rate": 69.23076923076923,
+        "be": 53.65878685651748,
+        "gap": 15.571982374251746,
+        "players": 20,
+        "dates": 30,
+        "games": 88,
+        "units": 34.27022284900733,
+        "roi": 29.290788759835326
       },
       "previous": {
         "hits": 78,
@@ -1092,16 +1092,16 @@
         "roi": 33.76777957844306
       },
       "since_check": {
-        "hits": 0,
-        "plays": 0,
-        "hit_rate": null,
-        "be": null,
-        "gap": null,
-        "players": 0,
-        "dates": 0,
-        "games": 0,
-        "units": null,
-        "roi": null
+        "hits": 3,
+        "plays": 8,
+        "hit_rate": 37.5,
+        "be": 52.576568364329866,
+        "gap": -15.076568364329866,
+        "players": 8,
+        "dates": 1,
+        "games": 5,
+        "units": -2.536656891495601,
+        "roi": -31.708211143695014
       },
       "archived_v1": {
         "baseline": {
@@ -1153,16 +1153,16 @@
       "since_from": "2026-11-14",
       "health_since_from": "2026-11-03",
       "health_since_check": {
-        "hits": 36,
-        "plays": 54,
-        "hit_rate": 66.66666666666667,
-        "be": 53.676704943980454,
-        "gap": 12.989961722686218,
-        "players": 17,
-        "dates": 11,
-        "games": 38,
-        "units": 12.68339466440382,
-        "roi": 23.48776789704411
+        "hits": 39,
+        "plays": 62,
+        "hit_rate": 62.903225806451616,
+        "be": 53.53475183692876,
+        "gap": 9.368473969522853,
+        "players": 18,
+        "dates": 12,
+        "games": 43,
+        "units": 10.146737772908219,
+        "roi": 16.365706085335837
       },
       "health_previous": {
         "hits": 42,
@@ -1185,16 +1185,16 @@
       "original_hits": 40,
       "original_plays": 53,
       "full": {
-        "hits": 70,
-        "plays": 97,
-        "hit_rate": 72.16494845360825,
-        "be": 53.068999688529374,
-        "gap": 19.095948765078873,
-        "players": 21,
-        "dates": 30,
-        "games": 85,
-        "units": 36.08978026145565,
-        "roi": 37.20595903242851
+        "hits": 74,
+        "plays": 103,
+        "hit_rate": 71.84466019417475,
+        "be": 53.069116583690594,
+        "gap": 18.775543610484156,
+        "players": 22,
+        "dates": 31,
+        "games": 91,
+        "units": 37.82403246086914,
+        "roi": 36.72236161249432
       },
       "previous": {
         "hits": 70,
@@ -1209,16 +1209,16 @@
         "roi": 37.20595903242851
       },
       "since_check": {
-        "hits": 0,
-        "plays": 0,
-        "hit_rate": null,
-        "be": null,
-        "gap": null,
-        "players": 0,
-        "dates": 0,
-        "games": 0,
-        "units": null,
-        "roi": null
+        "hits": 4,
+        "plays": 6,
+        "hit_rate": 66.66666666666667,
+        "be": 53.07100638879692,
+        "gap": 13.595660277869754,
+        "players": 6,
+        "dates": 1,
+        "games": 6,
+        "units": 1.7342521994134896,
+        "roi": 28.90420332355816
       },
       "archived_v1": {
         "baseline": {
@@ -1270,16 +1270,16 @@
       "since_from": "2026-11-14",
       "health_since_from": "2026-11-03",
       "health_since_check": {
-        "hits": 30,
-        "plays": 44,
-        "hit_rate": 68.18181818181819,
-        "be": 53.29187154982253,
-        "gap": 14.889946631995656,
-        "players": 16,
-        "dates": 11,
-        "games": 37,
-        "units": 11.832739692350676,
-        "roi": 26.8925902098879
+        "hits": 34,
+        "plays": 50,
+        "hit_rate": 68.0,
+        "be": 53.265367730499456,
+        "gap": 14.734632269500544,
+        "players": 17,
+        "dates": 12,
+        "games": 43,
+        "units": 13.566991891764166,
+        "roi": 27.133983783528333
       },
       "health_previous": {
         "hits": 40,
@@ -1302,16 +1302,16 @@
       "original_hits": 32,
       "original_plays": 40,
       "full": {
-        "hits": 45,
-        "plays": 57,
-        "hit_rate": 78.94736842105263,
-        "be": 54.806447061086736,
-        "gap": 24.140921359965894,
+        "hits": 46,
+        "plays": 59,
+        "hit_rate": 77.96610169491525,
+        "be": 55.009086609032614,
+        "gap": 22.957015085882638,
         "players": 11,
-        "dates": 24,
-        "games": 52,
-        "units": 26.989835747673858,
-        "roi": 47.35058903100677
+        "dates": 25,
+        "games": 54,
+        "units": 26.63499703799644,
+        "roi": 45.14406277626515
       },
       "previous": {
         "hits": 45,
@@ -1326,16 +1326,16 @@
         "roi": 47.35058903100677
       },
       "since_check": {
-        "hits": 0,
-        "plays": 0,
-        "hit_rate": null,
-        "be": null,
-        "gap": null,
-        "players": 0,
-        "dates": 0,
-        "games": 0,
-        "units": null,
-        "roi": null
+        "hits": 1,
+        "plays": 2,
+        "hit_rate": 50.0,
+        "be": 60.78431372549019,
+        "gap": -10.784313725490193,
+        "players": 2,
+        "dates": 1,
+        "games": 2,
+        "units": -0.3548387096774194,
+        "roi": -17.741935483870968
       },
       "archived_v1": {
         "baseline": {
@@ -1387,16 +1387,16 @@
       "since_from": "2026-11-14",
       "health_since_from": "2026-11-03",
       "health_since_check": {
-        "hits": 13,
-        "plays": 17,
-        "hit_rate": 76.47058823529412,
-        "be": 57.11413025691351,
-        "gap": 19.356457978380604,
+        "hits": 14,
+        "plays": 19,
+        "hit_rate": 73.6842105263158,
+        "be": 57.50046535886895,
+        "gap": 16.183745167446844,
         "players": 6,
-        "dates": 7,
-        "games": 16,
-        "units": 5.675814331077489,
-        "roi": 33.38714312398523
+        "dates": 8,
+        "games": 18,
+        "units": 5.32097562140007,
+        "roi": 28.00513484947405
       },
       "health_previous": {
         "hits": 32,
@@ -1419,16 +1419,16 @@
       "original_hits": 66,
       "original_plays": 112,
       "full": {
-        "hits": 101,
-        "plays": 165,
-        "hit_rate": 61.21212121212121,
-        "be": 53.022396899454385,
-        "gap": 8.189724312666826,
-        "players": 29,
-        "dates": 30,
-        "games": 110,
-        "units": 28.20376033440537,
-        "roi": 17.0931880814578
+        "hits": 105,
+        "plays": 176,
+        "hit_rate": 59.65909090909091,
+        "be": 52.90688656951777,
+        "gap": 6.752204339573133,
+        "players": 32,
+        "dates": 31,
+        "games": 116,
+        "units": 24.66710344290977,
+        "roi": 14.015399683471461
       },
       "previous": {
         "hits": 101,
@@ -1443,16 +1443,16 @@
         "roi": 17.0931880814578
       },
       "since_check": {
-        "hits": 0,
-        "plays": 0,
-        "hit_rate": null,
-        "be": null,
-        "gap": null,
-        "players": 0,
-        "dates": 0,
-        "games": 0,
-        "units": null,
-        "roi": null
+        "hits": 4,
+        "plays": 11,
+        "hit_rate": 36.36363636363637,
+        "be": 51.17423162046868,
+        "gap": -14.810595256832315,
+        "players": 11,
+        "dates": 1,
+        "games": 6,
+        "units": -3.536656891495601,
+        "roi": -32.15142628632365
       },
       "archived_v1": {
         "baseline": {
@@ -1504,16 +1504,16 @@
       "since_from": "2026-11-14",
       "health_since_from": "2026-11-03",
       "health_since_check": {
-        "hits": 35,
-        "plays": 53,
-        "hit_rate": 66.0377358490566,
-        "be": 55.47156305137022,
-        "gap": 10.566172797686384,
-        "players": 17,
-        "dates": 11,
-        "games": 36,
-        "units": 10.633382116565185,
-        "roi": 20.06298512559469
+        "hits": 39,
+        "plays": 64,
+        "hit_rate": 60.9375,
+        "be": 54.73295921168402,
+        "gap": 6.204540788315981,
+        "players": 20,
+        "dates": 12,
+        "games": 42,
+        "units": 7.0967252250695845,
+        "roi": 11.088633164171226
       },
       "health_previous": {
         "hits": 66,
@@ -1536,16 +1536,16 @@
       "original_hits": 46,
       "original_plays": 73,
       "full": {
-        "hits": 81,
-        "plays": 121,
-        "hit_rate": 66.94214876033058,
-        "be": 54.009492276365066,
-        "gap": 12.932656483965516,
-        "players": 16,
-        "dates": 28,
-        "games": 80,
-        "units": 29.85614272685068,
-        "roi": 24.674498121364202
+        "hits": 85,
+        "plays": 130,
+        "hit_rate": 65.38461538461539,
+        "be": 53.929261911314306,
+        "gap": 11.45535347330108,
+        "players": 17,
+        "dates": 29,
+        "games": 86,
+        "units": 27.981823497692744,
+        "roi": 21.524479613609802
       },
       "previous": {
         "hits": 81,
@@ -1560,16 +1560,16 @@
         "roi": 24.674498121364202
       },
       "since_check": {
-        "hits": 0,
-        "plays": 0,
-        "hit_rate": null,
-        "be": null,
-        "gap": null,
-        "players": 0,
-        "dates": 0,
-        "games": 0,
-        "units": null,
-        "roi": null
+        "hits": 4,
+        "plays": 9,
+        "hit_rate": 44.44444444444444,
+        "be": 52.8506092256319,
+        "gap": -8.406164781187456,
+        "players": 9,
+        "dates": 1,
+        "games": 6,
+        "units": -1.874319229157939,
+        "roi": -20.825769212865985
       },
       "archived_v1": {
         "baseline": {
@@ -1621,16 +1621,16 @@
       "since_from": "2026-11-14",
       "health_since_from": "2026-11-03",
       "health_since_check": {
-        "hits": 35,
-        "plays": 48,
-        "hit_rate": 72.91666666666667,
-        "be": 53.54490350969919,
-        "gap": 19.371763156967482,
-        "players": 13,
-        "dates": 10,
-        "games": 32,
-        "units": 17.487238628971728,
-        "roi": 36.431747143691105
+        "hits": 39,
+        "plays": 57,
+        "hit_rate": 68.42105263157895,
+        "be": 53.43527809642541,
+        "gap": 14.985774535153539,
+        "players": 14,
+        "dates": 11,
+        "games": 38,
+        "units": 15.61291939981379,
+        "roi": 27.391086666339984
       },
       "health_previous": {
         "hits": 46,
@@ -1653,16 +1653,16 @@
       "original_hits": 32,
       "original_plays": 52,
       "full": {
-        "hits": 52,
-        "plays": 78,
-        "hit_rate": 66.66666666666667,
-        "be": 52.634588129226145,
-        "gap": 14.032078537440526,
+        "hits": 54,
+        "plays": 82,
+        "hit_rate": 65.85365853658537,
+        "be": 52.519339579269406,
+        "gap": 13.334318957315965,
         "players": 17,
-        "dates": 24,
-        "games": 51,
-        "units": 21.55434511175448,
-        "roi": 27.633775784300614
+        "dates": 25,
+        "games": 54,
+        "units": 21.10859731116797,
+        "roi": 25.742191842887767
       },
       "previous": {
         "hits": 52,
@@ -1677,16 +1677,16 @@
         "roi": 27.633775784300614
       },
       "since_check": {
-        "hits": 0,
-        "plays": 0,
-        "hit_rate": null,
-        "be": null,
-        "gap": null,
-        "players": 0,
-        "dates": 0,
-        "games": 0,
-        "units": null,
-        "roi": null
+        "hits": 2,
+        "plays": 4,
+        "hit_rate": 50.0,
+        "be": 50.27199285511306,
+        "gap": -0.27199285511306215,
+        "players": 4,
+        "dates": 1,
+        "games": 3,
+        "units": -0.44574780058651026,
+        "roi": -11.143695014662757
       },
       "archived_v1": {
         "baseline": {
@@ -1738,16 +1738,16 @@
       "since_from": "2026-11-14",
       "health_since_from": "2026-11-03",
       "health_since_check": {
-        "hits": 20,
-        "plays": 26,
-        "hit_rate": 76.92307692307692,
-        "be": 54.696412736955054,
-        "gap": 22.226664186121866,
+        "hits": 22,
+        "plays": 30,
+        "hit_rate": 73.33333333333333,
+        "be": 54.10649008604279,
+        "gap": 19.22684324729054,
         "players": 9,
-        "dates": 9,
-        "games": 17,
-        "units": 11.025024957783579,
-        "roi": 42.40394214532146
+        "dates": 10,
+        "games": 20,
+        "units": 10.579277157197069,
+        "roi": 35.26425719065689
       },
       "health_previous": {
         "hits": 32,
@@ -1770,16 +1770,16 @@
       "original_hits": 45,
       "original_plays": 66,
       "full": {
-        "hits": 77,
-        "plays": 110,
-        "hit_rate": 70,
-        "be": 55.0140723066006,
-        "gap": 14.985927693399397,
+        "hits": 79,
+        "plays": 117,
+        "hit_rate": 67.52136752136752,
+        "be": 54.90919094072519,
+        "gap": 12.612176580642334,
         "players": 16,
-        "dates": 30,
-        "games": 90,
-        "units": 30.79298616852548,
-        "roi": 27.99362378956862
+        "dates": 31,
+        "games": 96,
+        "units": 27.43814745884806,
+        "roi": 23.45140808448552
       },
       "previous": {
         "hits": 77,
@@ -1794,16 +1794,16 @@
         "roi": 27.99362378956862
       },
       "since_check": {
-        "hits": 0,
-        "plays": 0,
-        "hit_rate": null,
-        "be": null,
-        "gap": null,
-        "players": 0,
-        "dates": 0,
-        "games": 0,
-        "units": null,
-        "roi": null
+        "hits": 2,
+        "plays": 7,
+        "hit_rate": 28.571428571428573,
+        "be": 53.261055191254385,
+        "gap": -24.689626619825813,
+        "players": 7,
+        "dates": 1,
+        "games": 6,
+        "units": -3.3548387096774195,
+        "roi": -47.92626728110599
       },
       "archived_v1": {
         "baseline": {
@@ -1855,16 +1855,16 @@
       "since_from": "2026-11-14",
       "health_since_from": "2026-11-03",
       "health_since_check": {
-        "hits": 32,
-        "plays": 44,
-        "hit_rate": 72.72727272727273,
-        "be": 55.23879511390927,
-        "gap": 17.488477613363465,
+        "hits": 34,
+        "plays": 51,
+        "hit_rate": 66.66666666666667,
+        "be": 54.967340614721344,
+        "gap": 11.699326051945327,
         "players": 13,
-        "dates": 11,
-        "games": 38,
-        "units": 13.967717662945876,
-        "roi": 31.744812870331536
+        "dates": 12,
+        "games": 44,
+        "units": 10.612878953268456,
+        "roi": 20.80956657503619
       },
       "health_previous": {
         "hits": 45,
@@ -1887,16 +1887,16 @@
       "original_hits": 31,
       "original_plays": 39,
       "full": {
-        "hits": 49,
-        "plays": 62,
-        "hit_rate": 79.03225806451613,
-        "be": 57.34548095137093,
-        "gap": 21.686777113145197,
+        "hits": 50,
+        "plays": 65,
+        "hit_rate": 76.92307692307692,
+        "be": 57.25281370585266,
+        "gap": 19.67026321722426,
         "players": 7,
-        "dates": 26,
-        "games": 51,
-        "units": 24.599518941194432,
-        "roi": 39.676643453539405
+        "dates": 27,
+        "games": 54,
+        "units": 23.244680231517012,
+        "roi": 35.76104651002617
       },
       "previous": {
         "hits": 49,
@@ -1911,16 +1911,16 @@
         "roi": 39.676643453539405
       },
       "since_check": {
-        "hits": 0,
-        "plays": 0,
-        "hit_rate": null,
-        "be": null,
-        "gap": null,
-        "players": 0,
-        "dates": 0,
-        "games": 0,
-        "units": null,
-        "roi": null
+        "hits": 1,
+        "plays": 3,
+        "hit_rate": 33.333333333333336,
+        "be": 55.33769063180828,
+        "gap": -22.004357298474943,
+        "players": 3,
+        "dates": 1,
+        "games": 3,
+        "units": -1.3548387096774193,
+        "roi": -45.16129032258065
       },
       "archived_v1": {
         "baseline": {
@@ -1972,16 +1972,16 @@
       "since_from": "2026-11-14",
       "health_since_from": "2026-11-03",
       "health_since_check": {
-        "hits": 18,
-        "plays": 23,
-        "hit_rate": 78.26086956521739,
-        "be": 56.9557957241536,
-        "gap": 21.305073841063788,
+        "hits": 19,
+        "plays": 26,
+        "hit_rate": 73.07692307692308,
+        "be": 56.76909129042145,
+        "gap": 16.30783178650163,
         "players": 6,
-        "dates": 9,
-        "games": 21,
-        "units": 8.823672085881432,
-        "roi": 38.363791677745354
+        "dates": 10,
+        "games": 24,
+        "units": 7.468833376204012,
+        "roi": 28.726282216169277
       },
       "health_previous": {
         "hits": 31,
@@ -2004,16 +2004,16 @@
       "original_hits": 36,
       "original_plays": 44,
       "full": {
-        "hits": 65,
-        "plays": 85,
-        "hit_rate": 76.47058823529412,
-        "be": 52.63107706799886,
-        "gap": 23.839511167295257,
-        "players": 18,
-        "dates": 26,
-        "games": 68,
-        "units": 40.48292364286,
-        "roi": 47.6269689916
+        "hits": 69,
+        "plays": 94,
+        "hit_rate": 73.40425531914893,
+        "be": 52.57311856716585,
+        "gap": 20.83113675198308,
+        "players": 19,
+        "dates": 27,
+        "games": 74,
+        "units": 39.046266751364406,
+        "roi": 41.53858165038766
       },
       "previous": {
         "hits": 65,
@@ -2028,16 +2028,16 @@
         "roi": 47.6269689916
       },
       "since_check": {
-        "hits": 0,
-        "plays": 0,
-        "hit_rate": null,
-        "be": null,
-        "gap": null,
-        "players": 0,
-        "dates": 0,
-        "games": 0,
-        "units": null,
-        "roi": null
+        "hits": 4,
+        "plays": 9,
+        "hit_rate": 44.44444444444444,
+        "be": 52.02573272596517,
+        "gap": -7.581288281520727,
+        "players": 9,
+        "dates": 1,
+        "games": 6,
+        "units": -1.4366568914956013,
+        "roi": -15.962854349951124
       },
       "archived_v1": {
         "baseline": {
@@ -2089,16 +2089,16 @@
       "since_from": "2026-11-14",
       "health_since_from": "2026-11-03",
       "health_since_check": {
-        "hits": 29,
-        "plays": 41,
-        "hit_rate": 70.73170731707317,
-        "be": 53.376704494015385,
-        "gap": 17.355002823057788,
-        "players": 15,
-        "dates": 11,
-        "games": 33,
-        "units": 13.753248183832891,
-        "roi": 33.54450776544608
+        "hits": 33,
+        "plays": 50,
+        "hit_rate": 66.0,
+        "be": 53.133529575766346,
+        "gap": 12.866470424233654,
+        "players": 16,
+        "dates": 12,
+        "games": 39,
+        "units": 12.316591292337291,
+        "roi": 24.633182584674582
       },
       "health_previous": {
         "hits": 36,
@@ -2121,16 +2121,16 @@
       "original_hits": 31,
       "original_plays": 37,
       "full": {
-        "hits": 52,
-        "plays": 68,
-        "hit_rate": 76.47058823529412,
-        "be": 52.84213759196958,
-        "gap": 23.628450643324534,
-        "players": 16,
-        "dates": 26,
-        "games": 63,
-        "units": 31.900558508951857,
-        "roi": 46.91258604257626
+        "hits": 56,
+        "plays": 74,
+        "hit_rate": 75.67567567567568,
+        "be": 52.86069452144206,
+        "gap": 22.814981154233614,
+        "players": 17,
+        "dates": 27,
+        "games": 69,
+        "units": 33.63481070836535,
+        "roi": 45.45244690319642
       },
       "previous": {
         "hits": 52,
@@ -2145,16 +2145,16 @@
         "roi": 46.91258604257626
       },
       "since_check": {
-        "hits": 0,
-        "plays": 0,
-        "hit_rate": null,
-        "be": null,
-        "gap": null,
-        "players": 0,
-        "dates": 0,
-        "games": 0,
-        "units": null,
-        "roi": null
+        "hits": 4,
+        "plays": 6,
+        "hit_rate": 66.66666666666667,
+        "be": 53.07100638879692,
+        "gap": 13.595660277869754,
+        "players": 6,
+        "dates": 1,
+        "games": 6,
+        "units": 1.7342521994134896,
+        "roi": 28.90420332355816
       },
       "archived_v1": {
         "baseline": {
@@ -2206,16 +2206,16 @@
       "since_from": "2026-11-14",
       "health_since_from": "2026-11-03",
       "health_since_check": {
-        "hits": 21,
-        "plays": 31,
-        "hit_rate": 67.74193548387096,
-        "be": 53.048151915877476,
-        "gap": 14.693783567993485,
-        "players": 14,
-        "dates": 11,
-        "games": 30,
-        "units": 8.52506487289096,
-        "roi": 27.500209267390193
+        "hits": 25,
+        "plays": 37,
+        "hit_rate": 67.56756756756756,
+        "be": 53.05185804662116,
+        "gap": 14.515709520946402,
+        "players": 15,
+        "dates": 12,
+        "games": 36,
+        "units": 10.25931707230445,
+        "roi": 27.727883979201216
       },
       "health_previous": {
         "hits": 31,
@@ -2238,16 +2238,16 @@
       "original_hits": 33,
       "original_plays": 40,
       "full": {
-        "hits": 61,
-        "plays": 84,
-        "hit_rate": 72.61904761904762,
-        "be": 53.693112949413226,
-        "gap": 18.925934669634394,
-        "players": 19,
-        "dates": 26,
-        "games": 68,
-        "units": 30.852440124464305,
-        "roi": 36.729095386267026
+        "hits": 64,
+        "plays": 92,
+        "hit_rate": 69.56521739130434,
+        "be": 53.59602211592772,
+        "gap": 15.969195275376627,
+        "players": 20,
+        "dates": 27,
+        "games": 73,
+        "units": 28.315783232968702,
+        "roi": 30.77802525322685
       },
       "previous": {
         "hits": 61,
@@ -2262,16 +2262,16 @@
         "roi": 36.729095386267026
       },
       "since_check": {
-        "hits": 0,
-        "plays": 0,
-        "hit_rate": null,
-        "be": null,
-        "gap": null,
-        "players": 0,
-        "dates": 0,
-        "games": 0,
-        "units": null,
-        "roi": null
+        "hits": 3,
+        "plays": 8,
+        "hit_rate": 37.5,
+        "be": 52.576568364329866,
+        "gap": -15.076568364329866,
+        "players": 8,
+        "dates": 1,
+        "games": 5,
+        "units": -2.536656891495601,
+        "roi": -31.708211143695014
       },
       "archived_v1": {
         "baseline": {
@@ -2323,16 +2323,16 @@
       "since_from": "2026-11-14",
       "health_since_from": "2026-11-03",
       "health_since_check": {
-        "hits": 28,
-        "plays": 44,
-        "hit_rate": 63.63636363636363,
-        "be": 53.800723142055176,
-        "gap": 9.835640494308457,
-        "players": 17,
-        "dates": 11,
-        "games": 35,
-        "units": 7.8942171752263315,
-        "roi": 17.941402670968934
+        "hits": 31,
+        "plays": 52,
+        "hit_rate": 59.61538461538461,
+        "be": 53.61239163778974,
+        "gap": 6.002992977594872,
+        "players": 18,
+        "dates": 12,
+        "games": 40,
+        "units": 5.35756028373073,
+        "roi": 10.303000545636019
       },
       "health_previous": {
         "hits": 33,
@@ -2355,16 +2355,16 @@
       "original_hits": 27,
       "original_plays": 31,
       "full": {
-        "hits": 49,
-        "plays": 62,
-        "hit_rate": 79.03225806451613,
-        "be": 53.878818181806025,
-        "gap": 25.153439882710103,
-        "players": 13,
-        "dates": 24,
-        "games": 49,
-        "units": 30.644124858409047,
-        "roi": 49.426007836143626
+        "hits": 52,
+        "plays": 70,
+        "hit_rate": 74.28571428571429,
+        "be": 53.729989631237316,
+        "gap": 20.555724654476975,
+        "players": 14,
+        "dates": 25,
+        "games": 54,
+        "units": 28.107467966913443,
+        "roi": 40.15352566701921
       },
       "previous": {
         "hits": 49,
@@ -2379,16 +2379,16 @@
         "roi": 49.426007836143626
       },
       "since_check": {
-        "hits": 0,
-        "plays": 0,
-        "hit_rate": null,
-        "be": null,
-        "gap": null,
-        "players": 0,
-        "dates": 0,
-        "games": 0,
-        "units": null,
-        "roi": null
+        "hits": 3,
+        "plays": 8,
+        "hit_rate": 37.5,
+        "be": 52.576568364329866,
+        "gap": -15.076568364329866,
+        "players": 8,
+        "dates": 1,
+        "games": 5,
+        "units": -2.536656891495601,
+        "roi": -31.708211143695014
       },
       "archived_v1": {
         "baseline": {
@@ -2440,16 +2440,16 @@
       "since_from": "2026-11-14",
       "health_since_from": "2026-11-03",
       "health_since_check": {
-        "hits": 22,
-        "plays": 31,
-        "hit_rate": 70.96774193548387,
-        "be": 54.35753353925212,
-        "gap": 16.610208396231755,
-        "players": 12,
-        "dates": 10,
-        "games": 24,
-        "units": 9.878921061679682,
-        "roi": 31.86748729574091
+        "hits": 25,
+        "plays": 39,
+        "hit_rate": 64.1025641025641,
+        "be": 53.99220734952448,
+        "gap": 10.110356753039625,
+        "players": 13,
+        "dates": 11,
+        "games": 29,
+        "units": 7.342264170184081,
+        "roi": 18.826318385087387
       },
       "health_previous": {
         "hits": 27,
