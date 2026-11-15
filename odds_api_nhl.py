@@ -36,6 +36,36 @@ MARKET_NAMES = {
     "player_shots_on_goal": "SOG", "player_shots_on_goal_alternate": "SOG",
     "player_goals": "Goal", "player_goal_scorer_anytime": "ATG",
 }
+# Supported US keys for the owner's approved books. bet365 is deliberately
+# absent: a foreign bet365 key must not stand in for a US sportsbook quote.
+PPP_BOOKMAKERS = ('hardrockbet', 'betmgm', 'betrivers', 'fanduel',
+                  'draftkings', 'espnbet', 'fanatics')
+PPP_MARKETS = frozenset({'player_power_play_points', 'player_power_play_points_alternate'})
+
+
+def _recover_ppp_books(books, targeted):
+    """Use the explicit-book PPP response while preserving all other markets.
+
+    A bookmaker can have a PPP market in the regional response yet omit one
+    player's quote. Check every supported preferred book, not only absent books.
+    For returned book/market pairs replace the earlier regional market so a
+    changed, worse price cannot lose to that book's older, better quote.
+    """
+    replacements = []
+    returned = {}
+    for book in targeted.get('bookmakers', []):
+        name = preferred_book(book.get('key')) or preferred_book(book.get('title'))
+        markets = [m for m in book.get('markets', []) if m.get('key') in PPP_MARKETS]
+        if name and markets:
+            returned.setdefault(name, set()).update(m['key'] for m in markets)
+            replacements.append({**book, 'markets': markets})
+    kept = []
+    for book in books:
+        name = preferred_book(book.get('key')) or preferred_book(book.get('title'))
+        markets = [m for m in book.get('markets', []) if m.get('key') not in returned.get(name, set())]
+        if markets:
+            kept.append({**book, 'markets': markets})
+    return kept + replacements
 TEAM_NAMES = {
     "anaheim ducks": "ANA", "boston bruins": "BOS", "buffalo sabres": "BUF",
     "calgary flames": "CGY", "carolina hurricanes": "CAR", "chicago blackhawks": "CHI",
@@ -170,29 +200,16 @@ def merge_odds_api_props(
             markets=",".join(MARKETS), oddsFormat="american",
         )
         books = list(payload.get("bookmakers", []))
-        # The regional multi-market response can omit a book's PPP market.
-        # Query the missing BetMGM/BetRivers markets together so comparison
-        # does not silently exclude either book's over 0.5 quote.
-        pp_market_keys = {"player_power_play_points", "player_power_play_points_alternate"}
-        pp_books_present = {
-            str(book.get("key") or "").casefold()
-            for book in books
-            if any(str(market.get("key") or "") in pp_market_keys
-                   for market in book.get("markets", []))
-        }
-        missing_pp_books = [key for key in ("betmgm", "betrivers") if key not in pp_books_present]
-        if missing_pp_books:
-            try:
-                targeted = _get(
-                    f"events/{event['id']}/odds", api_key, bookmakers=",".join(missing_pp_books),
-                    markets="player_power_play_points,player_power_play_points_alternate",
-                    oddsFormat="american",
-                )
-                books.extend(book for book in targeted.get("bookmakers", [])
-                             if str(book.get("key") or "").casefold() in missing_pp_books)
-            except RuntimeError:
-                if debug:
-                    print("[odds-api] targeted PPP check unavailable; using regional quotes")
+        try:
+            targeted = _get(
+                f"events/{event['id']}/odds", api_key, bookmakers=",".join(PPP_BOOKMAKERS),
+                markets="player_power_play_points,player_power_play_points_alternate",
+                oddsFormat="american",
+            )
+            books = _recover_ppp_books(books, targeted)
+        except RuntimeError:
+            if debug:
+                print("[odds-api] targeted PPP check unavailable; using regional quotes")
         for book in books:
             book_name = preferred_book(book.get("key")) or preferred_book(book.get("title"))
             if not book_name:
@@ -301,4 +318,5 @@ def merge_odds_api_props(
             known_books.update(str(row.get(f"BDL_{market}_Book_{n}") or "").strip() for n in range(1, 5))
             df.at[idx, f"{market}_Available_Books"] = json.dumps(sorted(known_books - {"", "nan", "None"}))
     return df
+
 
