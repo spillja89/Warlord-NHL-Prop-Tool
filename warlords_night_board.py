@@ -33,6 +33,7 @@ from assist_return_monitor import return_panel as assist_return_panel
 from assist_goalie_buff import context as assist_goalie_context, badge_html as assist_goalie_badge
 from assist_goalie_buff import goalie_html as assist_goalie_stats, inspect_html as assist_goalie_details, CSS as ASSIST_GOALIE_CSS
 from points_return_monitor import return_panel as points_return_panel, original_caption as points_original_caption
+from points15_card_families import inspect_group as points15_inspect_group, render_family as points15_render_family, condition_note as points15_condition_note
 from special_return_monitor import sog_return_panel
 from move_return_grades import grade_rank, move_grade, grade_badges, stable_identity, GRADE_CSS
 
@@ -1497,7 +1498,7 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
                 move_row = f'''<div class="wn-move-entry">
                   <div class="wn-move-title"><strong>{_h(fired_move["name"])}</strong>{grade_badges(fired_move)}<em>{_h(fired_label)}</em></div>
                   <div class="wn-move-record">{fired_wins}/{fired_picks} · {fired_pct:.1f}% <span>{later_text}</span></div>
-                  <div class="wn-move-rule">{_h(fired_rule)}</div>
+                  <div class="wn-move-rule">{_h(fired_rule)}</div>{points15_condition_note(fired_move) if role == 'Tank' and card.get('line') == 1.5 else ''}
                   {goal_return_panel(fired_move, compact=False) if role == 'Carry' else ''}
                   {assist_return_panel(fired_move, compact=False) if role == 'Support' else ''}{assist_goalie_details(card.get('assist_goalie_buff'), fired_move) if role == 'Support' and fired_move.get('assist_v2') else ''}{_render_assist_facts(card, fired_move) if role == 'Support' and fired_move.get('assist_v2') else ''}
                   {points_return_panel(fired_move, compact=False) if role == 'Tank' else ''}
@@ -1509,7 +1510,7 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
                     group = next(iter(goal_inspect_groups([fired_move])))
                     goal_record_groups.setdefault(group, []).append(move_row)
                 elif role == 'Tank' and card.get('line') == 1.5:
-                    group = ('V2 · '+fired_move['display_family']) if fired_move.get('points15_v2') else 'V1 · Preserved moves'
+                    group = ('V2 · '+fired_move['display_family']) if fired_move.get('points15_v2') else (points15_inspect_group(fired_move) or 'Legacy · Preserved records')
                     points_record_groups.setdefault(group, []).append((fired_move,move_row))
                 elif role == 'Support':
                     group=('V2 · '+fired_move['display_family']) if fired_move.get('assist_v2') else 'V2 · Established routes'
@@ -1524,6 +1525,10 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
                     move_rows.append(f'<details class="wn-goal-record-group"><summary>{_h(group)} · {_h(lead["name"])} ({len(entries)})</summary>{lead_html}{nested}</details>')
             if points_record_groups:
                 for group,entries in points_record_groups.items():
+                    family_html = points15_render_family(group, entries, _move_rank)
+                    if family_html is not None:
+                        move_rows.append(family_html)
+                        continue
                     entries.sort(key=lambda item:_move_rank(item[0]),reverse=True)
                     lead,lead_html=entries[0]
                     rest=''.join(html for _,html in entries[1:])
@@ -1561,7 +1566,9 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
                            if picks else '<div class="wn-record"><strong>SCOUT</strong><em>NO GOAL ATTACK</em></div>'
                            if role == "Carry" else '<div class="wn-record"><strong>BASE</strong><em>SCREEN ONLY</em></div>')
             details_label = ('Move families &amp; preserved records' if role == 'Carry' or points_record_groups or assist_record_groups else 'Full fired move list')
-            details_html = (f'<details class="wn-details"><summary>{details_label} ({len(fired)})</summary>'
+            details_summary = (f'Move families ({len(points_record_groups)}) · all {len(fired)} records preserved'
+                               if points_record_groups else f'{details_label} ({len(fired)})')
+            details_html = (f'<details class="wn-details"><summary>{details_summary}</summary>'
                             f'<div class="wn-move-list">{"".join(move_rows)}</div></details>' if fired else
                             f'<div class="wn-details">{_h((points_tier or {}).get("rule") or card.get("move_block_reason") or card.get("baseline_rule") or (move or {}).get("rule") or "No tested move fired")}</div>')
             move_name = move["name"] if move else (
@@ -1781,6 +1788,7 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
     goal_return_styles = '<style>' + GOAL_RETURN_CSS + '</style>' if any(item[0] in ('Carry', 'Support', 'Tank') for item in selected) else ''
     assist_goalie_styles = '<style>' + ASSIST_GOALIE_CSS + '</style>' if selected else ''
     return BETA_CSS + '<style>' + GRADE_CSS + '</style>' + styles + goal_return_styles + assist_goalie_styles + f'<div class="{board_class}">' + (hero if show_hero else "") + '<div class="wn-grid">' + ''.join(lanes) + '</div></div>'
+
 
 
 
