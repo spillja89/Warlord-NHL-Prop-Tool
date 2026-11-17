@@ -1,13 +1,13 @@
 {
-  "version": "goal-returns-v2-2026-11-11+graded-through-2026-11-15",
+  "version": "goal-returns-v2-2026-11-11+graded-through-2026-11-16",
   "kit": "goal-2026-27-moves-v2-2026-11-11",
   "move_version_label": "Moves V2",
   "wired_on": "2026-11-11",
   "full_from": "2026-10-13",
-  "full_through": "2026-11-15",
+  "full_through": "2026-11-16",
   "previous_through": "2026-11-10",
   "since_from": "2026-11-11",
-  "since_through": "2026-11-15",
+  "since_through": "2026-11-16",
   "units_policy": "Flat1u at actual saved pregame Goal0.5 prices; overlapping rule records are not an independent portfolio.",
   "baseline_provenance": "Approved Oct13-Nov10 current-season strictly-prior research replay. Baseline is not live sinceV2 performance.",
   "research_recent_window": [
@@ -1217,6 +1217,6 @@
     }
   ],
   "auto_update_version": "card-return-tracking-2026-11-10-v1",
-  "seed_version": "card-return-seed-2026-11-08-v1-sog-v2-added-2026-11-10-goals-v2-2026-11-11-points15-v2-2026-11-14-assist-v2-2026-11-15-assist-all-v2-baseline-2026-11-15",
+  "seed_version": "card-return-seed-2026-11-08-v1-sog-v2-added-2026-11-10-goals-v2-2026-11-11-points15-v2-2026-11-14-assist-v2-2026-11-15-assist-all-v2-baseline-2026-11-15-points15-iron-cadence-v3-2026-11-17",
   "baseline_record_version": "goal-returns-v2-2026-11-11"
 }
