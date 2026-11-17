@@ -32,7 +32,21 @@ def return_panel(move, *, compact=True):
           'move_version_label':row.get('move_version_label'),'wired_on':row.get('wired_on')}
     if move.get('points15_v2'):
         data={**data,'full_from':'2026-10-13','previous_through':'2026-11-13','since_from':'2026-11-14'}
+    if move.get('points15_v3'):
+        data={**data,'full_from':'2026-10-13','previous_through':row['previous_through'],'since_from':row['since_from']}
     result=render_return_panel(row,data,compact=compact)
+    if move.get('points15_v3'):
+        result=result.replace('vs V1','vs V3')
+        if not compact:
+            if not row['since_check']['plays']:
+                start=result.find('<div class="wn-gr-note">Full record:');end=result.find('</div>',start)
+                if start>=0 and end>=0:
+                    result=result[:start]+'<div class="wn-gr-note">V3 research baseline through Nov 15. Forward tracking begins Nov 17; no new settled plays. Flat 1u at saved pregame prices. Earlier research is not live V3 performance.</div>'+result[end+6:]
+            s=row.get('research_recent',{})
+            if s.get('plays'):
+                result+=('<div class="wn-gr-note">RESEARCH RECENT · Nov 6–15 · '
+                    +f"{s['hits']}/{s['plays']} · {s['hit_rate']:.1f}% · BE {s['be']:.1f}% · gap {s['gap']:+.1f} pp · {s['players']} players · {s['units']:+.2f}u · {s['roi']:+.1f}% ROI. Included in the full research record.</div>")
+
     if move.get('points15_v2'):
         result=result.replace('vs V1','vs V2')
         if not compact and not row['since_check']['plays']:

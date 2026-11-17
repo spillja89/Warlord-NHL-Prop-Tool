@@ -66,6 +66,8 @@ _GOAL_V2_LABELS = {'Pregame_xG_L5_per_game': 'L5 individual xG/game', 'Player_Lo
 
 _CARD_LABELS = {
     'Conf_Points': 'Points profile confidence', 'Conf_Goal': 'Goal profile confidence',
+    'Log_L5_TOI_per_game':'L5 actual ice time min/game', 'Log_L10_PPP_1plus_pct':'L10 PPP game frequency %', 'Trim10_SOG':'Trimmed L10 average SOG',
+    'NHL_Team_PKO_PG':'Own PK opportunities/game', 'Opp_SV':'Opponent goalie save percentage', 'Opp_GAA':'Opponent goalie GAA',
     'Log_L10_S_per_game': 'L10 average SOG', 'Log_L20_P_per_game': 'Recorded points/game',
     'Log_L5_P_per_game': 'L5 points/game', 'Pace_Gap_P10': 'Point-pace gap',
     'StarScore': 'Star score', 'TalentMult': 'Talent multiplier', 'TOI_per_game': 'Ice time/game',
@@ -291,13 +293,16 @@ def _render_assist_facts(card, move):
 def _render_points_facts(card, move):
     move = move or {}
     values = {**(card.get('role_context') or {}), **(card.get('points_context') or {})}
+    if move.get('points15_v3'):
+        from points15_iron_cadence import prepare as prepare_iron
+        values = prepare_iron(values)
     if move.get('points15_v2'):
         from points15_additions import prepare as prepare_additions
         values = prepare_additions(values)
     profile = [f'Saved points μ <b>{_number(values.get("Points_mu")):.2f}</b>'
                if _number(values.get('Points_mu')) is not None else 'Saved points μ <b>Unavailable</b>']
     environment = []
-    if move.get('points15_v2'):
+    if move.get('points15_v2') or move.get('points15_v3'):
         profile.append(_fact_line('Conf_Points', values.get('Conf_Points'), '>=', 82))
     for field, op, cut in move.get('conditions', []):
         line = _fact_line(field, values.get(field), op, cut)
@@ -1235,6 +1240,10 @@ def _card_quick_summary(role, card):
     elif role == 'Tank':
         values = {**values, **(card.get('points_context') or {})}
         fields = [('Points_mu', 'Points μ', 2), ('Assists_mu', 'Assist μ', 2), ('StarScore', 'Star score', 1)]
+        if (card.get('move') or {}).get('points15_v3'):
+            from points15_iron_cadence import prepare as prepare_iron
+            values=prepare_iron(values)
+            fields=[('Log_L5_TOI_per_game','L5 TOI',1),('Log_L10_PPP_1plus_pct','L10 PPP game %',1),('Trim10_SOG','Trimmed L10 SOG',1)]
     else:
         values = {**values, **(card.get('sog_context') or {})}
         fields = [('TOI_per_game', 'TOI min/g', 1), ('Player_5v5_SOG_Share', '5v5 shot share %', 1), ('Opp_SOG_Against_L10', 'Opp SOG/g', 1)]
@@ -1510,7 +1519,7 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
                     group = next(iter(goal_inspect_groups([fired_move])))
                     goal_record_groups.setdefault(group, []).append(move_row)
                 elif role == 'Tank' and card.get('line') == 1.5:
-                    group = ('V2 · '+fired_move['display_family']) if fired_move.get('points15_v2') else (points15_inspect_group(fired_move) or 'Legacy · Preserved records')
+                    group = 'V3 · Iron Cadence' if fired_move.get('points15_v3') else (('V2 · '+fired_move['display_family']) if fired_move.get('points15_v2') else (points15_inspect_group(fired_move) or 'Legacy · Preserved records'))
                     points_record_groups.setdefault(group, []).append((fired_move,move_row))
                 elif role == 'Support':
                     group=('V2 · '+fired_move['display_family']) if fired_move.get('assist_v2') else 'V2 · Established routes'
@@ -1560,7 +1569,7 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
                 record_label = points_original_caption(move)
             if role == 'Jungle' and sog_return_panel(move):
                 record_label = "V2 MOVE %" if move.get('sog_profile') else "V1 MOVE %"
-            if record_label in {"V1 MOVE %","V2 MOVE %"}:
+            if record_label in {"V1 MOVE %","V2 MOVE %","V3 MOVE %"}:
                 later_note = f'{record_label.split()[0]} MOVE {wins}/{picks}'
             record_html = (f'<div class="wn-record"><strong>{pct:.1f}%</strong><span>{wins}/{picks}</span><em>{record_label}</em></div>'
                            if picks else '<div class="wn-record"><strong>SCOUT</strong><em>NO GOAL ATTACK</em></div>'

@@ -92,6 +92,7 @@ def capture_row(row,*,root=ROOT):
         for m in moves:
             for s in lookup[(market,m['name'],m.get('rule',''))]:
                 if s['line']!=line:continue
+                if s.get('capture_from') and str(row.get('Date',''))[:10]<s['capture_from']:continue
                 if not s.get('legacy') and m.get('kit_version')!=s['kit']:continue
                 result.append(dict(file=s['file'],key=s['key'],market=market,line=line,odds=quote[0],book=quote[1],rule=s['rule'],kit_version=s['kit']))
     for market,fn,line in [('Goal',goals_moves,.5),('Assists',assists_moves,.5),('SOG',sog_moves,2.5)]:
@@ -215,6 +216,7 @@ def refresh(root=ROOT):
                 s=specs.get((tag['file'],tag['key']))
                 if not s:counts['other_kit_tags']+=1;continue
                 if day<=s.get('previous_through',seed['through']):continue
+                if s.get('capture_from') and day<s['capture_from']:continue
                 if tag['rule']!=s['rule'] or tag['kit_version']!=s['kit'] or tag['line']!=s['line']:raise ValueError('Captured rule identity changed')
                 actual=number(r.get(MARKET_ACTUAL[s['market']]))
                 if actual is None:counts['missing_actuals']+=1;continue

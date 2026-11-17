@@ -73,7 +73,7 @@ def points_moves(row):
 
 def display_moves(moves):
     """One visible badge/record per nested family; every rule remains frozen."""
-    if any(move.get('points15_v2') for move in moves):
+    if any(move.get('points15_v2') or move.get('points15_v3') for move in moves):
         from move_return_grades import grade_rank, stable_identity
         selected={}
         def rank(move):
@@ -96,6 +96,9 @@ def display_moves(moves):
 
 def best_move(row):
     moves = [m for m in display_moves(points_moves(row)) if m['kind'] != 'CONTEXT']
+    if any(m.get('points15_v3') for m in moves):
+        from move_return_grades import grade_rank, stable_identity
+        return max(moves,key=lambda m:grade_rank(m) or (0,False,m['wins']/m['picks'],m['picks'],0,stable_identity(m)))
     return max(moves, key=lambda m: (m['wins'] / m['picks'], m['picks'])) if moves else None
 
 def attach_points_moves(frame):
@@ -107,7 +110,7 @@ def attach_points_moves(frame):
     # V2 additions use the same return rank as cards; V1-only rows stay identical.
     from move_return_grades import grade_rank, stable_identity
     for i,moves in enumerate(all_moves):
-        if any(m.get('points15_v2') for m in moves):
+        if any(m.get('points15_v2') or m.get('points15_v3') for m in moves):
             best[i]=max((m for m in moves if m['kind']!='CONTEXT'),
                         key=lambda m:grade_rank(m) or (0,False,m['wins']/m['picks'],m['picks'],0,stable_identity(m)),default=None)
     out['Points_Attack'] = [m['name'] if m else '' for m in best]
@@ -116,10 +119,14 @@ def attach_points_moves(frame):
     out['Points_Sample_BE_Pct'] = [m['sample_book_be_pct'] if m else None for m in best]
     out['Points_Profile_Routes'] = [' · '.join(m['name'] for m in moves if m['kind'] != 'CONTEXT' and m['id'] != 'base77') for moves in all_moves]
     from points15_moves_current import VERSION as VERSION15
-    out['Points_Move_Kit_Version'] = [m['kit_version'] if m and m.get('points15_v2') else VERSION15 if number(row.get('Points_Line')) == 1.5 else VERSION for row,m in zip(records,best)]
+    out['Points_Move_Kit_Version'] = [m['kit_version'] if m and (m.get('points15_v2') or m.get('points15_v3')) else VERSION15 if number(row.get('Points_Line')) == 1.5 else VERSION for row,m in zip(records,best)]
     for field in ['Log_L10_S_per_game','Log_L20_P_per_game','Log_L5_P_per_game','Pace_Gap_P10']:
         out[field] = pd.Series([prepare_row(row).get(field) for row in records], index=out.index, dtype='Float64')
     for field in ['Log_L20_Point2plus_pct', 'Log_L20_PPP_hit_pct', 'Team_PP_xGF_relative_league', 'Opp_PK_xGA_relative_league', 'Opp_5v5_xGA_relative_league']:
         out[field] = pd.Series([prepare_row(row).get(field) for row in records], index=out.index, dtype='Float64')
+    from points15_iron_cadence import prepare as prepare_iron
+    prepared_iron=[prepare_iron(row) if number(row.get('Points_Line'))==1.5 else {} for row in records]
+    for field in ['Log_L5_TOI_per_game','Log_L10_PPP_1plus_pct']:
+        out[field]=pd.Series([row.get(field) for row in prepared_iron],index=out.index,dtype='Float64')
     return out
 
