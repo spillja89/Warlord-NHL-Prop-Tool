@@ -22,8 +22,11 @@ def log_context(row):
         data = json.loads(row['Form_Log']) if isinstance(row.get('Form_Log'), str) else row['Form_Log']
         if not isinstance(data, dict) or data.get('season') != '2026-27':
             return result
+        raw_games = data.get('games')
+        if not isinstance(raw_games, list) or any(not isinstance(g, dict) or not isinstance(g.get('d'), str) for g in raw_games):
+            return result
         before = str(row.get('Date', ''))[:10]
-        games = sorted([g for g in data['games'] if str(g.get('d', '')) < before], key=lambda g: g['d'], reverse=True)[:20]
+        games = sorted([g for g in raw_games if g['d'] < before], key=lambda g: g['d'], reverse=True)[:20]
         if not games:
             return result
         points = [_num(g.get('g')) + _num(g.get('a')) for g in games]
@@ -204,6 +207,7 @@ def attach_points_context(frame, session=None, before_day=None, reports=None, co
     from goal_routes_v2 import attach_context as attach_goal_v2_context
     out = attach_goal_v2_context(out, before, reports, codes or {})
     return out
+
 
 
 

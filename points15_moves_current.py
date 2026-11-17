@@ -27,8 +27,10 @@ def prepare_row(row):
     try:
         log=json.loads(row['Form_Log']) if isinstance(row.get('Form_Log'),str) else row.get('Form_Log')
         if not isinstance(log,dict) or log.get('season')!='2026-27':return result
+        raw_games=log.get('games')
+        if not isinstance(raw_games,list) or any(not isinstance(g,dict) or not isinstance(g.get('d'),str) for g in raw_games):return result
         date=str(row.get('Date',''))[:10]
-        games=sorted([g for g in log['games'] if str(g.get('d',''))<date],key=lambda g:g['d'],reverse=True)
+        games=sorted([g for g in raw_games if g['d']<date],key=lambda g:g['d'],reverse=True)
         if not games or len({g['d'] for g in games})!=len(games):return result
         for window,metric,target in ((10,'s','Log_L10_S_per_game'),(20,'p','Log_L20_P_per_game'),(5,'p','Log_L5_P_per_game')):
             recent=games[:window]

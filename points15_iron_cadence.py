@@ -12,9 +12,11 @@ def prepare(row):
     out=dict(row);out['Log_L5_TOI_per_game']=None;out['Log_L10_PPP_1plus_pct']=None
     try:
         obj=json.loads(row['Form_Log']) if isinstance(row.get('Form_Log'),str) else row['Form_Log']
-        if obj.get('season')!='2026-27':return out
+        if not isinstance(obj,dict) or obj.get('season')!='2026-27':return out
+        raw_games=obj.get('games')
+        if not isinstance(raw_games,list) or any(not isinstance(g,dict) or not isinstance(g.get('d'),str) for g in raw_games):return out
         before=str(row.get('Date',''))[:10]
-        games=sorted([g for g in obj['games'] if str(g.get('d',''))<before],key=lambda g:g['d'],reverse=True)
+        games=sorted([g for g in raw_games if g['d']<before],key=lambda g:g['d'],reverse=True)
         if not games or len({g['d'] for g in games})!=len(games):return out
         times=[]
         for g in games[:5]:

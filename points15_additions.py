@@ -15,7 +15,7 @@ def prepare(row):
     r['Pace_Gap_G10']=None;r['Log_L20_S_median']=None;r['Avg5_SOG']=None
     try:
         log=json.loads(r['Form_Log']) if isinstance(r.get('Form_Log'),str) else r['Form_Log']
-        if isinstance(log,dict) and log.get('season')=='2026-27':
+        if isinstance(log,dict) and log.get('season')=='2026-27' and isinstance(log.get('games'),list) and all(isinstance(g,dict) and isinstance(g.get('d'),str) for g in log['games']):
             games=sorted([g for g in log['games'] if str(g['d'])<str(r['Date'])[:10]],key=lambda g:g['d'],reverse=True)
             if games and len({g['d'] for g in games})==len(games):
                 shots=[number(g.get('s')) for g in games]
