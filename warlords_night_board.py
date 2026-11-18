@@ -319,6 +319,13 @@ def _render_points_facts(card, move):
         alternatives.append('<br>'.join(_fact_line(field, values.get(field), op, cut) for field, op, cut in group))
     if alternatives:
         environment.append('<b>ANY MATCHING PATH</b><br>' + '<br><b>OR</b><br>'.join(alternatives))
+    current_record = points_record_for(move)
+    if current_record and not current_record.get('legacy'):
+        from points_return_monitor import records as points_record_catalog
+        current_catalog = points_record_catalog()
+        move = {**move, 'sample_book_be_pct': current_record['full'].get('be'),
+                'sample_from': current_catalog.get('full_from'),
+                'sample_through': current_catalog.get('full_through')}
     sample = _number(move.get('sample_book_be_pct'))
     sample_note = (f'<div class="wn-assist-sample">MOVE SAMPLE AVG BOOK BE <b>{sample:.1f}%</b> · '
                    f'{_h(move.get("sample_from", ""))} through {_h(move.get("sample_through", ""))}</div>') if sample is not None else ''

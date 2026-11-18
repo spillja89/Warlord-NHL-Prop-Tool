@@ -21,7 +21,11 @@ def combo_parts(move, labels=None):
         parts=[f"{names.get(f,f.replace('_',' '))} {SIGNS.get(op,op)}{cut:g}" for f,op,cut in checks if f!='PPP line']
         return (['Green matrix'] if move.get('points15_v4') else [])+parts
     parts=[]
-    for token in re.split(r'\s+\+\s+',str(move.get('rule') or move.get('condition') or '')):
+    rule=str(move.get('rule') or move.get('condition') or '')
+    if move.get('market')=='Points':
+        rule=re.sub(r'\s*\+\s*',' + ',rule)
+        rule=re.sub(r'(Matrix_\w+?)(Green|Yellow|Red)\b',r'\1 \2',rule)
+    for token in re.split(r'\s+\+\s+',rule):
         token=token.strip()
         if not token:continue
         if re.match(r'^(?:Assist|Assists|Goal|Points|SOG)\s*\d',token):continue # Already beside the posted market.
