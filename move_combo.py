@@ -18,7 +18,8 @@ def combo_parts(move, labels=None):
     names={**(labels or {}),**LABELS}
     checks=move.get('entry',[])+move.get('conditions',[]) if isinstance(move.get('entry'),list) else None
     if checks is not None:
-        return [f"{names.get(f,f.replace('_',' '))} {SIGNS.get(op,op)}{cut:g}" for f,op,cut in checks if f!='PPP line']
+        parts=[f"{names.get(f,f.replace('_',' '))} {SIGNS.get(op,op)}{cut:g}" for f,op,cut in checks if f!='PPP line']
+        return (['Green matrix'] if move.get('points15_v4') else [])+parts
     parts=[]
     for token in re.split(r'\s+\+\s+',str(move.get('rule') or move.get('condition') or '')):
         token=token.strip()
