@@ -28,6 +28,9 @@ def prepare_row(row):
     if number(result.get('Points_Line')) == 1.5:
         from points15_moves_current import prepare_row as prepare15
         result = prepare15(result)
+    if number(row.get('Points_Line')) == .5:
+        from points05_v6 import prepare as prepare6
+        result = prepare6(result)
     return result
 
 def base_eligible(row):
@@ -69,7 +72,8 @@ def points_moves(row):
                       'market': 'Points', 'points_current': True, 'kit_version': VERSION,
                       'record_version': VERSION, 'sample_season': '2026-27',
                       'sample_from': KIT['sample_from'], 'sample_through': KIT['sample_through']})
-    return moves
+    from points05_v6 import moves as moves6
+    return moves + moves6(row)
 
 def display_moves(moves):
     """One visible badge/record per nested family; every rule remains frozen."""
@@ -98,7 +102,7 @@ def best_move(row):
     moves = [m for m in display_moves(points_moves(row)) if m['kind'] != 'CONTEXT']
     if number(row.get('Points_Line'))==.5 or any(m.get('points05_v6') or m.get('points15_v3') or m.get('points15_v4') for m in moves):
         from move_return_grades import grade_rank, stable_identity
-        return max(moves,key=lambda m:grade_rank(m) or (0,False,m['wins']/m['picks'],m['picks'],0,stable_identity(m)))
+        return max(moves,key=lambda m:grade_rank(m) or (0,False,m['wins']/m['picks'],m['picks'],0,stable_identity(m)),default=None)
     return max(moves, key=lambda m: (m['wins'] / m['picks'], m['picks'])) if moves else None
 
 def attach_points_moves(frame):
