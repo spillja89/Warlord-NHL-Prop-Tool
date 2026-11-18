@@ -32,7 +32,7 @@ from goal_card_routes import best_move as goal_best_move, move_rank as goal_move
 from assist_return_monitor import return_panel as assist_return_panel
 from assist_goalie_buff import context as assist_goalie_context, badge_html as assist_goalie_badge
 from assist_goalie_buff import goalie_html as assist_goalie_stats, inspect_html as assist_goalie_details, CSS as ASSIST_GOALIE_CSS
-from points_return_monitor import return_panel as points_return_panel, original_caption as points_original_caption
+from points_return_monitor import return_panel as points_return_panel, original_caption as points_original_caption, display_stats as points_display_stats, record_for as points_record_for
 from points15_card_families import inspect_group as points15_inspect_group, render_family as points15_render_family, condition_note as points15_condition_note
 from special_return_monitor import sog_return_panel
 from move_return_grades import grade_rank, move_grade, grade_badges, stable_identity, GRADE_CSS
@@ -1311,6 +1311,9 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
             if role == 'Support' and move:
                 shown = assist_display_stats(move)
                 wins, picks = shown['hits'], shown['plays']
+            if role == 'Tank' and move:
+                shown = points_display_stats(move)
+                wins, picks = shown['hits'], shown['plays']
             pct = 100 * wins / picks if picks else 0
             late_pct = 100 * late_wins / late_picks if late_picks else 0
             status = (("NO GOAL ATTACK" if role == "Carry" else
@@ -1482,6 +1485,9 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
                 if role == 'Support':
                     shown = assist_display_stats(fired_move)
                     fired_wins, fired_picks = shown['hits'], shown['plays']
+                if role == 'Tank':
+                    shown = points_display_stats(fired_move)
+                    fired_wins, fired_picks = shown['hits'], shown['plays']
                 fired_pct = 100 * fired_wins / fired_picks if fired_picks else 0
                 fired_late_pct = 100 * fired_late_wins / fired_late_picks if fired_late_picks else 0
                 fired_rule = str(fired_move.get("rule", fired_move.get("condition", "")))
@@ -1510,6 +1516,11 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
                     if rec:
                         s = rec['full']
                         later_text = f"Assist V2 · current combined record · sample BE {s['be']:.1f}% · {s['players']} players · {s['dates']} slate dates"
+                if role == 'Tank':
+                    rec = points_record_for(fired_move)
+                    if rec and not rec.get('legacy'):
+                        s=rec['full']
+                        later_text=f"Points V5 · current combined record · BE {s['be']:.1f}% · {s['players']} players · {s['dates']} slate dates"
                 move_row = f'''<div class="wn-move-entry">
                   <div class="wn-move-title"><strong>{_h(fired_move["name"])}</strong>{grade_badges(fired_move)}<em>{_h(fired_label)}</em></div>
                   <div class="wn-move-record">{fired_wins}/{fired_picks} · {fired_pct:.1f}% <span>{later_text}</span></div>
@@ -1541,6 +1552,10 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
             if points_record_groups:
                 for group,entries in points_record_groups.items():
                     family_html = points15_render_family(group, entries, _move_rank)
+                    if not group.startswith('Legacy'):
+                        patch_group='V5 · '+group.split(' · ',1)[-1]
+                        if family_html:family_html=family_html.replace('<summary>'+_h(group),'<summary>'+_h(patch_group),1)
+                        else:group=patch_group
                     if family_html is not None:
                         move_rows.append(family_html)
                         continue
@@ -1575,7 +1590,7 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
                 record_label = points_original_caption(move)
             if role == 'Jungle' and sog_return_panel(move):
                 record_label = "V2 MOVE %" if move.get('sog_profile') else "V1 MOVE %"
-            if record_label in {"V1 MOVE %","V2 MOVE %","V3 MOVE %","V4 MOVE %"}:
+            if record_label in {"V1 MOVE %","V2 MOVE %","V3 MOVE %","V4 MOVE %","V5 MOVE %"}:
                 later_note = f'{record_label.split()[0]} MOVE {wins}/{picks}'
             record_html = (f'<div class="wn-record"><strong>{pct:.1f}%</strong><span>{wins}/{picks}</span><em>{record_label}</em></div>'
                            if picks else '<div class="wn-record"><strong>SCOUT</strong><em>NO GOAL ATTACK</em></div>'

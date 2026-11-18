@@ -110,13 +110,16 @@ def attach_points_moves(frame):
     # V2 additions use the same return rank as cards; V1-only rows stay identical.
     from move_return_grades import grade_rank, stable_identity
     for i,moves in enumerate(all_moves):
-        if any(m.get('points15_v2') or m.get('points15_v3') or m.get('points15_v4') for m in moves):
+        if moves:
             best[i]=max((m for m in moves if m['kind']!='CONTEXT'),
                         key=lambda m:grade_rank(m) or (0,False,m['wins']/m['picks'],m['picks'],0,stable_identity(m)),default=None)
+    from points_return_monitor import display_stats
+    shown=[display_stats(m) if m else None for m in best]
     out['Points_Attack'] = [m['name'] if m else '' for m in best]
-    out['Points_Move_Record'] = [f"{m['wins']}/{m['picks']}" if m else '' for m in best]
-    out['Points_Move_Pct'] = [100 * m['wins'] / m['picks'] if m else None for m in best]
-    out['Points_Sample_BE_Pct'] = [m['sample_book_be_pct'] if m else None for m in best]
+    out['Points_Move_Record'] = [f"{s['hits']}/{s['plays']}" if s else '' for s in shown]
+    out['Points_Move_Pct'] = [100 * s['hits'] / s['plays'] if s and s['plays'] else None for s in shown]
+    out['Points_Sample_BE_Pct'] = [s.get('be') if s else None for s in shown]
+    out['Points_Move_Record_Version']=['V5' if m and not m.get('legacy') else '' for m in best]
     out['Points_Profile_Routes'] = [' · '.join(m['name'] for m in moves if m['kind'] != 'CONTEXT' and m['id'] != 'base77') for moves in all_moves]
     from points15_moves_current import VERSION as VERSION15
     out['Points_Move_Kit_Version'] = [m['kit_version'] if m and (m.get('points15_v2') or m.get('points15_v3') or m.get('points15_v4')) else VERSION15 if number(row.get('Points_Line')) == 1.5 else VERSION for row,m in zip(records,best)]

@@ -25,49 +25,44 @@ def original_caption(move):
     row=record_for(move)
     return (row.get('baseline_label') or 'V1 MOVE %') if row and not row.get('legacy') else ''
 
+def display_stats(move):
+    row=record_for(move)
+    return row['full'] if row and not row.get('legacy') else {'hits':int(move.get('wins',0)), 'plays':int(move.get('picks',0)), 'be':move.get('sample_book_be_pct')}
+
 def return_panel(move, *, compact=True):
     row=record_for(move)
     if row is None:return ''
-    data={**records(),'previous_through':row['previous_through'],'since_from':row['since_from'],
-          'move_version_label':row.get('move_version_label'),'wired_on':row.get('wired_on')}
-    if move.get('points15_v2'):
-        data={**data,'full_from':'2026-10-13','previous_through':'2026-11-13','since_from':'2026-11-14'}
-    if move.get('points15_v3'):
-        data={**data,'full_from':'2026-10-13','previous_through':row['previous_through'],'since_from':row['since_from']}
-    result=render_return_panel(row,data,compact=compact)
-    if move.get('points15_v3'):
-        result=result.replace('vs V1','vs V3')
-        if not compact:
-            if not row['since_check']['plays']:
-                start=result.find('<div class="wn-gr-note">Full record:');end=result.find('</div>',start)
-                if start>=0 and end>=0:
-                    result=result[:start]+'<div class="wn-gr-note">V3 research baseline through Nov 15. Forward tracking begins Nov 17; no new settled plays. Flat 1u at saved pregame prices. Earlier research is not live V3 performance.</div>'+result[end+6:]
-            s=row.get('research_recent',{})
-            if s.get('plays'):
-                result+=('<div class="wn-gr-note">RESEARCH RECENT · Nov 6–15 · '
-                    +f"{s['hits']}/{s['plays']} · {s['hit_rate']:.1f}% · BE {s['be']:.1f}% · gap {s['gap']:+.1f} pp · {s['players']} players · {s['units']:+.2f}u · {s['roi']:+.1f}% ROI. Included in the full research record.</div>")
-
-    if move.get('points15_v2'):
-        result=result.replace('vs V1','vs V2')
-        if not compact and not row['since_check']['plays']:
-            start=result.find('<div class="wn-gr-note">Full record:')
-            end=result.find('</div>',start)
-            if start>=0 and end>=0:
-                result=result[:start]+'<div class="wn-gr-note">V2 research baseline through Nov 13. No new settled plays since wiring Nov 14. Earlier research is not live V2 performance; flat 1u at saved pregame prices.</div>'+result[end+6:]
-    if move.get('points15_v4'):
-        data={**data,'full_from':'2026-10-13','previous_through':row['previous_through'],'since_from':row['since_from']}
-        result=render_return_panel(row,data,compact=compact).replace('vs V1','vs V4')
-        if not compact:
-            if not row['since_check']['plays']:
-                start=result.find('<div class="wn-gr-note">Full record:');end=result.find('</div>',start)
-                if start>=0 and end>=0:
-                    result=result[:start]+'<div class="wn-gr-note">V4 research baseline through Nov 15. Forward tracking begins Nov 18; no new settled plays. Flat 1u at saved pregame prices. Research is not live V4 performance.</div>'+result[end+6:]
-            stats=row.get('research_recent',{})
-            if stats.get('plays'):
-                result+=('<div class="wn-gr-note">RESEARCH RECENT · Nov 6–15 · '+f"{stats['hits']}/{stats['plays']} · {stats['hit_rate']:.1f}% · BE {stats['be']:.1f}% · gap {stats['gap']:+.1f} pp · {stats['players']} players · {stats['units']:+.2f}u · {stats['roi']:+.1f}% ROI. Included in the full research record.</div>")
-    if not compact and row['line']==1.5:
-        result+='<div class="wn-gr-note">'+escape(data['quote_policy15'])+'</div>'
     if row.get('legacy'):
-        result=result.replace('FULL MOVE RECORD','FULL 2026–27 RECORD',1)
-        if not compact:result+='<div class="wn-gr-note">These returns replay the unchanged legacy rule on 2026–27 games. Its separate large historical hit-rate record is from 2025–26.</div>'
+        data={**records(),'previous_through':row['previous_through'],'since_from':row['since_from'],'move_version_label':row.get('move_version_label'),'wired_on':row.get('wired_on')}
+        result=render_return_panel(row,data,compact=compact).replace('FULL MOVE RECORD','FULL 2026–27 RECORD',1)
+        if not compact:
+            result+='<div class="wn-gr-note">'+escape(data['quote_policy15'])+'</div>'
+            result+='<div class="wn-gr-note">These returns replay the unchanged legacy rule on 2026–27 games. Its separate large historical hit-rate record is from 2025–26.</div>'
+        return result
+    from goal_return_monitor import _metric
+    data={**records(),'previous_through':row['previous_through'],'since_from':row['since_from'],'move_version_label':'Moves V5','wired_on':'2026-11-18'}
+    result=render_return_panel(row,data,compact=compact).replace('vs V1','vs V5').replace('SINCE CHECK %','SINCE V5 CHECK %')
+    # Retain the same already-observed health window, including a losing trend.
+    health={**row,'previous':row['health_previous'],'since_check':row['health_since_check']}
+    health_html=render_return_panel(health,data,compact=True)
+    marker=health_html.find('<div class="wn-gr-change ')
+    if marker>=0:
+        health_html=health_html[marker:].removesuffix('</div>').replace('vs V1','vs prior baseline')
+        stats=row['health_since_check']
+        if stats['plays']:
+            result+='<div class="wn-gr-note"><b>RETAINED HEALTH · '+escape(row['health_since_from'])+' onward · '+f"{stats['hits']}/{stats['plays']} · {stats['roi']:+.1f}% ROI"+'</b>'+health_html+'</div>'
+    if not compact:
+        start=result.find('<div class="wn-gr-note">Full record:');end=result.find('</div>',start)
+        note='V5 combined baseline through Nov 16; patch wired Nov 18. Since-check starts Nov 17, the first date outside that baseline; it is not all live V5 performance. Earlier appearances are already included, never added twice. Flat 1u at saved pregame prices.'
+        if start>=0 and end>=0:result=result[:start]+'<div class="wn-gr-note">'+note+'</div>'+result[end+6:]
+        for old in row.get('archived_versions',[]):
+            label=old.get('move_version_label') or 'Previous version'
+            result+='<details class="wn-details"><summary>Archived '+escape(label)+' · original &amp; prior check</summary><div class="wn-goal-returns">'
+            for title,key in [('ORIGINAL RECORD','previous'),('PRIOR SINCE CHECK','since_check'),('COMBINED AT V5 START','full')]:
+                result+='<div class="wn-gr-box"><small>'+title+'</small>'+_metric(old[key])+'</div>'
+            result+='<div class="wn-gr-note">Already included in V5; these are not additional bets.</div></div></details>'
+            recent=old.get('research_recent') or {}
+            if recent.get('plays'):
+                result+='<div class="wn-gr-note">PRIOR RESEARCH RECENT · Nov 6–15 · '+f"{recent['hits']}/{recent['plays']} · {recent['hit_rate']:.1f}% · BE {recent['be']:.1f}% · {recent['players']} players · {recent['units']:+.2f}u · {recent['roi']:+.1f}% ROI"+'. Included in the baseline; not additional plays.</div>'
+        if row['line']==1.5:result+='<div class="wn-gr-note">'+escape(data['quote_policy15'])+'</div>'
     return result

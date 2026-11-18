@@ -830,7 +830,8 @@ def _priced_pool_table(cards: list[dict]) -> pd.DataFrame:
             move = points_tier
         elif card.get('move') is not None:
             move = card['move']
-        shown_assist = assist_display_stats(move) if move and card.get('market') == 'Assists' else None
+        from points_return_monitor import display_stats as points_display_stats
+        shown_assist = (points_display_stats(move) if card.get('market')=='Points' else assist_display_stats(move) if card.get('market')=='Assists' else None) if move else None
         performance = move_grade(move)
         featured = bool(card.get("baseline_rule") and (qualified or points_tier))
         row = {
@@ -1230,9 +1231,11 @@ def _probe_points_best(r: dict) -> dict | None:
     move = best_move(_points_display_moves(r))
     if move is None:
         return None
-    win = 100.0 * move["wins"] / move["picks"]
-    return {"title": move["name"], "win": win, "n": move["picks"],
-            "adj": _adj_win(win, move["picks"], k=20)}
+    from points_return_monitor import display_stats
+    shown=display_stats(move)
+    win = 100.0 * shown["hits"] / shown["plays"]
+    return {"title": move["name"], "win": win, "n": shown["plays"],
+            "adj": _adj_win(win, shown["plays"], k=20)}
 
 
 def _probe_assists_best(r: dict) -> dict | None:
@@ -5358,7 +5361,7 @@ if page == "⚔️ Warlords of the Night":
         st.info(f"{priced_total} priced prop entries. No named attack fires for this slate; see the complete slate below.")
 
     if points_tier_cards:
-        st.caption("Points 0.5 · November 5 kit; Points 1.5 · November 6 approved profile kit, records through Nov 5. Cards and tracker use each line’s own dated records and rules. Broader profiles remain eligible when matchup context is unavailable.")
+        st.caption("Points V5 · combined records through Nov 16 · patch wired Nov 18. Both lines retain their existing rules; original records remain in Inspect.")
 
     with st.expander(f"Complete priced slate · {priced_total} prop entries", expanded=True):
         st.caption("Every player's displayed priced prop appears here. Book break-even % comes from the displayed odds; Move % and Later % are historical results for the named rule, not forecasts. Active roster players without model history are marked odds only and have no tested move. NHL roster membership does not confirm tonight's dressed lineup.")
@@ -5723,7 +5726,7 @@ elif page == "Scout Board":
 elif page == "Points":
 
     _render_class_header("POINTS", df_f)
-    st.caption("Points0.5 · November5 kit. Points1.5 · November6 Iron March upgrades · records through November5. Monitor-only rules remain off cards.")
+    st.caption("Points V5 · combined records lead cards and tracker · original versions in Inspect · move rules unchanged. Monitor-only rules remain off cards.")
 
     from points15_moves_current import quote_rows as _points15_quote_rows
     df_p = attach_points_moves(_points15_quote_rows(df_f))
@@ -5764,7 +5767,7 @@ elif page == "Points":
         "Points_Primary_Source",
 
         # --- SIGNALS ---
-        "Points_Attack","Points_Move_Record","Points_Move_Pct","Points_Sample_BE_Pct",
+        "Points_Attack","Points_Move_Record_Version","Points_Move_Record","Points_Move_Pct","Points_Sample_BE_Pct",
         "Points_Profile_Routes","Conf_Points","Conf_Points_Move","Matrix_Points",
         "Log_L10_S_per_game","Pace_Gap_P10","Goalie_GSAA_per_game","NHL_Team_Rest_days","NHL_Opp_PK_Seconds_per_opportunity","Log_L20_P_per_game","Log_L5_P_per_game","StarScore","TalentMult","EV5_TOI_per_game",
         "Log_L20_Point2plus_pct","Log_L20_PPP_hit_pct","PP_TOI_per_game",
