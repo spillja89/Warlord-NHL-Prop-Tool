@@ -73,7 +73,7 @@ def points_moves(row):
 
 def display_moves(moves):
     """One visible badge/record per nested family; every rule remains frozen."""
-    if any(move.get('points15_v2') or move.get('points15_v3') or move.get('points15_v4') for move in moves):
+    if any(move.get('kit_version')==VERSION or move.get('points05_v6') or move.get('points15_v2') or move.get('points15_v3') or move.get('points15_v4') for move in moves):
         from move_return_grades import grade_rank, stable_identity
         selected={}
         def rank(move):
@@ -96,7 +96,7 @@ def display_moves(moves):
 
 def best_move(row):
     moves = [m for m in display_moves(points_moves(row)) if m['kind'] != 'CONTEXT']
-    if any(m.get('points15_v3') or m.get('points15_v4') for m in moves):
+    if number(row.get('Points_Line'))==.5 or any(m.get('points05_v6') or m.get('points15_v3') or m.get('points15_v4') for m in moves):
         from move_return_grades import grade_rank, stable_identity
         return max(moves,key=lambda m:grade_rank(m) or (0,False,m['wins']/m['picks'],m['picks'],0,stable_identity(m)))
     return max(moves, key=lambda m: (m['wins'] / m['picks'], m['picks'])) if moves else None
@@ -119,7 +119,7 @@ def attach_points_moves(frame):
     out['Points_Move_Record'] = [f"{s['hits']}/{s['plays']}" if s else '' for s in shown]
     out['Points_Move_Pct'] = [100 * s['hits'] / s['plays'] if s and s['plays'] else None for s in shown]
     out['Points_Sample_BE_Pct'] = [s.get('be') if s else None for s in shown]
-    out['Points_Move_Record_Version']=['V5' if m and not m.get('legacy') else '' for m in best]
+    out['Points_Move_Record_Version']=[('V6' if number(row.get('Points_Line'))==.5 else 'V5') if m and not m.get('legacy') else '' for row,m in zip(records,best)]
     out['Points_Profile_Routes'] = [' · '.join(m['name'] for m in moves if m['kind'] != 'CONTEXT' and m['id'] != 'base77') for moves in all_moves]
     from points15_moves_current import VERSION as VERSION15
     out['Points_Move_Kit_Version'] = [m['kit_version'] if m and (m.get('points15_v2') or m.get('points15_v3') or m.get('points15_v4')) else VERSION15 if number(row.get('Points_Line')) == 1.5 else VERSION for row,m in zip(records,best)]
@@ -135,5 +135,9 @@ def attach_points_moves(frame):
     prepared_backbone=[prepare_backbone(row) if number(row.get('Points_Line'))==1.5 else {} for row in records]
     for field in ['Goalie_GSAA_per_game','NHL_Team_Rest_days']:
         out[field]=pd.Series([row.get(field) for row in prepared_backbone],index=out.index,dtype='Float64')
+    from points05_v6 import OWNED
+    prepared6=[prepare_row(row) if number(row.get('Points_Line'))==.5 else {} for row in records]
+    for field in OWNED:
+        out[field]=pd.Series([r.get(field) for r in prepared6],index=out.index,dtype='Float64')
     return out
 

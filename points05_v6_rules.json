@@ -1,0 +1,1139 @@
+{
+  "version": "points05-v6-2026-11-18",
+  "entry": "Points0.5+Matrix_PointsGreen+Conf_Points>=77",
+  "sample_from": "2026-10-13",
+  "sample_through": "2026-11-16",
+  "moves": [
+    {
+      "id": "profile_00",
+      "name": "Iron Vanguard I",
+      "family": "v6_iron_vanguard",
+      "display_family": "Iron Vanguard",
+      "conditions": [
+        [
+          "PP_TOI_per_game",
+          ">=",
+          3.05
+        ]
+      ],
+      "kind": "ATTACK",
+      "level": 0,
+      "suppress_badge": false,
+      "icon": "PTS05_HAMMER_FISTS.svg",
+      "wins": 258,
+      "picks": 368,
+      "sample_book_be_pct": 61.853082129000654,
+      "sample_players": 61,
+      "sample_dates": 33
+    },
+    {
+      "id": "profile_01",
+      "name": "Iron Vanguard II",
+      "family": "v6_iron_vanguard",
+      "display_family": "Iron Vanguard",
+      "conditions": [
+        [
+          "PP_TOI_per_game",
+          ">=",
+          4.0
+        ]
+      ],
+      "kind": "HEAVY",
+      "level": 1,
+      "suppress_badge": false,
+      "icon": "PTS05_HAMMER_FISTS.svg",
+      "wins": 63,
+      "picks": 81,
+      "sample_book_be_pct": 61.24177145912635,
+      "sample_players": 22,
+      "sample_dates": 25
+    },
+    {
+      "id": "profile_02",
+      "name": "Runeforged Bulwark",
+      "family": "v6_runeforged_bulwark",
+      "display_family": "Runeforged Bulwark",
+      "conditions": [
+        [
+          "Player_L20_PPP_fraction_pct",
+          ">=",
+          28
+        ]
+      ],
+      "kind": "ATTACK",
+      "level": 2,
+      "suppress_badge": false,
+      "icon": "PTS05_HAMMER_FISTS.svg",
+      "wins": 207,
+      "picks": 292,
+      "sample_book_be_pct": 61.13675371833952,
+      "sample_players": 62,
+      "sample_dates": 33
+    },
+    {
+      "id": "profile_03",
+      "name": "Runic Guard · Initiate",
+      "family": "v6_runic_guard",
+      "display_family": "Runic Guard",
+      "conditions": [
+        [
+          "Assist_Dagger",
+          ">=",
+          74
+        ]
+      ],
+      "kind": "ATTACK",
+      "level": 3,
+      "suppress_badge": true,
+      "icon": "PTS05_HAMMER_FISTS.svg",
+      "wins": 201,
+      "picks": 286,
+      "sample_book_be_pct": 62.158879271478824,
+      "sample_players": 61,
+      "sample_dates": 31
+    },
+    {
+      "id": "profile_04",
+      "name": "Runic Guard I",
+      "family": "v6_runic_guard",
+      "display_family": "Runic Guard",
+      "conditions": [
+        [
+          "Assist_Dagger",
+          ">=",
+          85
+        ]
+      ],
+      "kind": "HEAVY",
+      "level": 4,
+      "suppress_badge": false,
+      "icon": "PTS05_HAMMER_FISTS.svg",
+      "wins": 82,
+      "picks": 109,
+      "sample_book_be_pct": 62.14443120259707,
+      "sample_players": 34,
+      "sample_dates": 27
+    },
+    {
+      "id": "profile_05",
+      "name": "Runic Guard II",
+      "family": "v6_runic_guard",
+      "display_family": "Runic Guard",
+      "conditions": [
+        [
+          "Assist_Dagger",
+          ">=",
+          90
+        ]
+      ],
+      "kind": "HEAVY",
+      "level": 5,
+      "suppress_badge": false,
+      "icon": "PTS05_HAMMER_FISTS.svg",
+      "wins": 35,
+      "picks": 43,
+      "sample_book_be_pct": 61.96589658892826,
+      "sample_players": 13,
+      "sample_dates": 20
+    },
+    {
+      "id": "profile_06",
+      "name": "Titan’s Rhythm I",
+      "family": "v6_titans_rhythm",
+      "display_family": "Titan’s Rhythm",
+      "conditions": [
+        [
+          "Player_L10_TOI_sd",
+          ">=",
+          2.4
+        ]
+      ],
+      "kind": "ATTACK",
+      "level": 6,
+      "suppress_badge": false,
+      "icon": "PTS05_HAMMER_FISTS.svg",
+      "wins": 87,
+      "picks": 116,
+      "sample_book_be_pct": 60.755809423003065,
+      "sample_players": 34,
+      "sample_dates": 29
+    },
+    {
+      "id": "profile_07",
+      "name": "Titan’s Rhythm II",
+      "family": "v6_titans_rhythm",
+      "display_family": "Titan’s Rhythm",
+      "conditions": [
+        [
+          "Player_L10_TOI_sd",
+          ">=",
+          2.7
+        ]
+      ],
+      "kind": "HEAVY",
+      "level": 7,
+      "suppress_badge": false,
+      "icon": "PTS05_HAMMER_FISTS.svg",
+      "wins": 53,
+      "picks": 63,
+      "sample_book_be_pct": 62.102220486505736,
+      "sample_players": 23,
+      "sample_dates": 26
+    },
+    {
+      "id": "profile_08",
+      "name": "Gaia’s Covenant",
+      "family": "v6_gaias_covenant",
+      "display_family": "Gaia’s Covenant",
+      "conditions": [
+        [
+          "Assists_mu",
+          ">=",
+          1.52
+        ]
+      ],
+      "kind": "ATTACK",
+      "level": 8,
+      "suppress_badge": false,
+      "icon": "PTS05_HAMMER_FISTS.svg",
+      "wins": 52,
+      "picks": 62,
+      "sample_book_be_pct": 64.35612772196252,
+      "sample_players": 16,
+      "sample_dates": 26
+    },
+    {
+      "id": "profile_09",
+      "name": "Runic Reservoir I",
+      "family": "v6_runic_reservoir",
+      "display_family": "Runic Reservoir",
+      "conditions": [
+        [
+          "Player_L20_PPP_per60",
+          ">=",
+          0.85
+        ]
+      ],
+      "kind": "ATTACK",
+      "level": 9,
+      "suppress_badge": true,
+      "icon": "PTS05_HAMMER_FISTS.svg",
+      "wins": 200,
+      "picks": 283,
+      "sample_book_be_pct": 61.92102148087601,
+      "sample_players": 59,
+      "sample_dates": 33
+    },
+    {
+      "id": "profile_10",
+      "name": "Runic Reservoir II",
+      "family": "v6_runic_reservoir",
+      "display_family": "Runic Reservoir",
+      "conditions": [
+        [
+          "Player_L20_PPP_per60",
+          ">=",
+          1.8
+        ]
+      ],
+      "kind": "HEAVY",
+      "level": 10,
+      "suppress_badge": false,
+      "icon": "PTS05_HAMMER_FISTS.svg",
+      "wins": 41,
+      "picks": 51,
+      "sample_book_be_pct": 64.1536795218889,
+      "sample_players": 20,
+      "sample_dates": 22
+    },
+    {
+      "id": "profile_11",
+      "name": "Runic Reservoir III",
+      "family": "v6_runic_reservoir",
+      "display_family": "Runic Reservoir",
+      "conditions": [
+        [
+          "Player_L20_PPP_per60",
+          ">=",
+          2.1
+        ]
+      ],
+      "kind": "HEAVY",
+      "level": 11,
+      "suppress_badge": false,
+      "icon": "PTS05_HAMMER_FISTS.svg",
+      "wins": 29,
+      "picks": 32,
+      "sample_book_be_pct": 66.22587718501433,
+      "sample_players": 8,
+      "sample_dates": 19
+    },
+    {
+      "id": "profile_12",
+      "name": "Siegebreaker’s Focus I",
+      "family": "v6_siegebreakers_focus",
+      "display_family": "Siegebreaker’s Focus",
+      "conditions": [
+        [
+          "Current_SOG_Profile",
+          ">=",
+          78
+        ]
+      ],
+      "kind": "ATTACK",
+      "level": 12,
+      "suppress_badge": false,
+      "icon": "PTS05_HAMMER_FISTS.svg",
+      "wins": 81,
+      "picks": 111,
+      "sample_book_be_pct": 59.577611997365,
+      "sample_players": 32,
+      "sample_dates": 31
+    },
+    {
+      "id": "profile_13",
+      "name": "Siegebreaker’s Focus II",
+      "family": "v6_siegebreakers_focus",
+      "display_family": "Siegebreaker’s Focus",
+      "conditions": [
+        [
+          "Current_SOG_Profile",
+          ">=",
+          80
+        ]
+      ],
+      "kind": "HEAVY",
+      "level": 13,
+      "suppress_badge": false,
+      "icon": "PTS05_HAMMER_FISTS.svg",
+      "wins": 46,
+      "picks": 57,
+      "sample_book_be_pct": 59.895578706411946,
+      "sample_players": 25,
+      "sample_dates": 27
+    },
+    {
+      "id": "profile_14",
+      "name": "Siegebreaker’s Focus III",
+      "family": "v6_siegebreakers_focus",
+      "display_family": "Siegebreaker’s Focus",
+      "conditions": [
+        [
+          "Current_SOG_Profile",
+          ">=",
+          82
+        ]
+      ],
+      "kind": "HEAVY",
+      "level": 14,
+      "suppress_badge": false,
+      "icon": "PTS05_HAMMER_FISTS.svg",
+      "wins": 27,
+      "picks": 30,
+      "sample_book_be_pct": 61.048942964749465,
+      "sample_players": 14,
+      "sample_dates": 20
+    },
+    {
+      "id": "vol1",
+      "name": "Iron Vanguard · Runic Bond",
+      "family": "v6_iron_vanguard",
+      "display_family": "Iron Vanguard",
+      "conditions": [
+        [
+          "PP_TOI_per_game",
+          ">=",
+          3.05
+        ],
+        [
+          "Player_L20_PPP_fraction_pct",
+          ">=",
+          29
+        ]
+      ],
+      "kind": "SPECIAL",
+      "level": 35,
+      "icon": "PTS05_WAR_HAMMER.svg",
+      "wins": 186,
+      "picks": 249,
+      "sample_book_be_pct": 61.65821223882261,
+      "sample_players": 52,
+      "sample_dates": 31
+    },
+    {
+      "id": "vol2",
+      "name": "Runeforged Bulwark · Iron Advance",
+      "family": "v6_runeforged_bulwark",
+      "display_family": "Runeforged Bulwark",
+      "conditions": [
+        [
+          "Player_L20_PPP_fraction_pct",
+          ">=",
+          28
+        ],
+        [
+          "PP_TOI_per_game",
+          ">=",
+          3.35
+        ]
+      ],
+      "kind": "SPECIAL",
+      "level": 36,
+      "icon": "PTS05_WAR_HAMMER.svg",
+      "wins": 161,
+      "picks": 211,
+      "sample_book_be_pct": 61.78353274597805,
+      "sample_players": 44,
+      "sample_dates": 29
+    },
+    {
+      "id": "vol3",
+      "name": "Titan’s Rhythm · Power Channel",
+      "family": "v6_titans_rhythm",
+      "display_family": "Titan’s Rhythm",
+      "conditions": [
+        [
+          "Player_L10_TOI_sd",
+          ">=",
+          2.4
+        ],
+        [
+          "PP_ActualPoints60",
+          ">=",
+          3.3
+        ]
+      ],
+      "kind": "SPECIAL",
+      "level": 37,
+      "icon": "PTS05_WAR_HAMMER.svg",
+      "wins": 79,
+      "picks": 99,
+      "sample_book_be_pct": 61.27521357495212,
+      "sample_players": 27,
+      "sample_dates": 25
+    },
+    {
+      "id": "bal1",
+      "name": "Runeforged Bulwark · Measured Might",
+      "family": "v6_runeforged_bulwark",
+      "display_family": "Runeforged Bulwark",
+      "conditions": [
+        [
+          "Player_L20_PPP_fraction_pct",
+          ">=",
+          28
+        ],
+        [
+          "PP_Points60",
+          "<=",
+          4.45
+        ]
+      ],
+      "kind": "SPECIAL",
+      "level": 38,
+      "icon": "PTS05_WAR_HAMMER.svg",
+      "wins": 58,
+      "picks": 68,
+      "sample_book_be_pct": 61.81878974015208,
+      "sample_players": 30,
+      "sample_dates": 20
+    },
+    {
+      "id": "bal2",
+      "name": "Titan’s Rhythm · Guardian’s Resolve",
+      "family": "v6_titans_rhythm",
+      "display_family": "Titan’s Rhythm",
+      "conditions": [
+        [
+          "Player_L10_TOI_sd",
+          ">=",
+          2.7
+        ],
+        [
+          "Goal_mu",
+          "<=",
+          0.41
+        ]
+      ],
+      "kind": "SPECIAL",
+      "level": 39,
+      "icon": "PTS05_WAR_HAMMER.svg",
+      "wins": 51,
+      "picks": 57,
+      "sample_book_be_pct": 62.07227599041082,
+      "sample_players": 20,
+      "sample_dates": 25
+    },
+    {
+      "id": "bal3",
+      "name": "Siegebreaker’s Focus · Steel Volley",
+      "family": "v6_siegebreakers_focus",
+      "display_family": "Siegebreaker’s Focus",
+      "conditions": [
+        [
+          "Current_SOG_Profile",
+          ">=",
+          78
+        ],
+        [
+          "L10_S",
+          ">=",
+          15
+        ]
+      ],
+      "kind": "SPECIAL",
+      "level": 40,
+      "icon": "PTS05_WAR_HAMMER.svg",
+      "wins": 66,
+      "picks": 85,
+      "sample_book_be_pct": 61.09110251499359,
+      "sample_players": 23,
+      "sample_dates": 29
+    },
+    {
+      "id": "hit1",
+      "name": "Iron Vanguard · Last Stand",
+      "family": "v6_iron_vanguard",
+      "display_family": "Iron Vanguard",
+      "conditions": [
+        [
+          "PP_TOI_per_game",
+          ">=",
+          4.0
+        ],
+        [
+          "Player_L5_P_2plus_pct",
+          "<=",
+          20
+        ]
+      ],
+      "kind": "SPECIAL",
+      "level": 41,
+      "icon": "PTS05_WAR_HAMMER.svg",
+      "wins": 32,
+      "picks": 34,
+      "sample_book_be_pct": 60.499185289426165,
+      "sample_players": 11,
+      "sample_dates": 17
+    },
+    {
+      "id": "hit2",
+      "name": "Runic Guard · Forward Bastion",
+      "family": "v6_runic_guard",
+      "display_family": "Runic Guard",
+      "conditions": [
+        [
+          "Assist_Dagger",
+          ">=",
+          85
+        ],
+        [
+          "EV5_OZS_Pct",
+          ">=",
+          59
+        ]
+      ],
+      "kind": "SPECIAL",
+      "level": 42,
+      "icon": "PTS05_WAR_HAMMER.svg",
+      "wins": 37,
+      "picks": 40,
+      "sample_book_be_pct": 64.49022544155991,
+      "sample_players": 18,
+      "sample_dates": 16
+    },
+    {
+      "id": "hit3",
+      "name": "Siegebreaker’s Focus · Rune Reprisal",
+      "family": "v6_siegebreakers_focus",
+      "display_family": "Siegebreaker’s Focus",
+      "conditions": [
+        [
+          "Current_SOG_Profile",
+          ">=",
+          80
+        ],
+        [
+          "Player_Pace_Gap_A10",
+          ">=",
+          0.94
+        ]
+      ],
+      "kind": "SPECIAL",
+      "level": 43,
+      "icon": "PTS05_WAR_HAMMER.svg",
+      "wins": 30,
+      "picks": 31,
+      "sample_book_be_pct": 60.920292585635856,
+      "sample_players": 16,
+      "sample_dates": 17
+    },
+    {
+      "id": "combo1",
+      "name": "Iron Vanguard · Guardian’s Oath",
+      "family": "v6_iron_vanguard",
+      "display_family": "Iron Vanguard",
+      "conditions": [
+        [
+          "PP_TOI_per_game",
+          ">=",
+          3.05
+        ],
+        [
+          "Player_L20_PPP_fraction_pct",
+          ">=",
+          29
+        ],
+        [
+          "Player_L20_G_total",
+          "<=",
+          5
+        ]
+      ],
+      "kind": "SPECIAL",
+      "level": 44,
+      "icon": "PTS05_WAR_HAMMER.svg",
+      "wins": 130,
+      "picks": 162,
+      "sample_book_be_pct": 60.274601684414286,
+      "sample_players": 34,
+      "sample_dates": 30
+    },
+    {
+      "id": "combo2",
+      "name": "Runeforged Bulwark · Tempered Might",
+      "family": "v6_runeforged_bulwark",
+      "display_family": "Runeforged Bulwark",
+      "conditions": [
+        [
+          "Player_L20_PPP_fraction_pct",
+          ">=",
+          28
+        ],
+        [
+          "PP_TOI_per_game",
+          ">=",
+          3.35
+        ],
+        [
+          "StarScore",
+          "<=",
+          91.8
+        ]
+      ],
+      "kind": "SPECIAL",
+      "level": 45,
+      "icon": "PTS05_WAR_HAMMER.svg",
+      "wins": 121,
+      "picks": 149,
+      "sample_book_be_pct": 61.415052417585976,
+      "sample_players": 34,
+      "sample_dates": 28
+    },
+    {
+      "id": "combo3",
+      "name": "Iron Vanguard · Runebreaker",
+      "family": "v6_iron_vanguard",
+      "display_family": "Iron Vanguard",
+      "conditions": [
+        [
+          "PP_TOI_per_game",
+          ">=",
+          3.05
+        ],
+        [
+          "Player_L20_PPP_fraction_pct",
+          ">=",
+          29
+        ],
+        [
+          "PP_Points60",
+          "<=",
+          4.3
+        ]
+      ],
+      "kind": "SPECIAL",
+      "level": 46,
+      "icon": "PTS05_WAR_HAMMER.svg",
+      "wins": 37,
+      "picks": 40,
+      "sample_book_be_pct": 61.71316596122008,
+      "sample_players": 22,
+      "sample_dates": 16
+    }
+  ],
+  "goalie_tracking": [
+    {
+      "id": "aegis_available_gbase77",
+      "name": "Shattered Aegis · Hammer Fists · Current Profile · comparable parent",
+      "family": "aegis_context",
+      "display_family": "Shattered Aegis",
+      "conditions": [],
+      "kind": "CONTEXT",
+      "suppress_badge": true,
+      "level": 0,
+      "wins": 164,
+      "picks": 245,
+      "sample_book_be_pct": 60.77675522887464,
+      "sample_players": 66,
+      "sample_dates": 30,
+      "rule": "Points0.5+Matrix_PointsGreen+Conf_Points>=77 + matched_confirmed_current_season_goalie"
+    },
+    {
+      "id": "aegis_buff_gbase77",
+      "name": "Shattered Aegis · Hammer Fists · Current Profile · buff",
+      "family": "aegis_context",
+      "display_family": "Shattered Aegis",
+      "conditions": [
+        [
+          "Opp_GAA",
+          ">=",
+          2.95
+        ]
+      ],
+      "kind": "CONTEXT",
+      "suppress_badge": true,
+      "level": 0,
+      "wins": 76,
+      "picks": 105,
+      "sample_book_be_pct": 59.80035323419229,
+      "sample_players": 56,
+      "sample_dates": 26,
+      "rule": "Points0.5+Matrix_PointsGreen+Conf_Points>=77 + Opp_GAA >= 2.95 + matched_confirmed_current_season_goalie"
+    },
+    {
+      "id": "aegis_available_gp00",
+      "name": "Shattered Aegis · Iron Vanguard I · comparable parent",
+      "family": "aegis_context",
+      "display_family": "Shattered Aegis",
+      "conditions": [
+        [
+          "PP_TOI_per_game",
+          ">=",
+          3.05
+        ]
+      ],
+      "kind": "CONTEXT",
+      "suppress_badge": true,
+      "level": 0,
+      "wins": 151,
+      "picks": 218,
+      "sample_book_be_pct": 62.02520038134849,
+      "sample_players": 54,
+      "sample_dates": 30,
+      "rule": "Points0.5+Matrix_PointsGreen+Conf_Points>=77 + PP_TOI_per_game >= 3.05 + matched_confirmed_current_season_goalie"
+    },
+    {
+      "id": "aegis_buff_gp00",
+      "name": "Shattered Aegis · Iron Vanguard I · buff",
+      "family": "aegis_context",
+      "display_family": "Shattered Aegis",
+      "conditions": [
+        [
+          "PP_TOI_per_game",
+          ">=",
+          3.05
+        ],
+        [
+          "Opp_GAA",
+          ">=",
+          2.95
+        ]
+      ],
+      "kind": "CONTEXT",
+      "suppress_badge": true,
+      "level": 0,
+      "wins": 69,
+      "picks": 93,
+      "sample_book_be_pct": 61.772909633412205,
+      "sample_players": 48,
+      "sample_dates": 25,
+      "rule": "Points0.5+Matrix_PointsGreen+Conf_Points>=77 + PP_TOI_per_game >= 3.05 + Opp_GAA >= 2.95 + matched_confirmed_current_season_goalie"
+    },
+    {
+      "id": "aegis_available_gp02",
+      "name": "Shattered Aegis · Runeforged Bulwark · comparable parent",
+      "family": "aegis_context",
+      "display_family": "Shattered Aegis",
+      "conditions": [
+        [
+          "Player_L20_PPP_fraction_pct",
+          ">=",
+          28
+        ]
+      ],
+      "kind": "CONTEXT",
+      "suppress_badge": true,
+      "level": 0,
+      "wins": 122,
+      "picks": 171,
+      "sample_book_be_pct": 61.56715354836864,
+      "sample_players": 51,
+      "sample_dates": 28,
+      "rule": "Points0.5+Matrix_PointsGreen+Conf_Points>=77 + Player_L20_PPP_fraction_pct >= 28 + matched_confirmed_current_season_goalie"
+    },
+    {
+      "id": "aegis_buff_gp02",
+      "name": "Shattered Aegis · Runeforged Bulwark · buff",
+      "family": "aegis_context",
+      "display_family": "Shattered Aegis",
+      "conditions": [
+        [
+          "Player_L20_PPP_fraction_pct",
+          ">=",
+          28
+        ],
+        [
+          "Opp_GAA",
+          ">=",
+          2.95
+        ]
+      ],
+      "kind": "CONTEXT",
+      "suppress_badge": true,
+      "level": 0,
+      "wins": 54,
+      "picks": 68,
+      "sample_book_be_pct": 60.966486860936755,
+      "sample_players": 39,
+      "sample_dates": 21,
+      "rule": "Points0.5+Matrix_PointsGreen+Conf_Points>=77 + Player_L20_PPP_fraction_pct >= 28 + Opp_GAA >= 2.95 + matched_confirmed_current_season_goalie"
+    },
+    {
+      "id": "aegis_available_gp12",
+      "name": "Shattered Aegis · Siegebreaker’s Focus I · comparable parent",
+      "family": "aegis_context",
+      "display_family": "Shattered Aegis",
+      "conditions": [
+        [
+          "Current_SOG_Profile",
+          ">=",
+          78
+        ]
+      ],
+      "kind": "CONTEXT",
+      "suppress_badge": true,
+      "level": 0,
+      "wins": 41,
+      "picks": 55,
+      "sample_book_be_pct": 60.32972317375138,
+      "sample_players": 22,
+      "sample_dates": 24,
+      "rule": "Points0.5+Matrix_PointsGreen+Conf_Points>=77 + Current_SOG_Profile >= 78 + matched_confirmed_current_season_goalie"
+    },
+    {
+      "id": "aegis_buff_gp12",
+      "name": "Shattered Aegis · Siegebreaker’s Focus I · buff",
+      "family": "aegis_context",
+      "display_family": "Shattered Aegis",
+      "conditions": [
+        [
+          "Current_SOG_Profile",
+          ">=",
+          78
+        ],
+        [
+          "Opp_GAA",
+          ">=",
+          2.95
+        ]
+      ],
+      "kind": "CONTEXT",
+      "suppress_badge": true,
+      "level": 0,
+      "wins": 26,
+      "picks": 32,
+      "sample_book_be_pct": 59.36475116542539,
+      "sample_players": 17,
+      "sample_dates": 21,
+      "rule": "Points0.5+Matrix_PointsGreen+Conf_Points>=77 + Current_SOG_Profile >= 78 + Opp_GAA >= 2.95 + matched_confirmed_current_season_goalie"
+    }
+  ],
+  "goalie_buff": {
+    "name": "Shattered Aegis",
+    "records": [
+      {
+        "root_name": "Hammer Fists · Current Profile",
+        "root_conditions": [],
+        "available_parent": {
+          "full": {
+            "hits": 164,
+            "plays": 245,
+            "hit_rate": 66.93877551020408,
+            "be": 60.77675522887464,
+            "gap": 6.16202028132944,
+            "units": 25.926272916164347,
+            "roi": 10.582152210679325,
+            "players": 66,
+            "dates": 30,
+            "games": 127,
+            "teams": 28,
+            "opponents": 31
+          },
+          "recent": {
+            "hits": 73,
+            "plays": 112,
+            "hit_rate": 65.17857142857143,
+            "be": 61.396689531017536,
+            "gap": 3.7818818975538946,
+            "units": 5.857053257072657,
+            "roi": 5.229511836672016,
+            "players": 48,
+            "dates": 12,
+            "games": 53,
+            "teams": 23,
+            "opponents": 28
+          }
+        },
+        "record": {
+          "full": {
+            "hits": 76,
+            "plays": 105,
+            "hit_rate": 72.38095238095238,
+            "be": 59.80035323419229,
+            "gap": 12.580599146760086,
+            "units": 21.76952370132365,
+            "roi": 20.732879715546336,
+            "players": 56,
+            "dates": 26,
+            "games": 63,
+            "teams": 26,
+            "opponents": 23
+          },
+          "recent": {
+            "hits": 35,
+            "plays": 44,
+            "hit_rate": 79.54545454545455,
+            "be": 60.86224385645805,
+            "gap": 18.683210688996496,
+            "units": 13.182039448988585,
+            "roi": 29.95918056588315,
+            "players": 35,
+            "dates": 10,
+            "games": 26,
+            "teams": 18,
+            "opponents": 17
+          }
+        },
+        "available_id": "aegis_available_gbase77",
+        "buff_id": "aegis_buff_gbase77"
+      },
+      {
+        "root_name": "Iron Vanguard I",
+        "root_conditions": [
+          [
+            "PP_TOI_per_game",
+            ">=",
+            3.05
+          ]
+        ],
+        "available_parent": {
+          "full": {
+            "hits": 151,
+            "plays": 218,
+            "hit_rate": 69.26605504587155,
+            "be": 62.02520038134849,
+            "gap": 7.240854664523063,
+            "units": 26.680419614652017,
+            "roi": 12.238724593877073,
+            "players": 54,
+            "dates": 30,
+            "games": 119,
+            "teams": 24,
+            "opponents": 31
+          },
+          "recent": {
+            "hits": 69,
+            "plays": 103,
+            "hit_rate": 66.99029126213593,
+            "be": 62.102718030149376,
+            "gap": 4.887573231986551,
+            "units": 7.552915931891688,
+            "roi": 7.332928089215231,
+            "players": 43,
+            "dates": 12,
+            "games": 53,
+            "teams": 23,
+            "opponents": 28
+          }
+        },
+        "record": {
+          "full": {
+            "hits": 69,
+            "plays": 93,
+            "hit_rate": 74.19354838709677,
+            "be": 61.772909633412205,
+            "gap": 12.420638753684564,
+            "units": 19.067955073872668,
+            "roi": 20.503177498787814,
+            "players": 48,
+            "dates": 25,
+            "games": 60,
+            "teams": 24,
+            "opponents": 23
+          },
+          "recent": {
+            "hits": 33,
+            "plays": 41,
+            "hit_rate": 80.48780487804878,
+            "be": 62.06487930516088,
+            "gap": 18.4229255728879,
+            "units": 12.263804154870938,
+            "roi": 29.911717450904728,
+            "players": 32,
+            "dates": 10,
+            "games": 26,
+            "teams": 18,
+            "opponents": 17
+          }
+        },
+        "available_id": "aegis_available_gp00",
+        "buff_id": "aegis_buff_gp00"
+      },
+      {
+        "root_name": "Runeforged Bulwark",
+        "root_conditions": [
+          [
+            "Player_L20_PPP_fraction_pct",
+            ">=",
+            28
+          ]
+        ],
+        "available_parent": {
+          "full": {
+            "hits": 122,
+            "plays": 171,
+            "hit_rate": 71.34502923976608,
+            "be": 61.56715354836864,
+            "gap": 9.77787569139744,
+            "units": 28.725348926809808,
+            "roi": 16.798449664801055,
+            "players": 51,
+            "dates": 28,
+            "games": 99,
+            "teams": 25,
+            "opponents": 31
+          },
+          "recent": {
+            "hits": 60,
+            "plays": 86,
+            "hit_rate": 69.76744186046511,
+            "be": 62.08552127916801,
+            "gap": 7.681920581297099,
+            "units": 10.204351154846435,
+            "roi": 11.865524598658647,
+            "players": 37,
+            "dates": 11,
+            "games": 46,
+            "teams": 20,
+            "opponents": 24
+          }
+        },
+        "record": {
+          "full": {
+            "hits": 54,
+            "plays": 68,
+            "hit_rate": 79.41176470588235,
+            "be": 60.966486860936755,
+            "gap": 18.445277844945593,
+            "units": 20.92995175540627,
+            "roi": 30.77934081677393,
+            "players": 39,
+            "dates": 21,
+            "games": 45,
+            "teams": 21,
+            "opponents": 18
+          },
+          "recent": {
+            "hits": 27,
+            "plays": 31,
+            "hit_rate": 87.09677419354838,
+            "be": 62.04389069591369,
+            "gap": 25.052883497634696,
+            "units": 12.584070546656854,
+            "roi": 40.59377595695759,
+            "players": 25,
+            "dates": 9,
+            "games": 20,
+            "teams": 14,
+            "opponents": 14
+          }
+        },
+        "available_id": "aegis_available_gp02",
+        "buff_id": "aegis_buff_gp02"
+      },
+      {
+        "root_name": "Siegebreaker’s Focus I",
+        "root_conditions": [
+          [
+            "Current_SOG_Profile",
+            ">=",
+            78
+          ]
+        ],
+        "available_parent": {
+          "full": {
+            "hits": 41,
+            "plays": 55,
+            "hit_rate": 74.54545454545455,
+            "be": 60.32972317375138,
+            "gap": 14.215731371703164,
+            "units": 13.023125453774522,
+            "roi": 23.678409915953676,
+            "players": 22,
+            "dates": 24,
+            "games": 51,
+            "teams": 16,
+            "opponents": 20
+          },
+          "recent": {
+            "hits": 20,
+            "plays": 28,
+            "hit_rate": 71.42857142857143,
+            "be": 60.86597866714179,
+            "gap": 10.562592761429642,
+            "units": 4.797897805823721,
+            "roi": 17.13534930651329,
+            "players": 15,
+            "dates": 11,
+            "games": 26,
+            "teams": 12,
+            "opponents": 16
+          }
+        },
+        "record": {
+          "full": {
+            "hits": 26,
+            "plays": 32,
+            "hit_rate": 81.25,
+            "be": 59.36475116542539,
+            "gap": 21.88524883457461,
+            "units": 11.560725693205953,
+            "roi": 36.1272677912686,
+            "players": 17,
+            "dates": 21,
+            "games": 31,
+            "teams": 15,
+            "opponents": 14
+          },
+          "recent": {
+            "hits": 12,
+            "plays": 14,
+            "hit_rate": 85.71428571428571,
+            "be": 61.24928848677742,
+            "gap": 24.46499722750829,
+            "units": 5.5262764258831565,
+            "roi": 39.47340304202255,
+            "players": 11,
+            "dates": 10,
+            "games": 14,
+            "teams": 10,
+            "opponents": 10
+          }
+        },
+        "available_id": "aegis_available_gp12",
+        "buff_id": "aegis_buff_gp12"
+      }
+    ]
+  }
+}

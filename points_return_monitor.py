@@ -40,8 +40,9 @@ def return_panel(move, *, compact=True):
             result+='<div class="wn-gr-note">These returns replay the unchanged legacy rule on 2026–27 games. Its separate large historical hit-rate record is from 2025–26.</div>'
         return result
     from goal_return_monitor import _metric
-    data={**records(),'previous_through':row['previous_through'],'since_from':row['since_from'],'move_version_label':'Moves V5','wired_on':'2026-11-18'}
-    result=render_return_panel(row,data,compact=compact).replace('vs V1','vs V5').replace('SINCE CHECK %','SINCE V5 CHECK %')
+    data={**records(),'previous_through':row['previous_through'],'since_from':row['since_from'],'move_version_label':row.get('move_version_label','Moves V5'),'wired_on':row.get('wired_on','2026-11-18')}
+    patch='V6' if row.get('line')==.5 and row.get('record_patch')=='points05-v6-2026-11-18' else 'V5'
+    result=render_return_panel(row,data,compact=compact).replace('vs V1','vs '+patch).replace('SINCE CHECK %','SINCE '+patch+' CHECK %')
     # Retain the same already-observed health window, including a losing trend.
     health={**row,'previous':row['health_previous'],'since_check':row['health_since_check']}
     health_html=render_return_panel(health,data,compact=True)
@@ -54,6 +55,7 @@ def return_panel(move, *, compact=True):
     if not compact:
         start=result.find('<div class="wn-gr-note">Full record:');end=result.find('</div>',start)
         note='V5 combined baseline through Nov 16; patch wired Nov 18. Since-check starts Nov 17, the first date outside that baseline; it is not all live V5 performance. Earlier appearances are already included, never added twice. Flat 1u at saved pregame prices.'
+        if patch=='V6':note='Points0.5 V6 wired Nov18. Research baseline through Nov16; new routes capture from Nov18. Existing unchanged routes retain their prior since-check window, including Nov17. Recent research health is retained; it is included in the baseline, not additional bets.'
         if start>=0 and end>=0:result=result[:start]+'<div class="wn-gr-note">'+note+'</div>'+result[end+6:]
         for old in row.get('archived_versions',[]):
             label=old.get('move_version_label') or 'Previous version'

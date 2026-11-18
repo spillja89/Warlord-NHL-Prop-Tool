@@ -2702,6 +2702,10 @@ COLUMN_LABELS = {'GoalV2_Player_Log_L5_TOI_per_game': 'L5 TOI min/g', 'GoalV2_Pl
     "Exp_A_10_Gap_Basis": "Assist gap basis/10",
     "Reg_Gap_A10": "Assist pace gap/10",
 }
+from points05_v6 import LABELS as POINTS05_V6_LABELS, TOOLTIPS as POINTS05_V6_TOOLTIPS
+COLUMN_LABELS.update(POINTS05_V6_LABELS)
+COLUMN_HELP.update(POINTS05_V6_TOOLTIPS)
+
 def build_column_config(df: pd.DataFrame, cols: list[str], *, fit_headers: bool = False) -> dict:
     cfg = {}
 
@@ -4136,6 +4140,8 @@ def show_table(df: pd.DataFrame, cols: list[str], title: str):
 # =========================
 inject_vengeance_css()
 render_vengeance_banner()
+from prop_update_notes import render as render_prop_update_notes
+render_prop_update_notes(st)
 
 # -------------------------
 # Data source (no more forced uploads)
@@ -5361,7 +5367,7 @@ if page == "⚔️ Warlords of the Night":
         st.info(f"{priced_total} priced prop entries. No named attack fires for this slate; see the complete slate below.")
 
     if points_tier_cards:
-        st.caption("Points V5 · combined records through Nov 16 · patch wired Nov 18. Both lines retain their existing rules; original records remain in Inspect.")
+        st.caption("Points .5 V6 · new Tank paths + optional Shattered Aegis. Points1.5 V5 remains unchanged. Earlier versions and other matched routes stay in Inspect.")
 
     with st.expander(f"Complete priced slate · {priced_total} prop entries", expanded=True):
         st.caption("Every player's displayed priced prop appears here. Book break-even % comes from the displayed odds; Move % and Later % are historical results for the named rule, not forecasts. Active roster players without model history are marked odds only and have no tested move. NHL roster membership does not confirm tonight's dressed lineup.")
@@ -5726,7 +5732,7 @@ elif page == "Scout Board":
 elif page == "Points":
 
     _render_class_header("POINTS", df_f)
-    st.caption("Points V5 · combined records lead cards and tracker · original versions in Inspect · move rules unchanged. Monitor-only rules remain off cards.")
+    st.caption("Points .5 V6 · named Tank paths + optional Shattered Aegis · healthy established moves preserved. Points1.5 retains V5; all matched routes grouped in Inspect.")
 
     from points15_moves_current import quote_rows as _points15_quote_rows
     df_p = attach_points_moves(_points15_quote_rows(df_f))
@@ -5769,6 +5775,7 @@ elif page == "Points":
         # --- SIGNALS ---
         "Points_Attack","Points_Move_Record_Version","Points_Move_Record","Points_Move_Pct","Points_Sample_BE_Pct",
         "Points_Profile_Routes","Conf_Points","Conf_Points_Move","Matrix_Points",
+        "Player_L20_PPP_fraction_pct","Player_L20_PPP_per60","Player_L10_TOI_sd","Current_SOG_Profile","Player_Pace_Gap_A10","Player_L5_P_2plus_pct","Player_L20_G_total",
         "Log_L10_S_per_game","Pace_Gap_P10","Goalie_GSAA_per_game","NHL_Team_Rest_days","NHL_Opp_PK_Seconds_per_opportunity","Log_L20_P_per_game","Log_L5_P_per_game","StarScore","TalentMult","EV5_TOI_per_game",
         "Log_L20_Point2plus_pct","Log_L20_PPP_hit_pct","PP_TOI_per_game",
         "Drought_G","NHL_Team_PP_G60","NHL_Opp_GA_10_PG","NHL_Opp_Goals_per_shot_allowed_pct",
