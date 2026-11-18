@@ -54,6 +54,17 @@ def return_panel(move, *, compact=True):
             end=result.find('</div>',start)
             if start>=0 and end>=0:
                 result=result[:start]+'<div class="wn-gr-note">V2 research baseline through Nov 13. No new settled plays since wiring Nov 14. Earlier research is not live V2 performance; flat 1u at saved pregame prices.</div>'+result[end+6:]
+    if move.get('points15_v4'):
+        data={**data,'full_from':'2026-10-13','previous_through':row['previous_through'],'since_from':row['since_from']}
+        result=render_return_panel(row,data,compact=compact).replace('vs V1','vs V4')
+        if not compact:
+            if not row['since_check']['plays']:
+                start=result.find('<div class="wn-gr-note">Full record:');end=result.find('</div>',start)
+                if start>=0 and end>=0:
+                    result=result[:start]+'<div class="wn-gr-note">V4 research baseline through Nov 15. Forward tracking begins Nov 18; no new settled plays. Flat 1u at saved pregame prices. Research is not live V4 performance.</div>'+result[end+6:]
+            stats=row.get('research_recent',{})
+            if stats.get('plays'):
+                result+=('<div class="wn-gr-note">RESEARCH RECENT · Nov 6–15 · '+f"{stats['hits']}/{stats['plays']} · {stats['hit_rate']:.1f}% · BE {stats['be']:.1f}% · gap {stats['gap']:+.1f} pp · {stats['players']} players · {stats['units']:+.2f}u · {stats['roi']:+.1f}% ROI. Included in the full research record.</div>")
     if not compact and row['line']==1.5:
         result+='<div class="wn-gr-note">'+escape(data['quote_policy15'])+'</div>'
     if row.get('legacy'):

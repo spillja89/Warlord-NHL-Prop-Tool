@@ -67,6 +67,9 @@ _GOAL_V2_LABELS = {'Pregame_xG_L5_per_game': 'L5 individual xG/game', 'Player_Lo
 _CARD_LABELS = {
     'Conf_Points': 'Points profile confidence', 'Conf_Goal': 'Goal profile confidence',
     'Log_L5_TOI_per_game':'L5 actual ice time min/game', 'Log_L10_PPP_1plus_pct':'L10 PPP game frequency %', 'Trim10_SOG':'Trimmed L10 average SOG',
+    'Goalie_GSAA_per_game':'Opponent goalie GSAA/game', 'NHL_Team_Rest_days':'Team rest days',
+    'NHL_Opp_PK_Seconds_per_opportunity':'Opp PK seconds/opportunity', 'NHL_Opp_PK_Goals_PG':'Opp PP goals allowed/game',
+    'NHL_Opp_SA_10_PG':'Opp L10 shots allowed/game',
     'NHL_Team_PKO_PG':'Own PK opportunities/game', 'Opp_SV':'Opponent goalie save percentage', 'Opp_GAA':'Opponent goalie GAA',
     'Log_L10_S_per_game': 'L10 average SOG', 'Log_L20_P_per_game': 'Recorded points/game',
     'Log_L5_P_per_game': 'L5 points/game', 'Pace_Gap_P10': 'Point-pace gap',
@@ -134,7 +137,7 @@ def _fact_line(field, value, op=None, cutoff=None, *, goal_v2=False):
         seconds = round(value * 60)
         actual = f'{seconds // 60}:{seconds % 60:02d}'
     else:
-        digits = 0 if field in {'Drought_G', 'Drought_PPP', 'L10_S', 'L10_G', 'PPP10_total'} else 2
+        digits = 3 if field == 'Opp_SV' else 0 if field in {'Drought_G', 'Drought_PPP', 'L10_S', 'L10_G', 'PPP10_total'} else 2
         actual = f'{value:.{digits}f}'
     target = ''
     if op is not None and cutoff is not None:
@@ -176,7 +179,7 @@ def _render_goal_facts(card, move):
                           for field in profile_fields if values.get(field) is not None)
     environment = '<br>'.join(_fact_line(field, values.get(field), op, cut, goal_v2=bool((move or {}).get('goal_v2')))
                               for field, (op, cut) in checks.items()
-                              if field.startswith(('NHL_', 'Opp_', 'opp_', 'Team_', 'team_')))
+                              if field.startswith(('NHL_', 'Opp_', 'opp_', 'Team_', 'team_', 'Goalie_')))
     environment = environment or 'Move-specific matchup requirements are listed in the full fired move list.'
     sample = _number((move or {}).get('sample_book_be_pct'))
     sample_note = f'<div class="wn-assist-sample">MOVE SAMPLE AVG BOOK BE <b>{sample:.1f}%</b></div>' if sample is not None else ''
@@ -293,6 +296,9 @@ def _render_assist_facts(card, move):
 def _render_points_facts(card, move):
     move = move or {}
     values = {**(card.get('role_context') or {}), **(card.get('points_context') or {})}
+    if move.get('points15_v4'):
+        from points15_backbone_buffs import prepare as prepare_backbone
+        values = prepare_backbone(values)
     if move.get('points15_v3'):
         from points15_iron_cadence import prepare as prepare_iron
         values = prepare_iron(values)
@@ -302,11 +308,11 @@ def _render_points_facts(card, move):
     profile = [f'Saved points μ <b>{_number(values.get("Points_mu")):.2f}</b>'
                if _number(values.get('Points_mu')) is not None else 'Saved points μ <b>Unavailable</b>']
     environment = []
-    if move.get('points15_v2') or move.get('points15_v3'):
+    if move.get('points15_v2') or move.get('points15_v3') or move.get('points15_v4'):
         profile.append(_fact_line('Conf_Points', values.get('Conf_Points'), '>=', 82))
     for field, op, cut in move.get('conditions', []):
         line = _fact_line(field, values.get(field), op, cut)
-        target = environment if field.startswith(('NHL_', 'Opp_', 'opp_', 'Team_', 'team_')) else profile
+        target = environment if field.startswith(('NHL_', 'Opp_', 'opp_', 'Team_', 'team_', 'Goalie_')) else profile
         target.append(line)
     alternatives = []
     for group in move.get('any_conditions', []):
@@ -1519,7 +1525,7 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
                     group = next(iter(goal_inspect_groups([fired_move])))
                     goal_record_groups.setdefault(group, []).append(move_row)
                 elif role == 'Tank' and card.get('line') == 1.5:
-                    group = 'V3 · Iron Cadence' if fired_move.get('points15_v3') else (('V2 · '+fired_move['display_family']) if fired_move.get('points15_v2') else (points15_inspect_group(fired_move) or 'Legacy · Preserved records'))
+                    group = 'V4 · Backbone' if fired_move.get('points15_v4') else 'V3 · Iron Cadence' if fired_move.get('points15_v3') else (('V2 · '+fired_move['display_family']) if fired_move.get('points15_v2') else (points15_inspect_group(fired_move) or 'Legacy · Preserved records'))
                     points_record_groups.setdefault(group, []).append((fired_move,move_row))
                 elif role == 'Support':
                     group=('V2 · '+fired_move['display_family']) if fired_move.get('assist_v2') else 'V2 · Established routes'
@@ -1569,7 +1575,7 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
                 record_label = points_original_caption(move)
             if role == 'Jungle' and sog_return_panel(move):
                 record_label = "V2 MOVE %" if move.get('sog_profile') else "V1 MOVE %"
-            if record_label in {"V1 MOVE %","V2 MOVE %","V3 MOVE %"}:
+            if record_label in {"V1 MOVE %","V2 MOVE %","V3 MOVE %","V4 MOVE %"}:
                 later_note = f'{record_label.split()[0]} MOVE {wins}/{picks}'
             record_html = (f'<div class="wn-record"><strong>{pct:.1f}%</strong><span>{wins}/{picks}</span><em>{record_label}</em></div>'
                            if picks else '<div class="wn-record"><strong>SCOUT</strong><em>NO GOAL ATTACK</em></div>'

@@ -5766,7 +5766,7 @@ elif page == "Points":
         # --- SIGNALS ---
         "Points_Attack","Points_Move_Record","Points_Move_Pct","Points_Sample_BE_Pct",
         "Points_Profile_Routes","Conf_Points","Conf_Points_Move","Matrix_Points",
-        "Log_L10_S_per_game","Pace_Gap_P10","Log_L20_P_per_game","Log_L5_P_per_game","StarScore","TalentMult","EV5_TOI_per_game",
+        "Log_L10_S_per_game","Pace_Gap_P10","Goalie_GSAA_per_game","NHL_Team_Rest_days","NHL_Opp_PK_Seconds_per_opportunity","Log_L20_P_per_game","Log_L5_P_per_game","StarScore","TalentMult","EV5_TOI_per_game",
         "Log_L20_Point2plus_pct","Log_L20_PPP_hit_pct","PP_TOI_per_game",
         "Drought_G","NHL_Team_PP_G60","NHL_Opp_GA_10_PG","NHL_Opp_Goals_per_shot_allowed_pct",
         "NHL_Opp_PP_Goals_PG","Team_PP_OZ_Time_Pct","Team_EV_OZ_Rank",

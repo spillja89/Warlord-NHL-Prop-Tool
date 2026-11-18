@@ -69,4 +69,5 @@ def points15_moves(row):
           'sample_season':'2026-27','sample_from':KIT['sample_from'],'sample_through':KIT['sample_through']})
     from points15_additions import fired as additions
     from points15_iron_cadence import fired as iron_cadence
-    return moves + additions(row) + iron_cadence(row)
+    from points15_backbone_buffs import fired as backbone_buffs
+    return moves + additions(row) + iron_cadence(row) + backbone_buffs(row)
