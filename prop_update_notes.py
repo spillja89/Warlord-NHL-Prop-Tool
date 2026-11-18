@@ -1,6 +1,8 @@
 """Compact release notes for every prop, separate from routine grading dates."""
 from pathlib import Path
 import json,re
+from html import escape
+from datetime import date
 from functools import lru_cache
 ROOT=Path(__file__).resolve().parent
 FILES=('goal_return_records.json','assist_return_records.json','points_return_records.json','special_return_records.json')
@@ -21,5 +23,10 @@ def _entries(signature):
 def render(st):
  st.caption('⚔️ Move updates · Points .5 V6 — new Tank paths + Shattered Aegis · Nov18')
  with st.expander('Version & move updates · all props',expanded=False):
-  st.table(entries())
+  rows=entries()
+  def day(v):
+   try:return date.fromisoformat(v).strftime('%b %d').replace(' 0',' ')
+   except (ValueError,TypeError):return v
+  body=''.join('<tr>'+''.join('<td>'+escape(str(v))+'</td>' for v in [r['Prop'],r['Version'],day(r['Updated']),r['Update'],day(r['Results graded through'])])+'</tr>' for r in rows)
+  st.html('<style>.wv-patch-scroll{overflow-x:auto}.wv-patch-table{width:100%;min-width:690px;border-collapse:collapse;font-size:13px;line-height:1.5}.wv-patch-table th,.wv-patch-table td{padding:9px 12px;border-bottom:1px solid #8593a133;text-align:left;vertical-align:top}.wv-patch-table th{font-weight:750;white-space:nowrap}.wv-patch-table td:nth-child(1),.wv-patch-table td:nth-child(2),.wv-patch-table td:nth-child(3),.wv-patch-table td:nth-child(5){white-space:nowrap}.wv-patch-table th:nth-child(2){min-width:55px}</style><div class="wv-patch-scroll"><table class="wv-patch-table"><thead><tr><th>Prop</th><th>Version</th><th>Updated</th><th>Move update</th><th>Graded through</th></tr></thead><tbody>'+body+'</tbody></table></div>')
   st.caption('Move versions identify approved patches. Results continue updating after grading; a grading refresh alone does not replace the move rules. Full rules and return periods remain in Inspect.')
