@@ -6013,14 +6013,17 @@ def build_tracker(today_local: date, debug: bool = False, api_key: str | None = 
     tracker = attach_return_tracking(tracker)
 
     out_path = os.path.join(OUTPUT_DIR, f"tracker_{today_local.isoformat()}_{stamp}.csv")
-    tracker.to_csv(out_path, index=False)
+    from slate_snapshot_store import atomic_tracker_csv
+    tracker["Snapshot_Built_UTC"] = datetime.now(timezone.utc).isoformat()
+    atomic_tracker_csv(tracker, out_path)
     print(f"CSV saved to: {out_path}")
     print(f"Cache saved to: {cache_path_today(today_local)}\n")
 
     # Also write a stable path for Streamlit Cloud (no more manual uploads)
     latest_out_path = os.path.join(OUTPUT_DIR, 'tracker_latest.csv')
     try:
-        shutil.copy(out_path, latest_out_path)
+        from slate_snapshot_store import promote_completed
+        promote_completed(out_path, latest_out_path)
     except Exception as e:
         print(f"[warn] failed to copy latest tracker: {e}")
 

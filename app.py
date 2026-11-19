@@ -4209,16 +4209,48 @@ def _published_grade_bytes(name: str, sha: str) -> bytes | None:
         return None
 
 
+# Completed server-generated slates survive a deployment/reboot in the existing
+# private database. Never store uploaded trackers or Played/ledger payloads here.
+from slate_snapshot_store import (SnapshotStore,inspect_snapshot,restore_local,
+                                  backup_completed)
+
+@st.cache_data(ttl=60,show_spinner=False)
+def _durable_tracker_snapshot(database_url):
+    try:
+        return SnapshotStore(database_url).latest(),True
+    except Exception:
+        return None,False
+
+_snapshot_backup_url=_owner_setting("WARLORD_LEDGER_DATABASE_URL")
+_snapshot_backup_status=None
+_active_snapshot=None
+_snapshot_source=None
 if uploaded is None:
-    published_tracker = _published_tracker_bytes()
-    if published_tracker:
-        try:
-            stable_path = Path(OUTPUT_DIR) / "tracker_latest.csv"
-            local_tracker = stable_path.read_bytes() if stable_path.is_file() else None
-            if local_tracker is None or is_newer_tracker(published_tracker, local_tracker):
-                save_if_changed(stable_path, published_tracker)
-        except OSError:
-            pass  # The app can still use its local tracker if this instance is read-only.
+    durable,read_ok=(_durable_tracker_snapshot(_snapshot_backup_url)
+                     if _snapshot_backup_url else (None,False))
+    published=None
+    try:
+        raw=_published_tracker_bytes()
+        if raw:published=inspect_snapshot(raw)
+    except (OSError,ValueError,UnicodeError):
+        pass
+    try:
+        _active_snapshot,_snapshot_source=restore_local(
+            OUTPUT_DIR,durable=durable,published=published,
+            extra_paths=(st.session_state.get("latest_path_override"),))
+    except OSError:
+        pass  # Read-only local disk must not hide an already generated board.
+    if _active_snapshot is not None and _snapshot_backup_url:
+        if durable is not None and _active_snapshot.sha==durable.sha:
+            _snapshot_backup_status=dict(ok=True,info=durable.public_info(),message="Secure backup verified.")
+        elif read_ok:
+            # Rescue an existing completed local run immediately on the first
+            # upgraded page load; avoid repeatedly writing it on every widget.
+            _snapshot_backup_status=backup_completed(
+                Path(OUTPUT_DIR)/"tracker_latest.csv",_snapshot_backup_url)
+            if _snapshot_backup_status.get("ok"):_durable_tracker_snapshot.clear()
+        else:
+            _snapshot_backup_status=dict(ok=False,message="Secure backup is temporarily unavailable. Your local slate is still loaded; retry backup before rebooting.")
 
 # Preferred stable path written by nhl_edge.py
 latest_stable = os.path.join(OUTPUT_DIR, "tracker_latest.csv")
@@ -4230,12 +4262,12 @@ if "latest_path_override" in st.session_state:
         try:
             override_tracker = Path(_p).read_bytes()
             stable_tracker = Path(latest_stable).read_bytes() if os.path.exists(latest_stable) else None
-            if stable_tracker is None or not is_newer_tracker(stable_tracker, override_tracker):
+            if stable_tracker is None or inspect_snapshot(stable_tracker).rank <= inspect_snapshot(override_tracker).rank:
                 latest_path = str(_p)
             else:
                 st.session_state.pop("latest_path_override", None)
-        except OSError:
-            latest_path = str(_p)
+        except (OSError,ValueError):
+            latest_path = latest_stable if os.path.exists(latest_stable) else str(_p)
 
 
 # Quick-run inside Streamlit (works on Streamlit Cloud)
@@ -4287,6 +4319,12 @@ else:
                     code_stamp = 0.0
                 latest_path = _run_model_cached(slate_date, code_stamp)
                 st.session_state["latest_path_override"] = str(latest_path)
+                # The model is complete before this write. A failed backup is
+                # reported separately and never replaces the fresh board.
+                _snapshot_backup_status=backup_completed(latest_path,_snapshot_backup_url)
+                _active_snapshot=inspect_snapshot(Path(latest_path).read_bytes())
+                _snapshot_source="fresh run"
+                if _snapshot_backup_status.get("ok"):_durable_tracker_snapshot.clear()
                 # A manual slate refresh must also recheck the live season
                 # views and PP usage, whose display caches otherwise last 10-30m.
                 st.cache_data.clear()
@@ -4307,6 +4345,23 @@ else:
         st.stop()
 
     df = load_csv(str(latest_path))
+
+if source=="latest" and _active_snapshot is not None:
+    _snap_info=_active_snapshot.public_info()
+    _snap_when=pd.to_datetime(_snap_info["built_at"],utc=True).tz_convert("America/Chicago")
+    if _snapshot_backup_status and _snapshot_backup_status.get("ok"):
+        st.caption(f"✓ Slate backed up securely · {_snap_info['date']} · generated {_snap_when:%I:%M %p} CT · survives reboot")
+    elif owner_access:
+        st.warning((_snapshot_backup_status or {}).get("message") or
+                   "This slate is loaded locally, but its secure backup is not confirmed. Save a backup before rebooting.")
+        if st.button("Retry slate backup",key="retry_completed_slate_backup",
+                     help="Saves the already generated tracker. Does not fetch odds or run the model."):
+            _snapshot_backup_status=backup_completed(latest_path,_snapshot_backup_url)
+            if _snapshot_backup_status.get("ok"):
+                _durable_tracker_snapshot.clear()
+                st.success("Slate backed up securely ✓ — no model rerun needed.")
+            else:
+                st.warning(_snapshot_backup_status["message"])
 
 if df.empty or not {"Player", "Date"}.issubset(df.columns):
     st.error("The tracker has no player rows or is missing Player/Date columns.")
