@@ -202,8 +202,28 @@ CHAMPIONS = {
 }
 
 
-def champion_hint(label, variant):
-    return hint(label, text=CHAMPIONS.get(variant))
+CLASS_CHAMPIONS = {
+    'Carry': {
+        'Ravager': 'Gorilla · Ravager: Goal routes using a less assist-heavy recent profile or the saved goal-pace gap. The exact move decides which checks apply.',
+        'Reaper': 'Chimp · Reaper: Goal routes using recent shooting conversion or five-on-five chance-production ranges. The leading move shows the exact route.',
+        'Executioner': 'Panda · Executioner: Goal routes using PP shooting activity or a larger goal share of the player’s points. These are separate paths, not universal requirements.',
+    },
+    'Tank': {
+        'Bulwark': 'Gorilla · Bulwark: the look used for the broader 0.5-point attack routes. A point can come from a goal or an assist.',
+        'Siegebreaker': 'Orangutan · Siegebreaker: the look used for Heavy, Special or Crit-style 0.5-point routes. The move combo explains the added requirements.',
+        'War Drummer': 'Panda · War Drummer: the 1.5-point specialist. The player needs two or more points, from any combination of goals and assists.',
+    },
+    'Jungle': {
+        'Berserker': 'Gorilla · Berserker: the core shot-profile routes, including saved shooting history, scoring involvement or drought conditions depending on the move.',
+        'Ranger': 'Orangutan · Ranger: routes using recent minutes, shot history or a rate-times-usage shot-opportunity measure. They are tested profile ranges, not simply the most ice time.',
+        'Warden': 'Panda · Warden: shot routes with a tested matchup condition, such as the opponent’s recent penalty-kill goal history. Inspect shows the exact condition.',
+    },
+}
+
+
+def champion_hint(label, variant, role='Support'):
+    descriptions = CHAMPIONS if role == 'Support' else CLASS_CHAMPIONS.get(role, {})
+    return hint(label, text=descriptions.get(variant))
 
 
 def support_guide():
@@ -219,3 +239,25 @@ def support_guide():
             + '<p>' + terms + '</p>'
             '<p><b>Confidence</b> is a profile score. <b>Assist rank</b> compares recorded assist totals. <b>μ</b> is an average model estimate. <b>BE</b> is the win rate needed at the odds. '
             '<b>Units</b> are profit at the record’s stated stake; <b>ROI</b> is profit divided by stakes. <b>S/A/B</b> grade returns; <b>Crit I/II</b> describe historical Assist hit rates.</p></details>')
+
+
+def class_guide(role):
+    if role == 'Support':
+        return support_guide()
+    if role not in CLASS_CHAMPIONS:
+        return ''
+    market, purpose = {
+        'Carry': ('Goal', 'Carry hunts goals. Over 0.5 means the player must score at least once.'),
+        'Tank': ('Points', 'Tank looks for scoring involvement. One goal or one assist is one point; over 1.5 needs at least two points.'),
+        'Jungle': ('Shot', 'Jungle looks for shots on goal. Over 2.5 needs at least three; attempts that miss the net or are blocked are not shots on goal.'),
+    }[role]
+    body = ''.join('<p style="margin:7px 0">' + hint(description.split(': ', 1)[0], text=description) + ' — '
+                   + escape(description.split(': ', 1)[1]) + '</p>'
+                   for variant, description in CLASS_CHAMPIONS[role].items())
+    return ('<details class="wn-champion-guide" style="margin:10px 14px;padding:10px 12px;border:1px solid #74658c;border-radius:7px;color:#e6e1f1;font-size:12px">'
+            '<summary style="cursor:pointer;font-weight:800;color:#e5cbff">Meet the ' + market
+            + ' champions · how to read the cards</summary><p>' + purpose + '</p>' + body
+            + '<p>The leading move chooses the portrait. A player can match several routes; the animal is not their return tier. Inspect shows the others.</p>'
+            '<p><b>Confidence</b> is a player-profile score. <b>Move %</b> is a historical hit rate. <b>BE</b> is the hit rate needed at the posted odds. '
+            '<b>Units</b> show record profit; <b>ROI</b> is profit divided by stakes. <b>S/A/B</b> grade returns and recent health. '
+            'Buffs add researched matchup context; they are not extra independent bets. Hover dotted stat labels for details.</p></details>')

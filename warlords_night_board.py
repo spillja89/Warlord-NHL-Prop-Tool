@@ -12,7 +12,7 @@ from pathlib import Path
 import pandas as pd
 from matchup_display import matchup_label
 from move_combo import combo_html
-from research_help import hint, field_help, champion_hint, support_guide
+from research_help import hint, field_help, champion_hint, class_guide
 
 from warlord_moves_2026 import fired_moves
 from sog_moves_current import is_current_sog25, sog_base_eligible, pk_duration_seconds
@@ -1371,7 +1371,7 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
                                       f' · {_h(support_tier["label"])}'
                                       f'<span>Routes: {_h(" · ".join(route_labels))}</span></div>')
             if role != 'Support':
-                support_route_note = (f'<div class="wn-support-route"><b>{_h(animal + " · " + character_variant)}</b></div>')
+                support_route_note = (f'<div class="wn-support-route"><b>{champion_hint(animal + " · " + character_variant, character_variant, role)}</b></div>')
                 if role == 'Carry' and move and move.get('goal_v2') and move.get('matchup_buff'):
                     support_route_note += f'<div class="wn-support-route"><span>Route: {_h(goal_buff_parent_name(move))} + {_h(move["name"])}</span></div>'
             name_backdrop = (f'<img class="wn-unit-ghost" src="{character_uri}" alt="" aria-hidden="true" />'
@@ -1692,7 +1692,7 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
             <div class="wn-class-text"><span class="wn-kicker">{_h(descriptions[role])}</span><h2>{_h(role)}</h2></div>
             <div class="wn-count"><strong>{len(cards)}</strong><span>{count_label}</span></div></header>
           <div class="wn-lane-sub">{_h(lane_subtitle)}<div class="wn-grade-legend">S / A / B rank updated returns · Watch flags recent losses, deterioration or limited confirmation · every matched route stays in Inspect</div></div>
-          {support_guide() if role == 'Support' else ''}
+          {class_guide(role)}
           <div class="wn-units">{''.join(units)}</div></section>""")
     total = sum(len(cards) for cards in boards.values())
     styles = """<style>
