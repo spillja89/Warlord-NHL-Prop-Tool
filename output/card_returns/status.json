@@ -12,6 +12,7 @@
     "2026-11-17": "e7eec6ebafd0e4e5bee80a49af69b4f6a3bd89d34d0c0b359b98dc91e5c0ab05"
   },
   "counts": {
+    "seed_outcomes_checked": 591,
     "new_memberships": 2046,
     "unsettled_rows": 227,
     "other_kit_tags": 71,
