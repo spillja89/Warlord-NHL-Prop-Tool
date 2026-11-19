@@ -99,14 +99,16 @@ def attach_sog_route_context(frame):
     from move_return_grades import grade_rank
     from sog_profiles_2026 import active_moves
     def attack(items):
-        active=[m for m in active_moves(items) if not m.get('matchup_buff')]
+        active=active_moves(items)
         return max(active,key=lambda m:grade_rank(m) or (0,False,m['wins']/m['picks'],0,m['picks'],m['name'])) if active else None
     attacks = [attack(items) for items in moves]
     out["SOG_Attack"] = [m["name"] if m else "" for m in attacks]
-    out["SOG_Buff"] = [' · '.join(m['name'] for m in items if m.get('matchup_buff')) for items in moves]
-    out["SOG_Move_Record"] = [f'{m["wins"]}/{m["picks"]}' if m else "" for m in attacks]
-    out["SOG_Move_Pct"] = [100*m["wins"]/m["picks"] if m else None for m in attacks]
-    out["SOG_Sample_BE_Pct"] = [m["sample_book_be_pct"] if m else None for m in attacks]
+    from sog_record_display import display_stats
+    shown=[display_stats(m) if m else None for m in attacks]
+    out["SOG_Buff"] = [' · '.join(m['name'] for m in active_moves(items) if m.get('matchup_buff')) for items in moves]
+    out["SOG_Move_Record"] = [f'{s["hits"]}/{s["plays"]}' if s else "" for s in shown]
+    out["SOG_Move_Pct"] = [100*s["hits"]/s["plays"] if s and s['plays'] else None for s in shown]
+    out["SOG_Sample_BE_Pct"] = [s['be'] if s else None for s in shown]
     out["SOG_Move_Kit_Version"] = [m['kit_version'] if m else version_for(row) for m,row in zip(attacks,rows)]
     from sog_profiles_2026 import VERSION as PROFILE_VERSION, profile_values, profile_moves
     values=[profile_values(row) for row in rows]
@@ -115,5 +117,10 @@ def attach_sog_route_context(frame):
     out['SOG_Profile_Kit_Version']=PROFILE_VERSION
     out['SOG_Research_Monitors']=[' · '.join(m['name'] for m in profile_moves(row,monitors=True)) for row in rows]
     out['SOG_Fired_Profile_Routes']=[' · '.join(m['name'] for m in items if m.get('sog_profile')) for items in moves]
+    from sog_routes_v3 import PLAYER_FIELDS,ENV_FIELDS,VERSION as V3_VERSION
+    for field in PLAYER_FIELDS+ENV_FIELDS:
+        out['SOGV3_Value_'+field]=[v.get(field) for v in values]
+    out['SOG_Move_Label']='Moves V3'
+    out['SOG_Current_Patch']=V3_VERSION
     return out
 

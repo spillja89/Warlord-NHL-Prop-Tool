@@ -830,8 +830,9 @@ def _priced_pool_table(cards: list[dict]) -> pd.DataFrame:
             move = points_tier
         elif card.get('move') is not None:
             move = card['move']
+        from sog_record_display import display_stats as sog_display_stats
         from points_return_monitor import display_stats as points_display_stats
-        shown_assist = (points_display_stats(move) if card.get('market')=='Points' else assist_display_stats(move) if card.get('market')=='Assists' else None) if move else None
+        shown_assist = (points_display_stats(move) if card.get('market')=='Points' else assist_display_stats(move) if card.get('market')=='Assists' else sog_display_stats(move) if card.get('market')=='SOG' else None) if move else None
         performance = move_grade(move)
         featured = bool(card.get("baseline_rule") and (qualified or points_tier))
         row = {
@@ -872,8 +873,8 @@ def _priced_pool_table(cards: list[dict]) -> pd.DataFrame:
         if has_sog:
             context = card.get("sog_context") or {}
             row["PK sec/opportunity"] = context.get("pk_seconds")
-            row["SOG buff"] = "Paralysis · PK ≤104s" if any(item.get("sog_current") and item.get("matchup_buff") for item in card["moves"]) else ""
-            row["Move sample BE %"] = move.get("sample_book_be_pct") if move else None
+            row["SOG buff"] = ' · '.join(item['name'] for item in card['moves'] if item.get('matchup_buff'))
+            row["Move sample BE %"] = sog_display_stats(move).get('be') if move else None
         rows.append(row)
     columns = ["Player", "Team", "Game", "Start (CT)", "Lineup", "Opp goalie", "Line", "Over odds",
                "Book", "Book break-even %", "Model conf", "Matrix", "Featured",
@@ -6082,10 +6083,10 @@ elif page == "Assists":
 elif page == "SOG":
 
     _render_class_header("SOG", df_f)
-    st.caption("Shot routes V2 · wired Nov 10 · player profiles and environment upgrades · high-rate research monitors stay off the cards.")
+    st.caption("Shot routes V3 · wired Nov 19 · steadier-minutes profiles and optional matchup buffs · strongest return-ranked move leads; other routes and archived records stay in Inspect.")
 
     if "Conf_SOG_Version" in df_f and df_f["Conf_SOG_Version"].eq("sog-profile-v2-2026-11-04").any():
-        st.caption("SOG2.5 Jungle kit · Swipe: Green + confidence67 · Rage: confidence71 · Paralysis: opponent PK duration ≤104s/opportunity. Assassin’s Overdrive is archived in Inspect and cannot lead or qualify a card. Profile confidence is not hit probability.")
+        st.caption("SOG2.5 V3 · Green + confidence71 for player routes. Swipe, Rage, Paralysis and Overdrive are archived from leads; their original rules and records remain in Inspect. Healthy existing profiles stay active. Confidence is a player rating, not tonight’s hit probability.")
     else:
         st.caption("This saved tracker predates Shot Profile v2. Run / Refresh slate calculates the new SOG confidence.")
 

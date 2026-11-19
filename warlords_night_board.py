@@ -36,6 +36,7 @@ from assist_goalie_buff import context as assist_goalie_context, badge_html as a
 from assist_goalie_buff import goalie_html as assist_goalie_stats, inspect_html as assist_goalie_details, CSS as ASSIST_GOALIE_CSS
 from points_return_monitor import return_panel as points_return_panel, original_caption as points_original_caption, display_stats as points_display_stats, record_for as points_record_for
 from points15_card_families import inspect_group as points15_inspect_group, render_family as points15_render_family, condition_note as points15_condition_note
+from sog_record_display import display_stats as sog_display_stats, caption as sog_record_caption, record_for as sog_record_for
 from special_return_monitor import sog_return_panel
 from move_return_grades import grade_rank, move_grade, grade_badges, stable_identity, GRADE_CSS
 
@@ -357,7 +358,13 @@ def _render_sog_facts(card, move):
                 'SOG_Opportunity_Base':'Saved shot opportunity',
                 'NHL_Opp_PK_Goal_drought':'Opponent PP-goal allowed drought',
                 'NHL_Team_PP_L5_O_PG':'Own L5 PPO/game',
-                'NHL_Opp_PK_L5_Success_pct':'Opponent L5 PK success %'}
+                'NHL_Opp_PK_L5_Success_pct':'Opponent L5 PK success %',
+                'Player_Log_L20_TOI_sd':'TOI variability · up to20 games (minutes)',
+                'i5v5_iCF60':'Individual 5v5 attempts/60','Trim10_SOG':'Trimmed L10 average SOG',
+                'NHL_Opp_SA_L5_PG':'Opponent L5 shots allowed/game',
+                'NHL_Team_Goals_per_shot_allowed_pct':'OWN team goals allowed / shots allowed %',
+                'NHL_Opp_PK_L10_O_PG':'Opponent L10 PK opportunities/game',
+                'NHL_Opp_PK_L5_Time_PG':'Opponent L5 PK minutes/game'}
         player=[];environment=[]
         for field,op,cut in move.get('conditions',[]):
             v=_number(values.get(field));actual='Unavailable' if v is None else f'{v:.2f}'
@@ -446,7 +453,7 @@ def _move_rank(move):
         return goal_move_rank(move)
     wins, picks = int(move["wins"]), int(move["picks"])
     later_wins, later_picks = int(move["later_wins"]), int(move["later_picks"])
-    if move.get("matchup_buff"):
+    if move.get("matchup_buff") and move.get("market") != "SOG":
         return (-1, False, picks, wins / picks if picks else -1, 0, stable_identity(move))
     performance = grade_rank(move)
     if performance is not None:
@@ -548,7 +555,7 @@ def rank_warlords(frame: pd.DataFrame) -> dict[str, list[dict]]:
                 move = {"name": "Green Baseline", "kind": "BASELINE", "rule": baseline_rule,
                         "wins": 0, "picks": 0, "later_wins": 0, "later_picks": 0}
             else:
-                attacks = [move for move in moves if move["kind"] != "CONTEXT" and not move.get("matchup_buff")]
+                attacks = [move for move in moves if move["kind"] != "CONTEXT" and (not move.get("matchup_buff") or move.get("market")=="SOG")]
                 move = goal_best_move(moves) if market == 'Goal' else max(attacks or moves, key=_move_rank)
             player = str(row["Player"]).strip()
             team = str(_value(row, "Team") or "").strip()
@@ -637,7 +644,7 @@ def rank_priced_slate(frame: pd.DataFrame) -> dict[str, list[dict]]:
             model_prob, book_prob, price_gap = _price_comparison(row, market, line, odds)
             tracked_moves = active[market]
             moves = _display_moves(tracked_moves, market, line)
-            attacks = [move for move in moves if move["kind"] != "CONTEXT" and not move.get("matchup_buff")]
+            attacks = [move for move in moves if move["kind"] != "CONTEXT" and (not move.get("matchup_buff") or move.get("market")=="SOG")]
             best = (goal_best_move(moves) if market == 'Goal' else max(attacks or moves, key=_move_rank)) if moves else None
             baseline = None if watch else _baseline_rule(row, market, line)
             current_points_tier = points_current_tier(row, line, baseline) if market == "Points" else None
@@ -738,7 +745,7 @@ def featured_warlords(boards: dict[str, list[dict]]) -> dict[str, list[dict]]:
                 selected.append({**card, "move": card["points_current_tier"]})
                 continue
             qualifying = [move for move in card["moves"] if move["kind"] != "CONTEXT"
-                          and not move.get("matchup_buff")
+                          and (not move.get("matchup_buff") or move.get("market")=="SOG")
                           and int(move["picks"]) > 0
                           and int(move["wins"]) / int(move["picks"]) >= 0.5]
             if not qualifying:
@@ -1273,6 +1280,8 @@ def _card_quick_summary(role, card):
     else:
         values = {**values, **(card.get('sog_context') or {})}
         fields = [('TOI_per_game', 'TOI min/g', 1), ('Player_5v5_SOG_Share', '5v5 shot share %', 1), ('Opp_SOG_Against_L10', 'Opp SOG/g', 1)]
+        if (card.get('move') or {}).get('sog_v3'):
+            fields=[('Player_Log_L5_TOI_per_game','L5 TOI',1),('Player_Log_L20_TOI_sd','TOI variability',2),('i5v5_iCF60','5v5 attempts/60',1)]
     pieces = [f'{hint(label, field)} <b>{value:.{digits}f}</b>' for field, label, digits in fields
               if (value := _number(values.get(field))) is not None]
     goalie_stats = assist_goalie_stats(card.get('assist_goalie_buff') or card.get('goalie_context'))
@@ -1334,6 +1343,9 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
             if role == 'Tank' and move:
                 shown = points_display_stats(move)
                 wins, picks = shown['hits'], shown['plays']
+            if role == 'Jungle' and move:
+                shown=sog_display_stats(move)
+                wins,picks=shown['hits'],shown['plays']
             pct = 100 * wins / picks if picks else 0
             late_pct = 100 * late_wins / late_picks if late_picks else 0
             status = (("NO GOAL ATTACK" if role == "Carry" else
@@ -1498,6 +1510,7 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
             goal_record_groups = {}
             points_record_groups = {}
             assist_record_groups = {}
+            sog_record_groups = {}
             for fired_move in fired:
                 fired_wins, fired_picks = int(fired_move["wins"]), int(fired_move["picks"])
                 fired_late_wins = int(fired_move["later_wins"])
@@ -1508,6 +1521,9 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
                 if role == 'Tank':
                     shown = points_display_stats(fired_move)
                     fired_wins, fired_picks = shown['hits'], shown['plays']
+                if role == 'Jungle':
+                    shown=sog_display_stats(fired_move)
+                    fired_wins,fired_picks=shown['hits'],shown['plays']
                 fired_pct = 100 * fired_wins / fired_picks if fired_picks else 0
                 fired_late_pct = 100 * fired_late_wins / fired_late_picks if fired_late_picks else 0
                 fired_rule = str(fired_move.get("rule", fired_move.get("condition", "")))
@@ -1520,7 +1536,7 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
                                "LAB" if fired_move.get("experimental") else fired_move["kind"])
                 if role == 'Jungle' and fired_move.get('sog_retired'):
                     fired_label = 'ARCHIVED · NOT A CARD SIGNAL'
-                    fired_rule = 'Retired from featured cards Nov 11 · history preserved. ' + fired_rule
+                    fired_rule = 'Archived from card leads · record and original rule preserved. ' + fired_rule
                 if role == "Support" and not fired_move.get("track"):
                     fired_label = assist_display_tier(fired_move)["label"]
                 later_text = (f"Mar 15+ {fired_late_wins}/{fired_late_picks} · {fired_late_pct:.1f}%"
@@ -1541,6 +1557,11 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
                     if rec and not rec.get('legacy'):
                         s=rec['full']
                         later_text=f"Points {'V6' if card.get('line')==.5 else 'V5'} · current combined record · BE {s['be']:.1f}% · {s['players']} players · {s['dates']} slate dates"
+                if role == 'Jungle':
+                    rec=sog_record_for(fired_move)
+                    if rec:
+                        s=rec['full']
+                        later_text=f"{sog_record_caption(fired_move)} · current record · BE {s['be']:.1f}% · {s['players']} players · {s['dates']} slate dates"
                 move_row = f'''<div class="wn-move-entry">
                   <div class="wn-move-title"><strong>{_h(fired_move["name"])}</strong>{grade_badges(fired_move)}<em>{_h(fired_label)}</em></div>
                   <div class="wn-move-record">{fired_wins}/{fired_picks} · {fired_pct:.1f}% <span>{later_text}</span></div>
@@ -1564,8 +1585,18 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
                 elif role == 'Support':
                     group=('V2 · '+fired_move['display_family']) if fired_move.get('assist_v2') else 'V2 · Established routes'
                     assist_record_groups.setdefault(group,[]).append((fired_move,move_row))
+                elif role == 'Jungle':
+                    group=('Archived · Preserved records' if fired_move.get('sog_retired') else
+                           'Shot routes · '+(fired_move.get('sog_family') or 'Established routes').replace('_',' ').title())
+                    sog_record_groups.setdefault(group,[]).append((fired_move,move_row))
                 else:
                     move_rows.append(move_row)
+            if sog_record_groups:
+                for group,entries in sog_record_groups.items():
+                    entries.sort(key=lambda item:_move_rank(item[0]),reverse=True)
+                    lead,lead_html=entries[0];rest=''.join(item[1] for item in entries[1:])
+                    nested=(f'<details class="wn-details"><summary>Other matched levels &amp; buffs ({len(entries)-1})</summary>{rest}</details>' if rest else '')
+                    move_rows.append(f'<details class="wn-goal-record-group"><summary>{_h(group)} · {_h(lead["name"])} ({len(entries)})</summary>{lead_html}{nested}</details>')
             if assist_record_groups:
                 for group,entries in assist_record_groups.items():
                     entries.sort(key=lambda item:_move_rank(item[0]),reverse=True)
@@ -1612,13 +1643,13 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
             if role == 'Tank' and points_original_caption(move):
                 record_label = points_original_caption(move)
             if role == 'Jungle' and sog_return_panel(move):
-                record_label = "V2 MOVE %" if move.get('sog_profile') else "V1 MOVE %"
+                record_label = sog_record_caption(move)
             if record_label in {"V1 MOVE %","V2 MOVE %","V3 MOVE %","V4 MOVE %","V5 MOVE %","V6 MOVE %"}:
                 later_note = f'{record_label.split()[0]} MOVE {wins}/{picks}'
             record_html = (f'<div class="wn-record"><strong>{pct:.1f}%</strong><span>{wins}/{picks}</span><em>{record_label}</em></div>'
                            if picks else '<div class="wn-record"><strong>SCOUT</strong><em>NO GOAL ATTACK</em></div>'
                            if role == "Carry" else '<div class="wn-record"><strong>BASE</strong><em>SCREEN ONLY</em></div>')
-            details_label = ('Move families &amp; preserved records' if role == 'Carry' or points_record_groups or assist_record_groups else 'Full fired move list')
+            details_label = ('Move families &amp; preserved records' if role == 'Carry' or points_record_groups or assist_record_groups or sog_record_groups else 'Full fired move list')
             details_summary = (f'Move families ({len(points_record_groups)}) · all {len(fired)} records preserved'
                                if points_record_groups else f'{details_label} ({len(fired)})')
             details_html = (f'<details class="wn-details"><summary>{details_summary}</summary>'
@@ -1683,7 +1714,7 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
                          "POINTS ✦ CURRENT-SEASON MOVE % ✦ BOOK BREAK-EVEN %" if role == "Tank" else
                          f"{market.upper()} ✦ HISTORICAL MOVE % ✦ BOOK BREAK-EVEN % FROM POSTED ODDS")
         if role == "Jungle" and any((card.get("move") or {}).get("sog_current") for card in cards):
-            lane_subtitle = "SOG2.5 ✦ 2026–27 MOVE % ✦ BASE67 · STRONGER71 · PK BUFF ≤104s/OPPORTUNITY"
+            lane_subtitle = "SOG V3 ✦ GREEN + CONF71 ✦ PLAYER ROUTES + OPTIONAL BUFFS ✦ ARCHIVED RECORDS IN INSPECT"
         if role == "Support":
             lane_subtitle = "ASSISTS V2 · CURRENT COMBINED RECORD · BOOK BREAK-EVEN %"
             lane_subtitle += " · CRIT I 75–79.9% · CRIT II 80%+ · MINIMUM 30 PLAYS; SMALLER SAMPLES MONITOR"

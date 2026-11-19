@@ -66,6 +66,12 @@ HELP = {
     'Crit': 'For Assists: Crit I is 75–79.9% and Crit II is 80% or higher, with at least 30 historical plays. These labels describe the move record.',
 }
 
+HELP.update({
+ 'NHL_Team_Goals_per_shot_allowed_pct':'Player’s OWN team: goals conceded divided by opposing shots on goal, times100, before this slate. Higher means opponents converted more shots against this team. It is not the opponent’s save percentage or a causal scoring bonus.',
+ 'NHL_Opp_PK_L10_O_PG':'Opponent: average times shorthanded per game over its last ten completed games.',
+ 'NHL_Opp_PK_L5_Time_PG':'Opponent: average penalty-kill minutes per game over its last five completed games. Decimal minutes:5.15 means5:09.',
+})
+
 ALIASES = {
     'Conf':'Conf_Assists', 'Goal_Profile':'Conf_Goal',
     'GoalV2_Player_Log_L5_TOI_per_game':'Log_L5_TOI_per_game',

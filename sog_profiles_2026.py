@@ -59,7 +59,8 @@ def profile_values(row):
         for field,side in [('NHL_Opp_PK_Goal_drought','Opp'),('NHL_Opp_PK_L5_Success_pct','Opp'),('NHL_Team_PP_L5_O_PG','Team')]:
             latest=str(row.get('SOG_Profile_'+side+'_Last_Date',''))[:10];v=number(row.get(field))
             if latest and latest<before and v is not None and v>=0:z[field]=v
-    return z
+    from sog_routes_v3 import values as v3_values
+    return {**z,**v3_values(row)}
 
 def attach_context(frame,before_day,reports,codes):
     import pandas as pd
@@ -95,7 +96,8 @@ def attach_context(frame,before_day,reports,codes):
     for field in ['NHL_Team_PP_L5_O_PG','NHL_Opp_PK_Goal_drought','NHL_Opp_PK_L5_Success_pct','SOG_Profile_Team_Last_Date','SOG_Profile_Opp_Last_Date']:
         out[field]=[z.get(field) for z in rows]
     out['SOG_Profile_Context_Version']=CONTEXT_VERSION;out['SOG_Profile_Context_AsOf']=before
-    return out
+    from sog_routes_v3 import attach_context as attach_v3
+    return attach_v3(out,before,reports,codes)
 
 def _eligible(row):
     from sog_moves_current import sog_base_eligible
@@ -120,19 +122,22 @@ def _move(spec,monitor=False):
 def profile_moves(row,*,monitors=False):
     if not _eligible(row):return []
     values=profile_values(row)
-    return [_move(s,monitors) for s in catalog()['monitors' if monitors else 'moves'] if _passed(values,s)]
+    existing=[_move(s,monitors) for s in catalog()['monitors' if monitors else 'moves'] if _passed(values,s)]
+    if monitors:return existing
+    from sog_routes_v3 import moves as v3_moves
+    return existing+v3_moves(row)
 
 def retired_from_cards(move):
     """User-approved Nov11 display retirement; raw evaluation/tracking stays intact."""
     return bool(move.get('sog_current') and not move.get('sog_profile')
-                and move.get('name')=='Assassin’s Overdrive')
+                and move.get('name') in {'Assassin’s Overdrive','Berserker Swipe','Berserker’s Rage','Paralysis'})
 
 def active_moves(moves):
     return [m for m in moves if not retired_from_cards(m)]
 
 def inspect_moves(moves,rank):
     archived=[{**m,'sog_retired':True} for m in moves if retired_from_cards(m)]
-    return sorted(display_moves(moves,rank),key=rank,reverse=True)+archived
+    return sorted([m for m in moves if not retired_from_cards(m)],key=rank,reverse=True)+archived
 
 def display_moves(moves,rank):
     """One lead per route family. Frozen captures still retain every rule."""

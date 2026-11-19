@@ -62,7 +62,7 @@ def return_record(move):
     if row and not row.get('legacy'):
         # A record rollover must not erase already-observed recent health or
         # demote S solely because the new V2 tracking counter starts at zero.
-        if (market in ('Assists','Points') or move.get('pp_v2')) and 'health_since_check' in row:
+        if (market in ('Assists','Points','SOG') or move.get('pp_v2')) and 'health_since_check' in row:
             return {**row, 'since_check':row['health_since_check'],
                     'previous':row['health_previous'], 'health_since_from':row['health_since_from']}
         return row
@@ -115,7 +115,7 @@ def grade_badges(move):
     explanation=(f'Total {grade["roi"]:+.1f}% ROI · {grade["units"]:+.2f}u · {grade["plays"]} plays. '
                  +(f'Since check {grade["recent_roi"]:+.1f}% ROI · {grade["recent_plays"]} plays.'
                    if grade['recent_plays'] else 'No new graded plays.'))
-    if move.get('market') in ('Assists','Points'):
+    if move.get('market') in ('Assists','Points','SOG'):
         record = return_record(move)
         if record and record.get('health_since_from'):
             explanation = explanation.replace('Since check ', 'Health period from '+record['health_since_from']+' ')

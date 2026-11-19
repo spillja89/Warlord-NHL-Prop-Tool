@@ -6,6 +6,12 @@ from research_help import condition_hint, hint
 LABELS = {
  'Conf_Assists':'Assist conf', 'Conf_Points':'Points conf', 'Conf_Goal':'Goal conf', 'Conf_SOG':'SOG conf',
  'iXA%':'Observed assist rank', 'iXG%':'Individual xG rank', 'PP_iXA60':'Weighted PP assists/60 (actual)',
+ 'Player_Log_L5_TOI_per_game':'L5 average TOI min', 'Player_Log_L20_TOI_sd':'TOI variability min (up to20)',
+ 'i5v5_iCF60':'Individual 5v5 attempts/60', 'Trim10_SOG':'Trimmed L10 SOG',
+ 'NHL_Opp_SA_L5_PG':'Opponent L5 SOG allowed/game',
+ 'NHL_Team_Goals_per_shot_allowed_pct':'OWN team goals allowed/shot %',
+ 'NHL_Opp_PK_L10_O_PG':'Opponent L10 PK opportunities/game',
+ 'NHL_Opp_PK_L5_Time_PG':'Opponent L5 PK minutes/game',
  'i5v5_SOG60':'5v5 SOG/60', 'NHL_Team_PPO_PG':'Own PP opportunities/game',
  'i5v5_primaryAssists60':'5v5 primary assists/60', 'PP_ActualPoints60':'Actual PP points/60',
  'Current_Goal_Profile':'Goal profile', 'Log_L10_P_2plus_pct':'L10 2+ point frequency %',
@@ -20,7 +26,7 @@ def combo_parts(move, labels=None):
     checks=move.get('entry',[])+move.get('conditions',[]) if isinstance(move.get('entry'),list) else None
     if checks is not None:
         parts=[f"{names.get(f,f.replace('_',' '))} {SIGNS.get(op,op)}{cut:g}" for f,op,cut in checks if f!='PPP line']
-        return (['Green matrix'] if move.get('points15_v4') else [])+parts
+        return (['Green matrix'] if move.get('points15_v4') or move.get('sog_v3') else [])+parts
     parts=[]
     rule=str(move.get('rule') or move.get('condition') or '')
     if move.get('market')=='Points':

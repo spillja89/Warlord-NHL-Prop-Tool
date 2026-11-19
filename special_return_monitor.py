@@ -30,6 +30,9 @@ def _panel(move,market,compact):
         from pp_v2_display import return_panel
         return return_panel(row,compact=compact)
     data={**records(),**{f:row[f] for f in ('previous_through','since_from','move_version_label','wired_on')}}
+    if market=='SOG' and row.get('record_patch')=='sog-v3-2026-11-19':
+        from sog_record_display import return_panel as v3_panel
+        return v3_panel(row,data,compact)
     result=render_return_panel(row,data,compact=compact)
     if market=='PPP' and not compact:
         result+='<div class="wn-gr-note">PPP results retain captured or explicitly labeled pregame-replay provenance. Each player-game is counted once per unchanged rule.</div>'
