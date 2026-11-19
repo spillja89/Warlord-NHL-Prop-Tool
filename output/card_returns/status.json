@@ -18,9 +18,11 @@
     "other_kit_tags": 71,
     "noncurrent_rows": 3
   },
-  "memberships": 29187,
+  "memberships": 30961,
   "V1_fixed": true,
   "rules_unchanged": true,
   "generation": "8f6bb735a876ba7664a3e9e13b65a139e9e1f4652c25c79045faf757245a7549",
-  "generated_utc": "2026-11-18T22:13:44.880773+00:00"
+  "generated_utc": "2026-11-19T13:11:24.645384+00:00",
+  "approved_new_PPP_V2_rules": 28,
+  "existing_rules_preserved": true
 }
