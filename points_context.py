@@ -5,6 +5,7 @@ import math
 from datetime import date, timedelta
 from concurrent.futures import ThreadPoolExecutor
 import pandas as pd
+from nhl_stats_paging import fetch_all_rows
 
 VERSION = 'points-context-2026-11-05-v1'
 
@@ -57,13 +58,8 @@ def _skater_pp_history(session, season, team_history):
         begin, end = window
         params = {'cayenneExp': f'seasonId={season} and gameTypeId=2 and gameDate>="{begin}" and gameDate<="{end}"',
                   'isAggregate': 'false', 'isGame': 'true', 'limit': -1, 'start': 0}
-        response = session.get('https://api.nhle.com/stats/rest/en/skater/powerplay', params=params, timeout=20)
-        response.raise_for_status()
-        payload = response.json()
-        rows = payload.get('data', [])
-        total = int(payload.get('total', len(rows)))
-        if len(rows) != total or total >= 10000:
-            raise ValueError('Incomplete official skater PP history window')
+        params['sort'] = json.dumps([{'property':'gameId','direction':'ASC'}, {'property':'playerId','direction':'ASC'}])
+        rows = fetch_all_rows(session, 'https://api.nhle.com/stats/rest/en/skater/powerplay', params=params)
         data = pd.DataFrame(rows)
         if not data.empty:
             if not {'gameDate', 'gameId', 'playerId'}.issubset(data.columns):
@@ -82,7 +78,7 @@ def _skater_pp_history(session, season, team_history):
     return data.sort_values(['gameDate', 'gameId', 'playerId']).reset_index(drop=True)
 
 
-def fetch_reports(session, season):
+def fetch_team_reports(session, season):
     base = 'https://api.nhle.com/stats/rest/en/team'
     lookup = session.get(base, timeout=20)
     lookup.raise_for_status()
@@ -91,15 +87,16 @@ def fetch_reports(session, season):
     def fetch(name):
         endpoint = ('https://api.nhle.com/stats/rest/en/skater/powerplay'
                     if name == 'skater_powerplay' else base + '/' + name)
-        response = session.get(endpoint, params=params, timeout=20)
-        response.raise_for_status()
-        payload = response.json()
-        rows = payload.get('data', [])
-        if int(payload.get('total', len(rows))) != len(rows):
-            raise ValueError('Incomplete official team-game report: ' + name)
+        query = dict(params, sort=json.dumps([{'property':'gameId','direction':'ASC'}, {'property':'teamId','direction':'ASC'}]))
+        rows = fetch_all_rows(session, endpoint, params=query)
         return name, pd.DataFrame(rows)
     with ThreadPoolExecutor(max_workers=4) as pool:
         reports = dict(pool.map(fetch, ['summary', 'powerplay', 'penaltykill']))
+    return reports, codes
+
+
+def fetch_reports(session, season):
+    reports, codes = fetch_team_reports(session, season)
     try:
         reports['skater_powerplay'] = _skater_pp_history(session, season, reports['summary'])
     except Exception as error:

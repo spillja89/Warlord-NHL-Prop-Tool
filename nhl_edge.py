@@ -647,13 +647,9 @@ def fetch_team_pp_opportunities(sess: requests.Session, season_id: int,
                   if row.get("id") is not None and row.get("triCode")}
         reports = {}
         for report in ("powerplay", "penaltykill"):
-            response = sess.get(f"{base}/{report}", params=params,
-                                timeout=REQUEST_TIMEOUT_SEC)
-            response.raise_for_status()
-            payload = response.json()
-            rows = payload.get("data", [])
-            if before_day is not None and int(payload.get("total", len(rows))) > len(rows):
-                raise ValueError("Incomplete NHL team-game opportunity report")
+            from nhl_stats_paging import fetch_all_rows
+            query = dict(params, sort=json.dumps([{'property':'gameId','direction':'ASC'}, {'property':'teamId','direction':'ASC'}]) if before_day is not None else json.dumps([{'property':'teamId','direction':'ASC'}]))
+            rows = fetch_all_rows(sess, f"{base}/{report}", params=query, timeout=REQUEST_TIMEOUT_SEC)
             reports[report] = pd.DataFrame(rows)
         if not lookup or any(reports[name].empty for name in reports):
             return pd.DataFrame(columns=columns)

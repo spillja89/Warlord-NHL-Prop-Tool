@@ -46,16 +46,29 @@ def summarize_pp_usage(rows: list[dict], before_date: str) -> dict[int, tuple[fl
 
 
 def fetch_current_pp_usage(season_id: int, before_date: str) -> dict[int, tuple[float, int]]:
-    """Get current-season PP usage from official NHL game-level TOI records."""
-    response = requests.get(
+    """Equivalent raw PP seconds / GP, aggregated strictly before the slate.
+
+    Avoid the game-level 10,000-row cap and verify every player page.
+    """
+    from datetime import date
+    from nhl_stats_paging import fetch_all_rows
+    date.fromisoformat(before_date)
+    rows = fetch_all_rows(requests,
         "https://api.nhle.com/stats/rest/en/skater/timeonice",
-        params={"cayenneExp": f"seasonId={season_id} and gameTypeId=2",
-                "isAggregate": "false", "isGame": "true", "limit": "-1", "start": "0"},
+        params={"cayenneExp": f'seasonId={int(season_id)} and gameTypeId=2 and gameDate<"{before_date}"',
+                "isAggregate": "false", "isGame": "false",
+                "sort": json.dumps([{'property':'playerId','direction':'ASC'}])},
         timeout=12,
     )
-    response.raise_for_status()
-    payload = response.json()
-    return summarize_pp_usage(payload.get("data", []), before_date)
+    result = {}
+    for row in rows:
+        pid = int(row['playerId']); games = int(row['gamesPlayed'])
+        seconds = _finite(row.get('ppTimeOnIce'))
+        if pid in result or int(row.get('seasonId', 0)) != int(season_id):
+            raise ValueError('Invalid official PP usage identity')
+        if games > 0 and seconds is not None and seconds >= 0:
+            result[pid] = (round(seconds/games/60, 1), games)
+    return result
 
 
 def _finite(value):

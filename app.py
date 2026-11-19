@@ -57,9 +57,9 @@ from points15_research import context as _points15_research_context, summarize a
 @st.cache_data(ttl=600, show_spinner=False)
 def _cached_pp_card_reports(season_id: int, context_version: str = PP_CARD_CONTEXT_VERSION):
     import requests
-    from points_context import fetch_reports
+    from points_context import fetch_team_reports
     with requests.Session() as session:
-        return fetch_reports(session, season_id)
+        return fetch_team_reports(session, season_id)
 
 
 @st.cache_data(ttl=600, show_spinner=False)
@@ -6365,6 +6365,21 @@ elif page == "GOALS (0.5)":
 # POWER PLAY
 # =========================
 elif page == "Power Play":
+    # Recover only missing research-table inputs from complete, strictly prior
+    # official reports. Do not rewrite the saved slate or its move records.
+    from pp_matchup_recovery import FIELDS as _pp_context_fields, recover_missing as _recover_pp_context
+    _pp_context_missing = any(field not in df_f or pd.to_numeric(df_f[field], errors="coerce").isna().any()
+                              for field in _pp_context_fields)
+    if _pp_context_missing and not df_f.empty:
+        _pp_days = pd.to_datetime(df_f["Date"], errors="coerce").dropna().dt.date.unique()
+        if len(_pp_days) == 1:
+            _pp_day = _pp_days[0]
+            _pp_year = _pp_day.year if _pp_day.month >= 7 else _pp_day.year - 1
+            try:
+                _pp_reports, _pp_codes = _cached_pp_card_reports(_pp_year * 10000 + _pp_year + 1)
+                df_f = _recover_pp_context(df_f, _pp_day.isoformat(), _pp_reports, _pp_codes)
+            except Exception as _pp_error:
+                st.warning("Official PP/PK matchup data is temporarily unavailable. Blank signals are ungraded, not a failed matchup.")
     st.subheader("⚡ Power Play · over 0.5 point")
     st.caption("Current-season PPP profiles across the original and Layer 1 routes. Strongest move leads each card; Inspect shows PPP L10, distinct routes and source windows. Tonight's PPP estimate remains experimental.")
     pp_dates = pd.to_datetime(df_f.get("Date", pd.Series(dtype=str)), errors="coerce").dropna()
@@ -6639,6 +6654,11 @@ elif page == "Power Play":
         current_pp_minutes = pd.to_numeric(ppp_quotes["Current PP min/game"], errors="coerce")
         saved_pp_minutes = pd.to_numeric(ppp_quotes["PP TOI/game"], errors="coerce")
         pp_minutes_for_view = current_pp_minutes.where(current_pp_minutes.notna(), saved_pp_minutes)
+        from power_play_quotes import team_pp_time_share_pct
+        ppp_quotes["PP TOI/game"] = pp_minutes_for_view
+        ppp_quotes["Team PP time share %"] = ppp_quotes.apply(
+            lambda row: team_pp_time_share_pct(row.get("PP TOI/game"),
+                pp_display_by_team.get(str(row["Team"]).upper(), {}).get("Team_PP_Time_PG")), axis=1)
         ppp_quotes["PP usage status"] = pp_minutes_for_view.apply(
             lambda minutes: "PP time unavailable" if pd.isna(minutes) else
             "No recorded PP ice time" if minutes <= 0 else "Recorded PP ice time")
