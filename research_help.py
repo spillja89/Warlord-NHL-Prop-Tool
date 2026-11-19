@@ -52,7 +52,7 @@ HELP = {
     'NHL_Opp_PKO_PG': 'Average penalty-kill opportunities faced by the opponent per game.',
     'NHL_Opp_PK_Time_PG': 'Average minutes the opponent spends killing penalties per game. 4.5 minutes is 4 minutes 30 seconds.',
     'NHL_Opp_PK_Seconds_per_opportunity': 'Opponent’s total PK time divided by PK opportunities, in seconds. 90 means 1 minute 30 seconds per opportunity. PP goals can end a minor penalty early.',
-    'NHL_Team_Rest_days': 'Calendar days between the team’s previous game and this game, using the source’s rest-days field.',
+    'NHL_Team_Rest_days': 'Full days off between the previous game and this game. Zero means back-to-back game days; one means one day off.',
     'PP unit': 'Projected power-play group: PP1 is the first unit. A complete projected lineup takes priority; season usage is the fallback. Units can change.',
     'Tonight PPP mean': 'Experimental estimate of how many PP points the player may record. This is an average estimate, not a hit probability.',
     'Tonight PPP 1+ %': 'Experimental model estimate of at least one PP point tonight. It is separate from the historical move hit rate.',
@@ -186,6 +186,9 @@ def condition_hint(part, labels=None):
     for field, label in sorted((labels or {}).items(), key=lambda item: len(item[1]), reverse=True):
         if part.startswith(label + ' '):
             return hint(part, field)
+    raw = re.match(r'^([\w%]+)\s*(?:>=|<=|>|<|≥|≤)', part)
+    if raw:
+        return hint(part, raw[1])
     return escape(part)
 
 
