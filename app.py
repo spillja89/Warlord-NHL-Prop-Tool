@@ -63,7 +63,7 @@ def _cached_pp_card_reports(season_id: int, context_version: str = PP_CARD_CONTE
 
 
 @st.cache_data(ttl=600, show_spinner=False)
-def _cached_current_pp_usage(season_id: int, before_date: str):
+def _cached_current_pp_usage(season_id: int, before_date: str, report_version: str = "complete-pages-v1"):
     return fetch_current_pp_usage(season_id, before_date)
 
 
