@@ -83,7 +83,12 @@ def champion_details_html(pick, boards, frame):
                   opp_pk_time_pg=format_pk_minutes_per_game(row.get('Opp_PK_Time_PG')),
                   ppp_l10=ppp_l10_label(row),ppp_drought=row.get('Drought_PPP'),
                   team_research_signals=team_pp_goal_research_signals(row))
-        return render_power_play_form(view)+beta_details(quote.get('PP Assist beta'))
+        from pp_cards import rank_pp_cards,render_pp_cards
+        from warlords_night_board import _character_uri
+        cards=rank_pp_cards(pd.DataFrame([row]),quotes)
+        art=_character_uri('Support','Celestial Sage')
+        details=render_pp_cards(cards,art,character_override='Panda · Celestial Sage · Power Play Support').replace('<details class="pp-w-inspect">','<details class="pp-w-inspect" open>') if cards else ''
+        return (details if cards else render_power_play_form(view))+beta_details(quote.get('PP Assist beta'))
     return ('<p>The selected line is not offered on this snapshot. Current move details are unavailable for that exact line.</p>'
             +_form_html(dict(player=pick['player'],market=pick['market'],line=pick['line'],
                              form_log=row.get('Form_Log'),form_season=row.get('Form_Season')),expanded=True))

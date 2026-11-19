@@ -1,0 +1,6517 @@
+{
+  "version": "pp-moves-v2-2026-11-19",
+  "move_version": "V2",
+  "wired_on": "2026-11-19",
+  "baseline_through": "2026-11-17",
+  "capture_from": "2026-11-19",
+  "recent_from": "2026-11-01",
+  "moves": [
+    {
+      "id": "pp-v2-p18",
+      "code": "P18",
+      "name": "Astral Momentum I",
+      "family": "astral-momentum",
+      "kind": "ATTACK",
+      "entry": [
+        [
+          "PPP_Line",
+          "==",
+          0.5
+        ],
+        [
+          "Official_Opp_PK_L5_PPP_per_O",
+          ">=",
+          1.1
+        ],
+        [
+          "PP_OnIce_xG_per_game",
+          ">=",
+          0.3
+        ]
+      ],
+      "conditions": [
+        [
+          "Player_L10_P_per60",
+          ">=",
+          1.8
+        ]
+      ],
+      "status": "keeper",
+      "rule_identity_separate_from_record_version": true,
+      "research_record": {
+        "full": {
+          "hits": 70,
+          "plays": 174,
+          "rate": 40.229885057471265,
+          "BE": 29.620834260906513,
+          "gap": 10.609050796564752,
+          "players": 99,
+          "units": 61.74495575221239,
+          "ROI": 35.48560675414505,
+          "dates": 23,
+          "games": 49,
+          "teams": 26,
+          "opponents": 16,
+          "team_games": 52
+        },
+        "recent": {
+          "hits": 43,
+          "plays": 109,
+          "rate": 39.44954128440367,
+          "BE": 29.918805453204275,
+          "gap": 9.530735831199397,
+          "players": 69,
+          "units": 27.71495575221239,
+          "ROI": 25.426564910286597,
+          "dates": 15,
+          "games": 30,
+          "teams": 19,
+          "opponents": 12,
+          "team_games": 33
+        }
+      },
+      "record": {
+        "hits": 70,
+        "plays": 174,
+        "rate": 40.229885057471265,
+        "BE": 29.620834260906513,
+        "gap": 10.609050796564752,
+        "players": 99,
+        "units": 61.74495575221239,
+        "ROI": 35.48560675414505,
+        "dates": 23,
+        "games": 49,
+        "teams": 26,
+        "opponents": 16,
+        "team_games": 52
+      },
+      "pp_v2": true,
+      "kit_version": "pp-moves-v2-2026-11-19",
+      "record_label": "V2 TOTAL MOVE %",
+      "move_version": "V2",
+      "display_family": "v2-astral-momentum",
+      "optional_buff": false,
+      "rule": "PPP_Line == 0.5 + Official_Opp_PK_L5_PPP_per_O >= 1.1 + PP_OnIce_xG_per_game >= 0.3 + Player_L10_P_per60 >= 1.8"
+    },
+    {
+      "id": "pp-v2-p235",
+      "code": "P235",
+      "name": "Astral Momentum II",
+      "family": "astral-momentum",
+      "kind": "HEAVY",
+      "entry": [
+        [
+          "PPP_Line",
+          "==",
+          0.5
+        ],
+        [
+          "Official_Opp_PK_L5_PPP_per_O",
+          ">=",
+          1.1
+        ],
+        [
+          "PP_OnIce_xG_per_game",
+          ">=",
+          0.3
+        ]
+      ],
+      "conditions": [
+        [
+          "Player_L10_P_per60",
+          ">=",
+          2.35
+        ]
+      ],
+      "status": "keeper",
+      "rule_identity_separate_from_record_version": true,
+      "research_record": {
+        "full": {
+          "hits": 56,
+          "plays": 127,
+          "rate": 44.09448818897638,
+          "BE": 30.46174111291874,
+          "gap": 13.632747076057637,
+          "players": 76,
+          "units": 56.04495575221239,
+          "ROI": 44.129886419064874,
+          "dates": 22,
+          "games": 47,
+          "teams": 25,
+          "opponents": 15,
+          "team_games": 48
+        },
+        "recent": {
+          "hits": 33,
+          "plays": 73,
+          "rate": 45.205479452054796,
+          "BE": 30.91561085193351,
+          "gap": 14.289868600121284,
+          "players": 47,
+          "units": 31.11495575221239,
+          "ROI": 42.62322705782519,
+          "dates": 14,
+          "games": 29,
+          "teams": 18,
+          "opponents": 11,
+          "team_games": 30
+        }
+      },
+      "record": {
+        "hits": 56,
+        "plays": 127,
+        "rate": 44.09448818897638,
+        "BE": 30.46174111291874,
+        "gap": 13.632747076057637,
+        "players": 76,
+        "units": 56.04495575221239,
+        "ROI": 44.129886419064874,
+        "dates": 22,
+        "games": 47,
+        "teams": 25,
+        "opponents": 15,
+        "team_games": 48
+      },
+      "pp_v2": true,
+      "kit_version": "pp-moves-v2-2026-11-19",
+      "record_label": "V2 TOTAL MOVE %",
+      "move_version": "V2",
+      "display_family": "v2-astral-momentum",
+      "optional_buff": false,
+      "rule": "PPP_Line == 0.5 + Official_Opp_PK_L5_PPP_per_O >= 1.1 + PP_OnIce_xG_per_game >= 0.3 + Player_L10_P_per60 >= 2.35"
+    },
+    {
+      "id": "pp-v2-p340",
+      "code": "P340",
+      "name": "Astral Momentum III",
+      "family": "astral-momentum",
+      "kind": "SPECIAL",
+      "entry": [
+        [
+          "PPP_Line",
+          "==",
+          0.5
+        ],
+        [
+          "Official_Opp_PK_L5_PPP_per_O",
+          ">=",
+          1.1
+        ],
+        [
+          "PP_OnIce_xG_per_game",
+          ">=",
+          0.3
+        ]
+      ],
+      "conditions": [
+        [
+          "Player_L10_P_per60",
+          ">=",
+          3.4
+        ]
+      ],
+      "status": "keeper",
+      "rule_identity_separate_from_record_version": true,
+      "research_record": {
+        "full": {
+          "hits": 26,
+          "plays": 48,
+          "rate": 54.166666666666664,
+          "BE": 33.73837847255764,
+          "gap": 20.428288194109022,
+          "players": 33,
+          "units": 28.39495575221239,
+          "ROI": 59.15615781710915,
+          "dates": 18,
+          "games": 29,
+          "teams": 16,
+          "opponents": 13,
+          "team_games": 29
+        },
+        "recent": {
+          "hits": 16,
+          "plays": 27,
+          "rate": 59.25925925925926,
+          "BE": 34.331104198289886,
+          "gap": 24.928155060969374,
+          "players": 21,
+          "units": 20.314955752212388,
+          "ROI": 75.24057686004589,
+          "dates": 10,
+          "games": 15,
+          "teams": 10,
+          "opponents": 9,
+          "team_games": 15
+        }
+      },
+      "record": {
+        "hits": 26,
+        "plays": 48,
+        "rate": 54.166666666666664,
+        "BE": 33.73837847255764,
+        "gap": 20.428288194109022,
+        "players": 33,
+        "units": 28.39495575221239,
+        "ROI": 59.15615781710915,
+        "dates": 18,
+        "games": 29,
+        "teams": 16,
+        "opponents": 13,
+        "team_games": 29
+      },
+      "pp_v2": true,
+      "kit_version": "pp-moves-v2-2026-11-19",
+      "record_label": "V2 TOTAL MOVE %",
+      "move_version": "V2",
+      "display_family": "v2-astral-momentum",
+      "optional_buff": false,
+      "rule": "PPP_Line == 0.5 + Official_Opp_PK_L5_PPP_per_O >= 1.1 + PP_OnIce_xG_per_game >= 0.3 + Player_L10_P_per60 >= 3.4"
+    },
+    {
+      "id": "pp-v2-a100",
+      "code": "A100",
+      "name": "Spirit Relay",
+      "family": "spirit-relay",
+      "kind": "ATTACK",
+      "entry": [
+        [
+          "PPP_Line",
+          "==",
+          0.5
+        ],
+        [
+          "Official_Opp_PK_L5_PPP_per_O",
+          ">=",
+          1.1
+        ],
+        [
+          "PP_OnIce_xG_per_game",
+          ">=",
+          0.3
+        ]
+      ],
+      "conditions": [
+        [
+          "Player_L5_A_per60",
+          ">=",
+          1.0
+        ]
+      ],
+      "status": "keeper",
+      "rule_identity_separate_from_record_version": true,
+      "research_record": {
+        "full": {
+          "hits": 68,
+          "plays": 162,
+          "rate": 41.97530864197531,
+          "BE": 30.3044990103581,
+          "gap": 11.67080963161721,
+          "players": 94,
+          "units": 61.44495575221239,
+          "ROI": 37.92898503222987,
+          "dates": 23,
+          "games": 49,
+          "teams": 26,
+          "opponents": 16,
+          "team_games": 52
+        },
+        "recent": {
+          "hits": 40,
+          "plays": 93,
+          "rate": 43.01075268817204,
+          "BE": 30.928840196811844,
+          "gap": 12.081912491360196,
+          "players": 62,
+          "units": 32.36495575221239,
+          "ROI": 34.80102769055095,
+          "dates": 15,
+          "games": 30,
+          "teams": 19,
+          "opponents": 12,
+          "team_games": 33
+        }
+      },
+      "record": {
+        "hits": 68,
+        "plays": 162,
+        "rate": 41.97530864197531,
+        "BE": 30.3044990103581,
+        "gap": 11.67080963161721,
+        "players": 94,
+        "units": 61.44495575221239,
+        "ROI": 37.92898503222987,
+        "dates": 23,
+        "games": 49,
+        "teams": 26,
+        "opponents": 16,
+        "team_games": 52
+      },
+      "pp_v2": true,
+      "kit_version": "pp-moves-v2-2026-11-19",
+      "record_label": "V2 TOTAL MOVE %",
+      "move_version": "V2",
+      "display_family": "v2-spirit-relay",
+      "optional_buff": false,
+      "rule": "PPP_Line == 0.5 + Official_Opp_PK_L5_PPP_per_O >= 1.1 + PP_OnIce_xG_per_game >= 0.3 + Player_L5_A_per60 >= 1"
+    },
+    {
+      "id": "pp-v2-pa60",
+      "code": "PA60",
+      "name": "Oracle’s Thread I",
+      "family": "oracle-thread",
+      "kind": "ATTACK",
+      "entry": [
+        [
+          "PPP_Line",
+          "==",
+          0.5
+        ],
+        [
+          "Official_Opp_PK_L5_PPP_per_O",
+          ">=",
+          1.1
+        ],
+        [
+          "PP_OnIce_xG_per_game",
+          ">=",
+          0.3
+        ]
+      ],
+      "conditions": [
+        [
+          "i5v5_primaryAssists60",
+          ">=",
+          0.6
+        ]
+      ],
+      "status": "keeper",
+      "rule_identity_separate_from_record_version": true,
+      "research_record": {
+        "full": {
+          "hits": 48,
+          "plays": 100,
+          "rate": 48.0,
+          "BE": 29.89730031779466,
+          "gap": 18.10269968220534,
+          "players": 62,
+          "units": 59.36495575221239,
+          "ROI": 59.36495575221239,
+          "dates": 22,
+          "games": 45,
+          "teams": 23,
+          "opponents": 14,
+          "team_games": 46
+        },
+        "recent": {
+          "hits": 32,
+          "plays": 59,
+          "rate": 54.23728813559322,
+          "BE": 30.967892620468962,
+          "gap": 23.269395515124256,
+          "players": 41,
+          "units": 41.21495575221239,
+          "ROI": 69.85585720713965,
+          "dates": 14,
+          "games": 28,
+          "teams": 17,
+          "opponents": 10,
+          "team_games": 29
+        }
+      },
+      "record": {
+        "hits": 48,
+        "plays": 100,
+        "rate": 48.0,
+        "BE": 29.89730031779466,
+        "gap": 18.10269968220534,
+        "players": 62,
+        "units": 59.36495575221239,
+        "ROI": 59.36495575221239,
+        "dates": 22,
+        "games": 45,
+        "teams": 23,
+        "opponents": 14,
+        "team_games": 46
+      },
+      "pp_v2": true,
+      "kit_version": "pp-moves-v2-2026-11-19",
+      "record_label": "V2 TOTAL MOVE %",
+      "move_version": "V2",
+      "display_family": "v2-oracle-thread",
+      "optional_buff": false,
+      "rule": "PPP_Line == 0.5 + Official_Opp_PK_L5_PPP_per_O >= 1.1 + PP_OnIce_xG_per_game >= 0.3 + i5v5_primaryAssists60 >= 0.6"
+    },
+    {
+      "id": "pp-v2-primary8",
+      "code": "Primary8",
+      "name": "Oracle’s Thread II",
+      "family": "oracle-thread",
+      "kind": "HEAVY",
+      "entry": [
+        [
+          "PPP_Line",
+          "==",
+          0.5
+        ],
+        [
+          "Official_Opp_PK_L5_PPP_per_O",
+          ">=",
+          1.1
+        ],
+        [
+          "PP_OnIce_xG_per_game",
+          ">=",
+          0.3
+        ]
+      ],
+      "conditions": [
+        [
+          "i5v5_primaryAssists60",
+          ">=",
+          0.6
+        ],
+        [
+          "Player_L20_P_total",
+          ">=",
+          8
+        ]
+      ],
+      "status": "keeper",
+      "rule_identity_separate_from_record_version": true,
+      "research_record": {
+        "full": {
+          "hits": 43,
+          "plays": 80,
+          "rate": 53.75,
+          "BE": 30.938650980815506,
+          "gap": 22.811349019184494,
+          "players": 50,
+          "units": 56.31495575221239,
+          "ROI": 70.39369469026549,
+          "dates": 22,
+          "games": 41,
+          "teams": 22,
+          "opponents": 13,
+          "team_games": 41
+        },
+        "recent": {
+          "hits": 31,
+          "plays": 55,
+          "rate": 56.36363636363637,
+          "BE": 31.43549441259249,
+          "gap": 24.928141951043877,
+          "players": 37,
+          "units": 40.96495575221239,
+          "ROI": 74.48173773129525,
+          "dates": 14,
+          "games": 27,
+          "teams": 16,
+          "opponents": 9,
+          "team_games": 27
+        }
+      },
+      "record": {
+        "hits": 43,
+        "plays": 80,
+        "rate": 53.75,
+        "BE": 30.938650980815506,
+        "gap": 22.811349019184494,
+        "players": 50,
+        "units": 56.31495575221239,
+        "ROI": 70.39369469026549,
+        "dates": 22,
+        "games": 41,
+        "teams": 22,
+        "opponents": 13,
+        "team_games": 41
+      },
+      "pp_v2": true,
+      "kit_version": "pp-moves-v2-2026-11-19",
+      "record_label": "V2 TOTAL MOVE %",
+      "move_version": "V2",
+      "display_family": "v2-oracle-thread",
+      "optional_buff": false,
+      "rule": "PPP_Line == 0.5 + Official_Opp_PK_L5_PPP_per_O >= 1.1 + PP_OnIce_xG_per_game >= 0.3 + i5v5_primaryAssists60 >= 0.6 + Player_L20_P_total >= 8"
+    },
+    {
+      "id": "pp-v2-primary16",
+      "code": "Primary16",
+      "name": "Oracle’s Thread III",
+      "family": "oracle-thread",
+      "kind": "SPECIAL",
+      "entry": [
+        [
+          "PPP_Line",
+          "==",
+          0.5
+        ],
+        [
+          "Official_Opp_PK_L5_PPP_per_O",
+          ">=",
+          1.1
+        ],
+        [
+          "PP_OnIce_xG_per_game",
+          ">=",
+          0.3
+        ]
+      ],
+      "conditions": [
+        [
+          "i5v5_primaryAssists60",
+          ">=",
+          0.6
+        ],
+        [
+          "Player_L20_P_total",
+          ">=",
+          16
+        ]
+      ],
+      "status": "keeper",
+      "rule_identity_separate_from_record_version": true,
+      "research_record": {
+        "full": {
+          "hits": 22,
+          "plays": 33,
+          "rate": 66.66666666666667,
+          "BE": 35.724741777261265,
+          "gap": 30.941924889405406,
+          "players": 24,
+          "units": 28.814955752212388,
+          "ROI": 87.31804773397694,
+          "dates": 11,
+          "games": 20,
+          "teams": 14,
+          "opponents": 11,
+          "team_games": 20
+        },
+        "recent": {
+          "hits": 19,
+          "plays": 29,
+          "rate": 65.51724137931035,
+          "BE": 36.16007321188648,
+          "gap": 29.357168167423872,
+          "players": 21,
+          "units": 23.86495575221239,
+          "ROI": 82.29295086969789,
+          "dates": 9,
+          "games": 16,
+          "teams": 11,
+          "opponents": 8,
+          "team_games": 16
+        }
+      },
+      "record": {
+        "hits": 22,
+        "plays": 33,
+        "rate": 66.66666666666667,
+        "BE": 35.724741777261265,
+        "gap": 30.941924889405406,
+        "players": 24,
+        "units": 28.814955752212388,
+        "ROI": 87.31804773397694,
+        "dates": 11,
+        "games": 20,
+        "teams": 14,
+        "opponents": 11,
+        "team_games": 20
+      },
+      "pp_v2": true,
+      "kit_version": "pp-moves-v2-2026-11-19",
+      "record_label": "V2 TOTAL MOVE %",
+      "move_version": "V2",
+      "display_family": "v2-oracle-thread",
+      "optional_buff": false,
+      "rule": "PPP_Line == 0.5 + Official_Opp_PK_L5_PPP_per_O >= 1.1 + PP_OnIce_xG_per_game >= 0.3 + i5v5_primaryAssists60 >= 0.6 + Player_L20_P_total >= 16"
+    },
+    {
+      "id": "pp-v2-pf55",
+      "code": "PF55",
+      "name": "Runic Rhythm I",
+      "family": "runic-rhythm",
+      "kind": "ATTACK",
+      "entry": [
+        [
+          "PPP_Line",
+          "==",
+          0.5
+        ],
+        [
+          "Official_Opp_PK_L5_PPP_per_O",
+          ">=",
+          1.1
+        ],
+        [
+          "PP_OnIce_xG_per_game",
+          ">=",
+          0.3
+        ]
+      ],
+      "conditions": [
+        [
+          "Player_L20_P_1plus_pct",
+          ">=",
+          55
+        ]
+      ],
+      "status": "keeper",
+      "rule_identity_separate_from_record_version": true,
+      "research_record": {
+        "full": {
+          "hits": 53,
+          "plays": 119,
+          "rate": 44.53781512605042,
+          "BE": 31.81640337142219,
+          "gap": 12.721411754628228,
+          "players": 65,
+          "units": 51.94495575221239,
+          "ROI": 43.65122332118688,
+          "dates": 23,
+          "games": 46,
+          "teams": 25,
+          "opponents": 16,
+          "team_games": 49
+        },
+        "recent": {
+          "hits": 32,
+          "plays": 70,
+          "rate": 45.714285714285715,
+          "BE": 32.850263593806886,
+          "gap": 12.864022120478829,
+          "players": 46,
+          "units": 24.66495575221239,
+          "ROI": 35.23565107458913,
+          "dates": 15,
+          "games": 27,
+          "teams": 18,
+          "opponents": 12,
+          "team_games": 30
+        }
+      },
+      "record": {
+        "hits": 53,
+        "plays": 119,
+        "rate": 44.53781512605042,
+        "BE": 31.81640337142219,
+        "gap": 12.721411754628228,
+        "players": 65,
+        "units": 51.94495575221239,
+        "ROI": 43.65122332118688,
+        "dates": 23,
+        "games": 46,
+        "teams": 25,
+        "opponents": 16,
+        "team_games": 49
+      },
+      "pp_v2": true,
+      "kit_version": "pp-moves-v2-2026-11-19",
+      "record_label": "V2 TOTAL MOVE %",
+      "move_version": "V2",
+      "display_family": "v2-runic-rhythm",
+      "optional_buff": false,
+      "rule": "PPP_Line == 0.5 + Official_Opp_PK_L5_PPP_per_O >= 1.1 + PP_OnIce_xG_per_game >= 0.3 + Player_L20_P_1plus_pct >= 55"
+    },
+    {
+      "id": "pp-v2-pf65",
+      "code": "PF65",
+      "name": "Runic Rhythm II",
+      "family": "runic-rhythm",
+      "kind": "SPECIAL",
+      "entry": [
+        [
+          "PPP_Line",
+          "==",
+          0.5
+        ],
+        [
+          "Official_Opp_PK_L5_PPP_per_O",
+          ">=",
+          1.1
+        ],
+        [
+          "PP_OnIce_xG_per_game",
+          ">=",
+          0.3
+        ]
+      ],
+      "conditions": [
+        [
+          "Player_L20_P_1plus_pct",
+          ">=",
+          65
+        ]
+      ],
+      "status": "keeper",
+      "rule_identity_separate_from_record_version": true,
+      "research_record": {
+        "full": {
+          "hits": 37,
+          "plays": 67,
+          "rate": 55.223880597014926,
+          "BE": 34.58369962358122,
+          "gap": 20.640180973433708,
+          "players": 37,
+          "units": 38.49495575221239,
+          "ROI": 57.45515783912297,
+          "dates": 19,
+          "games": 34,
+          "teams": 18,
+          "opponents": 15,
+          "team_games": 34
+        },
+        "recent": {
+          "hits": 24,
+          "plays": 42,
+          "rate": 57.142857142857146,
+          "BE": 35.29996873167275,
+          "gap": 21.842888411184397,
+          "players": 25,
+          "units": 25.71495575221239,
+          "ROI": 61.22608512431521,
+          "dates": 11,
+          "games": 18,
+          "teams": 10,
+          "opponents": 9,
+          "team_games": 18
+        }
+      },
+      "record": {
+        "hits": 37,
+        "plays": 67,
+        "rate": 55.223880597014926,
+        "BE": 34.58369962358122,
+        "gap": 20.640180973433708,
+        "players": 37,
+        "units": 38.49495575221239,
+        "ROI": 57.45515783912297,
+        "dates": 19,
+        "games": 34,
+        "teams": 18,
+        "opponents": 15,
+        "team_games": 34
+      },
+      "pp_v2": true,
+      "kit_version": "pp-moves-v2-2026-11-19",
+      "record_label": "V2 TOTAL MOVE %",
+      "move_version": "V2",
+      "display_family": "v2-runic-rhythm",
+      "optional_buff": false,
+      "rule": "PPP_Line == 0.5 + Official_Opp_PK_L5_PPP_per_O >= 1.1 + PP_OnIce_xG_per_game >= 0.3 + Player_L20_P_1plus_pct >= 65"
+    },
+    {
+      "id": "pp-v2-pm142",
+      "code": "PM142",
+      "name": "Astral Convergence",
+      "family": "astral-convergence",
+      "kind": "SPECIAL",
+      "entry": [
+        [
+          "PPP_Line",
+          "==",
+          0.5
+        ],
+        [
+          "Official_Opp_PK_L5_PPP_per_O",
+          ">=",
+          1.1
+        ],
+        [
+          "PP_OnIce_xG_per_game",
+          ">=",
+          0.3
+        ]
+      ],
+      "conditions": [
+        [
+          "Points_mu",
+          ">=",
+          1.42
+        ]
+      ],
+      "status": "keeper",
+      "rule_identity_separate_from_record_version": true,
+      "research_record": {
+        "full": {
+          "hits": 29,
+          "plays": 52,
+          "rate": 55.76923076923077,
+          "BE": 35.825408612003876,
+          "gap": 19.94382215722689,
+          "players": 28,
+          "units": 29.29495575221239,
+          "ROI": 56.33645336963921,
+          "dates": 20,
+          "games": 30,
+          "teams": 16,
+          "opponents": 14,
+          "team_games": 31
+        },
+        "recent": {
+          "hits": 15,
+          "plays": 29,
+          "rate": 51.724137931034484,
+          "BE": 37.00364793437894,
+          "gap": 14.720489996655544,
+          "players": 17,
+          "units": 11.41495575221239,
+          "ROI": 39.36191638693927,
+          "dates": 12,
+          "games": 18,
+          "teams": 11,
+          "opponents": 10,
+          "team_games": 19
+        }
+      },
+      "record": {
+        "hits": 29,
+        "plays": 52,
+        "rate": 55.76923076923077,
+        "BE": 35.825408612003876,
+        "gap": 19.94382215722689,
+        "players": 28,
+        "units": 29.29495575221239,
+        "ROI": 56.33645336963921,
+        "dates": 20,
+        "games": 30,
+        "teams": 16,
+        "opponents": 14,
+        "team_games": 31
+      },
+      "pp_v2": true,
+      "kit_version": "pp-moves-v2-2026-11-19",
+      "record_label": "V2 TOTAL MOVE %",
+      "move_version": "V2",
+      "display_family": "v2-astral-convergence",
+      "optional_buff": false,
+      "rule": "PPP_Line == 0.5 + Official_Opp_PK_L5_PPP_per_O >= 1.1 + PP_OnIce_xG_per_game >= 0.3 + Points_mu >= 1.42"
+    },
+    {
+      "id": "pp-v2-pt16",
+      "code": "PT16",
+      "name": "Mana Reservoir",
+      "family": "mana-reservoir",
+      "kind": "SPECIAL",
+      "entry": [
+        [
+          "PPP_Line",
+          "==",
+          0.5
+        ],
+        [
+          "Official_Opp_PK_L5_PPP_per_O",
+          ">=",
+          1.1
+        ],
+        [
+          "PP_OnIce_xG_per_game",
+          ">=",
+          0.3
+        ]
+      ],
+      "conditions": [
+        [
+          "Player_L20_P_total",
+          ">=",
+          16
+        ]
+      ],
+      "status": "keeper",
+      "rule_identity_separate_from_record_version": true,
+      "research_record": {
+        "full": {
+          "hits": 31,
+          "plays": 56,
+          "rate": 55.357142857142854,
+          "BE": 34.862984553299775,
+          "gap": 20.49415830384308,
+          "players": 38,
+          "units": 32.71495575221239,
+          "ROI": 58.41956384323641,
+          "dates": 16,
+          "games": 27,
+          "teams": 18,
+          "opponents": 13,
+          "team_games": 28
+        },
+        "recent": {
+          "hits": 27,
+          "plays": 50,
+          "rate": 54.0,
+          "BE": 35.03364818219006,
+          "gap": 18.966351817809937,
+          "players": 34,
+          "units": 27.064955752212388,
+          "ROI": 54.129911504424776,
+          "dates": 14,
+          "games": 23,
+          "teams": 15,
+          "opponents": 10,
+          "team_games": 24
+        }
+      },
+      "record": {
+        "hits": 31,
+        "plays": 56,
+        "rate": 55.357142857142854,
+        "BE": 34.862984553299775,
+        "gap": 20.49415830384308,
+        "players": 38,
+        "units": 32.71495575221239,
+        "ROI": 58.41956384323641,
+        "dates": 16,
+        "games": 27,
+        "teams": 18,
+        "opponents": 13,
+        "team_games": 28
+      },
+      "pp_v2": true,
+      "kit_version": "pp-moves-v2-2026-11-19",
+      "record_label": "V2 TOTAL MOVE %",
+      "move_version": "V2",
+      "display_family": "v2-mana-reservoir",
+      "optional_buff": false,
+      "rule": "PPP_Line == 0.5 + Official_Opp_PK_L5_PPP_per_O >= 1.1 + PP_OnIce_xG_per_game >= 0.3 + Player_L20_P_total >= 16"
+    },
+    {
+      "id": "pp-v2-buff-d1",
+      "code": "D1",
+      "name": "Defense Rend I",
+      "family": "defense-rend",
+      "parent": "Primary8",
+      "kind": "OPTIONAL BUFF",
+      "entry": [
+        [
+          "PPP_Line",
+          "==",
+          0.5
+        ],
+        [
+          "Official_Opp_PK_L5_PPP_per_O",
+          ">=",
+          1.1
+        ],
+        [
+          "PP_OnIce_xG_per_game",
+          ">=",
+          0.3
+        ]
+      ],
+      "conditions": [
+        [
+          "i5v5_primaryAssists60",
+          ">=",
+          0.6
+        ],
+        [
+          "Player_L20_P_total",
+          ">=",
+          8
+        ],
+        [
+          "opp_5v5_xGA60",
+          ">=",
+          2.3
+        ]
+      ],
+      "available_parent": {
+        "full": {
+          "hits": 43,
+          "plays": 80,
+          "rate": 53.75,
+          "BE": 30.938650980815506,
+          "gap": 22.811349019184494,
+          "players": 50,
+          "units": 56.31495575221239,
+          "ROI": 70.39369469026549,
+          "dates": 22,
+          "games": 41,
+          "teams": 22,
+          "opponents": 13,
+          "team_games": 41
+        },
+        "recent": {
+          "hits": 31,
+          "plays": 55,
+          "rate": 56.36363636363637,
+          "BE": 31.43549441259249,
+          "gap": 24.928141951043877,
+          "players": 37,
+          "units": 40.96495575221239,
+          "ROI": 74.48173773129525,
+          "dates": 14,
+          "games": 27,
+          "teams": 16,
+          "opponents": 9,
+          "team_games": 27
+        }
+      },
+      "noise": {
+        "full_defenders": {
+          "VAN": 15,
+          "SEA": 9,
+          "WPG": 8,
+          "SJS": 7,
+          "LAK": 4,
+          "CBJ": 3,
+          "VGK": 3,
+          "TBL": 3,
+          "TOR": 3,
+          "ANA": 2
+        },
+        "recent_defenders": {
+          "VAN": 13,
+          "SJS": 7,
+          "SEA": 6,
+          "WPG": 5,
+          "LAK": 4,
+          "TBL": 3,
+          "TOR": 3,
+          "ANA": 2
+        },
+        "full_teams": {
+          "NYR": 8,
+          "CAR": 7,
+          "EDM": 6,
+          "PIT": 5,
+          "TBL": 5,
+          "NSH": 5,
+          "VGK": 4,
+          "MTL": 3,
+          "OTT": 2,
+          "NYI": 2,
+          "CBJ": 2,
+          "UTA": 2,
+          "TOR": 2,
+          "WPG": 1,
+          "CGY": 1,
+          "MIN": 1,
+          "DET": 1
+        },
+        "recent_teams": {
+          "CAR": 6,
+          "NYR": 6,
+          "EDM": 6,
+          "PIT": 5,
+          "NSH": 5,
+          "VGK": 4,
+          "MTL": 3,
+          "NYI": 2,
+          "UTA": 2,
+          "CBJ": 2,
+          "WPG": 1,
+          "DET": 1
+        },
+        "full_goalies": {
+          "Leevi Merilainen": 14,
+          "Stuart Skinner": 8,
+          "Joey Daccord": 7,
+          "Yaroslav Askarov": 4,
+          "Anthony Stolarz": 3,
+          "Alex Nedeljkovic": 3,
+          "Jet Greaves": 2,
+          "Philipp Grubauer": 2,
+          "Adin Hill": 2,
+          "Dennis Hildeby": 2,
+          "Anton Forsberg": 2,
+          "Darcy Kuemper": 2,
+          "Laurent Brossoit": 2,
+          "Cam Talbot": 1,
+          "Carter Hart": 1,
+          "Andrei Vasilevskiy": 1,
+          "Nikita Tolopilo": 1
+        },
+        "recent_goalies": {
+          "Leevi Merilainen": 12,
+          "Joey Daccord": 6,
+          "Stuart Skinner": 5,
+          "Yaroslav Askarov": 4,
+          "Alex Nedeljkovic": 3,
+          "Anthony Stolarz": 3,
+          "Darcy Kuemper": 2,
+          "Laurent Brossoit": 2,
+          "Dennis Hildeby": 2,
+          "Anton Forsberg": 2,
+          "Andrei Vasilevskiy": 1,
+          "Nikita Tolopilo": 1
+        },
+        "goalie_gp_min": 2.0,
+        "goalie_gp_max": 15.0,
+        "goalie_gp1_2": 1,
+        "recent_goalie_gp1_2": 0,
+        "goalie_games": 28,
+        "outside_VAN_SEA": {
+          "full": {
+            "hits": 15,
+            "plays": 33,
+            "rate": 45.45454545454545,
+            "BE": 31.241739957816986,
+            "gap": 14.212805496728468,
+            "players": 27,
+            "units": 16.85,
+            "ROI": 51.06060606060606,
+            "dates": 15,
+            "games": 17,
+            "teams": 13,
+            "opponents": 8,
+            "team_games": 17
+          },
+          "recent": {
+            "hits": 13,
+            "plays": 24,
+            "rate": 54.166666666666664,
+            "BE": 31.67038582020164,
+            "gap": 22.496280846465023,
+            "players": 19,
+            "units": 18.45,
+            "ROI": 76.875,
+            "dates": 10,
+            "games": 12,
+            "teams": 9,
+            "opponents": 6,
+            "team_games": 12
+          }
+        },
+        "outside_player_kit": {
+          "full": {
+            "hits": 0,
+            "plays": 0,
+            "rate": null,
+            "BE": null,
+            "gap": null,
+            "players": 0,
+            "units": 0.0,
+            "ROI": null,
+            "dates": 0,
+            "games": 0,
+            "teams": 0,
+            "opponents": 0,
+            "team_games": 0
+          },
+          "recent": {
+            "hits": 0,
+            "plays": 0,
+            "rate": null,
+            "BE": null,
+            "gap": null,
+            "players": 0,
+            "units": 0.0,
+            "ROI": null,
+            "dates": 0,
+            "games": 0,
+            "teams": 0,
+            "opponents": 0,
+            "team_games": 0
+          }
+        },
+        "without_biggest_full": 45.66495575221239,
+        "without_biggest_recent": 38.76495575221239
+      },
+      "approved_books": {
+        "full": {
+          "plays": 53,
+          "hits": 32,
+          "rate": 60.37735849056604,
+          "units": 47.86495575221239,
+          "ROI": 90.31123726832526,
+          "BE": 32.356757985904856,
+          "gap": 28.020600504661182,
+          "players": 38
+        },
+        "recent": {
+          "plays": 39,
+          "hits": 26,
+          "rate": 66.66666666666667,
+          "units": 40.96495575221239,
+          "ROI": 105.03834808259587,
+          "BE": 33.155028330093856,
+          "gap": 33.511638336572815,
+          "players": 29
+        },
+        "original_prices_same_covered": {
+          "full": {
+            "hits": 32,
+            "plays": 53,
+            "rate": 60.37735849056604,
+            "BE": 32.356757985904856,
+            "gap": 28.020600504661182,
+            "players": 38,
+            "units": 47.86495575221239,
+            "ROI": 90.31123726832526,
+            "dates": 20,
+            "games": 27,
+            "teams": 17,
+            "opponents": 10,
+            "team_games": 27
+          },
+          "recent": {
+            "hits": 26,
+            "plays": 39,
+            "rate": 66.66666666666667,
+            "BE": 33.155028330093856,
+            "gap": 33.511638336572815,
+            "players": 29,
+            "units": 40.96495575221239,
+            "ROI": 105.03834808259587,
+            "dates": 13,
+            "games": 18,
+            "teams": 12,
+            "opponents": 8,
+            "team_games": 18
+          }
+        },
+        "missing_full": 4,
+        "missing_recent": 4,
+        "selection": "Best ordinary saved exactPPP0.5 quote among the users eight bookmakers; no fresh or invented prices."
+      },
+      "status": "keeper",
+      "not_an_entry_gate": true,
+      "research_record": {
+        "full": {
+          "hits": 34,
+          "plays": 57,
+          "rate": 59.64912280701754,
+          "BE": 32.432030660845726,
+          "gap": 27.217092146171815,
+          "players": 39,
+          "units": 48.91495575221239,
+          "ROI": 85.81571184598664,
+          "dates": 20,
+          "games": 28,
+          "teams": 17,
+          "opponents": 10,
+          "team_games": 28
+        },
+        "recent": {
+          "hits": 28,
+          "plays": 43,
+          "rate": 65.11627906976744,
+          "BE": 33.18055068113742,
+          "gap": 31.935728388630025,
+          "players": 30,
+          "units": 42.01495575221239,
+          "ROI": 97.70919942374974,
+          "dates": 13,
+          "games": 19,
+          "teams": 12,
+          "opponents": 8,
+          "team_games": 19
+        }
+      },
+      "record": {
+        "hits": 34,
+        "plays": 57,
+        "rate": 59.64912280701754,
+        "BE": 32.432030660845726,
+        "gap": 27.217092146171815,
+        "players": 39,
+        "units": 48.91495575221239,
+        "ROI": 85.81571184598664,
+        "dates": 20,
+        "games": 28,
+        "teams": 17,
+        "opponents": 10,
+        "team_games": 28
+      },
+      "pp_v2": true,
+      "kit_version": "pp-moves-v2-2026-11-19",
+      "record_label": "V2 TOTAL MOVE %",
+      "move_version": "V2",
+      "display_family": "v2-defense-rend",
+      "optional_buff": true,
+      "rule": "PPP_Line == 0.5 + Official_Opp_PK_L5_PPP_per_O >= 1.1 + PP_OnIce_xG_per_game >= 0.3 + i5v5_primaryAssists60 >= 0.6 + Player_L20_P_total >= 8 + opp_5v5_xGA60 >= 2.3"
+    },
+    {
+      "id": "pp-v2-buff-d2",
+      "code": "D2",
+      "name": "Defense Rend II",
+      "family": "defense-rend",
+      "parent": "Primary8",
+      "kind": "OPTIONAL BUFF",
+      "entry": [
+        [
+          "PPP_Line",
+          "==",
+          0.5
+        ],
+        [
+          "Official_Opp_PK_L5_PPP_per_O",
+          ">=",
+          1.1
+        ],
+        [
+          "PP_OnIce_xG_per_game",
+          ">=",
+          0.3
+        ]
+      ],
+      "conditions": [
+        [
+          "i5v5_primaryAssists60",
+          ">=",
+          0.6
+        ],
+        [
+          "Player_L20_P_total",
+          ">=",
+          8
+        ],
+        [
+          "opp_5v5_xGA60",
+          ">=",
+          2.65
+        ]
+      ],
+      "available_parent": {
+        "full": {
+          "hits": 43,
+          "plays": 80,
+          "rate": 53.75,
+          "BE": 30.938650980815506,
+          "gap": 22.811349019184494,
+          "players": 50,
+          "units": 56.31495575221239,
+          "ROI": 70.39369469026549,
+          "dates": 22,
+          "games": 41,
+          "teams": 22,
+          "opponents": 13,
+          "team_games": 41
+        },
+        "recent": {
+          "hits": 31,
+          "plays": 55,
+          "rate": 56.36363636363637,
+          "BE": 31.43549441259249,
+          "gap": 24.928141951043877,
+          "players": 37,
+          "units": 40.96495575221239,
+          "ROI": 74.48173773129525,
+          "dates": 14,
+          "games": 27,
+          "teams": 16,
+          "opponents": 9,
+          "team_games": 27
+        }
+      },
+      "noise": {
+        "full_defenders": {
+          "VAN": 15,
+          "SEA": 9,
+          "SJS": 7,
+          "WPG": 3,
+          "ANA": 2
+        },
+        "recent_defenders": {
+          "VAN": 13,
+          "SJS": 7,
+          "SEA": 6,
+          "WPG": 3,
+          "ANA": 2
+        },
+        "full_teams": {
+          "NYR": 6,
+          "CAR": 5,
+          "VGK": 4,
+          "MTL": 3,
+          "PIT": 3,
+          "NSH": 3,
+          "EDM": 3,
+          "TOR": 2,
+          "UTA": 2,
+          "NYI": 2,
+          "TBL": 1,
+          "CGY": 1,
+          "WPG": 1
+        },
+        "recent_teams": {
+          "NYR": 6,
+          "CAR": 4,
+          "VGK": 4,
+          "MTL": 3,
+          "NSH": 3,
+          "EDM": 3,
+          "PIT": 3,
+          "NYI": 2,
+          "UTA": 2,
+          "WPG": 1
+        },
+        "full_goalies": {
+          "Leevi Merilainen": 14,
+          "Joey Daccord": 7,
+          "Yaroslav Askarov": 4,
+          "Stuart Skinner": 3,
+          "Alex Nedeljkovic": 3,
+          "Philipp Grubauer": 2,
+          "Laurent Brossoit": 2,
+          "Nikita Tolopilo": 1
+        },
+        "recent_goalies": {
+          "Leevi Merilainen": 12,
+          "Joey Daccord": 6,
+          "Yaroslav Askarov": 4,
+          "Stuart Skinner": 3,
+          "Alex Nedeljkovic": 3,
+          "Laurent Brossoit": 2,
+          "Nikita Tolopilo": 1
+        },
+        "goalie_gp_min": 3.0,
+        "goalie_gp_max": 15.0,
+        "goalie_gp1_2": 0,
+        "recent_goalie_gp1_2": 0,
+        "goalie_games": 17,
+        "outside_VAN_SEA": {
+          "full": {
+            "hits": 12,
+            "plays": 12,
+            "rate": 100.0,
+            "BE": 31.04608466965528,
+            "gap": 68.95391533034473,
+            "players": 11,
+            "units": 27.4,
+            "ROI": 228.33333333333334,
+            "dates": 6,
+            "games": 6,
+            "teams": 5,
+            "opponents": 3,
+            "team_games": 6
+          },
+          "recent": {
+            "hits": 12,
+            "plays": 12,
+            "rate": 100.0,
+            "BE": 31.04608466965528,
+            "gap": 68.95391533034473,
+            "players": 11,
+            "units": 27.4,
+            "ROI": 228.33333333333334,
+            "dates": 6,
+            "games": 6,
+            "teams": 5,
+            "opponents": 3,
+            "team_games": 6
+          }
+        },
+        "outside_player_kit": {
+          "full": {
+            "hits": 0,
+            "plays": 0,
+            "rate": null,
+            "BE": null,
+            "gap": null,
+            "players": 0,
+            "units": 0.0,
+            "ROI": null,
+            "dates": 0,
+            "games": 0,
+            "teams": 0,
+            "opponents": 0,
+            "team_games": 0
+          },
+          "recent": {
+            "hits": 0,
+            "plays": 0,
+            "rate": null,
+            "BE": null,
+            "gap": null,
+            "players": 0,
+            "units": 0.0,
+            "ROI": null,
+            "dates": 0,
+            "games": 0,
+            "teams": 0,
+            "opponents": 0,
+            "team_games": 0
+          }
+        },
+        "without_biggest_full": 56.21495575221239,
+        "without_biggest_recent": 47.71495575221239
+      },
+      "approved_books": {
+        "full": {
+          "plays": 34,
+          "hits": 29,
+          "rate": 85.29411764705883,
+          "units": 56.41495575221239,
+          "ROI": 165.9263404476835,
+          "BE": 32.64831220404055,
+          "gap": 52.645805443018276,
+          "players": 29
+        },
+        "recent": {
+          "plays": 29,
+          "hits": 25,
+          "rate": 86.20689655172414,
+          "units": 47.91495575221239,
+          "ROI": 165.2239853524565,
+          "BE": 33.07133467176562,
+          "gap": 53.13556187995852,
+          "players": 25
+        },
+        "original_prices_same_covered": {
+          "full": {
+            "hits": 29,
+            "plays": 34,
+            "rate": 85.29411764705883,
+            "BE": 32.64831220404055,
+            "gap": 52.645805443018276,
+            "players": 29,
+            "units": 56.41495575221239,
+            "ROI": 165.9263404476835,
+            "dates": 14,
+            "games": 17,
+            "teams": 13,
+            "opponents": 5,
+            "team_games": 17
+          },
+          "recent": {
+            "hits": 25,
+            "plays": 29,
+            "rate": 86.20689655172414,
+            "BE": 33.07133467176562,
+            "gap": 53.13556187995852,
+            "players": 25,
+            "units": 47.91495575221239,
+            "ROI": 165.2239853524565,
+            "dates": 10,
+            "games": 13,
+            "teams": 10,
+            "opponents": 5,
+            "team_games": 13
+          }
+        },
+        "missing_full": 2,
+        "missing_recent": 2,
+        "selection": "Best ordinary saved exactPPP0.5 quote among the users eight bookmakers; no fresh or invented prices."
+      },
+      "status": "keeper",
+      "not_an_entry_gate": true,
+      "research_record": {
+        "full": {
+          "hits": 31,
+          "plays": 36,
+          "rate": 86.11111111111111,
+          "BE": 33.061148474891915,
+          "gap": 53.0499626362192,
+          "players": 31,
+          "units": 59.46495575221239,
+          "ROI": 165.18043264503441,
+          "dates": 14,
+          "games": 17,
+          "teams": 13,
+          "opponents": 5,
+          "team_games": 17
+        },
+        "recent": {
+          "hits": 27,
+          "plays": 31,
+          "rate": 87.09677419354838,
+          "BE": 33.523465665804295,
+          "gap": 53.57330852774409,
+          "players": 27,
+          "units": 50.96495575221239,
+          "ROI": 164.40308307165287,
+          "dates": 10,
+          "games": 13,
+          "teams": 10,
+          "opponents": 5,
+          "team_games": 13
+        }
+      },
+      "record": {
+        "hits": 31,
+        "plays": 36,
+        "rate": 86.11111111111111,
+        "BE": 33.061148474891915,
+        "gap": 53.0499626362192,
+        "players": 31,
+        "units": 59.46495575221239,
+        "ROI": 165.18043264503441,
+        "dates": 14,
+        "games": 17,
+        "teams": 13,
+        "opponents": 5,
+        "team_games": 17
+      },
+      "pp_v2": true,
+      "kit_version": "pp-moves-v2-2026-11-19",
+      "record_label": "V2 TOTAL MOVE %",
+      "move_version": "V2",
+      "display_family": "v2-defense-rend",
+      "optional_buff": true,
+      "rule": "PPP_Line == 0.5 + Official_Opp_PK_L5_PPP_per_O >= 1.1 + PP_OnIce_xG_per_game >= 0.3 + i5v5_primaryAssists60 >= 0.6 + Player_L20_P_total >= 8 + opp_5v5_xGA60 >= 2.65"
+    },
+    {
+      "id": "pp-v2-buff-k1",
+      "code": "K1",
+      "name": "Penalty Rift I",
+      "family": "penalty-rift",
+      "parent": "Primary8",
+      "kind": "OPTIONAL BUFF",
+      "entry": [
+        [
+          "PPP_Line",
+          "==",
+          0.5
+        ],
+        [
+          "Official_Opp_PK_L5_PPP_per_O",
+          ">=",
+          1.1
+        ],
+        [
+          "PP_OnIce_xG_per_game",
+          ">=",
+          0.3
+        ]
+      ],
+      "conditions": [
+        [
+          "i5v5_primaryAssists60",
+          ">=",
+          0.6
+        ],
+        [
+          "Player_L20_P_total",
+          ">=",
+          8
+        ],
+        [
+          "Official_Opp_PK_L10_Goals_PG",
+          ">=",
+          0.8
+        ]
+      ],
+      "available_parent": {
+        "full": {
+          "hits": 42,
+          "plays": 75,
+          "rate": 56.0,
+          "BE": 30.89627534719897,
+          "gap": 25.10372465280103,
+          "players": 50,
+          "units": 58.41495575221239,
+          "ROI": 77.88660766961652,
+          "dates": 20,
+          "games": 37,
+          "teams": 22,
+          "opponents": 12,
+          "team_games": 37
+        },
+        "recent": {
+          "hits": 31,
+          "plays": 55,
+          "rate": 56.36363636363637,
+          "BE": 31.43549441259249,
+          "gap": 24.928141951043877,
+          "players": 37,
+          "units": 40.96495575221239,
+          "ROI": 74.48173773129525,
+          "dates": 14,
+          "games": 27,
+          "teams": 16,
+          "opponents": 9,
+          "team_games": 27
+        }
+      },
+      "noise": {
+        "full_defenders": {
+          "VAN": 14,
+          "SEA": 9,
+          "SJS": 7,
+          "UTA": 6,
+          "TBL": 5,
+          "WPG": 5,
+          "VGK": 4,
+          "LAK": 4,
+          "TOR": 3,
+          "ANA": 2,
+          "NJD": 1
+        },
+        "recent_defenders": {
+          "VAN": 13,
+          "SJS": 7,
+          "SEA": 6,
+          "WPG": 5,
+          "TBL": 5,
+          "LAK": 4,
+          "TOR": 3,
+          "ANA": 2,
+          "NJD": 1
+        },
+        "full_teams": {
+          "CAR": 7,
+          "EDM": 6,
+          "NYR": 6,
+          "PIT": 5,
+          "NSH": 5,
+          "VGK": 4,
+          "TBL": 3,
+          "MIN": 3,
+          "MTL": 3,
+          "OTT": 2,
+          "TOR": 2,
+          "NJD": 2,
+          "UTA": 2,
+          "WSH": 2,
+          "CBJ": 2,
+          "NYI": 2,
+          "WPG": 1,
+          "CGY": 1,
+          "BUF": 1,
+          "DET": 1
+        },
+        "recent_teams": {
+          "CAR": 6,
+          "NYR": 6,
+          "EDM": 6,
+          "PIT": 5,
+          "NSH": 5,
+          "VGK": 4,
+          "MTL": 3,
+          "UTA": 2,
+          "CBJ": 2,
+          "NYI": 2,
+          "WSH": 2,
+          "WPG": 1,
+          "BUF": 1,
+          "DET": 1
+        },
+        "full_goalies": {
+          "Leevi Merilainen": 13,
+          "Joey Daccord": 7,
+          "Karel Vejmelka": 6,
+          "Stuart Skinner": 5,
+          "Adin Hill": 4,
+          "Yaroslav Askarov": 4,
+          "Andrei Vasilevskiy": 3,
+          "Alex Nedeljkovic": 3,
+          "Anthony Stolarz": 3,
+          "Laurent Brossoit": 2,
+          "Philipp Grubauer": 2,
+          "Darcy Kuemper": 2,
+          "Dennis Hildeby": 2,
+          "Anton Forsberg": 2,
+          "Connor Hellebuyck": 1,
+          "Nikita Tolopilo": 1
+        },
+        "recent_goalies": {
+          "Leevi Merilainen": 12,
+          "Joey Daccord": 6,
+          "Stuart Skinner": 5,
+          "Yaroslav Askarov": 4,
+          "Andrei Vasilevskiy": 3,
+          "Alex Nedeljkovic": 3,
+          "Anthony Stolarz": 3,
+          "Laurent Brossoit": 2,
+          "Darcy Kuemper": 2,
+          "Dennis Hildeby": 2,
+          "Anton Forsberg": 2,
+          "Connor Hellebuyck": 1,
+          "Nikita Tolopilo": 1
+        },
+        "goalie_gp_min": 3.0,
+        "goalie_gp_max": 15.0,
+        "goalie_gp1_2": 0,
+        "recent_goalie_gp1_2": 0,
+        "goalie_games": 29,
+        "outside_VAN_SEA": {
+          "full": {
+            "hits": 19,
+            "plays": 37,
+            "rate": 51.351351351351354,
+            "BE": 30.646074895566052,
+            "gap": 20.705276455785302,
+            "players": 31,
+            "units": 25.8,
+            "ROI": 69.72972972972973,
+            "dates": 14,
+            "games": 19,
+            "teams": 15,
+            "opponents": 9,
+            "team_games": 19
+          },
+          "recent": {
+            "hits": 13,
+            "plays": 27,
+            "rate": 48.148148148148145,
+            "BE": 31.18741786583955,
+            "gap": 16.960730282308596,
+            "players": 21,
+            "units": 15.45,
+            "ROI": 57.22222222222222,
+            "dates": 11,
+            "games": 15,
+            "teams": 11,
+            "opponents": 7,
+            "team_games": 15
+          }
+        },
+        "outside_player_kit": {
+          "full": {
+            "hits": 0,
+            "plays": 0,
+            "rate": null,
+            "BE": null,
+            "gap": null,
+            "players": 0,
+            "units": 0.0,
+            "ROI": null,
+            "dates": 0,
+            "games": 0,
+            "teams": 0,
+            "opponents": 0,
+            "team_games": 0
+          },
+          "recent": {
+            "hits": 0,
+            "plays": 0,
+            "rate": null,
+            "BE": null,
+            "gap": null,
+            "players": 0,
+            "units": 0.0,
+            "ROI": null,
+            "dates": 0,
+            "games": 0,
+            "teams": 0,
+            "opponents": 0,
+            "team_games": 0
+          }
+        },
+        "without_biggest_full": 52.71495575221239,
+        "without_biggest_recent": 35.76495575221239
+      },
+      "approved_books": {
+        "full": {
+          "plays": 55,
+          "hits": 34,
+          "rate": 61.81818181818182,
+          "units": 53.16495575221239,
+          "ROI": 96.66355591311344,
+          "BE": 31.76343874175663,
+          "gap": 30.05474307642519,
+          "players": 43
+        },
+        "recent": {
+          "plays": 42,
+          "hits": 26,
+          "rate": 61.904761904761905,
+          "units": 37.96495575221239,
+          "ROI": 90.39275179098188,
+          "BE": 32.73850303729735,
+          "gap": 29.166258867464556,
+          "players": 31
+        },
+        "original_prices_same_covered": {
+          "full": {
+            "hits": 34,
+            "plays": 55,
+            "rate": 61.81818181818182,
+            "BE": 31.76343874175663,
+            "gap": 30.05474307642519,
+            "players": 43,
+            "units": 53.16495575221239,
+            "ROI": 96.66355591311344,
+            "dates": 19,
+            "games": 28,
+            "teams": 20,
+            "opponents": 11,
+            "team_games": 28
+          },
+          "recent": {
+            "hits": 26,
+            "plays": 42,
+            "rate": 61.904761904761905,
+            "BE": 32.73850303729735,
+            "gap": 29.166258867464556,
+            "players": 31,
+            "units": 37.96495575221239,
+            "ROI": 90.39275179098188,
+            "dates": 14,
+            "games": 21,
+            "teams": 14,
+            "opponents": 9,
+            "team_games": 21
+          }
+        },
+        "missing_full": 5,
+        "missing_recent": 4,
+        "selection": "Best ordinary saved exactPPP0.5 quote among the users eight bookmakers; no fresh or invented prices."
+      },
+      "status": "keeper",
+      "not_an_entry_gate": true,
+      "research_record": {
+        "full": {
+          "hits": 37,
+          "plays": 60,
+          "rate": 61.666666666666664,
+          "BE": 31.951172359591666,
+          "gap": 29.715494307074998,
+          "players": 45,
+          "units": 55.96495575221239,
+          "ROI": 93.27492625368731,
+          "dates": 19,
+          "games": 29,
+          "teams": 20,
+          "opponents": 11,
+          "team_games": 29
+        },
+        "recent": {
+          "hits": 28,
+          "plays": 46,
+          "rate": 60.869565217391305,
+          "BE": 32.79858047786386,
+          "gap": 28.070984739527447,
+          "players": 32,
+          "units": 39.01495575221239,
+          "ROI": 84.81512120046172,
+          "dates": 14,
+          "games": 22,
+          "teams": 14,
+          "opponents": 9,
+          "team_games": 22
+        }
+      },
+      "record": {
+        "hits": 37,
+        "plays": 60,
+        "rate": 61.666666666666664,
+        "BE": 31.951172359591666,
+        "gap": 29.715494307074998,
+        "players": 45,
+        "units": 55.96495575221239,
+        "ROI": 93.27492625368731,
+        "dates": 19,
+        "games": 29,
+        "teams": 20,
+        "opponents": 11,
+        "team_games": 29
+      },
+      "pp_v2": true,
+      "kit_version": "pp-moves-v2-2026-11-19",
+      "record_label": "V2 TOTAL MOVE %",
+      "move_version": "V2",
+      "display_family": "v2-penalty-rift",
+      "optional_buff": true,
+      "rule": "PPP_Line == 0.5 + Official_Opp_PK_L5_PPP_per_O >= 1.1 + PP_OnIce_xG_per_game >= 0.3 + i5v5_primaryAssists60 >= 0.6 + Player_L20_P_total >= 8 + Official_Opp_PK_L10_Goals_PG >= 0.8"
+    },
+    {
+      "id": "pp-v2-buff-k2",
+      "code": "K2",
+      "name": "Penalty Rift II",
+      "family": "penalty-rift",
+      "parent": "Primary8",
+      "kind": "OPTIONAL BUFF",
+      "entry": [
+        [
+          "PPP_Line",
+          "==",
+          0.5
+        ],
+        [
+          "Official_Opp_PK_L5_PPP_per_O",
+          ">=",
+          1.1
+        ],
+        [
+          "PP_OnIce_xG_per_game",
+          ">=",
+          0.3
+        ]
+      ],
+      "conditions": [
+        [
+          "i5v5_primaryAssists60",
+          ">=",
+          0.6
+        ],
+        [
+          "Player_L20_P_total",
+          ">=",
+          8
+        ],
+        [
+          "Official_Opp_PK_L10_Goals_PG",
+          ">=",
+          1.0
+        ]
+      ],
+      "available_parent": {
+        "full": {
+          "hits": 42,
+          "plays": 75,
+          "rate": 56.0,
+          "BE": 30.89627534719897,
+          "gap": 25.10372465280103,
+          "players": 50,
+          "units": 58.41495575221239,
+          "ROI": 77.88660766961652,
+          "dates": 20,
+          "games": 37,
+          "teams": 22,
+          "opponents": 12,
+          "team_games": 37
+        },
+        "recent": {
+          "hits": 31,
+          "plays": 55,
+          "rate": 56.36363636363637,
+          "BE": 31.43549441259249,
+          "gap": 24.928141951043877,
+          "players": 37,
+          "units": 40.96495575221239,
+          "ROI": 74.48173773129525,
+          "dates": 14,
+          "games": 27,
+          "teams": 16,
+          "opponents": 9,
+          "team_games": 27
+        }
+      },
+      "noise": {
+        "full_defenders": {
+          "VAN": 13,
+          "SEA": 9,
+          "UTA": 6,
+          "WPG": 5,
+          "SJS": 5,
+          "LAK": 4,
+          "ANA": 2,
+          "TBL": 1
+        },
+        "recent_defenders": {
+          "VAN": 12,
+          "SEA": 6,
+          "WPG": 5,
+          "SJS": 5,
+          "LAK": 4,
+          "ANA": 2,
+          "TBL": 1
+        },
+        "full_teams": {
+          "CAR": 7,
+          "NYR": 6,
+          "PIT": 5,
+          "NSH": 5,
+          "VGK": 4,
+          "EDM": 3,
+          "MTL": 3,
+          "MIN": 3,
+          "TBL": 3,
+          "UTA": 2,
+          "TOR": 2,
+          "CGY": 1,
+          "DET": 1
+        },
+        "recent_teams": {
+          "CAR": 6,
+          "NYR": 6,
+          "PIT": 5,
+          "NSH": 5,
+          "VGK": 4,
+          "EDM": 3,
+          "MTL": 3,
+          "UTA": 2,
+          "DET": 1
+        },
+        "full_goalies": {
+          "Leevi Merilainen": 12,
+          "Joey Daccord": 7,
+          "Karel Vejmelka": 6,
+          "Stuart Skinner": 5,
+          "Alex Nedeljkovic": 3,
+          "Philipp Grubauer": 2,
+          "Laurent Brossoit": 2,
+          "Darcy Kuemper": 2,
+          "Anton Forsberg": 2,
+          "Yaroslav Askarov": 2,
+          "Andrei Vasilevskiy": 1,
+          "Nikita Tolopilo": 1
+        },
+        "recent_goalies": {
+          "Leevi Merilainen": 11,
+          "Joey Daccord": 6,
+          "Stuart Skinner": 5,
+          "Alex Nedeljkovic": 3,
+          "Laurent Brossoit": 2,
+          "Darcy Kuemper": 2,
+          "Anton Forsberg": 2,
+          "Yaroslav Askarov": 2,
+          "Andrei Vasilevskiy": 1,
+          "Nikita Tolopilo": 1
+        },
+        "goalie_gp_min": 3.0,
+        "goalie_gp_max": 15.0,
+        "goalie_gp1_2": 0,
+        "recent_goalie_gp1_2": 0,
+        "goalie_games": 20,
+        "outside_VAN_SEA": {
+          "full": {
+            "hits": 16,
+            "plays": 23,
+            "rate": 69.56521739130434,
+            "BE": 30.68338365421218,
+            "gap": 38.881833737092165,
+            "players": 18,
+            "units": 28.9,
+            "ROI": 125.65217391304348,
+            "dates": 10,
+            "games": 11,
+            "teams": 8,
+            "opponents": 6,
+            "team_games": 11
+          },
+          "recent": {
+            "hits": 11,
+            "plays": 17,
+            "rate": 64.70588235294117,
+            "BE": 30.234772551212327,
+            "gap": 34.47110980172884,
+            "players": 12,
+            "units": 18.65,
+            "ROI": 109.70588235294117,
+            "dates": 8,
+            "games": 9,
+            "teams": 6,
+            "opponents": 5,
+            "team_games": 9
+          }
+        },
+        "outside_player_kit": {
+          "full": {
+            "hits": 0,
+            "plays": 0,
+            "rate": null,
+            "BE": null,
+            "gap": null,
+            "players": 0,
+            "units": 0.0,
+            "ROI": null,
+            "dates": 0,
+            "games": 0,
+            "teams": 0,
+            "opponents": 0,
+            "team_games": 0
+          },
+          "recent": {
+            "hits": 0,
+            "plays": 0,
+            "rate": null,
+            "BE": null,
+            "gap": null,
+            "players": 0,
+            "units": 0.0,
+            "ROI": null,
+            "dates": 0,
+            "games": 0,
+            "teams": 0,
+            "opponents": 0,
+            "team_games": 0
+          }
+        },
+        "without_biggest_full": 56.81495575221239,
+        "without_biggest_recent": 39.96495575221239
+      },
+      "approved_books": {
+        "full": {
+          "plays": 41,
+          "hits": 32,
+          "rate": 78.04878048780488,
+          "units": 59.06495575221239,
+          "ROI": 144.0608676883229,
+          "BE": 32.29788875899528,
+          "gap": 45.7508917288096,
+          "players": 32
+        },
+        "recent": {
+          "plays": 32,
+          "hits": 25,
+          "rate": 78.125,
+          "units": 43.96495575221239,
+          "ROI": 137.39048672566372,
+          "BE": 32.88622606158393,
+          "gap": 45.23877393841607,
+          "players": 24
+        },
+        "original_prices_same_covered": {
+          "full": {
+            "hits": 32,
+            "plays": 41,
+            "rate": 78.04878048780488,
+            "BE": 32.29788875899528,
+            "gap": 45.7508917288096,
+            "players": 32,
+            "units": 59.06495575221239,
+            "ROI": 144.0608676883229,
+            "dates": 15,
+            "games": 19,
+            "teams": 13,
+            "opponents": 8,
+            "team_games": 19
+          },
+          "recent": {
+            "hits": 25,
+            "plays": 32,
+            "rate": 78.125,
+            "BE": 32.88622606158393,
+            "gap": 45.23877393841607,
+            "players": 24,
+            "units": 43.96495575221239,
+            "ROI": 137.39048672566372,
+            "dates": 10,
+            "games": 14,
+            "teams": 9,
+            "opponents": 7,
+            "team_games": 14
+          }
+        },
+        "missing_full": 4,
+        "missing_recent": 3,
+        "selection": "Best ordinary saved exactPPP0.5 quote among the users eight bookmakers; no fresh or invented prices."
+      },
+      "status": "keeper",
+      "not_an_entry_gate": true,
+      "research_record": {
+        "full": {
+          "hits": 34,
+          "plays": 45,
+          "rate": 75.55555555555556,
+          "BE": 32.41289698185346,
+          "gap": 43.1426585737021,
+          "players": 34,
+          "units": 60.06495575221239,
+          "ROI": 133.47767944936086,
+          "dates": 15,
+          "games": 20,
+          "teams": 13,
+          "opponents": 8,
+          "team_games": 20
+        },
+        "recent": {
+          "hits": 26,
+          "plays": 35,
+          "rate": 74.28571428571429,
+          "BE": 32.867500647761396,
+          "gap": 41.418213637952896,
+          "players": 25,
+          "units": 43.21495575221239,
+          "ROI": 123.47130214917826,
+          "dates": 10,
+          "games": 15,
+          "teams": 9,
+          "opponents": 7,
+          "team_games": 15
+        }
+      },
+      "record": {
+        "hits": 34,
+        "plays": 45,
+        "rate": 75.55555555555556,
+        "BE": 32.41289698185346,
+        "gap": 43.1426585737021,
+        "players": 34,
+        "units": 60.06495575221239,
+        "ROI": 133.47767944936086,
+        "dates": 15,
+        "games": 20,
+        "teams": 13,
+        "opponents": 8,
+        "team_games": 20
+      },
+      "pp_v2": true,
+      "kit_version": "pp-moves-v2-2026-11-19",
+      "record_label": "V2 TOTAL MOVE %",
+      "move_version": "V2",
+      "display_family": "v2-penalty-rift",
+      "optional_buff": true,
+      "rule": "PPP_Line == 0.5 + Official_Opp_PK_L5_PPP_per_O >= 1.1 + PP_OnIce_xG_per_game >= 0.3 + i5v5_primaryAssists60 >= 0.6 + Player_L20_P_total >= 8 + Official_Opp_PK_L10_Goals_PG >= 1"
+    },
+    {
+      "id": "pp-v2-buff-k3",
+      "code": "K3",
+      "name": "Penalty Rift III",
+      "family": "penalty-rift",
+      "parent": "Primary8",
+      "kind": "OPTIONAL BUFF",
+      "entry": [
+        [
+          "PPP_Line",
+          "==",
+          0.5
+        ],
+        [
+          "Official_Opp_PK_L5_PPP_per_O",
+          ">=",
+          1.1
+        ],
+        [
+          "PP_OnIce_xG_per_game",
+          ">=",
+          0.3
+        ]
+      ],
+      "conditions": [
+        [
+          "i5v5_primaryAssists60",
+          ">=",
+          0.6
+        ],
+        [
+          "Player_L20_P_total",
+          ">=",
+          8
+        ],
+        [
+          "Official_Opp_PK_L10_Goals_PG",
+          ">=",
+          1.1
+        ]
+      ],
+      "available_parent": {
+        "full": {
+          "hits": 42,
+          "plays": 75,
+          "rate": 56.0,
+          "BE": 30.89627534719897,
+          "gap": 25.10372465280103,
+          "players": 50,
+          "units": 58.41495575221239,
+          "ROI": 77.88660766961652,
+          "dates": 20,
+          "games": 37,
+          "teams": 22,
+          "opponents": 12,
+          "team_games": 37
+        },
+        "recent": {
+          "hits": 31,
+          "plays": 55,
+          "rate": 56.36363636363637,
+          "BE": 31.43549441259249,
+          "gap": 24.928141951043877,
+          "players": 37,
+          "units": 40.96495575221239,
+          "ROI": 74.48173773129525,
+          "dates": 14,
+          "games": 27,
+          "teams": 16,
+          "opponents": 9,
+          "team_games": 27
+        }
+      },
+      "noise": {
+        "full_defenders": {
+          "VAN": 10,
+          "UTA": 6,
+          "SEA": 5,
+          "SJS": 4,
+          "WPG": 3,
+          "ANA": 2
+        },
+        "recent_defenders": {
+          "VAN": 9,
+          "SJS": 4,
+          "SEA": 4,
+          "WPG": 3,
+          "ANA": 2
+        },
+        "full_teams": {
+          "CAR": 5,
+          "VGK": 4,
+          "NYR": 4,
+          "TBL": 3,
+          "MIN": 3,
+          "MTL": 3,
+          "NSH": 3,
+          "PIT": 2,
+          "UTA": 2,
+          "CGY": 1
+        },
+        "recent_teams": {
+          "NYR": 4,
+          "VGK": 4,
+          "CAR": 4,
+          "NSH": 3,
+          "MTL": 3,
+          "PIT": 2,
+          "UTA": 2
+        },
+        "full_goalies": {
+          "Leevi Merilainen": 9,
+          "Karel Vejmelka": 6,
+          "Joey Daccord": 5,
+          "Stuart Skinner": 3,
+          "Alex Nedeljkovic": 3,
+          "Laurent Brossoit": 2,
+          "Yaroslav Askarov": 1,
+          "Nikita Tolopilo": 1
+        },
+        "recent_goalies": {
+          "Leevi Merilainen": 8,
+          "Joey Daccord": 4,
+          "Stuart Skinner": 3,
+          "Alex Nedeljkovic": 3,
+          "Laurent Brossoit": 2,
+          "Yaroslav Askarov": 1,
+          "Nikita Tolopilo": 1
+        },
+        "goalie_gp_min": 3.0,
+        "goalie_gp_max": 15.0,
+        "goalie_gp1_2": 0,
+        "recent_goalie_gp1_2": 0,
+        "goalie_games": 12,
+        "outside_VAN_SEA": {
+          "full": {
+            "hits": 14,
+            "plays": 15,
+            "rate": 93.33333333333333,
+            "BE": 31.666266161761303,
+            "gap": 61.66706717157203,
+            "players": 15,
+            "units": 30.35,
+            "ROI": 202.33333333333334,
+            "dates": 6,
+            "games": 6,
+            "teams": 6,
+            "opponents": 4,
+            "team_games": 6
+          },
+          "recent": {
+            "hits": 9,
+            "plays": 9,
+            "rate": 100.0,
+            "BE": 31.47414463890545,
+            "gap": 68.52585536109456,
+            "players": 9,
+            "units": 20.1,
+            "ROI": 223.33333333333334,
+            "dates": 4,
+            "games": 4,
+            "teams": 4,
+            "opponents": 3,
+            "team_games": 4
+          }
+        },
+        "outside_player_kit": {
+          "full": {
+            "hits": 0,
+            "plays": 0,
+            "rate": null,
+            "BE": null,
+            "gap": null,
+            "players": 0,
+            "units": 0.0,
+            "ROI": null,
+            "dates": 0,
+            "games": 0,
+            "teams": 0,
+            "opponents": 0,
+            "team_games": 0
+          },
+          "recent": {
+            "hits": 0,
+            "plays": 0,
+            "rate": null,
+            "BE": null,
+            "gap": null,
+            "players": 0,
+            "units": 0.0,
+            "ROI": null,
+            "dates": 0,
+            "games": 0,
+            "teams": 0,
+            "opponents": 0,
+            "team_games": 0
+          }
+        },
+        "without_biggest_full": 49.25,
+        "without_biggest_recent": 37.15
+      },
+      "approved_books": {
+        "full": {
+          "plays": 29,
+          "hits": 25,
+          "rate": 86.20689655172414,
+          "units": 50.75,
+          "ROI": 175.0,
+          "BE": 31.98955378663754,
+          "gap": 54.2173427650866,
+          "players": 27
+        },
+        "recent": {
+          "plays": 22,
+          "hits": 20,
+          "rate": 90.9090909090909,
+          "units": 40.4,
+          "ROI": 183.63636363636363,
+          "BE": 32.548043146490826,
+          "gap": 58.36104776260008,
+          "players": 21
+        },
+        "original_prices_same_covered": {
+          "full": {
+            "hits": 25,
+            "plays": 29,
+            "rate": 86.20689655172414,
+            "BE": 31.98955378663754,
+            "gap": 54.2173427650866,
+            "players": 27,
+            "units": 50.75,
+            "ROI": 175.0,
+            "dates": 10,
+            "games": 12,
+            "teams": 10,
+            "opponents": 6,
+            "team_games": 12
+          },
+          "recent": {
+            "hits": 20,
+            "plays": 22,
+            "rate": 90.9090909090909,
+            "BE": 32.548043146490826,
+            "gap": 58.36104776260008,
+            "players": 21,
+            "units": 40.4,
+            "ROI": 183.63636363636363,
+            "dates": 6,
+            "games": 8,
+            "teams": 7,
+            "opponents": 5,
+            "team_games": 8
+          }
+        },
+        "missing_full": 1,
+        "missing_recent": 0,
+        "selection": "Best ordinary saved exactPPP0.5 quote among the users eight bookmakers; no fresh or invented prices."
+      },
+      "status": "keeper",
+      "not_an_entry_gate": true,
+      "research_record": {
+        "full": {
+          "hits": 26,
+          "plays": 30,
+          "rate": 86.66666666666667,
+          "BE": 32.13535653920417,
+          "gap": 54.531310127462504,
+          "players": 28,
+          "units": 52.5,
+          "ROI": 175.0,
+          "dates": 10,
+          "games": 12,
+          "teams": 10,
+          "opponents": 6,
+          "team_games": 12
+        },
+        "recent": {
+          "hits": 20,
+          "plays": 22,
+          "rate": 90.9090909090909,
+          "BE": 32.548043146490826,
+          "gap": 58.36104776260008,
+          "players": 21,
+          "units": 40.4,
+          "ROI": 183.63636363636363,
+          "dates": 6,
+          "games": 8,
+          "teams": 7,
+          "opponents": 5,
+          "team_games": 8
+        }
+      },
+      "record": {
+        "hits": 26,
+        "plays": 30,
+        "rate": 86.66666666666667,
+        "BE": 32.13535653920417,
+        "gap": 54.531310127462504,
+        "players": 28,
+        "units": 52.5,
+        "ROI": 175.0,
+        "dates": 10,
+        "games": 12,
+        "teams": 10,
+        "opponents": 6,
+        "team_games": 12
+      },
+      "pp_v2": true,
+      "kit_version": "pp-moves-v2-2026-11-19",
+      "record_label": "V2 TOTAL MOVE %",
+      "move_version": "V2",
+      "display_family": "v2-penalty-rift",
+      "optional_buff": true,
+      "rule": "PPP_Line == 0.5 + Official_Opp_PK_L5_PPP_per_O >= 1.1 + PP_OnIce_xG_per_game >= 0.3 + i5v5_primaryAssists60 >= 0.6 + Player_L20_P_total >= 8 + Official_Opp_PK_L10_Goals_PG >= 1.1"
+    },
+    {
+      "id": "pp-v2-buff-gsv",
+      "code": "GSV",
+      "name": "Guardian Breach · SV",
+      "family": "guardian-breach",
+      "parent": "P18",
+      "kind": "OPTIONAL BUFF",
+      "entry": [
+        [
+          "PPP_Line",
+          "==",
+          0.5
+        ],
+        [
+          "Official_Opp_PK_L5_PPP_per_O",
+          ">=",
+          1.1
+        ],
+        [
+          "PP_OnIce_xG_per_game",
+          ">=",
+          0.3
+        ]
+      ],
+      "conditions": [
+        [
+          "Player_L10_P_per60",
+          ">=",
+          1.8
+        ],
+        [
+          "Goalie_SV",
+          "<=",
+          0.9
+        ]
+      ],
+      "available_parent": {
+        "full": {
+          "hits": 27,
+          "plays": 69,
+          "rate": 39.130434782608695,
+          "BE": 30.204341580720502,
+          "gap": 8.926093201888193,
+          "players": 55,
+          "units": 25.58,
+          "ROI": 37.072463768115945,
+          "dates": 13,
+          "games": 21,
+          "teams": 17,
+          "opponents": 14,
+          "team_games": 22
+        },
+        "recent": {
+          "hits": 17,
+          "plays": 43,
+          "rate": 39.53488372093023,
+          "BE": 31.733836692473414,
+          "gap": 7.801047028456818,
+          "players": 34,
+          "units": 9.6,
+          "ROI": 22.325581395348838,
+          "dates": 8,
+          "games": 13,
+          "teams": 11,
+          "opponents": 9,
+          "team_games": 14
+        }
+      },
+      "noise": {
+        "full_defenders": {
+          "SJS": 12,
+          "NJD": 8,
+          "VGK": 6,
+          "SEA": 5,
+          "UTA": 5,
+          "CBJ": 4,
+          "TBL": 3,
+          "ANA": 2,
+          "PIT": 2,
+          "WPG": 1
+        },
+        "recent_defenders": {
+          "SJS": 12,
+          "NJD": 8,
+          "SEA": 5,
+          "TBL": 3,
+          "PIT": 2,
+          "WPG": 1
+        },
+        "full_teams": {
+          "NYI": 6,
+          "WPG": 5,
+          "CAR": 5,
+          "MIN": 5,
+          "NYR": 4,
+          "OTT": 4,
+          "NSH": 4,
+          "DET": 3,
+          "VAN": 3,
+          "PIT": 3,
+          "CBJ": 2,
+          "SJS": 2,
+          "UTA": 2
+        },
+        "recent_teams": {
+          "NYI": 6,
+          "CAR": 5,
+          "WPG": 5,
+          "NSH": 4,
+          "DET": 3,
+          "PIT": 3,
+          "SJS": 2,
+          "UTA": 2,
+          "VAN": 1
+        },
+        "full_goalies": {
+          "Jake Allen": 8,
+          "Yaroslav Askarov": 8,
+          "Karel Vejmelka": 5,
+          "Joey Daccord": 5,
+          "Jet Greaves": 4,
+          "Adin Hill": 4,
+          "Alex Nedeljkovic": 4,
+          "Andrei Vasilevskiy": 3,
+          "Carter Hart": 2,
+          "Lukas Dostal": 2,
+          "Sergei Murashov": 2,
+          "Stuart Skinner": 1
+        },
+        "recent_goalies": {
+          "Jake Allen": 8,
+          "Yaroslav Askarov": 8,
+          "Joey Daccord": 5,
+          "Alex Nedeljkovic": 4,
+          "Andrei Vasilevskiy": 3,
+          "Sergei Murashov": 2,
+          "Stuart Skinner": 1
+        },
+        "goalie_gp_min": 4.0,
+        "goalie_gp_max": 14.0,
+        "goalie_gp1_2": 0,
+        "recent_goalie_gp1_2": 0,
+        "goalie_games": 15,
+        "outside_VAN_SEA": {
+          "full": {
+            "hits": 20,
+            "plays": 43,
+            "rate": 46.51162790697674,
+            "BE": 28.632746549760405,
+            "gap": 17.878881357216336,
+            "players": 39,
+            "units": 30.45,
+            "ROI": 70.81395348837209,
+            "dates": 10,
+            "games": 13,
+            "teams": 12,
+            "opponents": 9,
+            "team_games": 14
+          },
+          "recent": {
+            "hits": 12,
+            "plays": 26,
+            "rate": 46.15384615384615,
+            "BE": 30.548822030915098,
+            "gap": 15.605024122931056,
+            "players": 23,
+            "units": 11.05,
+            "ROI": 42.5,
+            "dates": 7,
+            "games": 8,
+            "teams": 8,
+            "opponents": 5,
+            "team_games": 9
+          }
+        },
+        "outside_player_kit": {
+          "full": {
+            "hits": 0,
+            "plays": 0,
+            "rate": null,
+            "BE": null,
+            "gap": null,
+            "players": 0,
+            "units": 0.0,
+            "ROI": null,
+            "dates": 0,
+            "games": 0,
+            "teams": 0,
+            "opponents": 0,
+            "team_games": 0
+          },
+          "recent": {
+            "hits": 0,
+            "plays": 0,
+            "rate": null,
+            "BE": null,
+            "gap": null,
+            "players": 0,
+            "units": 0.0,
+            "ROI": null,
+            "dates": 0,
+            "games": 0,
+            "teams": 0,
+            "opponents": 0,
+            "team_games": 0
+          }
+        },
+        "without_biggest_full": 34.0,
+        "without_biggest_recent": 18.6
+      },
+      "approved_books": {
+        "full": {
+          "plays": 41,
+          "hits": 21,
+          "rate": 51.21951219512195,
+          "units": 30.15,
+          "ROI": 73.53658536585365,
+          "BE": 29.269582263369173,
+          "gap": 21.949929931752777,
+          "players": 40
+        },
+        "recent": {
+          "plays": 27,
+          "hits": 16,
+          "rate": 59.25925925925926,
+          "units": 22.8,
+          "ROI": 84.44444444444444,
+          "BE": 30.934577565902075,
+          "gap": 28.324681693357185,
+          "players": 26
+        },
+        "original_prices_same_covered": {
+          "full": {
+            "hits": 21,
+            "plays": 41,
+            "rate": 51.21951219512195,
+            "BE": 29.269582263369173,
+            "gap": 21.949929931752777,
+            "players": 40,
+            "units": 30.15,
+            "ROI": 73.53658536585365,
+            "dates": 9,
+            "games": 13,
+            "teams": 13,
+            "opponents": 9,
+            "team_games": 14
+          },
+          "recent": {
+            "hits": 16,
+            "plays": 27,
+            "rate": 59.25925925925926,
+            "BE": 30.934577565902075,
+            "gap": 28.324681693357185,
+            "players": 26,
+            "units": 22.8,
+            "ROI": 84.44444444444444,
+            "dates": 6,
+            "games": 8,
+            "teams": 8,
+            "opponents": 5,
+            "team_games": 9
+          }
+        },
+        "missing_full": 7,
+        "missing_recent": 4,
+        "selection": "Best ordinary saved exactPPP0.5 quote among the users eight bookmakers; no fresh or invented prices."
+      },
+      "status": "keeper",
+      "not_an_entry_gate": true,
+      "research_record": {
+        "full": {
+          "hits": 25,
+          "plays": 48,
+          "rate": 52.083333333333336,
+          "BE": 29.004472580318666,
+          "gap": 23.07886075301467,
+          "players": 44,
+          "units": 41.0,
+          "ROI": 85.41666666666667,
+          "dates": 10,
+          "games": 14,
+          "teams": 13,
+          "opponents": 10,
+          "team_games": 15
+        },
+        "recent": {
+          "hits": 17,
+          "plays": 31,
+          "rate": 54.83870967741935,
+          "BE": 30.815353387722297,
+          "gap": 24.023356289697055,
+          "players": 28,
+          "units": 21.6,
+          "ROI": 69.6774193548387,
+          "dates": 7,
+          "games": 9,
+          "teams": 9,
+          "opponents": 6,
+          "team_games": 10
+        }
+      },
+      "record": {
+        "hits": 25,
+        "plays": 48,
+        "rate": 52.083333333333336,
+        "BE": 29.004472580318666,
+        "gap": 23.07886075301467,
+        "players": 44,
+        "units": 41.0,
+        "ROI": 85.41666666666667,
+        "dates": 10,
+        "games": 14,
+        "teams": 13,
+        "opponents": 10,
+        "team_games": 15
+      },
+      "pp_v2": true,
+      "kit_version": "pp-moves-v2-2026-11-19",
+      "record_label": "V2 TOTAL MOVE %",
+      "move_version": "V2",
+      "display_family": "v2-guardian-breach",
+      "optional_buff": true,
+      "rule": "PPP_Line == 0.5 + Official_Opp_PK_L5_PPP_per_O >= 1.1 + PP_OnIce_xG_per_game >= 0.3 + Player_L10_P_per60 >= 1.8 + Goalie_SV <= 0.9"
+    },
+    {
+      "id": "pp-v2-buff-ggaa",
+      "code": "GGAA",
+      "name": "Guardian Breach · GAA",
+      "family": "guardian-breach",
+      "parent": "P18",
+      "kind": "OPTIONAL BUFF",
+      "entry": [
+        [
+          "PPP_Line",
+          "==",
+          0.5
+        ],
+        [
+          "Official_Opp_PK_L5_PPP_per_O",
+          ">=",
+          1.1
+        ],
+        [
+          "PP_OnIce_xG_per_game",
+          ">=",
+          0.3
+        ]
+      ],
+      "conditions": [
+        [
+          "Player_L10_P_per60",
+          ">=",
+          1.8
+        ],
+        [
+          "Goalie_GAA",
+          ">=",
+          2.95
+        ]
+      ],
+      "available_parent": {
+        "full": {
+          "hits": 27,
+          "plays": 69,
+          "rate": 39.130434782608695,
+          "BE": 30.204341580720502,
+          "gap": 8.926093201888193,
+          "players": 55,
+          "units": 25.58,
+          "ROI": 37.072463768115945,
+          "dates": 13,
+          "games": 21,
+          "teams": 17,
+          "opponents": 14,
+          "team_games": 22
+        },
+        "recent": {
+          "hits": 17,
+          "plays": 43,
+          "rate": 39.53488372093023,
+          "BE": 31.733836692473414,
+          "gap": 7.801047028456818,
+          "players": 34,
+          "units": 9.6,
+          "ROI": 22.325581395348838,
+          "dates": 8,
+          "games": 13,
+          "teams": 11,
+          "opponents": 9,
+          "team_games": 14
+        }
+      },
+      "noise": {
+        "full_defenders": {
+          "SJS": 12,
+          "NJD": 8,
+          "UTA": 5,
+          "SEA": 5,
+          "CBJ": 4,
+          "VGK": 4,
+          "ANA": 2,
+          "PIT": 2,
+          "WPG": 1
+        },
+        "recent_defenders": {
+          "SJS": 12,
+          "NJD": 8,
+          "SEA": 5,
+          "PIT": 2,
+          "WPG": 1
+        },
+        "full_teams": {
+          "NYI": 6,
+          "WPG": 5,
+          "MIN": 5,
+          "CAR": 5,
+          "NYR": 4,
+          "OTT": 4,
+          "NSH": 4,
+          "PIT": 3,
+          "VAN": 3,
+          "SJS": 2,
+          "UTA": 2
+        },
+        "recent_teams": {
+          "NYI": 6,
+          "WPG": 5,
+          "CAR": 5,
+          "NSH": 4,
+          "PIT": 3,
+          "SJS": 2,
+          "UTA": 2,
+          "VAN": 1
+        },
+        "full_goalies": {
+          "Yaroslav Askarov": 8,
+          "Jake Allen": 8,
+          "Joey Daccord": 5,
+          "Karel Vejmelka": 5,
+          "Jet Greaves": 4,
+          "Adin Hill": 4,
+          "Alex Nedeljkovic": 4,
+          "Lukas Dostal": 2,
+          "Sergei Murashov": 2,
+          "Stuart Skinner": 1
+        },
+        "recent_goalies": {
+          "Jake Allen": 8,
+          "Yaroslav Askarov": 8,
+          "Joey Daccord": 5,
+          "Alex Nedeljkovic": 4,
+          "Sergei Murashov": 2,
+          "Stuart Skinner": 1
+        },
+        "goalie_gp_min": 4.0,
+        "goalie_gp_max": 14.0,
+        "goalie_gp1_2": 0,
+        "recent_goalie_gp1_2": 0,
+        "goalie_games": 13,
+        "outside_VAN_SEA": {
+          "full": {
+            "hits": 18,
+            "plays": 38,
+            "rate": 47.36842105263158,
+            "BE": 29.55186572808419,
+            "gap": 17.81655532454739,
+            "players": 34,
+            "units": 19.95,
+            "ROI": 52.5,
+            "dates": 9,
+            "games": 11,
+            "teams": 10,
+            "opponents": 8,
+            "team_games": 12
+          },
+          "recent": {
+            "hits": 12,
+            "plays": 23,
+            "rate": 52.17391304347826,
+            "BE": 30.95067400715773,
+            "gap": 21.22323903632053,
+            "players": 20,
+            "units": 14.05,
+            "ROI": 61.08695652173913,
+            "dates": 7,
+            "games": 7,
+            "teams": 7,
+            "opponents": 4,
+            "team_games": 8
+          }
+        },
+        "outside_player_kit": {
+          "full": {
+            "hits": 0,
+            "plays": 0,
+            "rate": null,
+            "BE": null,
+            "gap": null,
+            "players": 0,
+            "units": 0.0,
+            "ROI": null,
+            "dates": 0,
+            "games": 0,
+            "teams": 0,
+            "opponents": 0,
+            "team_games": 0
+          },
+          "recent": {
+            "hits": 0,
+            "plays": 0,
+            "rate": null,
+            "BE": null,
+            "gap": null,
+            "players": 0,
+            "units": 0.0,
+            "ROI": null,
+            "dates": 0,
+            "games": 0,
+            "teams": 0,
+            "opponents": 0,
+            "team_games": 0
+          }
+        },
+        "without_biggest_full": 27.2,
+        "without_biggest_recent": 21.6
+      },
+      "approved_books": {
+        "full": {
+          "plays": 37,
+          "hits": 20,
+          "rate": 54.054054054054056,
+          "units": 26.65,
+          "ROI": 72.02702702702703,
+          "BE": 29.846369427719946,
+          "gap": 24.20768462633411,
+          "players": 36
+        },
+        "recent": {
+          "plays": 24,
+          "hits": 16,
+          "rate": 66.66666666666667,
+          "units": 25.8,
+          "ROI": 107.5,
+          "BE": 31.367905151674634,
+          "gap": 35.29876151499204,
+          "players": 23
+        },
+        "original_prices_same_covered": {
+          "full": {
+            "hits": 20,
+            "plays": 37,
+            "rate": 54.054054054054056,
+            "BE": 29.846369427719946,
+            "gap": 24.20768462633411,
+            "players": 36,
+            "units": 26.65,
+            "ROI": 72.02702702702703,
+            "dates": 8,
+            "games": 11,
+            "teams": 11,
+            "opponents": 8,
+            "team_games": 12
+          },
+          "recent": {
+            "hits": 16,
+            "plays": 24,
+            "rate": 66.66666666666667,
+            "BE": 31.367905151674634,
+            "gap": 35.29876151499204,
+            "players": 23,
+            "units": 25.8,
+            "ROI": 107.5,
+            "dates": 6,
+            "games": 7,
+            "teams": 7,
+            "opponents": 4,
+            "team_games": 8
+          }
+        },
+        "missing_full": 6,
+        "missing_recent": 4,
+        "selection": "Best ordinary saved exactPPP0.5 quote among the users eight bookmakers; no fresh or invented prices."
+      },
+      "status": "keeper",
+      "not_an_entry_gate": true,
+      "research_record": {
+        "full": {
+          "hits": 23,
+          "plays": 43,
+          "rate": 53.48837209302326,
+          "BE": 29.85994139262321,
+          "gap": 23.62843070040005,
+          "players": 39,
+          "units": 30.5,
+          "ROI": 70.93023255813954,
+          "dates": 9,
+          "games": 12,
+          "teams": 11,
+          "opponents": 9,
+          "team_games": 13
+        },
+        "recent": {
+          "hits": 17,
+          "plays": 28,
+          "rate": 60.714285714285715,
+          "BE": 31.174003013579515,
+          "gap": 29.5402827007062,
+          "players": 25,
+          "units": 24.6,
+          "ROI": 87.85714285714286,
+          "dates": 7,
+          "games": 8,
+          "teams": 8,
+          "opponents": 5,
+          "team_games": 9
+        }
+      },
+      "record": {
+        "hits": 23,
+        "plays": 43,
+        "rate": 53.48837209302326,
+        "BE": 29.85994139262321,
+        "gap": 23.62843070040005,
+        "players": 39,
+        "units": 30.5,
+        "ROI": 70.93023255813954,
+        "dates": 9,
+        "games": 12,
+        "teams": 11,
+        "opponents": 9,
+        "team_games": 13
+      },
+      "pp_v2": true,
+      "kit_version": "pp-moves-v2-2026-11-19",
+      "record_label": "V2 TOTAL MOVE %",
+      "move_version": "V2",
+      "display_family": "v2-guardian-breach",
+      "optional_buff": true,
+      "rule": "PPP_Line == 0.5 + Official_Opp_PK_L5_PPP_per_O >= 1.1 + PP_OnIce_xG_per_game >= 0.3 + Player_L10_P_per60 >= 1.8 + Goalie_GAA >= 2.95"
+    },
+    {
+      "id": "pp-v2-buff-primary-gsv",
+      "code": "PRIMARY_GSV",
+      "name": "Guardian Breach · SV",
+      "family": "guardian-breach",
+      "parent": "PA60",
+      "kind": "OPTIONAL BUFF",
+      "entry": [
+        [
+          "PPP_Line",
+          "==",
+          0.5
+        ],
+        [
+          "Official_Opp_PK_L5_PPP_per_O",
+          ">=",
+          1.1
+        ],
+        [
+          "PP_OnIce_xG_per_game",
+          ">=",
+          0.3
+        ]
+      ],
+      "conditions": [
+        [
+          "i5v5_primaryAssists60",
+          ">=",
+          0.6
+        ],
+        [
+          "Goalie_SV",
+          "<=",
+          0.9
+        ]
+      ],
+      "available_parent": {
+        "full": {
+          "hits": 19,
+          "plays": 42,
+          "rate": 45.23809523809524,
+          "BE": 29.87457369703442,
+          "gap": 15.36352154106082,
+          "players": 36,
+          "units": 24.15,
+          "ROI": 57.5,
+          "dates": 12,
+          "games": 18,
+          "teams": 14,
+          "opponents": 11,
+          "team_games": 18
+        },
+        "recent": {
+          "hits": 13,
+          "plays": 25,
+          "rate": 52.0,
+          "BE": 31.38618813684119,
+          "gap": 20.61381186315881,
+          "players": 21,
+          "units": 15.95,
+          "ROI": 63.8,
+          "dates": 7,
+          "games": 12,
+          "teams": 9,
+          "opponents": 7,
+          "team_games": 12
+        }
+      },
+      "noise": {
+        "full_defenders": {
+          "SJS": 7,
+          "NJD": 6,
+          "VGK": 6,
+          "SEA": 4,
+          "CBJ": 3,
+          "UTA": 3,
+          "TBL": 1
+        },
+        "recent_defenders": {
+          "SJS": 7,
+          "NJD": 6,
+          "SEA": 4,
+          "TBL": 1
+        },
+        "full_teams": {
+          "WPG": 4,
+          "NYI": 4,
+          "OTT": 4,
+          "CAR": 4,
+          "NSH": 3,
+          "NYR": 3,
+          "MIN": 3,
+          "CBJ": 2,
+          "PIT": 1,
+          "DET": 1,
+          "UTA": 1
+        },
+        "recent_teams": {
+          "NYI": 4,
+          "WPG": 4,
+          "CAR": 4,
+          "NSH": 3,
+          "PIT": 1,
+          "DET": 1,
+          "UTA": 1
+        },
+        "full_goalies": {
+          "Jake Allen": 6,
+          "Joey Daccord": 4,
+          "Adin Hill": 4,
+          "Yaroslav Askarov": 4,
+          "Jet Greaves": 3,
+          "Alex Nedeljkovic": 3,
+          "Karel Vejmelka": 3,
+          "Carter Hart": 2,
+          "Andrei Vasilevskiy": 1
+        },
+        "recent_goalies": {
+          "Jake Allen": 6,
+          "Yaroslav Askarov": 4,
+          "Joey Daccord": 4,
+          "Alex Nedeljkovic": 3,
+          "Andrei Vasilevskiy": 1
+        },
+        "goalie_gp_min": 4.0,
+        "goalie_gp_max": 14.0,
+        "goalie_gp1_2": 0,
+        "recent_goalie_gp1_2": 0,
+        "goalie_games": 12,
+        "outside_VAN_SEA": {
+          "full": {
+            "hits": 14,
+            "plays": 26,
+            "rate": 53.84615384615385,
+            "BE": 27.92792850049654,
+            "gap": 25.918225345657305,
+            "players": 24,
+            "units": 24.5,
+            "ROI": 94.23076923076923,
+            "dates": 9,
+            "games": 11,
+            "teams": 10,
+            "opponents": 6,
+            "team_games": 11
+          },
+          "recent": {
+            "hits": 9,
+            "plays": 14,
+            "rate": 64.28571428571429,
+            "BE": 29.094339348642684,
+            "gap": 35.19137493707161,
+            "players": 12,
+            "units": 14.6,
+            "ROI": 104.28571428571429,
+            "dates": 6,
+            "games": 7,
+            "teams": 6,
+            "opponents": 3,
+            "team_games": 7
+          }
+        },
+        "outside_player_kit": {
+          "full": {
+            "hits": 0,
+            "plays": 0,
+            "rate": null,
+            "BE": null,
+            "gap": null,
+            "players": 0,
+            "units": 0.0,
+            "ROI": null,
+            "dates": 0,
+            "games": 0,
+            "teams": 0,
+            "opponents": 0,
+            "team_games": 0
+          },
+          "recent": {
+            "hits": 0,
+            "plays": 0,
+            "rate": null,
+            "BE": null,
+            "gap": null,
+            "players": 0,
+            "units": 0.0,
+            "ROI": null,
+            "dates": 0,
+            "games": 0,
+            "teams": 0,
+            "opponents": 0,
+            "team_games": 0
+          }
+        },
+        "without_biggest_full": 25.85,
+        "without_biggest_recent": 19.95
+      },
+      "approved_books": {
+        "full": {
+          "plays": 26,
+          "hits": 15,
+          "rate": 57.69230769230769,
+          "units": 23.3,
+          "ROI": 89.61538461538461,
+          "BE": 28.500068109521397,
+          "gap": 29.192239582786296,
+          "players": 25
+        },
+        "recent": {
+          "plays": 16,
+          "hits": 12,
+          "rate": 75.0,
+          "units": 22.15,
+          "ROI": 138.4375,
+          "BE": 29.44125106745501,
+          "gap": 45.55874893254499,
+          "players": 15
+        },
+        "original_prices_same_covered": {
+          "full": {
+            "hits": 15,
+            "plays": 26,
+            "rate": 57.69230769230769,
+            "BE": 28.500068109521397,
+            "gap": 29.192239582786296,
+            "players": 25,
+            "units": 23.3,
+            "ROI": 89.61538461538461,
+            "dates": 9,
+            "games": 12,
+            "teams": 11,
+            "opponents": 7,
+            "team_games": 12
+          },
+          "recent": {
+            "hits": 12,
+            "plays": 16,
+            "rate": 75.0,
+            "BE": 29.44125106745501,
+            "gap": 45.55874893254499,
+            "players": 15,
+            "units": 22.15,
+            "ROI": 138.4375,
+            "dates": 6,
+            "games": 8,
+            "teams": 7,
+            "opponents": 4,
+            "team_games": 8
+          }
+        },
+        "missing_full": 4,
+        "missing_recent": 2,
+        "selection": "Best ordinary saved exactPPP0.5 quote among the users eight bookmakers; no fresh or invented prices."
+      },
+      "status": "keeper",
+      "not_an_entry_gate": true,
+      "research_record": {
+        "full": {
+          "hits": 18,
+          "plays": 30,
+          "rate": 60.0,
+          "BE": 28.529424107616958,
+          "gap": 31.470575892383042,
+          "players": 28,
+          "units": 32.85,
+          "ROI": 109.5,
+          "dates": 9,
+          "games": 12,
+          "teams": 11,
+          "opponents": 7,
+          "team_games": 12
+        },
+        "recent": {
+          "hits": 13,
+          "plays": 18,
+          "rate": 72.22222222222223,
+          "BE": 29.837629616477564,
+          "gap": 42.384592605744665,
+          "players": 16,
+          "units": 22.95,
+          "ROI": 127.5,
+          "dates": 6,
+          "games": 8,
+          "teams": 7,
+          "opponents": 4,
+          "team_games": 8
+        }
+      },
+      "record": {
+        "hits": 18,
+        "plays": 30,
+        "rate": 60.0,
+        "BE": 28.529424107616958,
+        "gap": 31.470575892383042,
+        "players": 28,
+        "units": 32.85,
+        "ROI": 109.5,
+        "dates": 9,
+        "games": 12,
+        "teams": 11,
+        "opponents": 7,
+        "team_games": 12
+      },
+      "pp_v2": true,
+      "kit_version": "pp-moves-v2-2026-11-19",
+      "record_label": "V2 TOTAL MOVE %",
+      "move_version": "V2",
+      "display_family": "v2-guardian-breach",
+      "optional_buff": true,
+      "rule": "PPP_Line == 0.5 + Official_Opp_PK_L5_PPP_per_O >= 1.1 + PP_OnIce_xG_per_game >= 0.3 + i5v5_primaryAssists60 >= 0.6 + Goalie_SV <= 0.9"
+    },
+    {
+      "id": "pp-v2-buff-p18-gk95",
+      "code": "P18_GK95",
+      "name": "Guardian Breach II",
+      "family": "guardian-breach",
+      "parent": "P18",
+      "kind": "OPTIONAL BUFF",
+      "entry": [
+        [
+          "PPP_Line",
+          "==",
+          0.5
+        ],
+        [
+          "Official_Opp_PK_L5_PPP_per_O",
+          ">=",
+          1.1
+        ],
+        [
+          "PP_OnIce_xG_per_game",
+          ">=",
+          0.3
+        ]
+      ],
+      "conditions": [
+        [
+          "Player_L10_P_per60",
+          ">=",
+          1.8
+        ],
+        [
+          "Goalie_SV",
+          "<=",
+          0.9
+        ],
+        [
+          "Official_Opp_PK_L10_Seconds_per_O",
+          "<=",
+          95
+        ]
+      ],
+      "available_parent": {
+        "full": {
+          "hits": 25,
+          "plays": 44,
+          "rate": 56.81818181818182,
+          "BE": 29.02383762571757,
+          "gap": 27.79434419246425,
+          "players": 40,
+          "units": 45.0,
+          "ROI": 102.27272727272727,
+          "dates": 9,
+          "games": 13,
+          "teams": 12,
+          "opponents": 9,
+          "team_games": 14
+        },
+        "recent": {
+          "hits": 17,
+          "plays": 31,
+          "rate": 54.83870967741935,
+          "BE": 30.815353387722297,
+          "gap": 24.023356289697055,
+          "players": 28,
+          "units": 21.6,
+          "ROI": 69.6774193548387,
+          "dates": 7,
+          "games": 9,
+          "teams": 9,
+          "opponents": 6,
+          "team_games": 10
+        }
+      },
+      "noise": {
+        "full_defenders": {
+          "SJS": 12,
+          "NJD": 8,
+          "VGK": 6,
+          "SEA": 5,
+          "UTA": 5,
+          "ANA": 2,
+          "WPG": 1
+        },
+        "recent_defenders": {
+          "SJS": 12,
+          "NJD": 8,
+          "SEA": 5,
+          "WPG": 1
+        },
+        "full_teams": {
+          "NYI": 6,
+          "MIN": 5,
+          "CAR": 5,
+          "WPG": 5,
+          "NSH": 4,
+          "OTT": 4,
+          "PIT": 3,
+          "VAN": 3,
+          "CBJ": 2,
+          "UTA": 2
+        },
+        "recent_teams": {
+          "NYI": 6,
+          "WPG": 5,
+          "CAR": 5,
+          "NSH": 4,
+          "PIT": 3,
+          "UTA": 2,
+          "VAN": 1
+        },
+        "full_goalies": {
+          "Yaroslav Askarov": 8,
+          "Jake Allen": 8,
+          "Karel Vejmelka": 5,
+          "Joey Daccord": 5,
+          "Adin Hill": 4,
+          "Alex Nedeljkovic": 4,
+          "Carter Hart": 2,
+          "Lukas Dostal": 2,
+          "Stuart Skinner": 1
+        },
+        "recent_goalies": {
+          "Jake Allen": 8,
+          "Yaroslav Askarov": 8,
+          "Joey Daccord": 5,
+          "Alex Nedeljkovic": 4,
+          "Stuart Skinner": 1
+        },
+        "goalie_gp_min": 5.0,
+        "goalie_gp_max": 14.0,
+        "goalie_gp1_2": 0,
+        "recent_goalie_gp1_2": 0,
+        "goalie_games": 12,
+        "outside_VAN_SEA": {
+          "full": {
+            "hits": 20,
+            "plays": 34,
+            "rate": 58.8235294117647,
+            "BE": 28.800783469733155,
+            "gap": 30.02274594203155,
+            "players": 30,
+            "units": 39.45,
+            "ROI": 116.02941176470588,
+            "dates": 9,
+            "games": 11,
+            "teams": 9,
+            "opponents": 6,
+            "team_games": 11
+          },
+          "recent": {
+            "hits": 12,
+            "plays": 21,
+            "rate": 57.142857142857146,
+            "BE": 31.30732083136883,
+            "gap": 25.835536311488315,
+            "players": 18,
+            "units": 16.05,
+            "ROI": 76.42857142857143,
+            "dates": 7,
+            "games": 7,
+            "teams": 6,
+            "opponents": 3,
+            "team_games": 7
+          }
+        },
+        "outside_player_kit": {
+          "full": {
+            "hits": 0,
+            "plays": 0,
+            "rate": null,
+            "BE": null,
+            "gap": null,
+            "players": 0,
+            "units": 0.0,
+            "ROI": null,
+            "dates": 0,
+            "games": 0,
+            "teams": 0,
+            "opponents": 0,
+            "team_games": 0
+          },
+          "recent": {
+            "hits": 0,
+            "plays": 0,
+            "rate": null,
+            "BE": null,
+            "gap": null,
+            "players": 0,
+            "units": 0.0,
+            "ROI": null,
+            "dates": 0,
+            "games": 0,
+            "teams": 0,
+            "opponents": 0,
+            "team_games": 0
+          }
+        },
+        "without_biggest_full": 43.0,
+        "without_biggest_recent": 23.6
+      },
+      "approved_books": {
+        "full": {
+          "plays": 32,
+          "hits": 21,
+          "rate": 65.625,
+          "units": 39.15,
+          "ROI": 122.34375,
+          "BE": 29.627231535292687,
+          "gap": 35.99776846470731,
+          "players": 31
+        },
+        "recent": {
+          "plays": 22,
+          "hits": 16,
+          "rate": 72.72727272727273,
+          "units": 27.8,
+          "ROI": 126.36363636363636,
+          "BE": 31.746270860650405,
+          "gap": 40.98100186662233,
+          "players": 21
+        },
+        "original_prices_same_covered": {
+          "full": {
+            "hits": 21,
+            "plays": 32,
+            "rate": 65.625,
+            "BE": 29.627231535292687,
+            "gap": 35.99776846470731,
+            "players": 31,
+            "units": 39.15,
+            "ROI": 122.34375,
+            "dates": 8,
+            "games": 11,
+            "teams": 10,
+            "opponents": 6,
+            "team_games": 11
+          },
+          "recent": {
+            "hits": 16,
+            "plays": 22,
+            "rate": 72.72727272727273,
+            "BE": 31.746270860650405,
+            "gap": 40.98100186662233,
+            "players": 21,
+            "units": 27.8,
+            "ROI": 126.36363636363636,
+            "dates": 6,
+            "games": 7,
+            "teams": 6,
+            "opponents": 3,
+            "team_games": 7
+          }
+        },
+        "missing_full": 7,
+        "missing_recent": 4,
+        "selection": "Best ordinary saved exactPPP0.5 quote among the users eight bookmakers; no fresh or invented prices."
+      },
+      "status": "keeper",
+      "not_an_entry_gate": true,
+      "research_record": {
+        "full": {
+          "hits": 25,
+          "plays": 39,
+          "rate": 64.1025641025641,
+          "BE": 29.236749235551944,
+          "gap": 34.86581486701216,
+          "players": 35,
+          "units": 50.0,
+          "ROI": 128.2051282051282,
+          "dates": 9,
+          "games": 12,
+          "teams": 10,
+          "opponents": 7,
+          "team_games": 12
+        },
+        "recent": {
+          "hits": 17,
+          "plays": 26,
+          "rate": 65.38461538461539,
+          "BE": 31.47924306439785,
+          "gap": 33.90537232021754,
+          "players": 23,
+          "units": 26.6,
+          "ROI": 102.3076923076923,
+          "dates": 7,
+          "games": 8,
+          "teams": 7,
+          "opponents": 4,
+          "team_games": 8
+        }
+      },
+      "record": {
+        "hits": 25,
+        "plays": 39,
+        "rate": 64.1025641025641,
+        "BE": 29.236749235551944,
+        "gap": 34.86581486701216,
+        "players": 35,
+        "units": 50.0,
+        "ROI": 128.2051282051282,
+        "dates": 9,
+        "games": 12,
+        "teams": 10,
+        "opponents": 7,
+        "team_games": 12
+      },
+      "pp_v2": true,
+      "kit_version": "pp-moves-v2-2026-11-19",
+      "record_label": "V2 TOTAL MOVE %",
+      "move_version": "V2",
+      "display_family": "v2-guardian-breach",
+      "optional_buff": true,
+      "rule": "PPP_Line == 0.5 + Official_Opp_PK_L5_PPP_per_O >= 1.1 + PP_OnIce_xG_per_game >= 0.3 + Player_L10_P_per60 >= 1.8 + Goalie_SV <= 0.9 + Official_Opp_PK_L10_Seconds_per_O <= 95"
+    },
+    {
+      "id": "pp-v2-buff-p18-gk91",
+      "code": "P18_GK91",
+      "name": "Guardian Breach III",
+      "family": "guardian-breach",
+      "parent": "P18",
+      "kind": "OPTIONAL BUFF",
+      "entry": [
+        [
+          "PPP_Line",
+          "==",
+          0.5
+        ],
+        [
+          "Official_Opp_PK_L5_PPP_per_O",
+          ">=",
+          1.1
+        ],
+        [
+          "PP_OnIce_xG_per_game",
+          ">=",
+          0.3
+        ]
+      ],
+      "conditions": [
+        [
+          "Player_L10_P_per60",
+          ">=",
+          1.8
+        ],
+        [
+          "Goalie_SV",
+          "<=",
+          0.9
+        ],
+        [
+          "Official_Opp_PK_L10_Seconds_per_O",
+          "<=",
+          91
+        ]
+      ],
+      "available_parent": {
+        "full": {
+          "hits": 25,
+          "plays": 44,
+          "rate": 56.81818181818182,
+          "BE": 29.02383762571757,
+          "gap": 27.79434419246425,
+          "players": 40,
+          "units": 45.0,
+          "ROI": 102.27272727272727,
+          "dates": 9,
+          "games": 13,
+          "teams": 12,
+          "opponents": 9,
+          "team_games": 14
+        },
+        "recent": {
+          "hits": 17,
+          "plays": 31,
+          "rate": 54.83870967741935,
+          "BE": 30.815353387722297,
+          "gap": 24.023356289697055,
+          "players": 28,
+          "units": 21.6,
+          "ROI": 69.6774193548387,
+          "dates": 7,
+          "games": 9,
+          "teams": 9,
+          "opponents": 6,
+          "team_games": 10
+        }
+      },
+      "noise": {
+        "full_defenders": {
+          "SJS": 9,
+          "VGK": 6,
+          "UTA": 5,
+          "SEA": 5,
+          "NJD": 5,
+          "ANA": 2,
+          "WPG": 1
+        },
+        "recent_defenders": {
+          "SJS": 9,
+          "NJD": 5,
+          "SEA": 5,
+          "WPG": 1
+        },
+        "full_teams": {
+          "MIN": 5,
+          "CAR": 5,
+          "WPG": 5,
+          "NSH": 4,
+          "OTT": 4,
+          "PIT": 3,
+          "VAN": 3,
+          "CBJ": 2,
+          "UTA": 2
+        },
+        "recent_teams": {
+          "WPG": 5,
+          "CAR": 5,
+          "NSH": 4,
+          "PIT": 3,
+          "UTA": 2,
+          "VAN": 1
+        },
+        "full_goalies": {
+          "Karel Vejmelka": 5,
+          "Yaroslav Askarov": 5,
+          "Joey Daccord": 5,
+          "Jake Allen": 5,
+          "Adin Hill": 4,
+          "Alex Nedeljkovic": 4,
+          "Carter Hart": 2,
+          "Lukas Dostal": 2,
+          "Stuart Skinner": 1
+        },
+        "recent_goalies": {
+          "Jake Allen": 5,
+          "Joey Daccord": 5,
+          "Yaroslav Askarov": 5,
+          "Alex Nedeljkovic": 4,
+          "Stuart Skinner": 1
+        },
+        "goalie_gp_min": 5.0,
+        "goalie_gp_max": 14.0,
+        "goalie_gp1_2": 0,
+        "recent_goalie_gp1_2": 0,
+        "goalie_games": 10,
+        "outside_VAN_SEA": {
+          "full": {
+            "hits": 18,
+            "plays": 28,
+            "rate": 64.28571428571429,
+            "BE": 28.876828653410413,
+            "gap": 35.40888563230388,
+            "players": 27,
+            "units": 38.65,
+            "ROI": 138.03571428571428,
+            "dates": 7,
+            "games": 9,
+            "teams": 8,
+            "opponents": 6,
+            "team_games": 9
+          },
+          "recent": {
+            "hits": 10,
+            "plays": 15,
+            "rate": 66.66666666666667,
+            "BE": 32.45188678555398,
+            "gap": 34.21477988111269,
+            "players": 15,
+            "units": 15.25,
+            "ROI": 101.66666666666667,
+            "dates": 5,
+            "games": 5,
+            "teams": 5,
+            "opponents": 3,
+            "team_games": 5
+          }
+        },
+        "outside_player_kit": {
+          "full": {
+            "hits": 0,
+            "plays": 0,
+            "rate": null,
+            "BE": null,
+            "gap": null,
+            "players": 0,
+            "units": 0.0,
+            "ROI": null,
+            "dates": 0,
+            "games": 0,
+            "teams": 0,
+            "opponents": 0,
+            "team_games": 0
+          },
+          "recent": {
+            "hits": 0,
+            "plays": 0,
+            "rate": null,
+            "BE": null,
+            "gap": null,
+            "players": 0,
+            "units": 0.0,
+            "ROI": null,
+            "dates": 0,
+            "games": 0,
+            "teams": 0,
+            "opponents": 0,
+            "team_games": 0
+          }
+        },
+        "without_biggest_full": 42.2,
+        "without_biggest_recent": 23.2
+      },
+      "approved_books": {
+        "full": {
+          "plays": 29,
+          "hits": 20,
+          "rate": 68.96551724137932,
+          "units": 38.15,
+          "ROI": 131.55172413793105,
+          "BE": 30.14422483587852,
+          "gap": 38.8212924055008,
+          "players": 29
+        },
+        "recent": {
+          "plays": 19,
+          "hits": 15,
+          "rate": 78.94736842105263,
+          "units": 26.8,
+          "ROI": 141.05263157894737,
+          "BE": 32.869951055022106,
+          "gap": 46.077417366030524,
+          "players": 19
+        },
+        "original_prices_same_covered": {
+          "full": {
+            "hits": 20,
+            "plays": 29,
+            "rate": 68.96551724137932,
+            "BE": 30.14422483587852,
+            "gap": 38.8212924055008,
+            "players": 29,
+            "units": 38.15,
+            "ROI": 131.55172413793105,
+            "dates": 6,
+            "games": 9,
+            "teams": 9,
+            "opponents": 6,
+            "team_games": 9
+          },
+          "recent": {
+            "hits": 15,
+            "plays": 19,
+            "rate": 78.94736842105263,
+            "BE": 32.869951055022106,
+            "gap": 46.077417366030524,
+            "players": 19,
+            "units": 26.8,
+            "ROI": 141.05263157894737,
+            "dates": 4,
+            "games": 5,
+            "teams": 5,
+            "opponents": 3,
+            "team_games": 5
+          }
+        },
+        "missing_full": 4,
+        "missing_recent": 1,
+        "selection": "Best ordinary saved exactPPP0.5 quote among the users eight bookmakers; no fresh or invented prices."
+      },
+      "status": "keeper",
+      "not_an_entry_gate": true,
+      "research_record": {
+        "full": {
+          "hits": 23,
+          "plays": 33,
+          "rate": 69.6969696969697,
+          "BE": 29.38053892457849,
+          "gap": 40.316430772391215,
+          "players": 32,
+          "units": 49.2,
+          "ROI": 149.0909090909091,
+          "dates": 7,
+          "games": 10,
+          "teams": 9,
+          "opponents": 7,
+          "team_games": 10
+        },
+        "recent": {
+          "hits": 15,
+          "plays": 20,
+          "rate": 75.0,
+          "BE": 32.389244199945416,
+          "gap": 42.610755800054584,
+          "players": 20,
+          "units": 25.8,
+          "ROI": 129.0,
+          "dates": 5,
+          "games": 6,
+          "teams": 6,
+          "opponents": 4,
+          "team_games": 6
+        }
+      },
+      "record": {
+        "hits": 23,
+        "plays": 33,
+        "rate": 69.6969696969697,
+        "BE": 29.38053892457849,
+        "gap": 40.316430772391215,
+        "players": 32,
+        "units": 49.2,
+        "ROI": 149.0909090909091,
+        "dates": 7,
+        "games": 10,
+        "teams": 9,
+        "opponents": 7,
+        "team_games": 10
+      },
+      "pp_v2": true,
+      "kit_version": "pp-moves-v2-2026-11-19",
+      "record_label": "V2 TOTAL MOVE %",
+      "move_version": "V2",
+      "display_family": "v2-guardian-breach",
+      "optional_buff": true,
+      "rule": "PPP_Line == 0.5 + Official_Opp_PK_L5_PPP_per_O >= 1.1 + PP_OnIce_xG_per_game >= 0.3 + Player_L10_P_per60 >= 1.8 + Goalie_SV <= 0.9 + Official_Opp_PK_L10_Seconds_per_O <= 91"
+    },
+    {
+      "id": "pp-v2-buff-p18-d2",
+      "code": "P18_D2",
+      "name": "Defense Rend II",
+      "family": "defense-rend",
+      "parent": "P18",
+      "kind": "OPTIONAL BUFF",
+      "entry": [
+        [
+          "PPP_Line",
+          "==",
+          0.5
+        ],
+        [
+          "Official_Opp_PK_L5_PPP_per_O",
+          ">=",
+          1.1
+        ],
+        [
+          "PP_OnIce_xG_per_game",
+          ">=",
+          0.3
+        ]
+      ],
+      "conditions": [
+        [
+          "Player_L10_P_per60",
+          ">=",
+          1.8
+        ],
+        [
+          "opp_5v5_xGA60",
+          ">=",
+          2.65
+        ]
+      ],
+      "available_parent": {
+        "full": {
+          "hits": 70,
+          "plays": 174,
+          "rate": 40.229885057471265,
+          "BE": 29.620834260906513,
+          "gap": 10.609050796564752,
+          "players": 99,
+          "units": 61.74495575221239,
+          "ROI": 35.48560675414505,
+          "dates": 23,
+          "games": 49,
+          "teams": 26,
+          "opponents": 16,
+          "team_games": 52
+        },
+        "recent": {
+          "hits": 43,
+          "plays": 109,
+          "rate": 39.44954128440367,
+          "BE": 29.918805453204275,
+          "gap": 9.530735831199397,
+          "players": 69,
+          "units": 27.71495575221239,
+          "ROI": 25.426564910286597,
+          "dates": 15,
+          "games": 30,
+          "teams": 19,
+          "opponents": 12,
+          "team_games": 33
+        }
+      },
+      "noise": {
+        "full_defenders": {
+          "VAN": 32,
+          "SEA": 16,
+          "SJS": 12,
+          "ANA": 5,
+          "WPG": 3
+        },
+        "recent_defenders": {
+          "VAN": 24,
+          "SJS": 12,
+          "SEA": 9,
+          "WPG": 3,
+          "ANA": 3
+        },
+        "full_teams": {
+          "CAR": 10,
+          "NYR": 9,
+          "PIT": 6,
+          "PHI": 5,
+          "EDM": 5,
+          "VGK": 5,
+          "CGY": 4,
+          "NSH": 4,
+          "UTA": 4,
+          "TBL": 3,
+          "MTL": 3,
+          "TOR": 3,
+          "NYI": 3,
+          "WPG": 2,
+          "VAN": 2
+        },
+        "recent_teams": {
+          "NYR": 9,
+          "PIT": 6,
+          "EDM": 5,
+          "VGK": 5,
+          "CAR": 5,
+          "PHI": 5,
+          "UTA": 4,
+          "NSH": 4,
+          "MTL": 3,
+          "NYI": 3,
+          "WPG": 2
+        },
+        "full_goalies": {
+          "Leevi Merilainen": 30,
+          "Joey Daccord": 13,
+          "Yaroslav Askarov": 8,
+          "Alex Nedeljkovic": 4,
+          "Philipp Grubauer": 3,
+          "Laurent Brossoit": 3,
+          "Stuart Skinner": 3,
+          "Lukas Dostal": 2,
+          "Nikita Tolopilo": 2
+        },
+        "recent_goalies": {
+          "Leevi Merilainen": 22,
+          "Joey Daccord": 9,
+          "Yaroslav Askarov": 8,
+          "Alex Nedeljkovic": 4,
+          "Stuart Skinner": 3,
+          "Laurent Brossoit": 3,
+          "Nikita Tolopilo": 2
+        },
+        "goalie_gp_min": 3.0,
+        "goalie_gp_max": 15.0,
+        "goalie_gp1_2": 0,
+        "recent_goalie_gp1_2": 0,
+        "goalie_games": 19,
+        "outside_VAN_SEA": {
+          "full": {
+            "hits": 16,
+            "plays": 20,
+            "rate": 80.0,
+            "BE": 31.34703502190551,
+            "gap": 48.65296497809449,
+            "players": 17,
+            "units": 32.25,
+            "ROI": 161.25,
+            "dates": 7,
+            "games": 7,
+            "teams": 6,
+            "opponents": 3,
+            "team_games": 7
+          },
+          "recent": {
+            "hits": 15,
+            "plays": 18,
+            "rate": 83.33333333333333,
+            "BE": 32.30348134791109,
+            "gap": 51.02985198542224,
+            "players": 15,
+            "units": 29.95,
+            "ROI": 166.38888888888889,
+            "dates": 6,
+            "games": 6,
+            "teams": 5,
+            "opponents": 3,
+            "team_games": 6
+          }
+        },
+        "outside_player_kit": {
+          "full": {
+            "hits": 0,
+            "plays": 0,
+            "rate": null,
+            "BE": null,
+            "gap": null,
+            "players": 0,
+            "units": 0.0,
+            "ROI": null,
+            "dates": 0,
+            "games": 0,
+            "teams": 0,
+            "opponents": 0,
+            "team_games": 0
+          },
+          "recent": {
+            "hits": 0,
+            "plays": 0,
+            "rate": null,
+            "BE": null,
+            "gap": null,
+            "players": 0,
+            "units": 0.0,
+            "ROI": null,
+            "dates": 0,
+            "games": 0,
+            "teams": 0,
+            "opponents": 0,
+            "team_games": 0
+          }
+        },
+        "without_biggest_full": 65.16495575221239,
+        "without_biggest_recent": 47.96495575221239
+      },
+      "approved_books": {
+        "full": {
+          "plays": 60,
+          "hits": 40,
+          "rate": 66.66666666666667,
+          "units": 67.41495575221239,
+          "ROI": 112.35825958702065,
+          "BE": 31.896756309755656,
+          "gap": 34.76991035691101,
+          "players": 46
+        },
+        "recent": {
+          "plays": 44,
+          "hits": 31,
+          "rate": 70.45454545454545,
+          "units": 53.51495575221239,
+          "ROI": 121.62489943684633,
+          "BE": 32.223846685932564,
+          "gap": 38.23069876861289,
+          "players": 35
+        },
+        "original_prices_same_covered": {
+          "full": {
+            "hits": 40,
+            "plays": 60,
+            "rate": 66.66666666666667,
+            "BE": 31.896756309755656,
+            "gap": 34.76991035691101,
+            "players": 46,
+            "units": 67.41495575221239,
+            "ROI": 112.35825958702065,
+            "dates": 15,
+            "games": 19,
+            "teams": 15,
+            "opponents": 5,
+            "team_games": 19
+          },
+          "recent": {
+            "hits": 31,
+            "plays": 44,
+            "rate": 70.45454545454545,
+            "BE": 32.223846685932564,
+            "gap": 38.23069876861289,
+            "players": 35,
+            "units": 53.51495575221239,
+            "ROI": 121.62489943684633,
+            "dates": 10,
+            "games": 14,
+            "teams": 11,
+            "opponents": 5,
+            "team_games": 14
+          }
+        },
+        "missing_full": 8,
+        "missing_recent": 7,
+        "selection": "Best ordinary saved exactPPP0.5 quote among the users eight bookmakers; no fresh or invented prices."
+      },
+      "status": "keeper",
+      "not_an_entry_gate": true,
+      "research_record": {
+        "full": {
+          "hits": 43,
+          "plays": 68,
+          "rate": 63.23529411764706,
+          "BE": 31.54891698929523,
+          "gap": 31.68637712835183,
+          "players": 54,
+          "units": 68.76495575221239,
+          "ROI": 101.1249349297241,
+          "dates": 15,
+          "games": 19,
+          "teams": 15,
+          "opponents": 5,
+          "team_games": 19
+        },
+        "recent": {
+          "hits": 33,
+          "plays": 51,
+          "rate": 64.70588235294117,
+          "BE": 31.884596410083933,
+          "gap": 32.821285942857244,
+          "players": 42,
+          "units": 51.56495575221239,
+          "ROI": 101.10775637688704,
+          "dates": 10,
+          "games": 14,
+          "teams": 11,
+          "opponents": 5,
+          "team_games": 14
+        }
+      },
+      "record": {
+        "hits": 43,
+        "plays": 68,
+        "rate": 63.23529411764706,
+        "BE": 31.54891698929523,
+        "gap": 31.68637712835183,
+        "players": 54,
+        "units": 68.76495575221239,
+        "ROI": 101.1249349297241,
+        "dates": 15,
+        "games": 19,
+        "teams": 15,
+        "opponents": 5,
+        "team_games": 19
+      },
+      "pp_v2": true,
+      "kit_version": "pp-moves-v2-2026-11-19",
+      "record_label": "V2 TOTAL MOVE %",
+      "move_version": "V2",
+      "display_family": "v2-defense-rend",
+      "optional_buff": true,
+      "rule": "PPP_Line == 0.5 + Official_Opp_PK_L5_PPP_per_O >= 1.1 + PP_OnIce_xG_per_game >= 0.3 + Player_L10_P_per60 >= 1.8 + opp_5v5_xGA60 >= 2.65"
+    },
+    {
+      "id": "pp-v2-buff-p235-d2",
+      "code": "P235_D2",
+      "name": "Defense Rend II",
+      "family": "defense-rend",
+      "parent": "P235",
+      "kind": "OPTIONAL BUFF",
+      "entry": [
+        [
+          "PPP_Line",
+          "==",
+          0.5
+        ],
+        [
+          "Official_Opp_PK_L5_PPP_per_O",
+          ">=",
+          1.1
+        ],
+        [
+          "PP_OnIce_xG_per_game",
+          ">=",
+          0.3
+        ]
+      ],
+      "conditions": [
+        [
+          "Player_L10_P_per60",
+          ">=",
+          2.35
+        ],
+        [
+          "opp_5v5_xGA60",
+          ">=",
+          2.65
+        ]
+      ],
+      "available_parent": {
+        "full": {
+          "hits": 56,
+          "plays": 127,
+          "rate": 44.09448818897638,
+          "BE": 30.46174111291874,
+          "gap": 13.632747076057637,
+          "players": 76,
+          "units": 56.04495575221239,
+          "ROI": 44.129886419064874,
+          "dates": 22,
+          "games": 47,
+          "teams": 25,
+          "opponents": 15,
+          "team_games": 48
+        },
+        "recent": {
+          "hits": 33,
+          "plays": 73,
+          "rate": 45.205479452054796,
+          "BE": 30.91561085193351,
+          "gap": 14.289868600121284,
+          "players": 47,
+          "units": 31.11495575221239,
+          "ROI": 42.62322705782519,
+          "dates": 14,
+          "games": 29,
+          "teams": 18,
+          "opponents": 11,
+          "team_games": 30
+        }
+      },
+      "noise": {
+        "full_defenders": {
+          "VAN": 22,
+          "SEA": 16,
+          "SJS": 10,
+          "ANA": 3,
+          "WPG": 2
+        },
+        "recent_defenders": {
+          "VAN": 16,
+          "SJS": 10,
+          "SEA": 9,
+          "WPG": 2,
+          "ANA": 2
+        },
+        "full_teams": {
+          "NYR": 9,
+          "CAR": 8,
+          "PIT": 5,
+          "EDM": 4,
+          "NSH": 4,
+          "CGY": 4,
+          "VGK": 3,
+          "PHI": 3,
+          "TOR": 3,
+          "TBL": 3,
+          "NYI": 2,
+          "MTL": 2,
+          "UTA": 2,
+          "VAN": 1
+        },
+        "recent_teams": {
+          "NYR": 9,
+          "PIT": 5,
+          "CAR": 5,
+          "NSH": 4,
+          "EDM": 4,
+          "VGK": 3,
+          "PHI": 3,
+          "MTL": 2,
+          "NYI": 2,
+          "UTA": 2
+        },
+        "full_goalies": {
+          "Leevi Merilainen": 21,
+          "Joey Daccord": 13,
+          "Yaroslav Askarov": 6,
+          "Alex Nedeljkovic": 4,
+          "Philipp Grubauer": 3,
+          "Laurent Brossoit": 2,
+          "Stuart Skinner": 2,
+          "Lukas Dostal": 1,
+          "Nikita Tolopilo": 1
+        },
+        "recent_goalies": {
+          "Leevi Merilainen": 15,
+          "Joey Daccord": 9,
+          "Yaroslav Askarov": 6,
+          "Alex Nedeljkovic": 4,
+          "Stuart Skinner": 2,
+          "Laurent Brossoit": 2,
+          "Nikita Tolopilo": 1
+        },
+        "goalie_gp_min": 3.0,
+        "goalie_gp_max": 15.0,
+        "goalie_gp1_2": 0,
+        "recent_goalie_gp1_2": 0,
+        "goalie_games": 18,
+        "outside_VAN_SEA": {
+          "full": {
+            "hits": 11,
+            "plays": 15,
+            "rate": 73.33333333333333,
+            "BE": 31.511171364487055,
+            "gap": 41.822161968846274,
+            "players": 13,
+            "units": 20.35,
+            "ROI": 135.66666666666666,
+            "dates": 7,
+            "games": 7,
+            "teams": 6,
+            "opponents": 3,
+            "team_games": 7
+          },
+          "recent": {
+            "hits": 11,
+            "plays": 14,
+            "rate": 78.57142857142857,
+            "BE": 32.174667731791686,
+            "gap": 46.39676083963688,
+            "players": 12,
+            "units": 21.35,
+            "ROI": 152.5,
+            "dates": 6,
+            "games": 6,
+            "teams": 5,
+            "opponents": 3,
+            "team_games": 6
+          }
+        },
+        "outside_player_kit": {
+          "full": {
+            "hits": 0,
+            "plays": 0,
+            "rate": null,
+            "BE": null,
+            "gap": null,
+            "players": 0,
+            "units": 0.0,
+            "ROI": null,
+            "dates": 0,
+            "games": 0,
+            "teams": 0,
+            "opponents": 0,
+            "team_games": 0
+          },
+          "recent": {
+            "hits": 0,
+            "plays": 0,
+            "rate": null,
+            "BE": null,
+            "gap": null,
+            "players": 0,
+            "units": 0.0,
+            "ROI": null,
+            "dates": 0,
+            "games": 0,
+            "teams": 0,
+            "opponents": 0,
+            "team_games": 0
+          }
+        },
+        "without_biggest_full": 56.664955752212386,
+        "without_biggest_recent": 40.76495575221239
+      },
+      "approved_books": {
+        "full": {
+          "plays": 49,
+          "hits": 35,
+          "rate": 71.42857142857143,
+          "units": 62.01495575221239,
+          "ROI": 126.56113418818855,
+          "BE": 31.81559242656567,
+          "gap": 39.61297900200576,
+          "players": 39
+        },
+        "recent": {
+          "plays": 35,
+          "hits": 26,
+          "rate": 74.28571428571429,
+          "units": 46.11495575221239,
+          "ROI": 131.75701643489253,
+          "BE": 32.116576159133494,
+          "gap": 42.1691381265808,
+          "players": 28
+        },
+        "original_prices_same_covered": {
+          "full": {
+            "hits": 35,
+            "plays": 49,
+            "rate": 71.42857142857143,
+            "BE": 31.81559242656567,
+            "gap": 39.61297900200576,
+            "players": 39,
+            "units": 62.01495575221239,
+            "ROI": 126.56113418818855,
+            "dates": 14,
+            "games": 18,
+            "teams": 14,
+            "opponents": 5,
+            "team_games": 18
+          },
+          "recent": {
+            "hits": 26,
+            "plays": 35,
+            "rate": 74.28571428571429,
+            "BE": 32.116576159133494,
+            "gap": 42.1691381265808,
+            "players": 28,
+            "units": 46.11495575221239,
+            "ROI": 131.75701643489253,
+            "dates": 9,
+            "games": 13,
+            "teams": 10,
+            "opponents": 5,
+            "team_games": 13
+          }
+        },
+        "missing_full": 4,
+        "missing_recent": 4,
+        "selection": "Best ordinary saved exactPPP0.5 quote among the users eight bookmakers; no fresh or invented prices."
+      },
+      "status": "keeper",
+      "not_an_entry_gate": true,
+      "research_record": {
+        "full": {
+          "hits": 36,
+          "plays": 53,
+          "rate": 67.9245283018868,
+          "BE": 31.891288871245266,
+          "gap": 36.03323943064153,
+          "players": 43,
+          "units": 60.26495575221239,
+          "ROI": 113.7074636834196,
+          "dates": 14,
+          "games": 18,
+          "teams": 14,
+          "opponents": 5,
+          "team_games": 18
+        },
+        "recent": {
+          "hits": 27,
+          "plays": 39,
+          "rate": 69.23076923076923,
+          "BE": 32.18857556010138,
+          "gap": 37.04219367066785,
+          "players": 32,
+          "units": 44.36495575221239,
+          "ROI": 113.75629680054459,
+          "dates": 9,
+          "games": 13,
+          "teams": 10,
+          "opponents": 5,
+          "team_games": 13
+        }
+      },
+      "record": {
+        "hits": 36,
+        "plays": 53,
+        "rate": 67.9245283018868,
+        "BE": 31.891288871245266,
+        "gap": 36.03323943064153,
+        "players": 43,
+        "units": 60.26495575221239,
+        "ROI": 113.7074636834196,
+        "dates": 14,
+        "games": 18,
+        "teams": 14,
+        "opponents": 5,
+        "team_games": 18
+      },
+      "pp_v2": true,
+      "kit_version": "pp-moves-v2-2026-11-19",
+      "record_label": "V2 TOTAL MOVE %",
+      "move_version": "V2",
+      "display_family": "v2-defense-rend",
+      "optional_buff": true,
+      "rule": "PPP_Line == 0.5 + Official_Opp_PK_L5_PPP_per_O >= 1.1 + PP_OnIce_xG_per_game >= 0.3 + Player_L10_P_per60 >= 2.35 + opp_5v5_xGA60 >= 2.65"
+    },
+    {
+      "id": "pp-v2-buff-a100-d2",
+      "code": "A100_D2",
+      "name": "Defense Rend II",
+      "family": "defense-rend",
+      "parent": "A100",
+      "kind": "OPTIONAL BUFF",
+      "entry": [
+        [
+          "PPP_Line",
+          "==",
+          0.5
+        ],
+        [
+          "Official_Opp_PK_L5_PPP_per_O",
+          ">=",
+          1.1
+        ],
+        [
+          "PP_OnIce_xG_per_game",
+          ">=",
+          0.3
+        ]
+      ],
+      "conditions": [
+        [
+          "Player_L5_A_per60",
+          ">=",
+          1.0
+        ],
+        [
+          "opp_5v5_xGA60",
+          ">=",
+          2.65
+        ]
+      ],
+      "available_parent": {
+        "full": {
+          "hits": 68,
+          "plays": 162,
+          "rate": 41.97530864197531,
+          "BE": 30.3044990103581,
+          "gap": 11.67080963161721,
+          "players": 94,
+          "units": 61.44495575221239,
+          "ROI": 37.92898503222987,
+          "dates": 23,
+          "games": 49,
+          "teams": 26,
+          "opponents": 16,
+          "team_games": 52
+        },
+        "recent": {
+          "hits": 40,
+          "plays": 93,
+          "rate": 43.01075268817204,
+          "BE": 30.928840196811844,
+          "gap": 12.081912491360196,
+          "players": 62,
+          "units": 32.36495575221239,
+          "ROI": 34.80102769055095,
+          "dates": 15,
+          "games": 30,
+          "teams": 19,
+          "opponents": 12,
+          "team_games": 33
+        }
+      },
+      "noise": {
+        "full_defenders": {
+          "VAN": 30,
+          "SEA": 17,
+          "SJS": 10,
+          "ANA": 4,
+          "WPG": 3
+        },
+        "recent_defenders": {
+          "VAN": 21,
+          "SJS": 10,
+          "SEA": 8,
+          "WPG": 3,
+          "ANA": 2
+        },
+        "full_teams": {
+          "CAR": 10,
+          "NYR": 7,
+          "CGY": 5,
+          "EDM": 5,
+          "VGK": 5,
+          "TOR": 4,
+          "TBL": 4,
+          "PHI": 4,
+          "PIT": 4,
+          "MTL": 3,
+          "NYI": 3,
+          "UTA": 3,
+          "NSH": 3,
+          "WPG": 2,
+          "VAN": 2
+        },
+        "recent_teams": {
+          "NYR": 7,
+          "CAR": 5,
+          "EDM": 5,
+          "VGK": 5,
+          "PIT": 4,
+          "PHI": 4,
+          "MTL": 3,
+          "UTA": 3,
+          "NYI": 3,
+          "NSH": 3,
+          "WPG": 2
+        },
+        "full_goalies": {
+          "Leevi Merilainen": 29,
+          "Joey Daccord": 13,
+          "Yaroslav Askarov": 7,
+          "Philipp Grubauer": 4,
+          "Stuart Skinner": 3,
+          "Alex Nedeljkovic": 3,
+          "Lukas Dostal": 2,
+          "Laurent Brossoit": 2,
+          "Nikita Tolopilo": 1
+        },
+        "recent_goalies": {
+          "Leevi Merilainen": 20,
+          "Joey Daccord": 8,
+          "Yaroslav Askarov": 7,
+          "Stuart Skinner": 3,
+          "Alex Nedeljkovic": 3,
+          "Laurent Brossoit": 2,
+          "Nikita Tolopilo": 1
+        },
+        "goalie_gp_min": 3.0,
+        "goalie_gp_max": 15.0,
+        "goalie_gp1_2": 0,
+        "recent_goalie_gp1_2": 0,
+        "goalie_games": 19,
+        "outside_VAN_SEA": {
+          "full": {
+            "hits": 13,
+            "plays": 17,
+            "rate": 76.47058823529412,
+            "BE": 31.420799152480697,
+            "gap": 45.04978908281342,
+            "players": 15,
+            "units": 25.2,
+            "ROI": 148.23529411764707,
+            "dates": 7,
+            "games": 7,
+            "teams": 6,
+            "opponents": 3,
+            "team_games": 7
+          },
+          "recent": {
+            "hits": 12,
+            "plays": 15,
+            "rate": 80.0,
+            "BE": 32.578369961097415,
+            "gap": 47.421630038902585,
+            "players": 13,
+            "units": 22.9,
+            "ROI": 152.66666666666666,
+            "dates": 6,
+            "games": 6,
+            "teams": 5,
+            "opponents": 3,
+            "team_games": 6
+          }
+        },
+        "outside_player_kit": {
+          "full": {
+            "hits": 0,
+            "plays": 0,
+            "rate": null,
+            "BE": null,
+            "gap": null,
+            "players": 0,
+            "units": 0.0,
+            "ROI": null,
+            "dates": 0,
+            "games": 0,
+            "teams": 0,
+            "opponents": 0,
+            "team_games": 0
+          },
+          "recent": {
+            "hits": 0,
+            "plays": 0,
+            "rate": null,
+            "BE": null,
+            "gap": null,
+            "players": 0,
+            "units": 0.0,
+            "ROI": null,
+            "dates": 0,
+            "games": 0,
+            "teams": 0,
+            "opponents": 0,
+            "team_games": 0
+          }
+        },
+        "without_biggest_full": 61.46495575221239,
+        "without_biggest_recent": 43.76495575221239
+      },
+      "approved_books": {
+        "full": {
+          "plays": 56,
+          "hits": 38,
+          "rate": 67.85714285714286,
+          "units": 63.41495575221239,
+          "ROI": 113.24099241466499,
+          "BE": 32.00193276079548,
+          "gap": 35.85521009634738,
+          "players": 45
+        },
+        "recent": {
+          "plays": 37,
+          "hits": 28,
+          "rate": 75.67567567567568,
+          "units": 48.96495575221239,
+          "ROI": 132.33771824922266,
+          "BE": 32.859866876635586,
+          "gap": 42.81580879904009,
+          "players": 31
+        },
+        "original_prices_same_covered": {
+          "full": {
+            "hits": 38,
+            "plays": 56,
+            "rate": 67.85714285714286,
+            "BE": 32.00193276079548,
+            "gap": 35.85521009634738,
+            "players": 45,
+            "units": 63.41495575221239,
+            "ROI": 113.24099241466499,
+            "dates": 15,
+            "games": 19,
+            "teams": 15,
+            "opponents": 5,
+            "team_games": 19
+          },
+          "recent": {
+            "hits": 28,
+            "plays": 37,
+            "rate": 75.67567567567568,
+            "BE": 32.859866876635586,
+            "gap": 42.81580879904009,
+            "players": 31,
+            "units": 48.96495575221239,
+            "ROI": 132.33771824922266,
+            "dates": 10,
+            "games": 14,
+            "teams": 11,
+            "opponents": 5,
+            "team_games": 14
+          }
+        },
+        "missing_full": 8,
+        "missing_recent": 7,
+        "selection": "Best ordinary saved exactPPP0.5 quote among the users eight bookmakers; no fresh or invented prices."
+      },
+      "status": "keeper",
+      "not_an_entry_gate": true,
+      "research_record": {
+        "full": {
+          "hits": 41,
+          "plays": 64,
+          "rate": 64.0625,
+          "BE": 31.619206426426302,
+          "gap": 32.4432935735737,
+          "players": 53,
+          "units": 64.76495575221239,
+          "ROI": 101.19524336283186,
+          "dates": 15,
+          "games": 19,
+          "teams": 15,
+          "opponents": 5,
+          "team_games": 19
+        },
+        "recent": {
+          "hits": 30,
+          "plays": 44,
+          "rate": 68.18181818181819,
+          "BE": 32.36545993565374,
+          "gap": 35.81635824616445,
+          "players": 38,
+          "units": 47.01495575221239,
+          "ROI": 106.85217216411907,
+          "dates": 10,
+          "games": 14,
+          "teams": 11,
+          "opponents": 5,
+          "team_games": 14
+        }
+      },
+      "record": {
+        "hits": 41,
+        "plays": 64,
+        "rate": 64.0625,
+        "BE": 31.619206426426302,
+        "gap": 32.4432935735737,
+        "players": 53,
+        "units": 64.76495575221239,
+        "ROI": 101.19524336283186,
+        "dates": 15,
+        "games": 19,
+        "teams": 15,
+        "opponents": 5,
+        "team_games": 19
+      },
+      "pp_v2": true,
+      "kit_version": "pp-moves-v2-2026-11-19",
+      "record_label": "V2 TOTAL MOVE %",
+      "move_version": "V2",
+      "display_family": "v2-defense-rend",
+      "optional_buff": true,
+      "rule": "PPP_Line == 0.5 + Official_Opp_PK_L5_PPP_per_O >= 1.1 + PP_OnIce_xG_per_game >= 0.3 + Player_L5_A_per60 >= 1 + opp_5v5_xGA60 >= 2.65"
+    },
+    {
+      "id": "pp-v2-buff-pa60-d2",
+      "code": "PA60_D2",
+      "name": "Defense Rend II",
+      "family": "defense-rend",
+      "parent": "PA60",
+      "kind": "OPTIONAL BUFF",
+      "entry": [
+        [
+          "PPP_Line",
+          "==",
+          0.5
+        ],
+        [
+          "Official_Opp_PK_L5_PPP_per_O",
+          ">=",
+          1.1
+        ],
+        [
+          "PP_OnIce_xG_per_game",
+          ">=",
+          0.3
+        ]
+      ],
+      "conditions": [
+        [
+          "i5v5_primaryAssists60",
+          ">=",
+          0.6
+        ],
+        [
+          "opp_5v5_xGA60",
+          ">=",
+          2.65
+        ]
+      ],
+      "available_parent": {
+        "full": {
+          "hits": 48,
+          "plays": 100,
+          "rate": 48.0,
+          "BE": 29.89730031779466,
+          "gap": 18.10269968220534,
+          "players": 62,
+          "units": 59.36495575221239,
+          "ROI": 59.36495575221239,
+          "dates": 22,
+          "games": 45,
+          "teams": 23,
+          "opponents": 14,
+          "team_games": 46
+        },
+        "recent": {
+          "hits": 32,
+          "plays": 59,
+          "rate": 54.23728813559322,
+          "BE": 30.967892620468962,
+          "gap": 23.269395515124256,
+          "players": 41,
+          "units": 41.21495575221239,
+          "ROI": 69.85585720713965,
+          "dates": 14,
+          "games": 28,
+          "teams": 17,
+          "opponents": 10,
+          "team_games": 29
+        }
+      },
+      "noise": {
+        "full_defenders": {
+          "VAN": 18,
+          "SEA": 10,
+          "SJS": 7,
+          "WPG": 3,
+          "ANA": 2
+        },
+        "recent_defenders": {
+          "VAN": 14,
+          "SJS": 7,
+          "SEA": 6,
+          "WPG": 3,
+          "ANA": 2
+        },
+        "full_teams": {
+          "NYR": 6,
+          "CAR": 5,
+          "VGK": 4,
+          "PIT": 3,
+          "MTL": 3,
+          "TBL": 3,
+          "NSH": 3,
+          "EDM": 3,
+          "TOR": 2,
+          "CGY": 2,
+          "UTA": 2,
+          "NYI": 2,
+          "WPG": 1,
+          "PHI": 1
+        },
+        "recent_teams": {
+          "NYR": 6,
+          "CAR": 4,
+          "VGK": 4,
+          "NSH": 3,
+          "MTL": 3,
+          "EDM": 3,
+          "PIT": 3,
+          "UTA": 2,
+          "NYI": 2,
+          "WPG": 1,
+          "PHI": 1
+        },
+        "full_goalies": {
+          "Leevi Merilainen": 17,
+          "Joey Daccord": 8,
+          "Yaroslav Askarov": 4,
+          "Stuart Skinner": 3,
+          "Alex Nedeljkovic": 3,
+          "Philipp Grubauer": 2,
+          "Laurent Brossoit": 2,
+          "Nikita Tolopilo": 1
+        },
+        "recent_goalies": {
+          "Leevi Merilainen": 13,
+          "Joey Daccord": 6,
+          "Yaroslav Askarov": 4,
+          "Stuart Skinner": 3,
+          "Alex Nedeljkovic": 3,
+          "Laurent Brossoit": 2,
+          "Nikita Tolopilo": 1
+        },
+        "goalie_gp_min": 3.0,
+        "goalie_gp_max": 15.0,
+        "goalie_gp1_2": 0,
+        "recent_goalie_gp1_2": 0,
+        "goalie_games": 18,
+        "outside_VAN_SEA": {
+          "full": {
+            "hits": 12,
+            "plays": 12,
+            "rate": 100.0,
+            "BE": 31.04608466965528,
+            "gap": 68.95391533034473,
+            "players": 11,
+            "units": 27.4,
+            "ROI": 228.33333333333334,
+            "dates": 6,
+            "games": 6,
+            "teams": 5,
+            "opponents": 3,
+            "team_games": 6
+          },
+          "recent": {
+            "hits": 12,
+            "plays": 12,
+            "rate": 100.0,
+            "BE": 31.04608466965528,
+            "gap": 68.95391533034473,
+            "players": 11,
+            "units": 27.4,
+            "ROI": 228.33333333333334,
+            "dates": 6,
+            "games": 6,
+            "teams": 5,
+            "opponents": 3,
+            "team_games": 6
+          }
+        },
+        "outside_player_kit": {
+          "full": {
+            "hits": 0,
+            "plays": 0,
+            "rate": null,
+            "BE": null,
+            "gap": null,
+            "players": 0,
+            "units": 0.0,
+            "ROI": null,
+            "dates": 0,
+            "games": 0,
+            "teams": 0,
+            "opponents": 0,
+            "team_games": 0
+          },
+          "recent": {
+            "hits": 0,
+            "plays": 0,
+            "rate": null,
+            "BE": null,
+            "gap": null,
+            "players": 0,
+            "units": 0.0,
+            "ROI": null,
+            "dates": 0,
+            "games": 0,
+            "teams": 0,
+            "opponents": 0,
+            "team_games": 0
+          }
+        },
+        "without_biggest_full": 60.26495575221239,
+        "without_biggest_recent": 50.96495575221239
+      },
+      "approved_books": {
+        "full": {
+          "plays": 38,
+          "hits": 31,
+          "rate": 81.57894736842105,
+          "units": 60.46495575221239,
+          "ROI": 159.11830461108522,
+          "BE": 32.1942073596798,
+          "gap": 49.384740008741254,
+          "players": 33
+        },
+        "recent": {
+          "plays": 30,
+          "hits": 26,
+          "rate": 86.66666666666667,
+          "units": 51.16495575221239,
+          "ROI": 170.54985250737462,
+          "BE": 32.75327057486363,
+          "gap": 53.913396091803044,
+          "players": 26
+        },
+        "original_prices_same_covered": {
+          "full": {
+            "hits": 31,
+            "plays": 38,
+            "rate": 81.57894736842105,
+            "BE": 32.1942073596798,
+            "gap": 49.384740008741254,
+            "players": 33,
+            "units": 60.46495575221239,
+            "ROI": 159.11830461108522,
+            "dates": 14,
+            "games": 18,
+            "teams": 14,
+            "opponents": 5,
+            "team_games": 18
+          },
+          "recent": {
+            "hits": 26,
+            "plays": 30,
+            "rate": 86.66666666666667,
+            "BE": 32.75327057486363,
+            "gap": 53.913396091803044,
+            "players": 26,
+            "units": 51.16495575221239,
+            "ROI": 170.54985250737462,
+            "dates": 10,
+            "games": 14,
+            "teams": 11,
+            "opponents": 5,
+            "team_games": 14
+          }
+        },
+        "missing_full": 2,
+        "missing_recent": 2,
+        "selection": "Best ordinary saved exactPPP0.5 quote among the users eight bookmakers; no fresh or invented prices."
+      },
+      "status": "keeper",
+      "not_an_entry_gate": true,
+      "research_record": {
+        "full": {
+          "hits": 33,
+          "plays": 40,
+          "rate": 82.5,
+          "BE": 32.58846524566406,
+          "gap": 49.91153475433594,
+          "players": 35,
+          "units": 63.51495575221239,
+          "ROI": 158.78738938053098,
+          "dates": 14,
+          "games": 18,
+          "teams": 14,
+          "opponents": 5,
+          "team_games": 18
+        },
+        "recent": {
+          "hits": 28,
+          "plays": 32,
+          "rate": 87.5,
+          "BE": 33.211151481394964,
+          "gap": 54.288848518605036,
+          "players": 28,
+          "units": 54.21495575221239,
+          "ROI": 169.42173672566372,
+          "dates": 10,
+          "games": 14,
+          "teams": 11,
+          "opponents": 5,
+          "team_games": 14
+        }
+      },
+      "record": {
+        "hits": 33,
+        "plays": 40,
+        "rate": 82.5,
+        "BE": 32.58846524566406,
+        "gap": 49.91153475433594,
+        "players": 35,
+        "units": 63.51495575221239,
+        "ROI": 158.78738938053098,
+        "dates": 14,
+        "games": 18,
+        "teams": 14,
+        "opponents": 5,
+        "team_games": 18
+      },
+      "pp_v2": true,
+      "kit_version": "pp-moves-v2-2026-11-19",
+      "record_label": "V2 TOTAL MOVE %",
+      "move_version": "V2",
+      "display_family": "v2-defense-rend",
+      "optional_buff": true,
+      "rule": "PPP_Line == 0.5 + Official_Opp_PK_L5_PPP_per_O >= 1.1 + PP_OnIce_xG_per_game >= 0.3 + i5v5_primaryAssists60 >= 0.6 + opp_5v5_xGA60 >= 2.65"
+    },
+    {
+      "id": "pp-v2-buff-pf55-d2",
+      "code": "PF55_D2",
+      "name": "Defense Rend II",
+      "family": "defense-rend",
+      "parent": "PF55",
+      "kind": "OPTIONAL BUFF",
+      "entry": [
+        [
+          "PPP_Line",
+          "==",
+          0.5
+        ],
+        [
+          "Official_Opp_PK_L5_PPP_per_O",
+          ">=",
+          1.1
+        ],
+        [
+          "PP_OnIce_xG_per_game",
+          ">=",
+          0.3
+        ]
+      ],
+      "conditions": [
+        [
+          "Player_L20_P_1plus_pct",
+          ">=",
+          55
+        ],
+        [
+          "opp_5v5_xGA60",
+          ">=",
+          2.65
+        ]
+      ],
+      "available_parent": {
+        "full": {
+          "hits": 53,
+          "plays": 119,
+          "rate": 44.53781512605042,
+          "BE": 31.81640337142219,
+          "gap": 12.721411754628228,
+          "players": 65,
+          "units": 51.94495575221239,
+          "ROI": 43.65122332118688,
+          "dates": 23,
+          "games": 46,
+          "teams": 25,
+          "opponents": 16,
+          "team_games": 49
+        },
+        "recent": {
+          "hits": 32,
+          "plays": 70,
+          "rate": 45.714285714285715,
+          "BE": 32.850263593806886,
+          "gap": 12.864022120478829,
+          "players": 46,
+          "units": 24.66495575221239,
+          "ROI": 35.23565107458913,
+          "dates": 15,
+          "games": 27,
+          "teams": 18,
+          "opponents": 12,
+          "team_games": 30
+        }
+      },
+      "noise": {
+        "full_defenders": {
+          "VAN": 24,
+          "SEA": 11,
+          "SJS": 10,
+          "ANA": 2,
+          "WPG": 1
+        },
+        "recent_defenders": {
+          "VAN": 17,
+          "SJS": 10,
+          "SEA": 7,
+          "WPG": 1,
+          "ANA": 1
+        },
+        "full_teams": {
+          "NYR": 8,
+          "CAR": 7,
+          "VGK": 5,
+          "UTA": 4,
+          "EDM": 4,
+          "TBL": 4,
+          "NSH": 4,
+          "NYI": 3,
+          "CGY": 2,
+          "TOR": 2,
+          "PIT": 2,
+          "VAN": 1,
+          "MTL": 1,
+          "WPG": 1
+        },
+        "recent_teams": {
+          "NYR": 8,
+          "VGK": 5,
+          "UTA": 4,
+          "NSH": 4,
+          "CAR": 4,
+          "EDM": 4,
+          "NYI": 3,
+          "PIT": 2,
+          "WPG": 1,
+          "MTL": 1
+        },
+        "full_goalies": {
+          "Leevi Merilainen": 22,
+          "Joey Daccord": 9,
+          "Yaroslav Askarov": 6,
+          "Alex Nedeljkovic": 4,
+          "Philipp Grubauer": 2,
+          "Nikita Tolopilo": 2,
+          "Lukas Dostal": 1,
+          "Stuart Skinner": 1,
+          "Laurent Brossoit": 1
+        },
+        "recent_goalies": {
+          "Leevi Merilainen": 15,
+          "Joey Daccord": 7,
+          "Yaroslav Askarov": 6,
+          "Alex Nedeljkovic": 4,
+          "Nikita Tolopilo": 2,
+          "Stuart Skinner": 1,
+          "Laurent Brossoit": 1
+        },
+        "goalie_gp_min": 3.0,
+        "goalie_gp_max": 15.0,
+        "goalie_gp1_2": 0,
+        "recent_goalie_gp1_2": 0,
+        "goalie_games": 18,
+        "outside_VAN_SEA": {
+          "full": {
+            "hits": 11,
+            "plays": 13,
+            "rate": 84.61538461538461,
+            "BE": 33.228241157583504,
+            "gap": 51.38714345780111,
+            "players": 12,
+            "units": 21.35,
+            "ROI": 164.23076923076923,
+            "dates": 7,
+            "games": 7,
+            "teams": 6,
+            "opponents": 3,
+            "team_games": 7
+          },
+          "recent": {
+            "hits": 10,
+            "plays": 12,
+            "rate": 83.33333333333333,
+            "BE": 34.05927675792476,
+            "gap": 49.274056575408565,
+            "players": 11,
+            "units": 18.05,
+            "ROI": 150.41666666666666,
+            "dates": 6,
+            "games": 6,
+            "teams": 5,
+            "opponents": 3,
+            "team_games": 6
+          }
+        },
+        "outside_player_kit": {
+          "full": {
+            "hits": 0,
+            "plays": 0,
+            "rate": null,
+            "BE": null,
+            "gap": null,
+            "players": 0,
+            "units": 0.0,
+            "ROI": null,
+            "dates": 0,
+            "games": 0,
+            "teams": 0,
+            "opponents": 0,
+            "team_games": 0
+          },
+          "recent": {
+            "hits": 0,
+            "plays": 0,
+            "rate": null,
+            "BE": null,
+            "gap": null,
+            "players": 0,
+            "units": 0.0,
+            "ROI": null,
+            "dates": 0,
+            "games": 0,
+            "teams": 0,
+            "opponents": 0,
+            "team_games": 0
+          }
+        },
+        "without_biggest_full": 47.06495575221239,
+        "without_biggest_recent": 36.61495575221239
+      },
+      "approved_books": {
+        "full": {
+          "plays": 43,
+          "hits": 30,
+          "rate": 69.76744186046511,
+          "units": 46.01495575221239,
+          "ROI": 107.01152500514509,
+          "BE": 34.08266472199205,
+          "gap": 35.68477713847306,
+          "players": 34
+        },
+        "recent": {
+          "plays": 32,
+          "hits": 24,
+          "rate": 75.0,
+          "units": 38.81495575221239,
+          "ROI": 121.29673672566372,
+          "BE": 34.44178084399577,
+          "gap": 40.55821915600423,
+          "players": 26
+        },
+        "original_prices_same_covered": {
+          "full": {
+            "hits": 30,
+            "plays": 43,
+            "rate": 69.76744186046511,
+            "BE": 34.08266472199205,
+            "gap": 35.68477713847306,
+            "players": 34,
+            "units": 46.01495575221239,
+            "ROI": 107.01152500514509,
+            "dates": 14,
+            "games": 17,
+            "teams": 13,
+            "opponents": 5,
+            "team_games": 17
+          },
+          "recent": {
+            "hits": 24,
+            "plays": 32,
+            "rate": 75.0,
+            "BE": 34.44178084399577,
+            "gap": 40.55821915600423,
+            "players": 26,
+            "units": 38.81495575221239,
+            "ROI": 121.29673672566372,
+            "dates": 10,
+            "games": 13,
+            "teams": 10,
+            "opponents": 5,
+            "team_games": 13
+          }
+        },
+        "missing_full": 5,
+        "missing_recent": 4,
+        "selection": "Best ordinary saved exactPPP0.5 quote among the users eight bookmakers; no fresh or invented prices."
+      },
+      "status": "keeper",
+      "not_an_entry_gate": true,
+      "research_record": {
+        "full": {
+          "hits": 33,
+          "plays": 48,
+          "rate": 68.75,
+          "BE": 34.022326901259184,
+          "gap": 34.727673098740816,
+          "players": 39,
+          "units": 50.36495575221239,
+          "ROI": 104.92699115044248,
+          "dates": 15,
+          "games": 18,
+          "teams": 14,
+          "opponents": 5,
+          "team_games": 18
+        },
+        "recent": {
+          "hits": 26,
+          "plays": 36,
+          "rate": 72.22222222222223,
+          "BE": 34.62217447969886,
+          "gap": 37.600047742523365,
+          "players": 30,
+          "units": 39.86495575221239,
+          "ROI": 110.73598820058997,
+          "dates": 10,
+          "games": 13,
+          "teams": 10,
+          "opponents": 5,
+          "team_games": 13
+        }
+      },
+      "record": {
+        "hits": 33,
+        "plays": 48,
+        "rate": 68.75,
+        "BE": 34.022326901259184,
+        "gap": 34.727673098740816,
+        "players": 39,
+        "units": 50.36495575221239,
+        "ROI": 104.92699115044248,
+        "dates": 15,
+        "games": 18,
+        "teams": 14,
+        "opponents": 5,
+        "team_games": 18
+      },
+      "pp_v2": true,
+      "kit_version": "pp-moves-v2-2026-11-19",
+      "record_label": "V2 TOTAL MOVE %",
+      "move_version": "V2",
+      "display_family": "v2-defense-rend",
+      "optional_buff": true,
+      "rule": "PPP_Line == 0.5 + Official_Opp_PK_L5_PPP_per_O >= 1.1 + PP_OnIce_xG_per_game >= 0.3 + Player_L20_P_1plus_pct >= 55 + opp_5v5_xGA60 >= 2.65"
+    },
+    {
+      "id": "pp-v2-buff-pf65-d2",
+      "code": "PF65_D2",
+      "name": "Defense Rend II",
+      "family": "defense-rend",
+      "parent": "PF65",
+      "kind": "OPTIONAL BUFF",
+      "entry": [
+        [
+          "PPP_Line",
+          "==",
+          0.5
+        ],
+        [
+          "Official_Opp_PK_L5_PPP_per_O",
+          ">=",
+          1.1
+        ],
+        [
+          "PP_OnIce_xG_per_game",
+          ">=",
+          0.3
+        ]
+      ],
+      "conditions": [
+        [
+          "Player_L20_P_1plus_pct",
+          ">=",
+          65
+        ],
+        [
+          "opp_5v5_xGA60",
+          ">=",
+          2.65
+        ]
+      ],
+      "available_parent": {
+        "full": {
+          "hits": 37,
+          "plays": 67,
+          "rate": 55.223880597014926,
+          "BE": 34.58369962358122,
+          "gap": 20.640180973433708,
+          "players": 37,
+          "units": 38.49495575221239,
+          "ROI": 57.45515783912297,
+          "dates": 19,
+          "games": 34,
+          "teams": 18,
+          "opponents": 15,
+          "team_games": 34
+        },
+        "recent": {
+          "hits": 24,
+          "plays": 42,
+          "rate": 57.142857142857146,
+          "BE": 35.29996873167275,
+          "gap": 21.842888411184397,
+          "players": 25,
+          "units": 25.71495575221239,
+          "ROI": 61.22608512431521,
+          "dates": 11,
+          "games": 18,
+          "teams": 10,
+          "opponents": 9,
+          "team_games": 18
+        }
+      },
+      "noise": {
+        "full_defenders": {
+          "VAN": 14,
+          "SJS": 9,
+          "SEA": 7,
+          "ANA": 1
+        },
+        "recent_defenders": {
+          "VAN": 11,
+          "SJS": 9,
+          "SEA": 4,
+          "ANA": 1
+        },
+        "full_teams": {
+          "CAR": 4,
+          "VGK": 4,
+          "EDM": 4,
+          "NSH": 4,
+          "UTA": 4,
+          "TOR": 2,
+          "TBL": 2,
+          "NYR": 2,
+          "PIT": 2,
+          "NYI": 2,
+          "CGY": 1
+        },
+        "recent_teams": {
+          "EDM": 4,
+          "VGK": 4,
+          "NSH": 4,
+          "UTA": 4,
+          "CAR": 3,
+          "NYI": 2,
+          "NYR": 2,
+          "PIT": 2
+        },
+        "full_goalies": {
+          "Leevi Merilainen": 12,
+          "Joey Daccord": 5,
+          "Yaroslav Askarov": 5,
+          "Alex Nedeljkovic": 4,
+          "Philipp Grubauer": 2,
+          "Nikita Tolopilo": 2,
+          "Laurent Brossoit": 1
+        },
+        "recent_goalies": {
+          "Leevi Merilainen": 9,
+          "Yaroslav Askarov": 5,
+          "Joey Daccord": 4,
+          "Alex Nedeljkovic": 4,
+          "Nikita Tolopilo": 2,
+          "Laurent Brossoit": 1
+        },
+        "goalie_gp_min": 3.0,
+        "goalie_gp_max": 15.0,
+        "goalie_gp1_2": 0,
+        "recent_goalie_gp1_2": 0,
+        "goalie_games": 15,
+        "outside_VAN_SEA": {
+          "full": {
+            "hits": 8,
+            "plays": 10,
+            "rate": 80.0,
+            "BE": 35.340829079206685,
+            "gap": 44.659170920793315,
+            "players": 9,
+            "units": 12.75,
+            "ROI": 127.5,
+            "dates": 5,
+            "games": 5,
+            "teams": 4,
+            "opponents": 2,
+            "team_games": 5
+          },
+          "recent": {
+            "hits": 8,
+            "plays": 10,
+            "rate": 80.0,
+            "BE": 35.340829079206685,
+            "gap": 44.659170920793315,
+            "players": 9,
+            "units": 12.75,
+            "ROI": 127.5,
+            "dates": 5,
+            "games": 5,
+            "teams": 4,
+            "opponents": 2,
+            "team_games": 5
+          }
+        },
+        "outside_player_kit": {
+          "full": {
+            "hits": 0,
+            "plays": 0,
+            "rate": null,
+            "BE": null,
+            "gap": null,
+            "players": 0,
+            "units": 0.0,
+            "ROI": null,
+            "dates": 0,
+            "games": 0,
+            "teams": 0,
+            "opponents": 0,
+            "team_games": 0
+          },
+          "recent": {
+            "hits": 0,
+            "plays": 0,
+            "rate": null,
+            "BE": null,
+            "gap": null,
+            "players": 0,
+            "units": 0.0,
+            "ROI": null,
+            "dates": 0,
+            "games": 0,
+            "teams": 0,
+            "opponents": 0,
+            "team_games": 0
+          }
+        },
+        "without_biggest_full": 35.66495575221239,
+        "without_biggest_recent": 30.41495575221239
+      },
+      "approved_books": {
+        "full": {
+          "plays": 27,
+          "hits": 23,
+          "rate": 85.18518518518519,
+          "units": 37.41495575221239,
+          "ROI": 138.57391019337922,
+          "BE": 36.55547033329432,
+          "gap": 48.62971485189087,
+          "players": 22
+        },
+        "recent": {
+          "plays": 21,
+          "hits": 19,
+          "rate": 90.47619047619048,
+          "units": 31.66495575221239,
+          "ROI": 150.78550358196375,
+          "BE": 36.99360505936935,
+          "gap": 53.48258541682113,
+          "players": 17
+        },
+        "original_prices_same_covered": {
+          "full": {
+            "hits": 23,
+            "plays": 27,
+            "rate": 85.18518518518519,
+            "BE": 36.55547033329432,
+            "gap": 48.62971485189087,
+            "players": 22,
+            "units": 37.41495575221239,
+            "ROI": 138.57391019337922,
+            "dates": 11,
+            "games": 14,
+            "teams": 10,
+            "opponents": 4,
+            "team_games": 14
+          },
+          "recent": {
+            "hits": 19,
+            "plays": 21,
+            "rate": 90.47619047619048,
+            "BE": 36.99360505936935,
+            "gap": 53.48258541682113,
+            "players": 17,
+            "units": 31.66495575221239,
+            "ROI": 150.78550358196375,
+            "dates": 7,
+            "games": 10,
+            "teams": 7,
+            "opponents": 4,
+            "team_games": 10
+          }
+        },
+        "missing_full": 4,
+        "missing_recent": 4,
+        "selection": "Best ordinary saved exactPPP0.5 quote among the users eight bookmakers; no fresh or invented prices."
+      },
+      "status": "keeper",
+      "not_an_entry_gate": true,
+      "research_record": {
+        "full": {
+          "hits": 25,
+          "plays": 31,
+          "rate": 80.64516129032258,
+          "BE": 36.49222558904003,
+          "gap": 44.152935701282544,
+          "players": 26,
+          "units": 38.46495575221239,
+          "ROI": 124.08050242649158,
+          "dates": 12,
+          "games": 15,
+          "teams": 11,
+          "opponents": 4,
+          "team_games": 15
+        },
+        "recent": {
+          "hits": 21,
+          "plays": 25,
+          "rate": 84.0,
+          "BE": 36.84508002032203,
+          "gap": 47.15491997967797,
+          "players": 21,
+          "units": 32.71495575221239,
+          "ROI": 130.85982300884956,
+          "dates": 8,
+          "games": 11,
+          "teams": 8,
+          "opponents": 4,
+          "team_games": 11
+        }
+      },
+      "record": {
+        "hits": 25,
+        "plays": 31,
+        "rate": 80.64516129032258,
+        "BE": 36.49222558904003,
+        "gap": 44.152935701282544,
+        "players": 26,
+        "units": 38.46495575221239,
+        "ROI": 124.08050242649158,
+        "dates": 12,
+        "games": 15,
+        "teams": 11,
+        "opponents": 4,
+        "team_games": 15
+      },
+      "pp_v2": true,
+      "kit_version": "pp-moves-v2-2026-11-19",
+      "record_label": "V2 TOTAL MOVE %",
+      "move_version": "V2",
+      "display_family": "v2-defense-rend",
+      "optional_buff": true,
+      "rule": "PPP_Line == 0.5 + Official_Opp_PK_L5_PPP_per_O >= 1.1 + PP_OnIce_xG_per_game >= 0.3 + Player_L20_P_1plus_pct >= 65 + opp_5v5_xGA60 >= 2.65"
+    },
+    {
+      "id": "pp-v2-buff-pt16-d2",
+      "code": "PT16_D2",
+      "name": "Defense Rend II",
+      "family": "defense-rend",
+      "parent": "PT16",
+      "kind": "OPTIONAL BUFF",
+      "entry": [
+        [
+          "PPP_Line",
+          "==",
+          0.5
+        ],
+        [
+          "Official_Opp_PK_L5_PPP_per_O",
+          ">=",
+          1.1
+        ],
+        [
+          "PP_OnIce_xG_per_game",
+          ">=",
+          0.3
+        ]
+      ],
+      "conditions": [
+        [
+          "Player_L20_P_total",
+          ">=",
+          16
+        ],
+        [
+          "opp_5v5_xGA60",
+          ">=",
+          2.65
+        ]
+      ],
+      "available_parent": {
+        "full": {
+          "hits": 31,
+          "plays": 56,
+          "rate": 55.357142857142854,
+          "BE": 34.862984553299775,
+          "gap": 20.49415830384308,
+          "players": 38,
+          "units": 32.71495575221239,
+          "ROI": 58.41956384323641,
+          "dates": 16,
+          "games": 27,
+          "teams": 18,
+          "opponents": 13,
+          "team_games": 28
+        },
+        "recent": {
+          "hits": 27,
+          "plays": 50,
+          "rate": 54.0,
+          "BE": 35.03364818219006,
+          "gap": 18.966351817809937,
+          "players": 34,
+          "units": 27.064955752212388,
+          "ROI": 54.129911504424776,
+          "dates": 14,
+          "games": 23,
+          "teams": 15,
+          "opponents": 10,
+          "team_games": 24
+        }
+      },
+      "noise": {
+        "full_defenders": {
+          "VAN": 13,
+          "SJS": 9,
+          "SEA": 8,
+          "ANA": 1
+        },
+        "recent_defenders": {
+          "VAN": 13,
+          "SJS": 9,
+          "SEA": 6,
+          "ANA": 1
+        },
+        "full_teams": {
+          "NYR": 5,
+          "NSH": 4,
+          "VGK": 4,
+          "CAR": 4,
+          "UTA": 4,
+          "EDM": 3,
+          "NYI": 2,
+          "TOR": 2,
+          "PIT": 2,
+          "WPG": 1
+        },
+        "recent_teams": {
+          "NYR": 5,
+          "VGK": 4,
+          "NSH": 4,
+          "UTA": 4,
+          "CAR": 4,
+          "EDM": 3,
+          "NYI": 2,
+          "PIT": 2,
+          "WPG": 1
+        },
+        "full_goalies": {
+          "Leevi Merilainen": 11,
+          "Joey Daccord": 6,
+          "Yaroslav Askarov": 5,
+          "Alex Nedeljkovic": 4,
+          "Philipp Grubauer": 2,
+          "Nikita Tolopilo": 2,
+          "Laurent Brossoit": 1
+        },
+        "recent_goalies": {
+          "Leevi Merilainen": 11,
+          "Joey Daccord": 6,
+          "Yaroslav Askarov": 5,
+          "Alex Nedeljkovic": 4,
+          "Nikita Tolopilo": 2,
+          "Laurent Brossoit": 1
+        },
+        "goalie_gp_min": 3.0,
+        "goalie_gp_max": 15.0,
+        "goalie_gp1_2": 0,
+        "recent_goalie_gp1_2": 0,
+        "goalie_games": 13,
+        "outside_VAN_SEA": {
+          "full": {
+            "hits": 8,
+            "plays": 10,
+            "rate": 80.0,
+            "BE": 35.340829079206685,
+            "gap": 44.659170920793315,
+            "players": 9,
+            "units": 12.75,
+            "ROI": 127.5,
+            "dates": 5,
+            "games": 5,
+            "teams": 4,
+            "opponents": 2,
+            "team_games": 5
+          },
+          "recent": {
+            "hits": 8,
+            "plays": 10,
+            "rate": 80.0,
+            "BE": 35.340829079206685,
+            "gap": 44.659170920793315,
+            "players": 9,
+            "units": 12.75,
+            "ROI": 127.5,
+            "dates": 5,
+            "games": 5,
+            "teams": 4,
+            "opponents": 2,
+            "team_games": 5
+          }
+        },
+        "outside_player_kit": {
+          "full": {
+            "hits": 0,
+            "plays": 0,
+            "rate": null,
+            "BE": null,
+            "gap": null,
+            "players": 0,
+            "units": 0.0,
+            "ROI": null,
+            "dates": 0,
+            "games": 0,
+            "teams": 0,
+            "opponents": 0,
+            "team_games": 0
+          },
+          "recent": {
+            "hits": 0,
+            "plays": 0,
+            "rate": null,
+            "BE": null,
+            "gap": null,
+            "players": 0,
+            "units": 0.0,
+            "ROI": null,
+            "dates": 0,
+            "games": 0,
+            "teams": 0,
+            "opponents": 0,
+            "team_games": 0
+          }
+        },
+        "without_biggest_full": 30.86495575221239,
+        "without_biggest_recent": 29.914955752212393
+      },
+      "approved_books": {
+        "full": {
+          "plays": 28,
+          "hits": 21,
+          "rate": 75.0,
+          "units": 31.21495575221239,
+          "ROI": 111.48198482932996,
+          "BE": 35.76697485161813,
+          "gap": 39.23302514838187,
+          "players": 23
+        },
+        "recent": {
+          "plays": 26,
+          "hits": 20,
+          "rate": 76.92307692307692,
+          "units": 30.26495575221239,
+          "ROI": 116.40367597004766,
+          "BE": 35.93244836258572,
+          "gap": 40.9906285604912,
+          "players": 21
+        },
+        "original_prices_same_covered": {
+          "full": {
+            "hits": 21,
+            "plays": 28,
+            "rate": 75.0,
+            "BE": 35.76697485161813,
+            "gap": 39.23302514838187,
+            "players": 23,
+            "units": 31.21495575221239,
+            "ROI": 111.48198482932996,
+            "dates": 9,
+            "games": 12,
+            "teams": 9,
+            "opponents": 4,
+            "team_games": 12
+          },
+          "recent": {
+            "hits": 20,
+            "plays": 26,
+            "rate": 76.92307692307692,
+            "BE": 35.93244836258572,
+            "gap": 40.9906285604912,
+            "players": 21,
+            "units": 30.26495575221239,
+            "ROI": 116.40367597004766,
+            "dates": 8,
+            "games": 11,
+            "teams": 8,
+            "opponents": 4,
+            "team_games": 11
+          }
+        },
+        "missing_full": 3,
+        "missing_recent": 3,
+        "selection": "Best ordinary saved exactPPP0.5 quote among the users eight bookmakers; no fresh or invented prices."
+      },
+      "status": "keeper",
+      "not_an_entry_gate": true,
+      "research_record": {
+        "full": {
+          "hits": 23,
+          "plays": 31,
+          "rate": 74.19354838709677,
+          "BE": 35.88397602494415,
+          "gap": 38.30957236215262,
+          "players": 26,
+          "units": 33.26495575221239,
+          "ROI": 107.30630887810449,
+          "dates": 10,
+          "games": 13,
+          "teams": 10,
+          "opponents": 4,
+          "team_games": 13
+        },
+        "recent": {
+          "hits": 22,
+          "plays": 29,
+          "rate": 75.86206896551724,
+          "BE": 36.04040063293757,
+          "gap": 39.82166833257967,
+          "players": 24,
+          "units": 32.31495575221239,
+          "ROI": 111.43088190418065,
+          "dates": 9,
+          "games": 12,
+          "teams": 9,
+          "opponents": 4,
+          "team_games": 12
+        }
+      },
+      "record": {
+        "hits": 23,
+        "plays": 31,
+        "rate": 74.19354838709677,
+        "BE": 35.88397602494415,
+        "gap": 38.30957236215262,
+        "players": 26,
+        "units": 33.26495575221239,
+        "ROI": 107.30630887810449,
+        "dates": 10,
+        "games": 13,
+        "teams": 10,
+        "opponents": 4,
+        "team_games": 13
+      },
+      "pp_v2": true,
+      "kit_version": "pp-moves-v2-2026-11-19",
+      "record_label": "V2 TOTAL MOVE %",
+      "move_version": "V2",
+      "display_family": "v2-defense-rend",
+      "optional_buff": true,
+      "rule": "PPP_Line == 0.5 + Official_Opp_PK_L5_PPP_per_O >= 1.1 + PP_OnIce_xG_per_game >= 0.3 + Player_L20_P_total >= 16 + opp_5v5_xGA60 >= 2.65"
+    }
+  ],
+  "tooltips": {
+    "Goalie_GAA": {
+      "definition": "Matched confirmed goalie actual all-strength goals allowed per60 minutes.",
+      "source": "frozen matched goalie stats",
+      "guard": "current-season confirmed/official named match,GP>0; no10-game minimum",
+      "label": "Opposing goalie GAA",
+      "tooltip": "Actual goals allowed per60 goalie minutes. Uses the matched goalie record, not the teams overall goals allowed."
+    },
+    "Goalie_SV": {
+      "definition": "Matched confirmed goalie all-strength save percentage.",
+      "source": "frozen matched goalie stats",
+      "guard": "current-season confirmed/official named match,GP>0; no10-game minimum",
+      "label": "Opposing goalie save percentage",
+      "tooltip": "Share of shots stopped in the matched current-season record. .900 means90%. Requires a named confirmed or official starter and matching stats."
+    },
+    "Official_Opp_PK_L10_Goals_PG": {
+      "definition": "Strictly-prior official Opp PK_L10_Goals_PG; complete5/10-game windows or actual prior season/venue denominator. PPP credits are goals plus skater assists, not team goals.",
+      "source": "official current-season game reports",
+      "guard": "strictly prior current-season",
+      "label": "Opponent recent PP goals allowed",
+      "tooltip": "Power-play goals conceded across10 previous games divided by10. A1.10 average means11 PP goals allowed over those10 games."
+    },
+    "Official_Opp_PK_L10_Seconds_per_O": {
+      "definition": "Strictly-prior official Opp PK_L10_Seconds_per_O; complete5/10-game windows or actual prior season/venue denominator. PPP credits are goals plus skater assists, not team goals.",
+      "source": "official current-season game reports",
+      "guard": "strictly prior current-season",
+      "label": "Opponent PK time per opportunity",
+      "tooltip": "Total shorthanded seconds divided by times shorthanded over10 prior games. A PP goal can end a penalty, so shorter duration is not the same as fewer penalties."
+    },
+    "Official_Opp_PK_L5_PPP_per_O": {
+      "definition": "Strictly-prior official Opp PK_L5_PPP_per_O; complete5/10-game windows or actual prior season/venue denominator. PPP credits are goals plus skater assists, not team goals.",
+      "source": "official current-season game reports",
+      "guard": "strictly prior current-season",
+      "label": "Opponent recent PP damage",
+      "tooltip": "Skater power-play points allowed divided by times shorthanded over five prior games. One PP goal can credit a goal and two assists, so1.10 does not mean110% team scoring chance."
+    },
+    "PPP_Line": {
+      "definition": "PPP_Line",
+      "source": "strict-prior2026-27 Form_Log or unchanged frozen savedmodel;no imputation",
+      "label": "Power-play point line",
+      "tooltip": "Over0.5 requires at least one power-play goal or assist. Read the exact offered line from the quote."
+    },
+    "PP_OnIce_xG_per_game": {
+      "definition": "PP_OnIce_xG_per_game",
+      "source": "strict-prior2026-27 Form_Log or unchanged frozen savedmodel;no imputation",
+      "label": "PP on-ice expected goals/game",
+      "tooltip": "Expected goals for the team while this player is on power-play ice, per game. Includes teammates chances; not individual player xG."
+    },
+    "Player_L10_P_per60": {
+      "definition": "Player_L10_P_per60",
+      "source": "strict-prior2026-27 Form_Log or unchanged frozen savedmodel;no imputation",
+      "label": "Recent point pace",
+      "tooltip": "Goals plus assists per60 minutes of total player ice time across up to10 previous games. Higher means more points for the ice time played."
+    },
+    "Player_L20_P_1plus_pct": {
+      "definition": "Player_L20_P_1plus_pct",
+      "source": "strict-prior2026-27 Form_Log or unchanged frozen savedmodel;no imputation",
+      "label": "Recent point hit rate",
+      "tooltip": "Share of up to20 previous games with at least one goal or assist. Show games available; no20-game minimum is added."
+    },
+    "Player_L20_P_total": {
+      "definition": "Player_L20_P_total",
+      "source": "strict-prior2026-27 Form_Log or unchanged frozen savedmodel;no imputation",
+      "label": "Recent total points",
+      "tooltip": "Goals plus assists in up to20 previous games. This is a count, so players with more games have had more chances to accumulate points."
+    },
+    "Player_L5_A_per60": {
+      "definition": "Player_L5_A_per60",
+      "source": "strict-prior2026-27 Form_Log or unchanged frozen savedmodel;no imputation",
+      "label": "Recent assist pace",
+      "tooltip": "Actual assists per60 minutes of total player ice time across up to5 previous games."
+    },
+    "Points_mu": {
+      "definition": "Points_mu",
+      "source": "strict-prior2026-27 Form_Log or unchanged frozen savedmodel;no imputation",
+      "label": "Saved points projection",
+      "tooltip": "The existing models saved mean for total points. A broader production signal, not a power-play hit probability."
+    },
+    "i5v5_primaryAssists60": {
+      "definition": "i5v5_primaryAssists60",
+      "source": "strict-prior2026-27 Form_Log or unchanged frozen savedmodel;no imputation",
+      "label": "Primary assists at5v5",
+      "tooltip": "Recorded first assists per60 minutes at5v5. A first assist is the last credited pass before the goal. This is not expected assists."
+    },
+    "opp_5v5_xGA60": {
+      "definition": "Unchanged saved current-season Opponent 5v5 expected goals allowed/60; original frozen slate values.",
+      "source": "SHA-verified original archives",
+      "guard": "strictly prior current-season",
+      "label": "Opponent5v5 chances allowed",
+      "tooltip": "Expected goals allowed per60 minutes at5v5. Tested here as PPP matchup context; this is not a penalty-kill rate."
+    }
+  }
+}

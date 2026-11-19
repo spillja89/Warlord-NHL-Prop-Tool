@@ -73,5 +73,7 @@ def attach_pp_card_context(frame, before_day, reports, codes):
     out['PP_Card_Context_AsOf'] = before
     from pp_lower_context import attach_pp_lower_context
     out = attach_pp_lower_context(out, before, reports, codes)
+    from pp_v2_context import attach_context
+    out = attach_context(out,before,reports,codes)
     return out
 

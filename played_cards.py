@@ -259,10 +259,10 @@ def pp_controls_html(pick, state, error, key):
             f'<span role="status">{note}</span></div>')
 
 
-def render_markable_pp_table(quotes, frame, signals_by_team, *, render, owner_access, setting, key):
+def render_markable_pp_table(quotes, frame, signals_by_team, *, render, owner_access, setting, key, cards_renderer=None):
     """One bridge for the whole sortable table. Public viewers never load marks."""
     if not owner_access:
-        st.html(render(quotes, signals_by_team), unsafe_allow_javascript=True)
+        st.html(render(quotes, signals_by_team)+(cards_renderer(None) if cards_renderer else ''), unsafe_allow_javascript=True)
         return
     url = storage_url(setting)
     store, states, error = (PickStore(url) if url else None), {}, ''
@@ -284,7 +284,7 @@ def render_markable_pp_table(quotes, frame, signals_by_team, *, render, owner_ac
         registry[pick['pick_id']] = pick
         return pp_controls_html(pick, states.get(pick['pick_id'], {}), error, key)
 
-    st.html(_CSS + render(quotes, signals_by_team, row_controls=controls), unsafe_allow_javascript=True)
+    st.html(_CSS + render(quotes, signals_by_team, row_controls=controls)+(cards_renderer(controls) if cards_renderer else ''), unsafe_allow_javascript=True)
     if error:
         st.warning(error)
         return

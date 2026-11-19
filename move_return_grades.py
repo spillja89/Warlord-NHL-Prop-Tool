@@ -55,14 +55,14 @@ def return_record(move):
         elif market=='SOG':row=special_record(move,'SOG')
         elif all(k in move for k in ('entry','conditions','record')):
             row=special_record(move,'PPP')
-            if row and row.get('kit_version')!=_pp_kit_version():return None
+            if row and row.get('kit_version')!=move.get('kit_version',_pp_kit_version()):return None
         else:return None
     except (TypeError,ValueError,KeyError):return None
     # Old-season fallback headlines cannot inherit a current-season performance grade.
     if row and not row.get('legacy'):
         # A record rollover must not erase already-observed recent health or
         # demote S solely because the new V2 tracking counter starts at zero.
-        if market in ('Assists','Points') and 'health_since_check' in row:
+        if (market in ('Assists','Points') or move.get('pp_v2')) and 'health_since_check' in row:
             return {**row, 'since_check':row['health_since_check'],
                     'previous':row['health_previous'], 'health_since_from':row['health_since_from']}
         return row

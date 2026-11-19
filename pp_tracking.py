@@ -43,22 +43,36 @@ def attach_pp_tracking(frame, *, mode=CAPTURED, evaluated_utc=None, source_sha25
             e,a=_num(r.get('Team_PP_xGF60')),_num(r.get('Team_PP_GF60'))
             return e-a if r.get('Team_Stats_Season')=='2026-2027' and e is not None and a is not None and min(e,a)>=0 else None
         out['MP_Team_PP_xG_minus_G60']=[gap(r) for r in out.to_dict('records')]
+    from pp_v2_moves import attach_fields
+    out=attach_fields(out)
     catalog=records()['moves']
     identity=json.dumps([dict(id=m['id'],entry=m['entry'],conditions=m['conditions'],record=m['record']) for m in catalog],sort_keys=True,separators=(',',':'),ensure_ascii=False)
     record_version=KIT+':'+sha256(identity.encode('utf-8')).hexdigest()[:16]
-    manifest=json.dumps([dict(id=m['id'],name=m['name'],kind=m['kind']) for m in catalog],ensure_ascii=False,separators=(',',':'))
+    manifest=json.dumps([dict(id=m['id'],name=m['name'],kind=m['kind'],kit_version=m.get('kit_version',KIT),record_version=record_version) for m in catalog],ensure_ascii=False,separators=(',',':'))
     eligible=out.loc[~ambiguous]
-    cards=rank_pp_cards(eligible,priced_ppp_quotes(eligible,line_filter=.5))
-    frozen={}
+    cards=rank_pp_cards(eligible,priced_ppp_quotes(eligible,line_filter=.5),display_filter=False)
+    frozen={};leaders={}
     for card in cards:
         row,quote=card['row'],card['quote'];tags=[]
+        from pp_v2_display import card_qualified
+        from move_return_grades import pp_move_rank,move_grade
+        from pp_cards import display_record
+        candidates=[m for m in card['moves'] if card_qualified(m)]
+        if candidates:
+            lead=max(candidates,key=pp_move_rank);s=display_record(lead);g=move_grade(lead)
+            leaders[tuple(str(row.get(k)) for k in keys)]=dict(PP_Attack=lead['name'],PP_Attack_ID=lead['id'],PP_Attack_Hits=s['hits'],PP_Attack_Plays=s['plays'],PP_Attack_Hit_Pct=s['rate'],PP_Attack_Sample_BE=s['BE'],PP_Attack_Historical_Gap=s['gap'],PP_Attack_Tier=g['tier'] if g else '')
         for m in card['moves']:
             values={field:(_num(quote['PPP line']) if field=='PPP line' else onice_xg(row) if field=='PP_OnIce_xG_per_game' else _num(row.get(field))) for field,_,_ in m['entry']+m['conditions']}
-            tags.append(dict(market='PPP',name=m['name'],id=m['id'],kind=m['kind'],rule=_rule(m),icon='ϟ',kit_version=KIT,record_version=record_version,
+            if m.get('pp_v2'):
+                from pp_v2_moves import value
+                values={f:value(row,f,quote['PPP line']) for f,_,_ in m['entry']+m['conditions']}
+            tags.append(dict(market='PPP',name=m['name'],id=m['id'],kind=m['kind'],rule=_rule(m),icon='ϟ',kit_version=m.get('kit_version',KIT),record_version=record_version,
                              line=float(quote['PPP line']),odds=float(quote['Over odds']),book=str(quote['Book']),odds_checked_utc=str(row.get('Odds_Checked_UTC') or ''),
                              pp_unit=str(quote.get('PP unit') or ''),tracking_mode=mode,historical_record=m['record'],inputs=values,
                              context_asof=str(row.get('PP_Card_Context_AsOf') or ''),lower_context_asof=str(row.get('PP_Lower_Context_AsOf') or '')))
         frozen[tuple(str(row.get(k)) for k in keys)]=json.dumps(tags,ensure_ascii=False,separators=(',',':'),allow_nan=False)
+    for field in ['PP_Attack','PP_Attack_ID','PP_Attack_Hits','PP_Attack_Plays','PP_Attack_Hit_Pct','PP_Attack_Sample_BE','PP_Attack_Historical_Gap','PP_Attack_Tier']:
+        out[field]=[leaders.get(tuple(str(row.get(k)) for k in keys),{}).get(field) for row in out.to_dict('records')]
     out['PP_Fired_Moves']=[frozen.get(tuple(str(row.get(k)) for k in keys),'[]') for row in out.to_dict('records')]
     out['PP_Move_Kit_Version']=KIT
     out['PP_Move_Record_Version']=record_version

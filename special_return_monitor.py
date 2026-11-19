@@ -16,7 +16,7 @@ def record_for(move,market):
         key='SOG|'+str(move.get('name'));original=(move.get('wins'),move.get('picks'));kit=move.get('kit_version');rule=move.get('rule')
     elif market=='PPP':
         key='PPP|'+str(move.get('id'));r=move.get('record',{});original=(r.get('hits'),r.get('plays'))
-        kit='pp-card-kit-2026-11-07-v2';rule=' + '.join(f'{field} {op} {cut:g}' for field,op,cut in move.get('entry',[])+move.get('conditions',[]))
+        kit=move.get('kit_version','pp-card-kit-2026-11-07-v2');rule=' + '.join(f'{field} {op} {cut:g}' for field,op,cut in move.get('entry',[])+move.get('conditions',[]))
     else:return None
     row=records().get('by_key',{}).get(key)
     if not row or row['name']!=move.get('name') or row['kit_version']!=kit or row['rule']!=rule:return None
@@ -26,6 +26,9 @@ def record_for(move,market):
 def _panel(move,market,compact):
     row=record_for(move,market)
     if row is None:return ''
+    if market=='PPP' and move.get('pp_v2'):
+        from pp_v2_display import return_panel
+        return return_panel(row,compact=compact)
     data={**records(),**{f:row[f] for f in ('previous_through','since_from','move_version_label','wired_on')}}
     result=render_return_panel(row,data,compact=compact)
     if market=='PPP' and not compact:

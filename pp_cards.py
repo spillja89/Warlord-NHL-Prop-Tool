@@ -14,7 +14,8 @@ from goal_return_monitor import RETURN_CSS
 from move_return_grades import pp_move_rank, move_grade, grade_badges, GRADE_CSS
 from pp_card_form import ppp_l10_chart, ppp_l10_label, FORM_CSS
 
-VERSION = 'pp-card-kit-2026-11-07-v2'
+LEGACY_VERSION = 'pp-card-kit-2026-11-07-v2'
+VERSION = 'pp-moves-v2-2026-11-19'
 LABELS = {
     'Official_Opp_FailurePct_L5': ('Opponent L5 PK goals / opportunities', '%'),
     'Official_Team_OpportunitiesPG_L5': ('Team L5 PP opportunities/game', ''),
@@ -33,6 +34,20 @@ LABELS = {
     'PP_OnIce_xG_per_game': ('PP on-ice xG/game', ''),
 }
 
+from pp_v2_display import goalie_summary as _goalie_summary
+from pp_v2_moves import catalog as _v2_catalog
+LABELS.update({f:(x['label'],'') for f,x in _v2_catalog()['tooltips'].items()})
+
+def display_record(move):
+    from special_return_monitor import record_for
+    row=record_for(move,'PPP')
+    if not row:return move['record']
+    s=row['full'];return {**move['record'],**s,'rate':s['hit_rate'],'BE':s['be']}
+
+def optional_badges(card):
+    from pp_v2_display import buff_badges
+    return buff_badges(card['moves'],card['row'])
+
 RUNESMITH_IDS = {'pp-arcane-momentum-i-v1', 'pp-arcane-momentum-ii-v1',
                  'pp-rune-rupture-v1', 'pp-arcane-overload-v1',
                  'pp-runic-weave-i-v1', 'pp-runic-weave-ii-v1',
@@ -43,6 +58,10 @@ STORMCALLER_IDS = {'pp-breachfire-v1', 'pp-tempest-sigil-v1',
 
 def pp_character(move):
     """Route identity changes only artwork and accent, never qualification."""
+    if move.get('pp_v2'):
+        family=move.get('family','')
+        if family in {'astral-momentum','runic-rhythm','mana-reservoir'}:return 'Runesmith','Orangutan · Runesmith','runesmith'
+        if family in {'penalty-rift','spirit-relay','astral-convergence'}:return 'Stormcaller','Chimp · Stormcaller','stormcaller'
     if move['id'] in RUNESMITH_IDS:
         return 'Runesmith', 'Orangutan · Runesmith', 'runesmith'
     if move['id'] in STORMCALLER_IDS:
@@ -100,7 +119,10 @@ def _num(value):
 
 @lru_cache(maxsize=1)
 def records():
-    return json.loads(Path(__file__).with_name('pp_card_records.json').read_text(encoding='utf-8'))
+    data=json.loads(Path(__file__).with_name('pp_card_records.json').read_text(encoding='utf-8'))
+    legacy=[{**m,'kit_version':LEGACY_VERSION,'move_version':'V1'} for m in data['moves']]
+    from pp_v2_moves import catalog
+    return {**data,'version':VERSION,'moves':legacy+catalog()['moves']}
 
 def onice_xg(row):
     value = _num(row.get('PP_OnIce_xG_per_game'))
@@ -119,6 +141,7 @@ def fired_pp_moves(row, line=.5):
                      and str(row.get('PP_Card_Context_AsOf')) == str(row.get('Date'))[:10])
     fired = []
     for move in records()['moves']:
+        if move.get('pp_v2'):continue
         lower = move.get('lane') == 'layer1-lower-xg'
         lower_current = (row.get('PP_Lower_Context_Version') == LOWER_CONTEXT_VERSION
                          and str(row.get('PP_Lower_Context_AsOf')) == str(row.get('Date'))[:10])
@@ -135,9 +158,10 @@ def fired_pp_moves(row, line=.5):
                 break
         if matches:
             fired.append(move)
-    return sorted(fired, key=lambda m: (-m['record']['rate'], -m['record']['plays'], m['id']))
+    from pp_v2_moves import fired as fired_v2
+    return sorted(fired+fired_v2(row,line), key=pp_move_rank,reverse=True)
 
-def rank_pp_cards(frame, quotes):
+def rank_pp_cards(frame, quotes, *, display_filter=True):
     """One player-game card, using the existing best-quote selection and view filters."""
     rows = {(str(r.get('Player')), str(r.get('Team')), str(r.get('Game'))): r
             for r in frame.to_dict('records')}
@@ -151,8 +175,12 @@ def rank_pp_cards(frame, quotes):
         moves = fired_pp_moves(row, quote.get('PPP line'))
         if not moves:
             continue
+        from pp_v2_display import card_qualified
+        eligible=[m for m in moves if card_qualified(m)] if display_filter else moves
+        if not eligible:continue
+        eligible=sorted(eligible,key=pp_move_rank,reverse=True)
         moves = sorted(moves, key=pp_move_rank, reverse=True)
-        card = dict(row=row, quote=quote, moves=moves, best=moves[0], xg=onice_xg(row),
+        card = dict(row=row, quote=quote, moves=moves, best=eligible[0], xg=onice_xg(row),
                     be=100*(100/(odds+100) if odds > 0 else -odds/(-odds+100)))
         if key not in cards or odds > cards[key]['quote']['Over odds']:
             cards[key] = card
@@ -169,29 +197,38 @@ def _value(value, digits=2):
 def _rule_checks(row, move, xg):
     checks = []
     for field, op, cutoff in move['entry'] + move['conditions']:
-        if field == 'PPP line':
+        if field in ('PPP line','PPP_Line'):
             continue
-        label, unit = LABELS[field]
-        actual = xg if field == 'PP_OnIce_xG_per_game' else row.get(field)
-        checks.append(f'{_h(label)} <b>{_value(actual,3)}{unit}</b> '
+        label, unit = LABELS.get(field,(field.replace('_',' '),''))
+        if move.get('pp_v2'):
+            from pp_v2_moves import prepare,value
+            actual=value(prepare(row),field)
+        else:actual = xg if field == 'PP_OnIce_xG_per_game' else row.get(field)
+        tooltip=_v2_catalog()['tooltips'].get(field,{}).get('tooltip',label)
+        checks.append(f'<span title="{_h(tooltip)}">{_h(label)}</span> <b>{_value(actual,3)}{unit}</b> '
                       f'{dict([(">=","≥"),("<=","≤"),("<","<"),("==","=")])[op]}{cutoff:g}{unit}')
     return '<br>'.join(checks)
 
-def render_pp_cards(cards, portrait_uri='', form_renderer=None):
+def render_pp_cards(cards, portrait_uri='', form_renderer=None, row_controls=None, character_override=None):
     """Compact front; dated PPP form and distinct routes are inside Inspect."""
     articles = []
     for index, card in enumerate(cards, 1):
         row, quote, move = card['row'], card['quote'], card['best']
-        record = move['record']
+        from matchup_display import matchup_label
+        game_label=matchup_label(quote.get('Game'),row.get('StartTimeUTC'),row.get('StartTimeLocal'))
+        controls=row_controls(quote) if row_controls else ''
+        record = display_record(move)
         variant, character, accent = pp_character(move)
+        if character_override:character=character_override
         portrait = portrait_uri.get(variant, '') if isinstance(portrait_uri, dict) else portrait_uri
-        families = display_routes(card['moves'])
+        from pp_v2_display import card_qualified
+        families = display_routes([m for m in card['moves'] if card_qualified(m)])
         odds = float(quote['Over odds'])
         matches = []
         nested_matches = []
         family_ids = {fired['id'] for fired in families}
         for fired in card['moves']:
-            r = fired['record']
+            r = display_record(fired)
             target = matches if fired['id'] in family_ids else nested_matches
             target.append(f'<section class="pp-w-move" data-move-id="{_h(fired["id"])}">'
                 f'<b>{_h(fired["name"])}</b>{grade_badges(fired)} <span>{_h(fired["kind"])}</span>'
@@ -217,10 +254,10 @@ def render_pp_cards(cards, portrait_uri='', form_renderer=None):
         upgraded = ' pp-w-combo' if move['kind'] == 'COMBO SPELL' else ''
         performance = move_grade(move)
         graded = (' rg-card-' + performance['tier'].lower() + (' rg-card-watch' if performance['watch'] else '')) if performance else ''
-        nested = (f'<details class="pp-w-all-definitions"><summary>Other matched levels ({len(nested_matches)})</summary>{"".join(nested_matches)}</details>' if nested_matches else '')
+        nested = (f'<details class="pp-w-all-definitions"><summary>Other matched levels &amp; tracked routes ({len(nested_matches)})</summary>{"".join(nested_matches)}</details>' if nested_matches else '')
         articles.append(f'<article class="pp-w-card pp-w-{accent}{upgraded}{graded}"><div class="pp-w-front">'
             f'<div class="pp-w-body"><div class="pp-w-heading"><span>{index:02d}</span>{grade_badges(move)} '
-            f'<strong>{_h(quote["Player"])}</strong> <small>{_h(quote["Game"])}</small></div>'
+            f'<strong>{_h(quote["Player"])}</strong> <small>{_h(game_label)}</small></div>'
             f'<div class="pp-w-name">{_h(move["name"])} <small>{_h(move["kind"])}</small></div>'
             f'<div class="pp-w-character">{_h(character)}</div>'
             f'<p class="pp-w-price">OVER 0.5 POWER-PLAY POINTS <b>{odds:+.0f}</b> · {_h(quote["Book"])}</p>'
@@ -228,10 +265,10 @@ def render_pp_cards(cards, portrait_uri='', form_renderer=None):
             f'<p class="pp-w-quick">PP on-ice xG/game <b>{card["xg"]:.3f}</b> · '
             f'PP <b>{_value(quote.get("PP TOI/game"), 1)} min/game</b> · {_h(quote.get("PP unit", "Unit unknown"))}'
             f' · <b>{len(families)}</b> route {"family" if len(families) == 1 else "families"}</p>'
-            f'{combo_html(move, {k:v[0] for k,v in LABELS.items()})}'
+            f'{controls}{combo_html(move, {k:v[0] for k,v in LABELS.items()})}{optional_badges(card)}{_goalie_summary(row)}'
             f'<p class="pp-w-l10-quick">PPP L10 <b>{_h(ppp_l10_label(row))}</b> · dated chart in Inspect</p>{pp_return_panel(move)}</div>'
             f'<div class="pp-w-record"><strong>{record["rate"]:.1f}%</strong>'
-            f'<b>{record["hits"]}/{record["plays"]}</b><small>V1 MOVE %</small></div>{image}</div>'
+            f'<b>{record["hits"]}/{record["plays"]}</b><small>{_h(move.get('move_version','V1'))} TOTAL MOVE %</small></div>{image}</div>'
             f'<details class="pp-w-inspect"><summary>Inspect · PPP L10, {len(families)} distinct {"route" if len(families) == 1 else "routes"} &amp; matchup</summary>{form}'
             f'<div class="pp-w-info">Move sample book BE <b>{record["BE"]:.1f}%</b> · '
             f'<b>{record["gap"]:+.1f} points</b> historical gap<br>'
@@ -239,7 +276,7 @@ def render_pp_cards(cards, portrait_uri='', form_renderer=None):
             f'{"".join(matches)}{nested}<div class="pp-w-info"><b>Official pregame windows</b><br>{"<br>".join(source)}'
             f'<br>As of {_h(row.get("Date"))} · all PP/PK strengths; last up-to-5/10 completed regular-season games.</div>'
             f'<div class="pp-w-info">Lineup: {_h(row.get("Lineup_Status", "Pending"))}<br>'
-            f'2026–27 research samples: higher-xG Oct 17–Nov 5; Layer 1 lower-xG Oct 16–Nov 6 · {VERSION}. '
+            f'2026–27 PPP V2 baseline through Nov17; health Nov1–17 is included in the baseline, not new live performance. V1 provenance remains in its return panel. {VERSION}. '
             'Historical move results are not tonight’s PPP probabilities. On-ice xG describes team chances while this player is on the ice.</div>'
             '</details></article>')
     return '<style>' + FORM_CSS + RETURN_CSS + GRADE_CSS + '''</style><style>
@@ -262,4 +299,4 @@ def render_pp_cards(cards, portrait_uri='', form_renderer=None):
     @keyframes pp-w-shimmer{0%,30%{transform:translateX(-100%)}80%,100%{transform:translateX(100%)}}@media(prefers-reduced-motion:reduce){.pp-w-combo:before{animation:none}}
     .pp-w .wn-form{margin-top:10px;font-size:13px}.pp-w .wn-form summary{cursor:pointer;color:#f0d59b}.pp-w .wn-form-tiles{display:flex;flex-wrap:wrap;gap:6px}.pp-w .wn-form-tiles>div{background:#101b2c;padding:8px;border-radius:5px;min-width:110px}.pp-w .wn-form-tiles small,.pp-w .wn-form-tiles strong{display:block}.pp-w .wn-form-meta{margin:7px 0}.pp-w .wn-form-strip{display:flex;flex-wrap:wrap;gap:4px}.pp-w .wn-form-strip>span{padding:7px;border-radius:5px}.pp-w .wn-form-strip .hit{background:#245744}.pp-w .wn-form-strip .miss{background:#663540}.pp-w .wn-form-strip b,.pp-w .wn-form-strip small{display:block;text-align:center}.pp-w .wn-form-strip small{font-size:11px;margin-top:4px}
     @container(max-width:600px){.pp-w-front{grid-template-columns:minmax(0,1fr) 75px}.pp-w-portrait{display:none}.pp-w-record strong{font-size:25px}.pp-w-heading>strong{font-size:17px}.pp-w-name small{display:inline-block;margin:4px 0}.pp-w-price{overflow-wrap:anywhere}}
-    </style><section class="pp-w"><h3 class="pp-w-title">ϟ Power Play · Spellbook</h3><div class="pp-w-caption">Strongest return-ranked move leads: S / A / B, then recent status and total ROI. Watch flags recent net losses. Inspect keeps every matched route and level.</div>''' + ''.join(articles) + '</section>'
+    </style><section class="pp-w"><h3 class="pp-w-title">ϟ Power Play · Spellbook</h3><div class="pp-w-caption">Cards require at least a 15-point gap between updated historical hit rate and the move’s historical average book break-even. Strongest return-ranked qualifying move leads; tonight’s posted BE stays beside the price. Inspect groups other routes and tracked lower-gap levels. Overlapping records are not additive.</div>''' + ''.join(articles) + '</section>'

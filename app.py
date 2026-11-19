@@ -6695,12 +6695,17 @@ elif page == "Power Play":
                 return "background-color:#193d53;color:#c9efff;font-weight:800"
             return ""
 
-        # PP remains a research table; the user retired the pick-card display.
+        # Keep the research table first; approved compact matching cards follow it.
+        from pp_cards import rank_pp_cards,render_pp_cards
+        pp_spell_cards=rank_pp_cards(df_f,pp_view)
+        pp_spell_art={v:_character_uri('Support',v) for v in ('Arcanist','Runesmith','Stormcaller')}
+        def _pp_spell_cards(controls):
+            return render_pp_cards(pp_spell_cards,pp_spell_art,row_controls=controls) if pp_spell_cards else '<p>No current PP moves match this view. All priced research rows remain in the table above.</p>'
         st.caption("Click any column heading to sort low to high; click again to reverse it.")
         render_markable_pp_table(pp_view.to_dict("records"), df_f, pp_signals_by_team,
                                  render=render_power_play_quotes_table,
                                  owner_access=owner_access, setting=_owner_setting,
-                                 key='played_pp_table')
+                                 key='played_pp_table',cards_renderer=_pp_spell_cards)
         with st.expander("Detailed sortable PP columns"):
             st.dataframe(display_quotes.style.map(_pp_research_flag_color, subset=["PP matchup stack"]),
                          hide_index=True, width="stretch")
