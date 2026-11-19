@@ -1,0 +1,66 @@
+name: Grade completed NHL slates
+
+on:
+  schedule:
+    # Runs independently of the much slower new-slate/odds capture.
+    # 13:00 UTC is 7 AM CST / 8 AM CDT.
+    - cron: "0 13 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: nhl-repository-writes
+  cancel-in-progress: false
+
+jobs:
+  grade:
+    runs-on: ubuntu-latest
+    env:
+      TZ: America/Chicago
+    steps:
+      - name: Check out the live preview branch
+        uses: actions/checkout@v4
+        with:
+          ref: launch/2026-warlord-readiness
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: requirements.txt
+
+      - name: Install dependencies
+        run: python -m pip install -r requirements.txt
+
+      - name: Grade yesterday and retry recent slates
+        shell: bash
+        run: |
+          set -euo pipefail
+          for days_ago in 1 2 3; do
+            slate_date="$(date -d "$days_ago days ago" +%F)"
+            python grade_daily_tracker.py --date "$slate_date" --skip-missing
+          done
+          python card_returns.py
+
+      - name: Save graded results and updated card returns
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email 'github-actions[bot]@users.noreply.github.com'
+          shopt -s nullglob
+          results=(output/graded/tracker_*_GRADED.csv output/graded/tracker_*_summary.json output/graded/moves_*.csv output/card_returns/*.json goal_return_records.json assist_return_records.json points_return_records.json special_return_records.json)
+          if (( ${#results[@]} )); then
+            git add -f "${results[@]}"
+          fi
+          if git diff --cached --quiet; then
+            echo 'No grading changes'
+            exit 0
+          fi
+          git commit -m 'Grade completed NHL slates and refresh card returns'
+          git pull --rebase origin launch/2026-warlord-readiness
+          git push origin HEAD:launch/2026-warlord-readiness
