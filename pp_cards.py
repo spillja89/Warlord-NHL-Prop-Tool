@@ -268,7 +268,7 @@ def render_pp_cards(cards, portrait_uri='', form_renderer=None, row_controls=Non
             f'{controls}{combo_html(move, {k:v[0] for k,v in LABELS.items()})}{optional_badges(card)}{_goalie_summary(row)}'
             f'<p class="pp-w-l10-quick">PPP L10 <b>{_h(ppp_l10_label(row))}</b> · dated chart in Inspect</p>{pp_return_panel(move)}</div>'
             f'<div class="pp-w-record"><strong>{record["rate"]:.1f}%</strong>'
-            f'<b>{record["hits"]}/{record["plays"]}</b><small>{_h(move.get('move_version','V1'))} TOTAL MOVE %</small></div>{image}</div>'
+            f'<b>{record["hits"]}/{record["plays"]}</b><small>{_h(move.get("move_version","V1"))} TOTAL MOVE %</small></div>{image}</div>'
             f'<details class="pp-w-inspect"><summary>Inspect · PPP L10, {len(families)} distinct {"route" if len(families) == 1 else "routes"} &amp; matchup</summary>{form}'
             f'<div class="pp-w-info">Move sample book BE <b>{record["BE"]:.1f}%</b> · '
             f'<b>{record["gap"]:+.1f} points</b> historical gap<br>'
