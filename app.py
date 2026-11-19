@@ -2903,6 +2903,7 @@ def render_vengeance_banner():
         st.session_state.vengeance_completed_for = ""  # key like YYYY-MM-DD@HH:MM
 
     with st.expander("Strike settings", expanded=False):
+        st.caption("Auto-refresh is off. Use the clock button to update the banner; Run / Refresh slate updates the odds.")
         # Controls row (compact)
         c1, c2, c3, c4 = st.columns([2.2, 1.1, 1.1, 1.1], gap="small")
         with c1:
@@ -2931,9 +2932,9 @@ def render_vengeance_banner():
             if st.button("🔄", help="Refresh the clock"):
                 st.rerun()
 
-    # Refresh only the banner every second; a full app rerun would repeat the
-    # model/odds views and make the countdown appear frozen between reruns.
-    @st.fragment(run_every="1s")
+    # Research mode: no timed server reruns while cards are being inspected.
+    # Keep button events scoped to the banner; update the clock on interaction.
+    @st.fragment
     def _render_clock():
         clock_now = datetime.now(tz) if tz else datetime.now()
         strike_dt = clock_now.replace(hour=target_h, minute=target_m, second=0, microsecond=0)
