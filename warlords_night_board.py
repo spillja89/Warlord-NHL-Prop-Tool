@@ -12,6 +12,7 @@ from pathlib import Path
 import pandas as pd
 from matchup_display import matchup_label
 from move_combo import combo_html
+from research_help import hint, field_help, champion_hint, support_guide
 
 from warlord_moves_2026 import fired_moves
 from sog_moves_current import is_current_sog25, sog_base_eligible, pk_duration_seconds
@@ -149,7 +150,7 @@ def _fact_line(field, value, op=None, cutoff=None, *, goal_v2=False):
         else:
             limit = f'{cutoff:g}'
         target = f' <span>({sign}{limit})</span>'
-    return f'<span title="{_h(label + chr(32) + actual)}">{_h(label)} <b>{_h(actual)}</b>{target}</span>'
+    return f'<span>{hint(label, field)} <b>{_h(actual)}</b>{target}</span>'
 
 
 def _render_goal_facts(card, move):
@@ -1029,12 +1030,12 @@ def render_power_play_quotes_table(rows, signals_by_team, *, row_controls=None):
             cells.append(f'<td{css} data-sort="{_h(sort_value(label, row, signals))}">{content}</td>')
         body.append("<tr>" + "".join(cells) + "</tr>")
     headings = []
-    for label, _, _ in columns:
+    for label, field, _ in columns:
         css = ' class="pp-player"' if label == "Player" else ""
         kind = "text" if label in ("Player", "Team", "Game", "PP unit", "Assists cross-check") else "number"
         headings.append(
             f'<th scope="col" aria-sort="none"{css}>'
-            f'<button type="button" class="pp-sort" data-kind="{kind}">'
+            f'<button type="button" class="pp-sort" data-kind="{kind}" title="{_h(field_help(field) or field_help(label) or ("Click to sort by " + label))}">'
             f'{_h(label)} <span class="pp-sort-arrow" aria-hidden="true">↕</span></button></th>'
         )
     return BETA_CSS + '''<style>
@@ -1272,7 +1273,7 @@ def _card_quick_summary(role, card):
     else:
         values = {**values, **(card.get('sog_context') or {})}
         fields = [('TOI_per_game', 'TOI min/g', 1), ('Player_5v5_SOG_Share', '5v5 shot share %', 1), ('Opp_SOG_Against_L10', 'Opp SOG/g', 1)]
-    pieces = [f'{_h(label)} <b>{value:.{digits}f}</b>' for field, label, digits in fields
+    pieces = [f'{hint(label, field)} <b>{value:.{digits}f}</b>' for field, label, digits in fields
               if (value := _number(values.get(field))) is not None]
     goalie_stats = assist_goalie_stats(card.get('assist_goalie_buff') or card.get('goalie_context'))
     return '<div class="wn-quick-summary">' + ' · '.join(pieces) + goalie_stats + '</div>' if pieces or goalie_stats else ''
@@ -1366,7 +1367,7 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
                 route_labels = list(dict.fromkeys(
                     item["route_variant"] for item in card.get("moves", []) if item.get("route_variant")))
                 animal = "Orangutan" if variant in {"Runesmith", "Oracle + Runesmith"} else "Chimp" if variant == "Stormcaller" else "Gorilla"
-                support_route_note = (f'<div class="wn-support-route"><b>{_h(animal + " · " + variant)}</b>'
+                support_route_note = (f'<div class="wn-support-route"><b>{champion_hint(animal + " · " + variant, variant)}</b>'
                                       f' · {_h(support_tier["label"])}'
                                       f'<span>Routes: {_h(" · ".join(route_labels))}</span></div>')
             if role != 'Support':
@@ -1379,7 +1380,7 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
             book = str(card.get("book") or "").strip()
             book_note = f' <small class="wn-book">BEST PRICE · {_h(book)}</small>' if book else ""
             book_prob = card.get("book_prob")
-            book_rate_note = (f'<div class="wn-book-rate">BOOK BREAK-EVEN {book_prob*100:.1f}%</div>'
+            book_rate_note = (f'<div class="wn-book-rate">{hint("BOOK BREAK-EVEN", "BE")} {book_prob*100:.1f}%</div>'
                               if book_prob is not None else "")
             tonight_xg = _number(card.get("tonight_goal_xg")) if role == "Carry" else None
             tonight_pct = _number(card.get("tonight_goal_pct")) if role == "Carry" else None
@@ -1598,7 +1599,7 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
             if points_tier:
                 later_note = f'CURRENT MOVE {wins}/{picks}'
             confidence = card.get("confidence")
-            confidence_note = (f" · CONF {confidence:.0f} {_h(card.get('matrix') or 'Unknown')}"
+            confidence_note = (f" · {hint('CONF', 'Conf_' + market)} {confidence:.0f} {_h(card.get('matrix') or 'Unknown')}"
                                if confidence is not None else "")
             record_label = ("2026–27 REG MOVE" if role == "Carry" or
                             (move and move.get("sample_season") == "2026-27") else "HISTORICAL MOVE")
@@ -1691,6 +1692,7 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
             <div class="wn-class-text"><span class="wn-kicker">{_h(descriptions[role])}</span><h2>{_h(role)}</h2></div>
             <div class="wn-count"><strong>{len(cards)}</strong><span>{count_label}</span></div></header>
           <div class="wn-lane-sub">{_h(lane_subtitle)}<div class="wn-grade-legend">S / A / B rank updated returns · Watch flags recent losses, deterioration or limited confirmation · every matched route stays in Inspect</div></div>
+          {support_guide() if role == 'Support' else ''}
           <div class="wn-units">{''.join(units)}</div></section>""")
     total = sum(len(cards) for cards in boards.values())
     styles = """<style>

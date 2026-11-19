@@ -2705,13 +2705,16 @@ COLUMN_LABELS = {'GoalV2_Player_Log_L5_TOI_per_game': 'L5 TOI min/g', 'GoalV2_Pl
 from points05_v6 import LABELS as POINTS05_V6_LABELS, TOOLTIPS as POINTS05_V6_TOOLTIPS
 COLUMN_LABELS.update(POINTS05_V6_LABELS)
 COLUMN_HELP.update(POINTS05_V6_TOOLTIPS)
+from research_help import HELP as PLAIN_STAT_HELP, ALIASES as STAT_HELP_ALIASES, field_help as plain_stat_help
+COLUMN_HELP.update(PLAIN_STAT_HELP)
+COLUMN_HELP.update({field: plain_stat_help(field) for field in STAT_HELP_ALIASES if plain_stat_help(field)})
 
 def build_column_config(df: pd.DataFrame, cols: list[str], *, fit_headers: bool = False) -> dict:
     cfg = {}
 
     for c in cols:
         width = COLUMN_WIDTHS.get(c, "small")
-        help_txt = COLUMN_HELP.get(c)
+        help_txt = plain_stat_help(c) or COLUMN_HELP.get(c)
         label = COLUMN_LABELS.get(c, c)
         if fit_headers:
             minimum = 160 if width == "medium" else 100

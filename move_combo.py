@@ -1,6 +1,7 @@
 """Compact, literal leading-move conditions; no eligibility or record logic."""
 import re
 from html import escape
+from research_help import condition_hint, hint
 
 LABELS = {
  'Conf_Assists':'Assist conf', 'Conf_Points':'Points conf', 'Conf_Goal':'Goal conf', 'Conf_SOG':'SOG conf',
@@ -42,6 +43,6 @@ def combo_parts(move, labels=None):
 def combo_html(move, labels=None):
     parts=combo_parts(move,labels)
     if not parts:return ''
-    chips=''.join('<span style="display:inline-block;margin:2px 4px 2px 0;padding:2px 6px;background:#111b2b;border:1px solid #53647b;border-radius:4px">'+escape(p)+'</span>' for p in parts)
+    chips=''.join('<span style="display:inline-block;margin:2px 4px 2px 0;padding:2px 6px;background:#111b2b;border:1px solid #53647b;border-radius:4px">'+condition_hint(p, {**(labels or {}), **LABELS})+'</span>' for p in parts)
     return ('<div class="wn-move-combo" style="margin:8px 0 4px;font-size:11px;line-height:1.6;color:#e3edfc">'
             '<strong style="display:block;font-size:10px;color:#f2d388;letter-spacing:.05em">MOVE COMBO · ALL REQUIRED</strong>'+chips+'</div>')
