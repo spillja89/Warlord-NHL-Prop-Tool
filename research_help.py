@@ -139,6 +139,10 @@ ALIASES.update({
 
 
 def field_help(field):
+    # Display-only columns (for example PP matchup signals) have no raw field.
+    # Let their caller fall back to the visible column label.
+    if not isinstance(field,str) or not field.strip():
+        return ''
     field = ALIASES.get(field, field)
     if field in HELP:
         return HELP[field]
