@@ -911,6 +911,11 @@ def moneypuck_url(kind: str, y: int) -> str:
     return f"https://moneypuck.com/moneypuck/playerData/seasonSummary/{y}/regular/{kind}.csv"
 
 def load_moneypuck_csv(sess: requests.Session, url: str) -> pd.DataFrame:
+    from run_resources import RunResources
+    if isinstance(sess, RunResources):
+        saved = sess.frame(url)
+        if saved is not None:
+            return saved
     # requests consumes the body before returning. A chunked transfer can fail
     # after HTTP 200, so status-code retries alone do not handle this failure.
     # Retry the complete download AND parse; never retain a partial dataframe.
@@ -925,6 +930,8 @@ def load_moneypuck_csv(sess: requests.Session, url: str) -> pd.DataFrame:
             df.columns = df.columns.str.strip()
             if df.empty:
                 raise pd.errors.EmptyDataError(f"CSV has no data rows: {url}")
+            if isinstance(sess, RunResources):
+                sess.remember_frame(url, df)
             return df
         except (requests.exceptions.RequestException, pd.errors.ParserError,
                 pd.errors.EmptyDataError) as error:
@@ -1458,10 +1465,13 @@ def fetch_dfo_injuries_for_team(team_abbr: str, debug: bool = False) -> List[Dic
     return out_rows
 
 def fetch_dfo_injuries_for_teams(teams: set[str], debug: bool = False) -> pd.DataFrame:
-    rows: List[Dict[str, Any]] = []
-    for t in sorted({norm_team(x) for x in teams}):
-        rows.extend(fetch_dfo_injuries_for_team(t, debug=debug))
+    from run_resources import ordered_map
+    def fetch_team(t):
+        result = fetch_dfo_injuries_for_team(t, debug=debug)
         time.sleep(HTTP_SLEEP_SEC)
+        return result
+    rows = [row for result in ordered_map(fetch_team, sorted({norm_team(x) for x in teams}))
+            for row in result]
 
     if not rows:
         return pd.DataFrame(columns=["Team", "Player", "Status", "Injury", "Expected_Return", "Player_norm"])
@@ -3643,7 +3653,7 @@ def get_team_recent_soga(sess: requests.Session, team_abbrev: str, n_games: int 
         except Exception:
             continue
 
-        bx = _game_team_sog_from_boxscore(sess, game_id, cache or {}, debug=debug)
+        bx = _game_team_sog_from_boxscore(sess, game_id, cache if cache is not None else {}, debug=debug)
         if not bx:
             continue
 
@@ -3722,7 +3732,8 @@ def drought_bump(tier: str, market: str, drought: Optional[int], ixg_pct: Option
 
 def build_tracker(today_local: date, debug: bool = False, api_key: str | None = None, odds_api_key: str | None = None) -> str:
     ensure_dirs()
-    sess = http_session()
+    from run_resources import RunResources, ordered_map
+    sess = RunResources(http_session())
 
     # Retain completed-game boxscores for team SOG-against; player logs are
     # fetched fresh on every run so recent results and model inputs agree.
@@ -3733,6 +3744,7 @@ def build_tracker(today_local: date, debug: bool = False, api_key: str | None = 
     games = nhl_schedule_today(sess, today_local)
     if not games:
         raise RuntimeError("No games found for today.")
+    sess.mark('schedule')
 
     teams_playing = set()
     game_map: Dict[str, str] = {}
@@ -3775,10 +3787,11 @@ def build_tracker(today_local: date, debug: bool = False, api_key: str | None = 
     # -------------------------
     # TEAM GF L5 HARD GATE (2.70) — affects GOAL/POINTS/ASSISTS
     # -------------------------
-    team_gf = {}
-    for t in sorted(teams_playing):
+    def _team_gf(t):
         gf, avg, n_used = get_team_recent_gf(sess, t, n_games=TEAM_GF_WINDOW, debug=debug)
-        team_gf[t] = {"GF_L5": gf, "GF_Avg_L5": avg, "GF_N": n_used, "GF_Gate": (avg >= TEAM_GF_MIN_AVG)}
+        return t, {"GF_L5": gf, "GF_Avg_L5": avg, "GF_N": n_used, "GF_Gate": (avg >= TEAM_GF_MIN_AVG)}
+    team_gf = dict(ordered_map(_team_gf, sorted(teams_playing)))
+    sess.mark('team scoring form')
 
     
     if debug:
@@ -3793,6 +3806,7 @@ def build_tracker(today_local: date, debug: bool = False, api_key: str | None = 
     current_team_by_id = current_roster_teams_by_id(active_rosters)
     from pregame_checks import fetch_official_lineups, player_lineup_status
     official_lineups, lineup_check_utc = fetch_official_lineups(sess, games)
+    sess.mark('active rosters and lineup checks')
 
     # MoneyPuck skaters
     sk_raw = load_moneypuck_best_effort(sess, "skaters", teams_playing, today_local)
@@ -3814,6 +3828,7 @@ def build_tracker(today_local: date, debug: bool = False, api_key: str | None = 
             print("[roster] linked transferred skater history:\n", moved.to_string(index=False))
     if sk.empty:
         raise RuntimeError("No skaters matched today's teams. Team abbrev mismatch.")
+    sess.mark('skater season sources')
 
     # Goalies (MoneyPuck)
     g_raw = load_moneypuck_best_effort(sess, "goalies", teams_playing, today_local)
@@ -3844,6 +3859,7 @@ def build_tracker(today_local: date, debug: bool = False, api_key: str | None = 
     inj_df = clear_dressed_injury_reports(inj_df, sk)
     injury_reports_count = len(inj_df)
     injury_check_utc = datetime.now(timezone.utc).isoformat(timespec="seconds")
+    sess.mark('goalie and injury sources')
 
     # Schedule columns
     sk["Game"] = sk["Team"].map(game_map).fillna("")
@@ -4388,19 +4404,20 @@ def build_tracker(today_local: date, debug: bool = False, api_key: str | None = 
 
     # Last-10 overlay (GA/G) — aligns defense environment with other last-10 features
     opp_teams = sorted(set(sk.get("Opp", pd.Series(dtype=str)).dropna().astype(str).map(norm_team).tolist()))
-    ga_map = {}
-    for t in opp_teams:
+    def _team_ga(t):
         ga_sum, ga_avg, n_used = get_team_recent_ga(sess, t, n_games=10, debug=debug)
-        ga_map[t] = {"ga_avg": ga_avg, "n_used": n_used}
+        return t, {"ga_avg": ga_avg, "n_used": n_used}
+    ga_map = dict(ordered_map(_team_ga, opp_teams))
     # Big 3 (SOG): Opponent shots-against per game over recent windows (L10/L50)
     # Uses gamecenter boxscore; cached in the daily cache under cache['team_game_sog'].
-    soga10_map = {}
-    soga50_map = {}
-    for t in opp_teams:
+    def _team_soga(t):
         _sum10, _avg10, _used10 = get_team_recent_soga(sess, t, n_games=10, cache=cache, debug=debug)
         _sum50, _avg50, _used50 = get_team_recent_soga(sess, t, n_games=50, cache=cache, debug=debug)
-        soga10_map[t] = {"soga_avg": _avg10, "n_used": _used10}
-        soga50_map[t] = {"soga_avg": _avg50, "n_used": _used50}
+        return t, {"soga_avg": _avg10, "n_used": _used10}, {"soga_avg": _avg50, "n_used": _used50}
+    _soga_rows = ordered_map(_team_soga, opp_teams)
+    soga10_map = {team: short for team, short, long in _soga_rows}
+    soga50_map = {team: long for team, short, long in _soga_rows}
+    sess.mark('season context and opponent shot windows')
 
     sk["Opp_SOG_Against_L10"] = sk["Opp"].astype(str).map(lambda x: soga10_map.get(norm_team(x), {}).get("soga_avg", float("nan")))
     sk["Opp_SOG_Used_L10"]    = sk["Opp"].astype(str).map(lambda x: soga10_map.get(norm_team(x), {}).get("n_used", 0))
@@ -4472,6 +4489,7 @@ def build_tracker(today_local: date, debug: bool = False, api_key: str | None = 
         pid: compact_regular_log(fetched.get(pid), today_local.isoformat())
         for pid in cand_ids
     }
+    sess.mark('fresh player game logs')
 
     save_cache(today_local, cache)
 
@@ -5868,6 +5886,7 @@ def build_tracker(today_local: date, debug: bool = False, api_key: str | None = 
             tracker["Plays_EV_Assists"] = _mk_play("Assists_EVpct_over")
 
         print("[odds/ev] merged BDL odds + EV")
+        sess.mark('model calculations, fresh odds and projections')
     except Exception as e:
         if str(e).startswith((
             "BallDontLie NHL odds access denied",
@@ -5962,6 +5981,7 @@ def build_tracker(today_local: date, debug: bool = False, api_key: str | None = 
     # Fetch strictly prior official team history for Points before finalization.
     from points_context import attach_points_context
     tracker = attach_points_context(tracker, sess, today_local)
+    sess.mark('complete official team and PP history')
 
     # Publish source provenance before evaluating or freezing any current kit.
     tracker["Model_Stats_Season"] = tracker["Model_Stats_Season"].fillna(f"{sk_stats_year}-{sk_stats_year + 1}") if "Model_Stats_Season" in tracker else f"{sk_stats_year}-{sk_stats_year + 1}"
@@ -6007,6 +6027,7 @@ def build_tracker(today_local: date, debug: bool = False, api_key: str | None = 
     # Freeze every current card rule with its exact line and pregame price.
     from card_returns import attach_return_tracking
     tracker = attach_return_tracking(tracker)
+    sess.mark('move evaluation and frozen return tags')
 
     out_path = os.path.join(OUTPUT_DIR, f"tracker_{today_local.isoformat()}_{stamp}.csv")
     from slate_snapshot_store import atomic_tracker_csv
@@ -6023,6 +6044,8 @@ def build_tracker(today_local: date, debug: bool = False, api_key: str | None = 
     except Exception as e:
         print(f"[warn] failed to copy latest tracker: {e}")
 
+    sess.mark('atomic tracker save')
+    sess.report()
     return out_path
 
 

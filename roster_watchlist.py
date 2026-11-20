@@ -36,11 +36,12 @@ def _roster_players(session, team: str) -> dict[str, dict]:
 
 def load_active_rosters(session, teams: set[str], *, debug: bool = False) -> dict[str, dict[str, dict]]:
     """Fetch today's official skater rosters once for modeling and verification."""
-    rosters = {}
-    for team in sorted(teams):
+    from run_resources import ordered_map
+    def fetch_team(team):
+        found = None
         for attempt in range(4):
             try:
-                rosters[team] = _roster_players(session, team)
+                found = _roster_players(session, team)
                 break
             except Exception as exc:
                 status = getattr(getattr(exc, "response", None), "status_code", None)
@@ -51,7 +52,9 @@ def load_active_rosters(session, teams: set[str], *, debug: bool = False) -> dic
                     print(f"[roster] {team}: {exc}")
                 break
         time.sleep(0.3)
-    return rosters
+        return team, found
+    return {team: found for team, found in ordered_map(fetch_team, sorted(teams))
+            if found is not None}
 
 
 def current_roster_teams_by_id(rosters: dict[str, dict[str, dict]]) -> dict[int, str]:
