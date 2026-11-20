@@ -5,12 +5,14 @@ from __future__ import annotations
 import math
 import re
 import base64
+import hashlib
 from functools import lru_cache
 from html import escape
 from pathlib import Path
 
 import pandas as pd
 from matchup_display import matchup_label
+from card_return_store import record_snapshot
 from move_combo import combo_html
 from research_help import hint, field_help, champion_hint, class_guide
 
@@ -525,6 +527,7 @@ def points_current_tier(row, line, baseline):
     return max(moves, key=_move_rank, default=original)
 
 
+@record_snapshot()
 def rank_warlords(frame: pd.DataFrame) -> dict[str, list[dict]]:
     """Best fired historical move per player and class on this filtered slate."""
     boards = {role: {} for role, *_ in CLASSES}
@@ -613,6 +616,7 @@ def rank_warlords(frame: pd.DataFrame) -> dict[str, list[dict]]:
             for role, players in boards.items()}
 
 
+@record_snapshot()
 def rank_priced_slate(frame: pd.DataFrame) -> dict[str, list[dict]]:
     """Each player's displayed priced prop, ordered by current model confidence.
 
@@ -729,6 +733,7 @@ def rank_priced_slate(frame: pd.DataFrame) -> dict[str, list[dict]]:
     ), reverse=True) for role, players in boards.items()}
 
 
+@record_snapshot()
 def featured_warlords(boards: dict[str, list[dict]]) -> dict[str, list[dict]]:
     """Character cards ranked by their strongest qualifying fired move.
 
@@ -765,6 +770,7 @@ def unfeatured_baselines(cards: list[dict]) -> list[dict]:
         for move in card["moves"])]
 
 
+@record_snapshot()
 def goal_display_cards(cards: list[dict]) -> list[dict]:
     """Only fired Goal attacks get cards; scouting rows stay in the research table."""
     eligible = []
@@ -1206,7 +1212,11 @@ def render_power_play_form(card):
 
 @lru_cache(maxsize=16)
 def _character_uri(role: str, variant: str = "") -> str:
-    """Inline small artwork so class cards render behind Cloud's app proxy."""
+    """Reuse browser-cached artwork through Streamlit's enabled static route.
+
+    Keep this relative: the Cloud iframe lives below /~/+/, while a local app
+    lives at /. Both resolve app/static to the correct Streamlit server.
+    """
     image = Path(__file__).parent / "static" / "characters" / f"{role.lower()}-gorilla-v2.webp"
     if role == "Support":
         candidate = image.parent / "support-gorilla-v3.webp"
@@ -1233,7 +1243,8 @@ def _character_uri(role: str, variant: str = "") -> str:
             image = candidate
     if not image.is_file():
         return ""
-    return "data:image/webp;base64," + base64.b64encode(image.read_bytes()).decode("ascii")
+    version = hashlib.sha256(image.read_bytes()).hexdigest()[:12]
+    return f"app/static/characters/{image.name}?v={version}"
 
 
 def _support_variant(move):
@@ -1288,6 +1299,7 @@ def _card_quick_summary(role, card):
     return '<div class="wn-quick-summary">' + ' · '.join(pieces) + goalie_stats + '</div>' if pieces or goalie_stats else ''
 
 
+@record_snapshot()
 def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=None,
                     roles: tuple[str, ...] | None = None, show_hero: bool = True,
                     card_controls=None) -> str:
@@ -1369,7 +1381,7 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
             matchup = card["game"] or card["team"]
             if card.get("time"):
                 matchup = f'{matchup} · {card["time"]}' + ('' if 'CT' in card['time'] else ' CT')
-            portrait = (f'<img src="{character_uri}" alt="" />' if character_uri else symbol)
+            portrait = (f'<img src="{character_uri}" alt="" loading="lazy" decoding="async" width="140" height="180" />' if character_uri else symbol)
             route_style = ""
             support_route_note = ""
             if role == "Support" and move:
@@ -1386,8 +1398,8 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
                 support_route_note = (f'<div class="wn-support-route"><b>{champion_hint(animal + " · " + character_variant, character_variant, role)}</b></div>')
                 if role == 'Carry' and move and move.get('goal_v2') and move.get('matchup_buff'):
                     support_route_note += f'<div class="wn-support-route"><span>Route: {_h(goal_buff_parent_name(move))} + {_h(move["name"])}</span></div>'
-            name_backdrop = (f'<img class="wn-unit-ghost" src="{character_uri}" alt="" aria-hidden="true" />'
-                             if character_uri else "")
+            # Every class uses a full portrait; the old duplicate is CSS-hidden.
+            name_backdrop = ""
             price = _odds(card["odds"])
             book = str(card.get("book") or "").strip()
             book_note = f' <small class="wn-book">BEST PRICE · {_h(book)}</small>' if book else ""
@@ -1855,6 +1867,12 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
       .wn-card-inspect .wn-form,.wn-card-inspect .wn-form-empty,.wn-card-inspect .wn-details{margin-top:8px}
       @container(max-width:680px){.wn-lane .wn-unit{display:block;padding:11px}.wn-lane .wn-card-heading{padding-right:132px;min-height:230px}.wn-lane .wn-portrait{right:11px;top:11px;width:115px;height:150px}.wn-lane .wn-record{right:11px;top:172px;width:115px}.wn-lane .wn-quick-summary{margin-top:5px}.wn-card-inspect .wn-assist-facts{grid-template-columns:repeat(auto-fit,minmax(min(100%,190px),1fr))}}
       @container(max-width:430px){.wn-lane .wn-card-heading{padding-right:100px;min-height:200px}.wn-lane .wn-portrait{width:88px;height:120px}.wn-lane .wn-record{top:140px;width:88px}.wn-card-inspect .wn-assist-facts,.wn-card-inspect .wn-context{grid-template-columns:1fr}}
+      /* Keep offscreen cards searchable and inspectable while deferring paint. */
+      .wn-unit{content-visibility:auto;contain-intrinsic-block-size:auto 440px}
+      .wn-lane--support .wn-unit--crit,.wn-lane--carry .wn-unit--crit{animation:none}
+      .wn-lane--support .wn-unit--crit::after,.wn-lane--carry .wn-unit--crit::after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;border:1px solid #f4bf5566;box-shadow:inset 0 0 14px #f4bf5530;opacity:.35;animation:wn-crit-shimmer 3s ease-in-out infinite}
+      @keyframes wn-crit-shimmer{50%{opacity:1}}
+      @media(prefers-reduced-motion:reduce){.wn-lane--support .wn-unit--crit::after,.wn-lane--carry .wn-unit--crit::after{animation:none;opacity:.6}}
     </style>"""
     goal_count = len(boards.get("Carry", []))
     other_count = total - goal_count

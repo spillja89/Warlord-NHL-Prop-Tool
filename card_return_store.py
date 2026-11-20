@@ -4,9 +4,29 @@ from pathlib import Path
 from datetime import datetime,timezone
 import hashlib,json
 import requests
+from contextlib import contextmanager
+from contextvars import ContextVar
 from card_returns import FILES,VERSION,_write
 
 URL='https://raw.githubusercontent.com/spillja89/Warlord-NHL-Prop-Tool/launch/2026-warlord-readiness/output/card_returns/latest.json'
+_RENDER_SNAPSHOT = ContextVar('card_return_render_snapshot', default=None)
+
+
+@contextmanager
+def record_snapshot():
+    """Use one return generation within a render, never cache across reruns.
+
+    Nested rank/render helpers share the snapshot. The next invocation checks
+    the current files again, including any newly published morning grades.
+    """
+    if _RENDER_SNAPSHOT.get() is not None:
+        yield
+        return
+    token = _RENDER_SNAPSHOT.set({})
+    try:
+        yield
+    finally:
+        _RENDER_SNAPSHOT.reset(token)
 
 def _identity(doc):
     return {r['key']:(r['name'],r['rule'],r.get('kit_version'),r.get('line'),r['original_hits'],r['original_plays'],r['previous']) for r in doc['moves']}
@@ -48,6 +68,10 @@ def _json(path):
     s=path.stat();return _read(str(path),s.st_mtime_ns,s.st_size)
 
 def _bundle(root):
+    snapshot = _RENDER_SNAPSHOT.get()
+    key = ('bundle', str(root))
+    if snapshot is not None and key in snapshot:
+        return snapshot[key]
     candidates=[]
     for p in (root/'output/card_returns/latest.json',root/'cache/card_returns/latest.json'):
         try:
@@ -56,14 +80,25 @@ def _bundle(root):
             validated=_validate_cached(str(root),str(p),p.stat().st_mtime_ns,p.stat().st_size,tuple((root/f).stat().st_mtime_ns for f in FILES))
             candidates.append(validated)
         except (OSError,ValueError,KeyError,TypeError):continue
-    return max(candidates,key=lambda b:(b['manifest']['through'],b['manifest'].get('generated_utc',''))) if candidates else None
+    result = max(candidates,key=lambda b:(b['manifest']['through'],b['manifest'].get('generated_utc',''))) if candidates else None
+    if snapshot is not None:
+        snapshot[key] = result
+    return result
 
 @lru_cache(maxsize=16)
 def _validate_cached(root,path,mtime,size,identity_signature):
     return validate_bundle(_read(path,mtime,size),Path(root))
 
 def load_records(path):
-    path=Path(path);bundle=_bundle(path.parent)
+    path=Path(path)
+    snapshot = _RENDER_SNAPSHOT.get()
+    key = ('records', str(path))
+    if snapshot is not None and key in snapshot:
+        return snapshot[key]
+    bundle=_bundle(path.parent)
     try:doc=bundle['records'][path.name] if bundle else _json(path)
     except (OSError,ValueError,KeyError,TypeError):return {}
-    return {**doc,'by_key':{r['key']:r for r in doc['moves']}}
+    result = {**doc,'by_key':{r['key']:r for r in doc['moves']}}
+    if snapshot is not None:
+        snapshot[key] = result
+    return result

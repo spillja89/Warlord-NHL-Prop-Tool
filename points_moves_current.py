@@ -4,6 +4,7 @@ import json
 import math
 from pathlib import Path
 from points_context import VERSION as CONTEXT_VERSION, log_context
+from card_return_store import record_snapshot
 
 KIT = json.loads(Path(__file__).with_name('points_current_rules.json').read_text(encoding='utf-8'))
 VERSION = KIT['version']
@@ -105,6 +106,7 @@ def best_move(row):
         return max(moves,key=lambda m:grade_rank(m) or (0,False,m['wins']/m['picks'],m['picks'],0,stable_identity(m)),default=None)
     return max(moves, key=lambda m: (m['wins'] / m['picks'], m['picks'])) if moves else None
 
+@record_snapshot()
 def attach_points_moves(frame):
     import pandas as pd
     out = frame.copy()
@@ -127,10 +129,11 @@ def attach_points_moves(frame):
     out['Points_Profile_Routes'] = [' · '.join(m['name'] for m in moves if m['kind'] != 'CONTEXT' and m['id'] != 'base77') for moves in all_moves]
     from points15_moves_current import VERSION as VERSION15
     out['Points_Move_Kit_Version'] = [m['kit_version'] if m and (m.get('points15_v2') or m.get('points15_v3') or m.get('points15_v4')) else VERSION15 if number(row.get('Points_Line')) == 1.5 else VERSION for row,m in zip(records,best)]
+    prepared_rows = [prepare_row(row) for row in records]
     for field in ['Log_L10_S_per_game','Log_L20_P_per_game','Log_L5_P_per_game','Pace_Gap_P10']:
-        out[field] = pd.Series([prepare_row(row).get(field) for row in records], index=out.index, dtype='Float64')
+        out[field] = pd.Series([row.get(field) for row in prepared_rows], index=out.index, dtype='Float64')
     for field in ['Log_L20_Point2plus_pct', 'Log_L20_PPP_hit_pct', 'Team_PP_xGF_relative_league', 'Opp_PK_xGA_relative_league', 'Opp_5v5_xGA_relative_league']:
-        out[field] = pd.Series([prepare_row(row).get(field) for row in records], index=out.index, dtype='Float64')
+        out[field] = pd.Series([row.get(field) for row in prepared_rows], index=out.index, dtype='Float64')
     from points15_iron_cadence import prepare as prepare_iron
     prepared_iron=[prepare_iron(row) if number(row.get('Points_Line'))==1.5 else {} for row in records]
     for field in ['Log_L5_TOI_per_game','Log_L10_PPP_1plus_pct']:
@@ -140,7 +143,7 @@ def attach_points_moves(frame):
     for field in ['Goalie_GSAA_per_game','NHL_Team_Rest_days']:
         out[field]=pd.Series([row.get(field) for row in prepared_backbone],index=out.index,dtype='Float64')
     from points05_v6 import OWNED
-    prepared6=[prepare_row(row) if number(row.get('Points_Line'))==.5 else {} for row in records]
+    prepared6=[prepared if number(row.get('Points_Line'))==.5 else {} for row,prepared in zip(records,prepared_rows)]
     for field in OWNED:
         out[field]=pd.Series([r.get(field) for r in prepared6],index=out.index,dtype='Float64')
     return out
