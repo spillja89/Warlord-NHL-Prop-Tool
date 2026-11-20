@@ -10,6 +10,23 @@ import requests
 from pp_assist_beta import assist_ppp_beta
 
 
+# Dated team-game replay; these records do not set player eligibility.
+TEAM_PP_GOAL_RESEARCH_THROUGH = "2026-11-19"
+TEAM_PP_GOAL_RESEARCH_RECORDS = {
+    "base": (77, 115),
+    "seconds90": (26, 33),
+    "seconds85": (16, 20),
+    "team_ppo": (40, 56),
+    "opp_pko": (28, 39),
+    "opp_pk_ga": (17, 21),
+}
+
+
+def _team_pp_goal_record(key: str) -> str:
+    hits, plays = TEAM_PP_GOAL_RESEARCH_RECORDS[key]
+    return f"{hits}/{plays} ({100 * hits / plays:.1f}%)"
+
+
 COLUMNS = ("Game", "Player", "Team", "Opponent", "PPP line", "Over odds",
            "Book", "Book break-even %", "PP unit", "PP TOI/game",
            "Team PP time share %",
@@ -190,7 +207,7 @@ def team_pp_goal_research_flag(row) -> str:
 
 
 def team_pp_goal_research_signals(row) -> list[str]:
-    """All matching team PP-goal research signals, replayed through Nov 3, 2026.
+    """All matching team PP-goal research signals, replayed through Nov 19, 2026.
 
     Records count team games with at least one PP goal. They are not player
     power-play-point rates or probabilities for the next game.
@@ -198,21 +215,21 @@ def team_pp_goal_research_signals(row) -> list[str]:
     pk_minutes = _finite(row.get("Opp_PK_Time_PG"))
     if pk_minutes is None or pk_minutes > 4.5:
         return []
-    signals = ["⚡ PK ≤4:30 · 58/82 (70.7%)"]
+    signals = [f"⚡ PK ≤4:30 · {_team_pp_goal_record('base')}"]
     pk_seconds = opponent_pk_seconds_per_opportunity(row)
     if pk_seconds is not None and pk_seconds <= 90:
-        signals.append("✨ PK ≤90s/opportunity · 20/25 (80.0%)")
+        signals.append(f"✨ PK ≤90s/opportunity · {_team_pp_goal_record('seconds90')}")
     if pk_seconds is not None and pk_seconds <= 85:
-        signals.append("💥 PK ≤85s/opportunity · 14/17 (82.4%)")
+        signals.append(f"💥 PK ≤85s/opportunity · {_team_pp_goal_record('seconds85')}")
     team_ppo = _finite(row.get("Team_PPO_PG"))
     opp_pko = _finite(row.get("Opp_PKO_PG"))
     opp_pk_ga = _finite(row.get("Opp_PK_GA_PG"))
     if team_ppo is not None and team_ppo >= 3.25:
-        signals.append("Team PPO ≥3.25/game · 34/42 (81.0%)")
+        signals.append(f"Team PPO ≥3.25/game · {_team_pp_goal_record('team_ppo')}")
     if opp_pko is not None and opp_pko >= 2.75:
-        signals.append("Opp PKO ≥2.75/game · 24/31 (77.4%)")
+        signals.append(f"Opp PKO ≥2.75/game · {_team_pp_goal_record('opp_pko')}")
         if opp_pk_ga is not None and opp_pk_ga >= 0.9:
-            signals.append("Opp PK GA ≥0.9/game · 14/16 (87.5%)")
+            signals.append(f"Opp PK GA ≥0.9/game · {_team_pp_goal_record('opp_pk_ga')}")
     return signals
 
 
@@ -220,20 +237,15 @@ def team_pp_goal_research_signals(row) -> list[str]:
 def team_pp_goal_research_compact(row) -> str:
     """Short, horizontal summary for the priced-player table."""
     labels = team_pp_goal_research_signals(row)
+    compact_prefixes = ("⚡", "✨", "💥", "PPO", "PKO", "GA")
+    full_prefixes = ("⚡", "✨", "💥", "Team PPO", "Opp PKO", "Opp PK GA")
     short = []
     for label in labels:
-        if label.startswith("⚡"):
-            short.append("⚡71%")
-        elif label.startswith("✨"):
-            short.append("✨80%")
-        elif label.startswith("💥"):
-            short.append("💥82%")
-        elif label.startswith("Team PPO"):
-            short.append("PPO81%")
-        elif label.startswith("Opp PKO"):
-            short.append("PKO77%")
-        elif label.startswith("Opp PK GA"):
-            short.append("GA88%")
+        for full_prefix, compact_prefix in zip(full_prefixes, compact_prefixes):
+            if label.startswith(full_prefix):
+                percentage = label.rsplit("(", 1)[1].rstrip(")")
+                short.append(f"{compact_prefix}{percentage}")
+                break
     return " + ".join(short) if short else "—"
 
 
