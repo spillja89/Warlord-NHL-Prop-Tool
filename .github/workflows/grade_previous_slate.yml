@@ -2,10 +2,18 @@ name: Grade completed NHL slates
 
 on:
   schedule:
-    # Runs independently of the much slower new-slate/odds capture.
-    # 13:00 UTC is 7 AM CST / 8 AM CDT.
-    - cron: "0 13 * * *"
+    # Avoid the busiest minute of the hour; keep local time through DST.
+    - cron: "7 7 * * *"
+      timezone: America/Chicago
+    # A second morning pass catches late finals or a delayed/missed first pass.
+    - cron: "17 8 * * *"
+      timezone: America/Chicago
   workflow_dispatch:
+  # Verify the actual hosted job whenever its configuration is maintained.
+  # The job writes the preview branch, so it cannot trigger itself.
+  push:
+    branches: [main]
+    paths: [.github/workflows/grade_previous_slate.yml]
 
 permissions:
   contents: write
@@ -17,6 +25,7 @@ concurrency:
 jobs:
   grade:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     env:
       TZ: America/Chicago
     steps:
@@ -36,6 +45,27 @@ jobs:
       - name: Install dependencies
         run: python -m pip install -r requirements.txt
 
+      - name: Preserve move identities and the current slate
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import hashlib, json, os
+          from pathlib import Path
+          from card_returns import FILES
+          from card_return_store import _identity
+
+          snapshot = {
+              'moves': {name: _identity(json.loads(Path(name).read_text(encoding='utf-8'))) for name in FILES},
+              'protected': {
+                  str(path): hashlib.sha256(path.read_bytes()).hexdigest()
+                  for path in [*Path('.').glob('*.py'), *Path('output/slates').glob('*.csv'), Path('output/tracker_latest.csv')]
+                  if path.is_file()
+              },
+          }
+          (Path(os.environ['RUNNER_TEMP']) / 'nhl-grader-before.json').write_text(json.dumps(snapshot), encoding='utf-8')
+          PY
+
       - name: Grade yesterday and retry recent slates
         shell: bash
         run: |
@@ -45,6 +75,46 @@ jobs:
             python grade_daily_tracker.py --date "$slate_date" --skip-missing
           done
           python card_returns.py
+
+      - name: Validate unchanged rules and updated returns
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import hashlib, json, os
+          from pathlib import Path
+          from card_returns import FILES
+          from card_return_store import _identity, validate_bundle
+
+          before = json.loads((Path(os.environ['RUNNER_TEMP']) / 'nhl-grader-before.json').read_text(encoding='utf-8'))
+          now = {name: _identity(json.loads(Path(name).read_text(encoding='utf-8'))) for name in FILES}
+          # JSON normalizes tuple identities into arrays in the saved snapshot.
+          if json.loads(json.dumps(now)) != before['moves']:
+              raise SystemExit('Move rules or original version baselines changed; refusing publication')
+          for filename, expected in before['protected'].items():
+              if hashlib.sha256(Path(filename).read_bytes()).hexdigest() != expected:
+                  raise SystemExit(f'Protected model/slate file changed: {filename}; refusing publication')
+          bundle = validate_bundle(json.loads(Path('output/card_returns/latest.json').read_text(encoding='utf-8')), Path('.'))
+          manifest = bundle['manifest']
+          rows = [move for doc in bundle['records'].values() for move in doc['moves']]
+          for move in rows:
+              parts = [move[period] for period in ('previous', 'since_check', 'full')]
+              if all(part.get('units') is not None for part in parts):
+                  if abs(parts[0]['units'] + parts[1]['units'] - parts[2]['units']) > 1e-7:
+                      raise SystemExit(f'Overlapping or incorrect return units: {move["name"]}')
+          summary = (
+              '## Morning NHL grading\n'
+              f'- Graded through: **{manifest["through"]}**\n'
+              f'- Move records checked: **{len(rows)}**\n'
+              '- Rules and original version baselines: unchanged\n'
+              '- Current tracker and frozen pregame archives: unchanged\n'
+              '- Unfinished games and missing player results: remain unresolved\n'
+              '- No odds/model refresh or app restart performed\n'
+          )
+          with open(os.environ['GITHUB_STEP_SUMMARY'], 'a') as stream:
+              stream.write(summary)
+          print(summary)
+          PY
 
       - name: Save graded results and updated card returns
         shell: bash
