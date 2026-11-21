@@ -1303,7 +1303,7 @@ def _card_quick_summary(role, card):
 @record_snapshot()
 def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=None,
                     roles: tuple[str, ...] | None = None, show_hero: bool = True,
-                    card_controls=None) -> str:
+                    card_controls=None, defer_records: bool = False) -> str:
     """Compact, escaped HTML for the raid board or selected class lanes."""
     descriptions = {"Carry": "Finish the fight", "Support": "Set the play",
                     "Tank": "Hold the line", "Jungle": "Control the lanes"}
@@ -1668,6 +1668,9 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
             details_html = (f'<details class="wn-details"><summary>{details_summary}</summary>'
                             f'<div class="wn-move-list">{"".join(move_rows)}</div></details>' if fired else
                             f'<div class="wn-details">{_h((points_tier or {}).get("rule") or card.get("move_block_reason") or card.get("baseline_rule") or (move or {}).get("rule") or "No tested move fired")}</div>')
+            if defer_records and fired:
+                details_html = (f'<details class="wn-details wn-deferred-records"><summary>{details_summary}</summary>'
+                                f'<template class="wn-record-template"><div class="wn-move-list">{"".join(move_rows)}</div></template></details>')
             move_name = move["name"] if move else (
                 "Scouting Target" if role == "Carry" and baseline_only else
                 "Green Baseline" if baseline_only else "Scouting pool")

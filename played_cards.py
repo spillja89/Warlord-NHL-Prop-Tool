@@ -170,8 +170,10 @@ def _save_bridge(store, registry, states, replies, *, owner_access, key):
 
 def render_markable_boards(boards, frame, *, render, owner_access, setting, key, **kwargs):
     """Public rendering never reads private marks or mounts owner controls."""
+    from card_inspect import wrap, mount
     if not owner_access:
-        st.html(render(boards, **kwargs))
+        st.html(wrap(render(boards, defer_records=True, **kwargs), key))
+        mount(key)
         return
     url = storage_url(setting)
     store, states, error = (PickStore(url) if url else None), {}, ''
@@ -214,7 +216,8 @@ def render_markable_boards(boards, frame, *, render, owner_access, setting, key,
                 f'{" checked" if deployed else ""}{disabled}>✓ Played · shared to Tail</label>'
                 f'<span role="status">{note}</span></div>')
 
-    st.html(_CSS + render(boards, card_controls=controls, **kwargs))
+    st.html(_CSS + wrap(render(boards, card_controls=controls, defer_records=True, **kwargs), key))
+    mount(key)
     if error:
         st.warning(error)
         if not store:
