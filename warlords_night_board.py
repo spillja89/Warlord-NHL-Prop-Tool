@@ -133,8 +133,8 @@ def _card_usage_panel(values):
             f'Team PP time <b>{fmt("team_pp_share", "%")}</b></div>')
 
 
-def _fact_line(field, value, op=None, cutoff=None, *, goal_v2=False):
-    label = (_GOAL_V2_LABELS if goal_v2 else {}).get(field, _CARD_LABELS.get(field, field.replace('_', ' ')))
+def _fact_line(field, value, op=None, cutoff=None, *, goal_v2=False, label=None, help_text=None):
+    label = label or (_GOAL_V2_LABELS if goal_v2 else {}).get(field, _CARD_LABELS.get(field, field.replace('_', ' ')))
     value = _number(value)
     if value is None:
         actual = 'Unavailable'
@@ -153,7 +153,7 @@ def _fact_line(field, value, op=None, cutoff=None, *, goal_v2=False):
         else:
             limit = f'{cutoff:g}'
         target = f' <span>({sign}{limit})</span>'
-    return f'<span>{hint(label, field)} <b>{_h(actual)}</b>{target}</span>'
+    return f'<span>{hint(label, field, text=help_text)} <b>{_h(actual)}</b>{target}</span>'
 
 
 def _render_goal_facts(card, move):
@@ -319,13 +319,14 @@ def _render_points_facts(card, move):
     if move.get('points15_v2') or move.get('points15_v3') or move.get('points15_v4'):
         profile.append(_fact_line('Conf_Points', values.get('Conf_Points'), '>=', 82))
     for field, op, cut in move.get('conditions', []):
-        line = _fact_line(field, values.get(field), op, cut)
         if move.get('points05_v6'):
             from points05_v6 import TOOLTIPS
             old_label=_CARD_LABELS.get(field,field.replace('_',' '))
             new_label=POINTS05_LABELS.get(field,old_label)
-            label_html='<span title="'+_h(TOOLTIPS.get(field,new_label))+'">'+_h(new_label)+'</span>'
-            line=line.replace(_h(old_label),label_html,1)
+            line = _fact_line(field, values.get(field), op, cut,
+                              label=new_label, help_text=TOOLTIPS.get(field) or field_help(field) or new_label)
+        else:
+            line = _fact_line(field, values.get(field), op, cut)
         target = environment if field.startswith(('NHL_', 'Opp_', 'opp_', 'Team_', 'team_', 'Goalie_')) else profile
         target.append(line)
     alternatives = []
