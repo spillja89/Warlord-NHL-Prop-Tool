@@ -13,9 +13,10 @@ from special_return_monitor import pp_return_panel
 from goal_return_monitor import RETURN_CSS
 from move_return_grades import pp_move_rank, move_grade, grade_badges, GRADE_CSS
 from pp_card_form import ppp_l10_chart, ppp_l10_label, FORM_CSS
+from card_return_store import record_snapshot
 
 LEGACY_VERSION = 'pp-card-kit-2026-11-07-v2'
-VERSION = 'pp-moves-v2-2026-11-19'
+VERSION = 'pp-moves-v3-2026-11-21'
 LABELS = {
     'Official_Opp_FailurePct_L5': ('Opponent L5 PK goals / opportunities', '%'),
     'Official_Team_OpportunitiesPG_L5': ('Team L5 PP opportunities/game', ''),
@@ -37,6 +38,8 @@ LABELS = {
 from pp_v2_display import goalie_summary as _goalie_summary
 from pp_v2_moves import catalog as _v2_catalog
 LABELS.update({f:(x['label'],'') for f,x in _v2_catalog()['tooltips'].items()})
+from pp_v3_moves import catalog as _v3_catalog
+LABELS.update({f:(x['label'],'') for f,x in _v3_catalog()['tooltips'].items()})
 
 def display_record(move):
     from special_return_monitor import record_for
@@ -46,7 +49,8 @@ def display_record(move):
 
 def optional_badges(card):
     from pp_v2_display import buff_badges
-    return buff_badges(card['moves'],card['row'])
+    from pp_v3_display import badge
+    return buff_badges(card['moves'],card['row'])+badge(card)
 
 RUNESMITH_IDS = {'pp-arcane-momentum-i-v1', 'pp-arcane-momentum-ii-v1',
                  'pp-rune-rupture-v1', 'pp-arcane-overload-v1',
@@ -58,6 +62,9 @@ STORMCALLER_IDS = {'pp-breachfire-v1', 'pp-tempest-sigil-v1',
 
 def pp_character(move):
     """Route identity changes only artwork and accent, never qualification."""
+    if move.get('pp_v3'):
+        variant=move.get('character_variant','Arcanist')
+        return (variant,{'Arcanist':'Gorilla · Arcanist','Runesmith':'Orangutan · Runesmith','Stormcaller':'Chimp · Stormcaller'}[variant],variant.lower())
     if move.get('pp_v2'):
         family=move.get('family','')
         if family in {'astral-momentum','runic-rhythm','mana-reservoir'}:return 'Runesmith','Orangutan · Runesmith','runesmith'
@@ -122,7 +129,7 @@ def records():
     data=json.loads(Path(__file__).with_name('pp_card_records.json').read_text(encoding='utf-8'))
     legacy=[{**m,'kit_version':LEGACY_VERSION,'move_version':'V1'} for m in data['moves']]
     from pp_v2_moves import catalog
-    return {**data,'version':VERSION,'moves':legacy+catalog()['moves']}
+    return {**data,'version':VERSION,'moves':legacy+catalog()['moves']+_v3_catalog()['moves']}
 
 def onice_xg(row):
     value = _num(row.get('PP_OnIce_xG_per_game'))
@@ -141,7 +148,7 @@ def fired_pp_moves(row, line=.5):
                      and str(row.get('PP_Card_Context_AsOf')) == str(row.get('Date'))[:10])
     fired = []
     for move in records()['moves']:
-        if move.get('pp_v2'):continue
+        if move.get('pp_v2') or move.get('pp_v3'):continue
         lower = move.get('lane') == 'layer1-lower-xg'
         lower_current = (row.get('PP_Lower_Context_Version') == LOWER_CONTEXT_VERSION
                          and str(row.get('PP_Lower_Context_AsOf')) == str(row.get('Date'))[:10])
@@ -159,8 +166,10 @@ def fired_pp_moves(row, line=.5):
         if matches:
             fired.append(move)
     from pp_v2_moves import fired as fired_v2
-    return sorted(fired+fired_v2(row,line), key=pp_move_rank,reverse=True)
+    from pp_v3_moves import fired as fired_v3
+    return sorted(fired+fired_v2(row,line)+fired_v3(row,line), key=pp_move_rank,reverse=True)
 
+@record_snapshot()
 def rank_pp_cards(frame, quotes, *, display_filter=True):
     """One player-game card, using the existing best-quote selection and view filters."""
     rows = {(str(r.get('Player')), str(r.get('Team')), str(r.get('Game'))): r
@@ -200,15 +209,19 @@ def _rule_checks(row, move, xg):
         if field in ('PPP line','PPP_Line'):
             continue
         label, unit = LABELS.get(field,(field.replace('_',' '),''))
-        if move.get('pp_v2'):
+        if move.get('pp_v3'):
+            from pp_v3_moves import prepare,value
+            actual=value(prepare(row),field)
+        elif move.get('pp_v2'):
             from pp_v2_moves import prepare,value
             actual=value(prepare(row),field)
         else:actual = xg if field == 'PP_OnIce_xG_per_game' else row.get(field)
-        tooltip=_v2_catalog()['tooltips'].get(field,{}).get('tooltip',label)
+        tooltip=(_v3_catalog() if move.get('pp_v3') else _v2_catalog())['tooltips'].get(field,{}).get('tooltip',label)
         checks.append(f'<span title="{_h(tooltip)}">{_h(label)}</span> <b>{_value(actual,3)}{unit}</b> '
                       f'{dict([(">=","≥"),("<=","≤"),("<","<"),("==","=")])[op]}{cutoff:g}{unit}')
     return '<br>'.join(checks)
 
+@record_snapshot()
 def render_pp_cards(cards, portrait_uri='', form_renderer=None, row_controls=None, character_override=None):
     """Compact front; dated PPP form and distinct routes are inside Inspect."""
     articles = []
@@ -276,7 +289,7 @@ def render_pp_cards(cards, portrait_uri='', form_renderer=None, row_controls=Non
             f'{"".join(matches)}{nested}<div class="pp-w-info"><b>Official pregame windows</b><br>{"<br>".join(source)}'
             f'<br>As of {_h(row.get("Date"))} · all PP/PK strengths; last up-to-5/10 completed regular-season games.</div>'
             f'<div class="pp-w-info">Lineup: {_h(row.get("Lineup_Status", "Pending"))}<br>'
-            f'2026–27 PPP V2 baseline through Nov17; health Nov1–17 is included in the baseline, not new live performance. V1 provenance remains in its return panel. {VERSION}. '
+            f'PP V3 environment baseline through Nov19; research health Nov1–19 is included in that baseline. V1/V2 moves keep their own rules, records and dated provenance. {VERSION}. '
             'Historical move results are not tonight’s PPP probabilities. On-ice xG describes team chances while this player is on the ice.</div>'
             '</details></article>')
     return '<style>' + FORM_CSS + RETURN_CSS + GRADE_CSS + '''</style><style>
@@ -300,3 +313,4 @@ def render_pp_cards(cards, portrait_uri='', form_renderer=None, row_controls=Non
     .pp-w .wn-form{margin-top:10px;font-size:13px}.pp-w .wn-form summary{cursor:pointer;color:#f0d59b}.pp-w .wn-form-tiles{display:flex;flex-wrap:wrap;gap:6px}.pp-w .wn-form-tiles>div{background:#101b2c;padding:8px;border-radius:5px;min-width:110px}.pp-w .wn-form-tiles small,.pp-w .wn-form-tiles strong{display:block}.pp-w .wn-form-meta{margin:7px 0}.pp-w .wn-form-strip{display:flex;flex-wrap:wrap;gap:4px}.pp-w .wn-form-strip>span{padding:7px;border-radius:5px}.pp-w .wn-form-strip .hit{background:#245744}.pp-w .wn-form-strip .miss{background:#663540}.pp-w .wn-form-strip b,.pp-w .wn-form-strip small{display:block;text-align:center}.pp-w .wn-form-strip small{font-size:11px;margin-top:4px}
     @container(max-width:600px){.pp-w-front{grid-template-columns:minmax(0,1fr) 75px}.pp-w-portrait{display:none}.pp-w-record strong{font-size:25px}.pp-w-heading>strong{font-size:17px}.pp-w-name small{display:inline-block;margin:4px 0}.pp-w-price{overflow-wrap:anywhere}}
     </style><section class="pp-w"><h3 class="pp-w-title">ϟ Power Play · Spellbook</h3><div class="pp-w-caption">Cards require at least a 15-point gap between updated historical hit rate and the move’s historical average book break-even. Strongest return-ranked qualifying move leads; tonight’s posted BE stays beside the price. Inspect groups other routes and tracked lower-gap levels. Overlapping records are not additive.</div>''' + ''.join(articles) + '</section>'
+

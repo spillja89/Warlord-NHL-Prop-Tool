@@ -75,5 +75,8 @@ def attach_pp_card_context(frame, before_day, reports, codes):
     out = attach_pp_lower_context(out, before, reports, codes)
     from pp_v2_context import attach_context
     out = attach_context(out,before,reports,codes)
+    from pp_v3_context import attach_context as attach_v3_context
+    out = attach_v3_context(out,before,reports,codes)
     return out
+
 

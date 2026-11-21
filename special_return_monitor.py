@@ -26,6 +26,9 @@ def record_for(move,market):
 def _panel(move,market,compact):
     row=record_for(move,market)
     if row is None:return ''
+    if market=='PPP' and move.get('pp_v3'):
+        from pp_v3_display import return_panel
+        return return_panel(row,compact=compact)
     if market=='PPP' and move.get('pp_v2'):
         from pp_v2_display import return_panel
         return return_panel(row,compact=compact)
@@ -40,3 +43,4 @@ def _panel(move,market,compact):
 
 def sog_return_panel(move,*,compact=True):return _panel(move,'SOG',compact)
 def pp_return_panel(move,*,compact=True):return _panel(move,'PPP',compact)
+

@@ -1,0 +1,906 @@
+{
+  "version": "pp-moves-v3-2026-11-21",
+  "move_version": "V3",
+  "wired_on": "2026-11-21",
+  "baseline_through": "2026-11-19",
+  "capture_from": "2026-11-21",
+  "recent_from": "2026-11-01",
+  "environment_families": 7,
+  "player_families": 2,
+  "moves": [
+    {
+      "id": "pp-v3-pk103",
+      "name": "Riftbreaker",
+      "code": "PK103",
+      "market": "PPP",
+      "family": "riftbreaker",
+      "display_family": "v3-riftbreaker",
+      "character_variant": "Stormcaller",
+      "kit_version": "pp-moves-v3-2026-11-21",
+      "move_version": "V3",
+      "pp_v3": true,
+      "optional_buff": true,
+      "kind": "OPTIONAL BUFF",
+      "entry": [
+        [
+          "PPP_Line",
+          "==",
+          0.5
+        ],
+        [
+          "PP_OnIce_xG_per_game",
+          ">=",
+          0.55
+        ],
+        [
+          "PPV3_Opp_PK_Season_Minutes_PG",
+          "<=",
+          4.5
+        ]
+      ],
+      "conditions": [
+        [
+          "PPV3_Opp_PK_L5_Seconds_per_O",
+          "<=",
+          103.0
+        ]
+      ],
+      "rule": "PPP_Line == 0.5 + PP_OnIce_xG_per_game >= 0.55 + PPV3_Opp_PK_Season_Minutes_PG <= 4.5 + PPV3_Opp_PK_L5_Seconds_per_O <= 103",
+      "record": {
+        "hits": 54,
+        "plays": 114,
+        "rate": 47.36842105263158,
+        "BE": 31.219623001281413,
+        "gap": 16.14879805135017,
+        "players": 59,
+        "units": 61.59,
+        "ROI": 54.026315789473685,
+        "dates": 17,
+        "games": 27,
+        "team_games": 32,
+        "teams": 15,
+        "opponents": 10
+      },
+      "context_note": ""
+    },
+    {
+      "id": "pp-v3-pk92",
+      "name": "Riftbreaker · Deep Fracture",
+      "code": "PK92",
+      "market": "PPP",
+      "family": "riftbreaker",
+      "display_family": "v3-riftbreaker",
+      "character_variant": "Stormcaller",
+      "kit_version": "pp-moves-v3-2026-11-21",
+      "move_version": "V3",
+      "pp_v3": true,
+      "optional_buff": true,
+      "kind": "CONTEXT BUFF",
+      "entry": [
+        [
+          "PPP_Line",
+          "==",
+          0.5
+        ],
+        [
+          "PP_OnIce_xG_per_game",
+          ">=",
+          0.55
+        ],
+        [
+          "PPV3_Opp_PK_Season_Minutes_PG",
+          "<=",
+          4.5
+        ]
+      ],
+      "conditions": [
+        [
+          "PPV3_Opp_PK_L5_Seconds_per_O",
+          "<=",
+          92.0
+        ]
+      ],
+      "rule": "PPP_Line == 0.5 + PP_OnIce_xG_per_game >= 0.55 + PPV3_Opp_PK_Season_Minutes_PG <= 4.5 + PPV3_Opp_PK_L5_Seconds_per_O <= 92",
+      "record": {
+        "hits": 34,
+        "plays": 67,
+        "rate": 50.74626865671642,
+        "BE": 29.901273287638094,
+        "gap": 20.844995369078323,
+        "players": 41,
+        "units": 45.86,
+        "ROI": 68.44776119402985,
+        "dates": 13,
+        "games": 18,
+        "team_games": 19,
+        "teams": 11,
+        "opponents": 8
+      },
+      "context_note": "Tighter context, not a consistently stronger upgrade: its recent hit rate trails the broader PK103 group."
+    },
+    {
+      "id": "pp-v3-ga280",
+      "name": "Riftbreaker · Crumbling Guard",
+      "code": "GA280",
+      "market": "PPP",
+      "family": "riftbreaker",
+      "display_family": "v3-riftbreaker",
+      "character_variant": "Stormcaller",
+      "kit_version": "pp-moves-v3-2026-11-21",
+      "move_version": "V3",
+      "pp_v3": true,
+      "optional_buff": true,
+      "kind": "OPTIONAL BUFF",
+      "entry": [
+        [
+          "PPP_Line",
+          "==",
+          0.5
+        ],
+        [
+          "PP_OnIce_xG_per_game",
+          ">=",
+          0.55
+        ],
+        [
+          "PPV3_Opp_PK_Season_Minutes_PG",
+          "<=",
+          4.5
+        ]
+      ],
+      "conditions": [
+        [
+          "PPV3_Opp_Season_GA_PG",
+          ">=",
+          2.8
+        ]
+      ],
+      "rule": "PPP_Line == 0.5 + PP_OnIce_xG_per_game >= 0.55 + PPV3_Opp_PK_Season_Minutes_PG <= 4.5 + PPV3_Opp_Season_GA_PG >= 2.8",
+      "record": {
+        "hits": 54,
+        "plays": 117,
+        "rate": 46.15384615384615,
+        "BE": 31.10266691704488,
+        "gap": 15.051179236801275,
+        "players": 55,
+        "units": 59.06,
+        "ROI": 50.47863247863248,
+        "dates": 18,
+        "games": 29,
+        "team_games": 33,
+        "teams": 15,
+        "opponents": 10
+      },
+      "context_note": ""
+    },
+    {
+      "id": "pp-v3-ppa030",
+      "name": "Riftbreaker · Spirit Leak",
+      "code": "PPA030",
+      "market": "PPP",
+      "family": "riftbreaker",
+      "display_family": "v3-riftbreaker",
+      "character_variant": "Stormcaller",
+      "kit_version": "pp-moves-v3-2026-11-21",
+      "move_version": "V3",
+      "pp_v3": true,
+      "optional_buff": true,
+      "kind": "OPTIONAL BUFF",
+      "entry": [
+        [
+          "PPP_Line",
+          "==",
+          0.5
+        ],
+        [
+          "PP_OnIce_xG_per_game",
+          ">=",
+          0.55
+        ],
+        [
+          "PPV3_Opp_PK_Season_Minutes_PG",
+          "<=",
+          4.5
+        ]
+      ],
+      "conditions": [
+        [
+          "PPV3_Opp_PK_L5_PPA_per_O",
+          ">=",
+          0.3
+        ]
+      ],
+      "rule": "PPP_Line == 0.5 + PP_OnIce_xG_per_game >= 0.55 + PPV3_Opp_PK_Season_Minutes_PG <= 4.5 + PPV3_Opp_PK_L5_PPA_per_O >= 0.3",
+      "record": {
+        "hits": 54,
+        "plays": 115,
+        "rate": 46.95652173913044,
+        "BE": 31.443564388655705,
+        "gap": 15.512957350474732,
+        "players": 59,
+        "units": 59.74,
+        "ROI": 51.947826086956525,
+        "dates": 17,
+        "games": 27,
+        "team_games": 33,
+        "teams": 15,
+        "opponents": 10
+      },
+      "context_note": ""
+    },
+    {
+      "id": "pp-v3-venue340",
+      "name": "Mana Tide",
+      "code": "VENUE340",
+      "market": "PPP",
+      "family": "mana-tide",
+      "display_family": "v3-mana-tide",
+      "character_variant": "Runesmith",
+      "kit_version": "pp-moves-v3-2026-11-21",
+      "move_version": "V3",
+      "pp_v3": true,
+      "optional_buff": true,
+      "kind": "OPTIONAL BUFF",
+      "entry": [
+        [
+          "PPP_Line",
+          "==",
+          0.5
+        ],
+        [
+          "PP_OnIce_xG_per_game",
+          ">=",
+          0.55
+        ],
+        [
+          "PPV3_Opp_PK_Season_Minutes_PG",
+          "<=",
+          4.5
+        ]
+      ],
+      "conditions": [
+        [
+          "PPV3_Own_PP_Venue_O_PG",
+          ">=",
+          3.4
+        ]
+      ],
+      "rule": "PPP_Line == 0.5 + PP_OnIce_xG_per_game >= 0.55 + PPV3_Opp_PK_Season_Minutes_PG <= 4.5 + PPV3_Own_PP_Venue_O_PG >= 3.4",
+      "record": {
+        "hits": 39,
+        "plays": 64,
+        "rate": 60.9375,
+        "BE": 30.598259073239042,
+        "gap": 30.339240926760958,
+        "players": 36,
+        "units": 64.26,
+        "ROI": 100.40625,
+        "dates": 13,
+        "games": 18,
+        "team_games": 18,
+        "teams": 10,
+        "opponents": 9
+      },
+      "context_note": ""
+    },
+    {
+      "id": "pp-v3-ownpk99",
+      "name": "Runic Reprieve I",
+      "code": "OWNPK99",
+      "market": "PPP",
+      "family": "runic-reprieve",
+      "display_family": "v3-runic-reprieve",
+      "character_variant": "Arcanist",
+      "kit_version": "pp-moves-v3-2026-11-21",
+      "move_version": "V3",
+      "pp_v3": true,
+      "optional_buff": true,
+      "kind": "OPTIONAL BUFF",
+      "entry": [
+        [
+          "PPP_Line",
+          "==",
+          0.5
+        ],
+        [
+          "PP_OnIce_xG_per_game",
+          ">=",
+          0.55
+        ],
+        [
+          "PPV3_Opp_PK_Season_Minutes_PG",
+          "<=",
+          4.5
+        ]
+      ],
+      "conditions": [
+        [
+          "PPV3_Own_PK_Season_Seconds_per_O",
+          "<=",
+          99.0
+        ]
+      ],
+      "rule": "PPP_Line == 0.5 + PP_OnIce_xG_per_game >= 0.55 + PPV3_Opp_PK_Season_Minutes_PG <= 4.5 + PPV3_Own_PK_Season_Seconds_per_O <= 99",
+      "record": {
+        "hits": 41,
+        "plays": 75,
+        "rate": 54.666666666666664,
+        "BE": 30.948964955170393,
+        "gap": 23.71770171149627,
+        "players": 37,
+        "units": 58.46,
+        "ROI": 77.94666666666667,
+        "dates": 15,
+        "games": 19,
+        "team_games": 19,
+        "teams": 9,
+        "opponents": 7
+      },
+      "context_note": ""
+    },
+    {
+      "id": "pp-v3-ownpk96",
+      "name": "Runic Reprieve II",
+      "code": "OWNPK96",
+      "market": "PPP",
+      "family": "runic-reprieve",
+      "display_family": "v3-runic-reprieve",
+      "character_variant": "Arcanist",
+      "kit_version": "pp-moves-v3-2026-11-21",
+      "move_version": "V3",
+      "pp_v3": true,
+      "optional_buff": true,
+      "kind": "OPTIONAL BUFF",
+      "entry": [
+        [
+          "PPP_Line",
+          "==",
+          0.5
+        ],
+        [
+          "PP_OnIce_xG_per_game",
+          ">=",
+          0.55
+        ],
+        [
+          "PPV3_Opp_PK_Season_Minutes_PG",
+          "<=",
+          4.5
+        ]
+      ],
+      "conditions": [
+        [
+          "PPV3_Own_PK_Season_Seconds_per_O",
+          "<=",
+          96.0
+        ]
+      ],
+      "rule": "PPP_Line == 0.5 + PP_OnIce_xG_per_game >= 0.55 + PPV3_Opp_PK_Season_Minutes_PG <= 4.5 + PPV3_Own_PK_Season_Seconds_per_O <= 96",
+      "record": {
+        "hits": 34,
+        "plays": 54,
+        "rate": 62.96296296296296,
+        "BE": 32.073215259529434,
+        "gap": 30.889747703433528,
+        "players": 33,
+        "units": 55.06,
+        "ROI": 101.96296296296296,
+        "dates": 12,
+        "games": 14,
+        "team_games": 14,
+        "teams": 8,
+        "opponents": 7
+      },
+      "context_note": ""
+    },
+    {
+      "id": "pp-v3-l5ppo340",
+      "name": "Leyline Surge I",
+      "code": "L5PPO340",
+      "market": "PPP",
+      "family": "leyline-surge",
+      "display_family": "v3-leyline-surge",
+      "character_variant": "Stormcaller",
+      "kit_version": "pp-moves-v3-2026-11-21",
+      "move_version": "V3",
+      "pp_v3": true,
+      "optional_buff": true,
+      "kind": "OPTIONAL BUFF",
+      "entry": [
+        [
+          "PPP_Line",
+          "==",
+          0.5
+        ],
+        [
+          "PP_OnIce_xG_per_game",
+          ">=",
+          0.55
+        ],
+        [
+          "PPV3_Opp_PK_Season_Minutes_PG",
+          "<=",
+          4.5
+        ]
+      ],
+      "conditions": [
+        [
+          "PPV3_Own_PP_L5_O_PG",
+          ">=",
+          3.4
+        ]
+      ],
+      "rule": "PPP_Line == 0.5 + PP_OnIce_xG_per_game >= 0.55 + PPV3_Opp_PK_Season_Minutes_PG <= 4.5 + PPV3_Own_PP_L5_O_PG >= 3.4",
+      "record": {
+        "hits": 36,
+        "plays": 61,
+        "rate": 59.01639344262295,
+        "BE": 30.892533042484683,
+        "gap": 28.123860400138266,
+        "players": 39,
+        "units": 57.7,
+        "ROI": 94.59016393442623,
+        "dates": 12,
+        "games": 16,
+        "team_games": 17,
+        "teams": 11,
+        "opponents": 9
+      },
+      "context_note": ""
+    },
+    {
+      "id": "pp-v3-l5ppo360",
+      "name": "Leyline Surge II",
+      "code": "L5PPO360",
+      "market": "PPP",
+      "family": "leyline-surge",
+      "display_family": "v3-leyline-surge",
+      "character_variant": "Stormcaller",
+      "kit_version": "pp-moves-v3-2026-11-21",
+      "move_version": "V3",
+      "pp_v3": true,
+      "optional_buff": true,
+      "kind": "OPTIONAL BUFF",
+      "entry": [
+        [
+          "PPP_Line",
+          "==",
+          0.5
+        ],
+        [
+          "PP_OnIce_xG_per_game",
+          ">=",
+          0.55
+        ],
+        [
+          "PPV3_Opp_PK_Season_Minutes_PG",
+          "<=",
+          4.5
+        ]
+      ],
+      "conditions": [
+        [
+          "PPV3_Own_PP_L5_O_PG",
+          ">=",
+          3.6
+        ]
+      ],
+      "rule": "PPP_Line == 0.5 + PP_OnIce_xG_per_game >= 0.55 + PPV3_Opp_PK_Season_Minutes_PG <= 4.5 + PPV3_Own_PP_L5_O_PG >= 3.6",
+      "record": {
+        "hits": 31,
+        "plays": 48,
+        "rate": 64.58333333333333,
+        "BE": 31.203558491974924,
+        "gap": 33.379774841358405,
+        "players": 37,
+        "units": 54.05,
+        "ROI": 112.60416666666667,
+        "dates": 10,
+        "games": 13,
+        "team_games": 13,
+        "teams": 10,
+        "opponents": 7
+      },
+      "context_note": ""
+    },
+    {
+      "id": "pp-v3-ppmin465",
+      "name": "Aether Dominion I",
+      "code": "PPMIN465",
+      "market": "PPP",
+      "family": "aether-dominion",
+      "display_family": "v3-aether-dominion",
+      "character_variant": "Runesmith",
+      "kit_version": "pp-moves-v3-2026-11-21",
+      "move_version": "V3",
+      "pp_v3": true,
+      "optional_buff": true,
+      "kind": "OPTIONAL BUFF",
+      "entry": [
+        [
+          "PPP_Line",
+          "==",
+          0.5
+        ],
+        [
+          "PP_OnIce_xG_per_game",
+          ">=",
+          0.55
+        ],
+        [
+          "PPV3_Opp_PK_Season_Minutes_PG",
+          "<=",
+          4.5
+        ]
+      ],
+      "conditions": [
+        [
+          "PPV3_Own_PP_Venue_Minutes_PG",
+          ">=",
+          4.65
+        ]
+      ],
+      "rule": "PPP_Line == 0.5 + PP_OnIce_xG_per_game >= 0.55 + PPV3_Opp_PK_Season_Minutes_PG <= 4.5 + PPV3_Own_PP_Venue_Minutes_PG >= 4.65",
+      "record": {
+        "hits": 51,
+        "plays": 103,
+        "rate": 49.51456310679612,
+        "BE": 30.432192269087167,
+        "gap": 19.08237083770895,
+        "players": 53,
+        "units": 64.71,
+        "ROI": 62.8252427184466,
+        "dates": 18,
+        "games": 26,
+        "team_games": 30,
+        "teams": 14,
+        "opponents": 9
+      },
+      "context_note": ""
+    },
+    {
+      "id": "pp-v3-ppmin600",
+      "name": "Aether Dominion II",
+      "code": "PPMIN600",
+      "market": "PPP",
+      "family": "aether-dominion",
+      "display_family": "v3-aether-dominion",
+      "character_variant": "Runesmith",
+      "kit_version": "pp-moves-v3-2026-11-21",
+      "move_version": "V3",
+      "pp_v3": true,
+      "optional_buff": true,
+      "kind": "OPTIONAL BUFF",
+      "entry": [
+        [
+          "PPP_Line",
+          "==",
+          0.5
+        ],
+        [
+          "PP_OnIce_xG_per_game",
+          ">=",
+          0.55
+        ],
+        [
+          "PPV3_Opp_PK_Season_Minutes_PG",
+          "<=",
+          4.5
+        ]
+      ],
+      "conditions": [
+        [
+          "PPV3_Own_PP_Venue_Minutes_PG",
+          ">=",
+          6.0
+        ]
+      ],
+      "rule": "PPP_Line == 0.5 + PP_OnIce_xG_per_game >= 0.55 + PPV3_Opp_PK_Season_Minutes_PG <= 4.5 + PPV3_Own_PP_Venue_Minutes_PG >= 6",
+      "record": {
+        "hits": 26,
+        "plays": 37,
+        "rate": 70.27027027027027,
+        "BE": 30.69752027288438,
+        "gap": 39.5727499973859,
+        "players": 24,
+        "units": 48.56,
+        "ROI": 131.24324324324326,
+        "dates": 9,
+        "games": 11,
+        "team_games": 11,
+        "teams": 7,
+        "opponents": 6
+      },
+      "context_note": "Recent14appearances span5team-games and include8Carolina appearances. Historical screened hit rate is not tonight's probability."
+    },
+    {
+      "id": "pp-v3-xga260",
+      "name": "Shattered Ward",
+      "code": "XGA260",
+      "market": "PPP",
+      "family": "shattered-ward",
+      "display_family": "v3-shattered-ward",
+      "character_variant": "Arcanist",
+      "kit_version": "pp-moves-v3-2026-11-21",
+      "move_version": "V3",
+      "pp_v3": true,
+      "optional_buff": true,
+      "kind": "OPTIONAL BUFF",
+      "entry": [
+        [
+          "PPP_Line",
+          "==",
+          0.5
+        ],
+        [
+          "PP_OnIce_xG_per_game",
+          ">=",
+          0.55
+        ],
+        [
+          "PPV3_Opp_PK_Season_Minutes_PG",
+          "<=",
+          4.5
+        ]
+      ],
+      "conditions": [
+        [
+          "opp_5v5_xGA60",
+          ">=",
+          2.6
+        ]
+      ],
+      "rule": "PPP_Line == 0.5 + PP_OnIce_xG_per_game >= 0.55 + PPV3_Opp_PK_Season_Minutes_PG <= 4.5 + opp_5v5_xGA60 >= 2.6",
+      "record": {
+        "hits": 28,
+        "plays": 49,
+        "rate": 57.142857142857146,
+        "BE": 31.162786808195623,
+        "gap": 25.980070334661523,
+        "players": 31,
+        "units": 44.13,
+        "ROI": 90.06122448979592,
+        "dates": 11,
+        "games": 13,
+        "team_games": 13,
+        "teams": 9,
+        "opponents": 4
+      },
+      "context_note": "Incremental overlap monitor: outside Aether Dominion II, historical exclusive plays were6/20; no recent exclusive appearances. No new AND requirement."
+    },
+    {
+      "id": "pp-v3-expsv895",
+      "name": "Phantom Breach",
+      "code": "EXPSV895",
+      "market": "PPP",
+      "family": "phantom-breach",
+      "display_family": "v3-phantom-breach",
+      "character_variant": "Arcanist",
+      "kit_version": "pp-moves-v3-2026-11-21",
+      "move_version": "V3",
+      "pp_v3": true,
+      "optional_buff": true,
+      "kind": "OPTIONAL BUFF",
+      "entry": [
+        [
+          "PPP_Line",
+          "==",
+          0.5
+        ],
+        [
+          "PP_OnIce_xG_per_game",
+          ">=",
+          0.55
+        ],
+        [
+          "PPV3_Opp_PK_Season_Minutes_PG",
+          "<=",
+          4.5
+        ]
+      ],
+      "conditions": [
+        [
+          "PPV3_Goalie_Expected_SV",
+          ">=",
+          0.895
+        ]
+      ],
+      "rule": "PPP_Line == 0.5 + PP_OnIce_xG_per_game >= 0.55 + PPV3_Opp_PK_Season_Minutes_PG <= 4.5 + PPV3_Goalie_Expected_SV >= 0.895",
+      "record": {
+        "hits": 21,
+        "plays": 30,
+        "rate": 70.0,
+        "BE": 31.099808432910553,
+        "gap": 38.90019156708945,
+        "players": 30,
+        "units": 37.93,
+        "ROI": 126.43333333333334,
+        "dates": 6,
+        "games": 7,
+        "team_games": 8,
+        "teams": 8,
+        "opponents": 5
+      },
+      "context_note": "Optional goalie context. Research coverage64of134parent appearances;70unavailable never counted as failed. Selected30appearances span7games; recent15span3games. No10-game minimum."
+    },
+    {
+      "id": "pp-v3-drought0",
+      "name": "Ember Echo",
+      "code": "DROUGHT0",
+      "market": "PPP",
+      "family": "ember-echo",
+      "display_family": "v3-ember-echo",
+      "character_variant": "Stormcaller",
+      "kit_version": "pp-moves-v3-2026-11-21",
+      "move_version": "V3",
+      "pp_v3": true,
+      "optional_buff": false,
+      "kind": "TRACKED PROFILE",
+      "entry": [
+        [
+          "PPP_Line",
+          "==",
+          0.5
+        ],
+        [
+          "PP_OnIce_xG_per_game",
+          ">=",
+          0.55
+        ],
+        [
+          "PPV3_Opp_PK_Season_Minutes_PG",
+          "<=",
+          4.5
+        ]
+      ],
+      "conditions": [
+        [
+          "Drought_PPP",
+          "==",
+          0.0
+        ]
+      ],
+      "rule": "PPP_Line == 0.5 + PP_OnIce_xG_per_game >= 0.55 + PPV3_Opp_PK_Season_Minutes_PG <= 4.5 + Drought_PPP == 0",
+      "record": {
+        "hits": 22,
+        "plays": 46,
+        "rate": 47.82608695652174,
+        "BE": 33.40254388584023,
+        "gap": 14.42354307068151,
+        "players": 32,
+        "units": 21.76,
+        "ROI": 47.30434782608695,
+        "dates": 13,
+        "games": 18
+      },
+      "context_note": ""
+    },
+    {
+      "id": "pp-v3-l10max2",
+      "name": "Silent Conduit",
+      "code": "L10MAX2",
+      "market": "PPP",
+      "family": "silent-conduit",
+      "display_family": "v3-silent-conduit",
+      "character_variant": "Runesmith",
+      "kit_version": "pp-moves-v3-2026-11-21",
+      "move_version": "V3",
+      "pp_v3": true,
+      "optional_buff": false,
+      "kind": "ATTACK",
+      "entry": [
+        [
+          "PPP_Line",
+          "==",
+          0.5
+        ],
+        [
+          "PP_OnIce_xG_per_game",
+          ">=",
+          0.55
+        ],
+        [
+          "PPV3_Opp_PK_Season_Minutes_PG",
+          "<=",
+          4.5
+        ]
+      ],
+      "conditions": [
+        [
+          "PPP10_total",
+          "<=",
+          2.0
+        ]
+      ],
+      "rule": "PPP_Line == 0.5 + PP_OnIce_xG_per_game >= 0.55 + PPV3_Opp_PK_Season_Minutes_PG <= 4.5 + PPP10_total <= 2",
+      "record": {
+        "hits": 18,
+        "plays": 39,
+        "rate": 46.15384615384615,
+        "BE": 29.218249864447472,
+        "gap": 16.93559628939868,
+        "players": 21,
+        "units": 21.1,
+        "ROI": 54.1025641025641,
+        "dates": 13,
+        "games": 16
+      },
+      "context_note": ""
+    }
+  ],
+  "monitors": [
+    {
+      "field": "Opponent seasonGA/game",
+      "op": ">=",
+      "cutoff": 2.85
+    },
+    {
+      "field": "Opponent5v5xGA/60",
+      "op": ">=",
+      "cutoff": 2.7
+    },
+    {
+      "field": "PlayerPPP10total",
+      "op": "<=",
+      "cutoff": 4
+    }
+  ],
+  "tooltips": {
+    "PPP_Line": {
+      "label": "PPP line",
+      "tooltip": "Exact posted power-play point line; these profiles use over0.5."
+    },
+    "PP_OnIce_xG_per_game": {
+      "label": "PP on-ice xG/game",
+      "tooltip": "Expected team goals per game while this player is on the power play. This route requires at least0.55."
+    },
+    "PPV3_Opp_PK_Season_Minutes_PG": {
+      "label": "Layer1 · opponent PK minutes/game",
+      "tooltip": "Opponent season penalty-kill time per game before this slate. Layer1 requires4.50minutes or less, which is4:30."
+    },
+    "PPV3_Opp_PK_L5_Seconds_per_O": {
+      "label": "Opponent L5 PK seconds/opportunity",
+      "tooltip": "Total opponent PK seconds divided by shorthanded opportunities across five completed games. Lower means shorter average PK time per opportunity."
+    },
+    "PPV3_Opp_Season_GA_PG": {
+      "label": "Opponent goals allowed/game",
+      "tooltip": "Opponent actual goals conceded per game across its completed current-season games; all strengths."
+    },
+    "PPV3_Opp_PK_L5_PPA_per_O": {
+      "label": "Opponent L5 PP assists allowed/opportunity",
+      "tooltip": "PP assist credits conceded per shorthanded opportunity over five completed games. One goal can receive two assists."
+    },
+    "PPV3_Own_PP_Venue_O_PG": {
+      "label": "Own home/away PP opportunities/game",
+      "tooltip": "Own team prior season HOME PP opportunities per HOME game if home tonight; ROAD equivalents if away. Not the last five games."
+    },
+    "PPV3_Own_PK_Season_Seconds_per_O": {
+      "label": "Own PK seconds/opportunity",
+      "tooltip": "Own team season PK seconds divided by shorthanded opportunities. This is an observed team-context profile, not opponent PK performance."
+    },
+    "PPV3_Own_PP_L5_O_PG": {
+      "label": "Own L5 PP opportunities/game",
+      "tooltip": "Own team PP opportunities across five completed games divided by five. Home and away games together."
+    },
+    "PPV3_Own_PP_Venue_Minutes_PG": {
+      "label": "Own home/away PP minutes/game",
+      "tooltip": "Own prior season HOME PP minutes per HOME game if home tonight; ROAD equivalents if away. Decimal4.65means4:39;6.00means6:00. Team time, not player ice time."
+    },
+    "opp_5v5_xGA60": {
+      "label": "Opponent 5v5 xGA/60",
+      "tooltip": "Expected goals allowed per60minutes at five-on-five. Higher means greater shot quality conceded. Separate from PK xGA."
+    },
+    "PPV3_Goalie_Expected_SV": {
+      "label": "Goalie expected save proxy",
+      "tooltip": "Computed1−goalie all-strength xGA/shots faced. .895means89.5%. Describes modeled shot difficulty, not actual saves or saves above expectation. Named current-season confirmed goalie required; no10-game minimum."
+    },
+    "Drought_PPP": {
+      "label": "PPP drought",
+      "tooltip": "Consecutive completed player games without a power-play point. Zero means a PPP in the previous completed game. This profile is tracked below the15point card display floor."
+    },
+    "PPP10_total": {
+      "label": "PPP total · up to last10games",
+      "tooltip": "Total PP goals plus assists across up to10completed player games; not the number of games with a PPP. Available shorter histories retain their actual denominator."
+    }
+  }
+}
