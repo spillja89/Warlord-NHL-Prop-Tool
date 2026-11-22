@@ -8,6 +8,9 @@ on:
     # A second morning pass catches late finals or a delayed/missed first pass.
     - cron: "17 8 * * *"
       timezone: America/Chicago
+    # Recovery checks after the morning passes; never run the odds/model pipeline.
+    - cron: "47 9-12 * * *"
+      timezone: America/Chicago
   workflow_dispatch:
   # Verify the actual hosted job whenever its configuration is maintained.
   # The job writes the preview branch, so it cannot trigger itself.
@@ -134,3 +137,36 @@ jobs:
           git commit -m 'Grade completed NHL slates and refresh card returns'
           git pull --rebase origin launch/2026-warlord-readiness
           git push origin HEAD:launch/2026-warlord-readiness
+
+      - name: Audit yesterday coverage and return freshness
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          from datetime import datetime, timedelta
+          from pathlib import Path
+          from zoneinfo import ZoneInfo
+          from grade_daily_tracker import _source_path, _session, schedule_for_day
+
+          root = Path('.')
+          day = (datetime.now(ZoneInfo('America/Chicago')).date() - timedelta(days=1)).isoformat()
+          games = schedule_for_day(_session(), day)
+          if not games:
+              print(f'{day}: no NHL games; no results are missing.')
+          else:
+              source = _source_path(root, day)
+              if source is None:
+                  raise SystemExit(f'{day}: NHL games exist but the frozen pregame tracker is missing; returns cannot be invented.')
+              path = root / 'output/graded' / f'tracker_{day}_summary.json'
+              if not path.is_file():
+                  raise SystemExit(f'{day}: frozen slate exists but grading summary is missing.')
+              summary = json.loads(path.read_text(encoding='utf-8'))
+              status = summary.get('grade_status', {})
+              through = json.loads((root/'output/card_returns/status.json').read_text(encoding='utf-8'))['through']
+              if status.get('FINAL', 0) and through < day:
+                  raise SystemExit(f'{day}: final results exist but published card returns stop at {through}.')
+              if not status.get('FINAL', 0):
+                  raise SystemExit(f'{day}: no final player results yet; grading needs another pass.')
+              print(f'{day}: {status.get("FINAL", 0)} final player rows; card returns through {through}; unresolved rows remain ungraded.')
+          PY
