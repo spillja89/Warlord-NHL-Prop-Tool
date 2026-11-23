@@ -138,7 +138,12 @@ ALIASES.update({
 })
 
 
+_GOAL_V3_HELP = {'Player_Log_L20_TOI_median': 'Middle ice-time value across up to the last 20 completed games, in minutes.', 'Player_Log_L5_PPP_per60_total_TOI': 'Power-play points over the last five games per 60 minutes of TOTAL ice time. This is not per 60 PP minutes.', 'Player_Log_L5_S_sd': 'How much the player’s shots vary across the last five games. Lower means steadier shot totals.', 'Player_Log_L10_TOI_sd': 'How much ice time varies across up to the last ten games, in minutes. Lower means steadier usage.', 'Player_Log_L40_S_hit_pct': 'Percentage of available completed games, up to 40, with at least three shots. Uses the actual game count.', 'PP_TOI_Pct_Game': 'Percentage of this player’s TOTAL ice time spent on the power play. This is not team PP time share.', 'Goalie_Expected_SV': 'Expected share of shots saved based on the quality of shots faced: 1 minus xGA/shots. It is not actual save percentage or a goalie skill score.', 'Official_Opp_Season_GA_PG': 'Opponent TEAM goals allowed per game, all strengths. This is not the goalie’s GAA.', 'Official_Own_PP_Venue_O_PG': 'Own team’s earned PP opportunities per game in the relevant home or away games before this slate.', 'Official_Opp_PP_Season_G60': 'Opponent’s actual PP goals scored per 60 PP minutes before this slate.', 'Official_Opp_L10_SA_PG': 'Opponent’s average shots allowed in its last ten completed games.', 'Official_Opp_PK_L10_G60': 'Opponent’s goals allowed per 60 shorthanded minutes across its last ten completed games.', 'Official_Opp_PK_Season_O_PG': 'Opponent’s times shorthanded per game this season before the slate.'}
+
 def field_help(field):
+    if isinstance(field,str):
+        _field=field.removeprefix('GoalV3_')
+        if _field in _GOAL_V3_HELP:return _GOAL_V3_HELP[_field]
     # Display-only columns (for example PP matchup signals) have no raw field.
     # Let their caller fall back to the visible column label.
     if not isinstance(field,str) or not field.strip():

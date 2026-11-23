@@ -20,7 +20,7 @@ def catalog():return json.loads(Path(__file__).with_name('goal_v2_rules.json').r
 def _log(raw,before):
     try:
         data=json.loads(raw)
-        if data.get('season')!='2026-27':return {}
+        if not isinstance(data,dict) or data.get('season')!='2026-27':return {}
         games=sorted(data['games'],key=lambda g:str(g['d']),reverse=True)
         if not games or any(str(g['d'])>=before for g in games) or len({g['d'] for g in games})!=len(games):return {}
         if any(number(g.get(k)) is None or number(g[k])<0 for g in games for k in ('g','a','s')):return {}

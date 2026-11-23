@@ -1,0 +1,2687 @@
+{
+  "version": "goal-2026-27-moves-v3-2026-11-23",
+  "wired_on": "2026-11-23",
+  "common": "Goal 0.5 + saved Green; confidence94 only for eight new attack routes and their exact-parent buffs.",
+  "new_player_attacks": 8,
+  "optional_buffs": 7,
+  "approved_047_routes": 2,
+  "environment_fields": [
+    "Official_Opp_L10_SA_PG",
+    "Official_Opp_PK_L10_G60",
+    "Official_Opp_PK_Season_O_PG",
+    "Official_Opp_PP_Season_G60",
+    "Official_Opp_Season_GA_PG",
+    "Official_Own_PP_Venue_O_PG"
+  ],
+  "moves": [
+    {
+      "id": "T_coldPP",
+      "name": "Iron Prowl",
+      "family": "Iron Prowl",
+      "kind": "player_attack",
+      "display_kind": "HEAVY ATTACK",
+      "icon": "fenrir_claw.svg",
+      "checks": [
+        [
+          "Player_Log_L20_TOI_median",
+          ">=",
+          20.3
+        ],
+        [
+          "Trim10_SOG",
+          "<=",
+          3.8
+        ],
+        [
+          "Player_Log_L5_PPP_per60_total_TOI",
+          "<=",
+          2.85
+        ]
+      ],
+      "all_checks": [
+        [
+          "Goal_Profile",
+          ">=",
+          94
+        ],
+        [
+          "Player_Log_L20_TOI_median",
+          ">=",
+          20.3
+        ],
+        [
+          "Trim10_SOG",
+          "<=",
+          3.8
+        ],
+        [
+          "Player_Log_L5_PPP_per60_total_TOI",
+          "<=",
+          2.85
+        ]
+      ],
+      "parent": null,
+      "parent_name": "",
+      "character": "Gorilla · Ravager",
+      "record": {
+        "hits": 80,
+        "plays": 145,
+        "rate": 55.172413793103445,
+        "BE": 39.23394741693909,
+        "gap": 15.938466376164357,
+        "players": 22,
+        "dates": 33,
+        "games": 97,
+        "units": 61.41069835115537,
+        "ROI": 42.352205759417494
+      },
+      "recent": {
+        "hits": 20,
+        "plays": 39,
+        "rate": 51.282051282051285,
+        "BE": 39.516065048101304,
+        "gap": 11.765986233949981,
+        "players": 11,
+        "dates": 7,
+        "games": 25,
+        "units": 12.65,
+        "ROI": 32.43589743589744
+      },
+      "rule": "Goal 0.5 + Matrix_Goal Green + Goal_Profile >= 94 + Player_Log_L20_TOI_median >= 20.3 + Trim10_SOG <= 3.8 + Player_Log_L5_PPP_per60_total_TOI <= 2.85"
+    },
+    {
+      "id": "S_rebound",
+      "name": "Astral Ambush II",
+      "family": "Astral Ambush",
+      "kind": "player_attack",
+      "display_kind": "SPECIAL ATTACK",
+      "icon": "fenrir_claw.svg",
+      "checks": [
+        [
+          "StarScore",
+          ">=",
+          93
+        ],
+        [
+          "Player_Log_L5_PPP_per60_total_TOI",
+          "<=",
+          2.2
+        ],
+        [
+          "Drought_G",
+          ">=",
+          1
+        ]
+      ],
+      "all_checks": [
+        [
+          "Goal_Profile",
+          ">=",
+          94
+        ],
+        [
+          "StarScore",
+          ">=",
+          93
+        ],
+        [
+          "Player_Log_L5_PPP_per60_total_TOI",
+          "<=",
+          2.2
+        ],
+        [
+          "Drought_G",
+          ">=",
+          1
+        ]
+      ],
+      "parent": null,
+      "parent_name": "",
+      "character": "Gorilla · Ravager",
+      "record": {
+        "hits": 57,
+        "plays": 95,
+        "rate": 60.0,
+        "BE": 39.58387671467165,
+        "gap": 20.416123285328347,
+        "players": 19,
+        "dates": 33,
+        "games": 80,
+        "units": 49.93586558369167,
+        "ROI": 52.56406903546492
+      },
+      "recent": {
+        "hits": 15,
+        "plays": 24,
+        "rate": 62.5,
+        "BE": 38.776038899545384,
+        "gap": 23.723961100454616,
+        "players": 13,
+        "dates": 8,
+        "games": 21,
+        "units": 14.39,
+        "ROI": 59.958333333333336
+      },
+      "rule": "Goal 0.5 + Matrix_Goal Green + Goal_Profile >= 94 + StarScore >= 93 + Player_Log_L5_PPP_per60_total_TOI <= 2.2 + Drought_G >= 1"
+    },
+    {
+      "id": "X_stable",
+      "name": "Predator’s Focus II",
+      "family": "Predator’s Focus",
+      "kind": "player_attack",
+      "display_kind": "HEAVY ATTACK",
+      "icon": "fenrir_claw.svg",
+      "checks": [
+        [
+          "Pregame_xG_L5_per_game",
+          ">=",
+          0.48
+        ],
+        [
+          "Player_Log_L5_S_sd",
+          "<=",
+          1.7
+        ],
+        [
+          "Player_Log_L10_TOI_sd",
+          "<=",
+          2.3
+        ]
+      ],
+      "all_checks": [
+        [
+          "Goal_Profile",
+          ">=",
+          94
+        ],
+        [
+          "Pregame_xG_L5_per_game",
+          ">=",
+          0.48
+        ],
+        [
+          "Player_Log_L5_S_sd",
+          "<=",
+          1.7
+        ],
+        [
+          "Player_Log_L10_TOI_sd",
+          "<=",
+          2.3
+        ]
+      ],
+      "parent": null,
+      "parent_name": "",
+      "character": "Chimp · Reaper",
+      "record": {
+        "hits": 58,
+        "plays": 99,
+        "rate": 58.58585858585859,
+        "BE": 39.21450636301292,
+        "gap": 19.371352222845665,
+        "players": 25,
+        "dates": 27,
+        "games": 85,
+        "units": 49.78091582397127,
+        "ROI": 50.283753357546736
+      },
+      "recent": {
+        "hits": 20,
+        "plays": 28,
+        "rate": 71.42857142857143,
+        "BE": 40.56483626823089,
+        "gap": 30.86373516034054,
+        "players": 10,
+        "dates": 7,
+        "games": 25,
+        "units": 21.88,
+        "ROI": 78.14285714285714
+      },
+      "rule": "Goal 0.5 + Matrix_Goal Green + Goal_Profile >= 94 + Pregame_xG_L5_per_game >= 0.48 + Player_Log_L5_S_sd <= 1.7 + Player_Log_L10_TOI_sd <= 2.3"
+    },
+    {
+      "id": "X_creatorII",
+      "name": "Creator’s Bane II",
+      "family": "Creator’s Bane",
+      "kind": "player_attack",
+      "display_kind": "HEAVY ATTACK",
+      "icon": "fenrir_claw.svg",
+      "checks": [
+        [
+          "Pregame_xG_L5_per_game",
+          ">=",
+          0.48
+        ],
+        [
+          "i5v5_primaryAssists60",
+          "<=",
+          0.65
+        ]
+      ],
+      "all_checks": [
+        [
+          "Goal_Profile",
+          ">=",
+          94
+        ],
+        [
+          "Pregame_xG_L5_per_game",
+          ">=",
+          0.48
+        ],
+        [
+          "i5v5_primaryAssists60",
+          "<=",
+          0.65
+        ]
+      ],
+      "parent": null,
+      "parent_name": "",
+      "character": "Chimp · Reaper",
+      "record": {
+        "hits": 51,
+        "plays": 92,
+        "rate": 55.43478260869565,
+        "BE": 37.6963270413008,
+        "gap": 17.73845556739485,
+        "players": 23,
+        "dates": 27,
+        "games": 74,
+        "units": 46.05853487159032,
+        "ROI": 50.063624860424255
+      },
+      "recent": {
+        "hits": 16,
+        "plays": 23,
+        "rate": 69.56521739130434,
+        "BE": 40.178324698716196,
+        "gap": 29.386892692588148,
+        "players": 8,
+        "dates": 7,
+        "games": 19,
+        "units": 17.93,
+        "ROI": 77.95652173913044
+      },
+      "rule": "Goal 0.5 + Matrix_Goal Green + Goal_Profile >= 94 + Pregame_xG_L5_per_game >= 0.48 + i5v5_primaryAssists60 <= 0.65"
+    },
+    {
+      "id": "C_rebound",
+      "name": "Creator’s Bane · Blood Moon",
+      "family": "Creator’s Bane",
+      "kind": "player_attack",
+      "display_kind": "SPECIAL ATTACK",
+      "icon": "fenrir_claw.svg",
+      "checks": [
+        [
+          "Pregame_xG_L5_per_game",
+          ">=",
+          0.48
+        ],
+        [
+          "i5v5_primaryAssists60",
+          "<=",
+          0.85
+        ],
+        [
+          "Drought_PPP",
+          ">=",
+          2
+        ]
+      ],
+      "all_checks": [
+        [
+          "Goal_Profile",
+          ">=",
+          94
+        ],
+        [
+          "Pregame_xG_L5_per_game",
+          ">=",
+          0.48
+        ],
+        [
+          "i5v5_primaryAssists60",
+          "<=",
+          0.85
+        ],
+        [
+          "Drought_PPP",
+          ">=",
+          2
+        ]
+      ],
+      "parent": null,
+      "parent_name": "",
+      "character": "Chimp · Reaper",
+      "record": {
+        "hits": 34,
+        "plays": 53,
+        "rate": 64.15094339622641,
+        "BE": 38.9410236596219,
+        "gap": 25.209919736604512,
+        "players": 20,
+        "dates": 25,
+        "games": 46,
+        "units": 35.76853487159032,
+        "ROI": 67.48780164451003
+      },
+      "recent": {
+        "hits": 11,
+        "plays": 13,
+        "rate": 84.61538461538461,
+        "BE": 40.53487742017563,
+        "gap": 44.08050719520898,
+        "players": 8,
+        "dates": 6,
+        "games": 12,
+        "units": 14.22,
+        "ROI": 109.38461538461539
+      },
+      "rule": "Goal 0.5 + Matrix_Goal Green + Goal_Profile >= 94 + Pregame_xG_L5_per_game >= 0.48 + i5v5_primaryAssists60 <= 0.85 + Drought_PPP >= 2"
+    },
+    {
+      "id": "B1S",
+      "name": "Primal Tempo II",
+      "family": "Primal Tempo",
+      "kind": "player_attack",
+      "display_kind": "HEAVY ATTACK",
+      "icon": "fenrir_claw.svg",
+      "checks": [
+        [
+          "PP_TOI_Pct_Game",
+          "<=",
+          15
+        ]
+      ],
+      "all_checks": [
+        [
+          "Goal_Profile",
+          ">=",
+          94
+        ],
+        [
+          "PP_TOI_Pct_Game",
+          "<=",
+          15
+        ]
+      ],
+      "parent": null,
+      "parent_name": "",
+      "character": "Panda · Executioner",
+      "record": {
+        "hits": 31,
+        "plays": 56,
+        "rate": 55.357142857142854,
+        "BE": 39.61184434238444,
+        "gap": 15.745298514758417,
+        "players": 12,
+        "dates": 25,
+        "games": 40,
+        "units": 24.638969654199013,
+        "ROI": 43.99816009678395
+      },
+      "recent": {
+        "hits": 8,
+        "plays": 13,
+        "rate": 61.53846153846154,
+        "BE": 40.181535875954246,
+        "gap": 21.356925662507294,
+        "players": 5,
+        "dates": 6,
+        "games": 10,
+        "units": 6.93,
+        "ROI": 53.30769230769231
+      },
+      "rule": "Goal 0.5 + Matrix_Goal Green + Goal_Profile >= 94 + PP_TOI_Pct_Game <= 15"
+    },
+    {
+      "id": "R",
+      "name": "Deadeye Rhythm I",
+      "family": "Deadeye Rhythm",
+      "kind": "player_attack",
+      "display_kind": "SPECIAL ATTACK",
+      "icon": "fenrir_claw.svg",
+      "checks": [
+        [
+          "Player_Log_L40_S_hit_pct",
+          ">=",
+          72
+        ],
+        [
+          "Trim10_SOG",
+          "<=",
+          3.8
+        ]
+      ],
+      "all_checks": [
+        [
+          "Goal_Profile",
+          ">=",
+          94
+        ],
+        [
+          "Player_Log_L40_S_hit_pct",
+          ">=",
+          72
+        ],
+        [
+          "Trim10_SOG",
+          "<=",
+          3.8
+        ]
+      ],
+      "parent": null,
+      "parent_name": "",
+      "character": "Panda · Executioner",
+      "record": {
+        "hits": 43,
+        "plays": 71,
+        "rate": 60.563380281690144,
+        "BE": 41.086290898085224,
+        "gap": 19.47708938360492,
+        "players": 10,
+        "dates": 28,
+        "games": 60,
+        "units": 33.12069835115537,
+        "ROI": 46.64887091712024
+      },
+      "recent": {
+        "hits": 13,
+        "plays": 19,
+        "rate": 68.42105263157895,
+        "BE": 40.67948865986567,
+        "gap": 27.741563971713276,
+        "players": 7,
+        "dates": 7,
+        "games": 17,
+        "units": 13.0,
+        "ROI": 68.42105263157895
+      },
+      "rule": "Goal 0.5 + Matrix_Goal Green + Goal_Profile >= 94 + Player_Log_L40_S_hit_pct >= 72 + Trim10_SOG <= 3.8"
+    },
+    {
+      "id": "R_stable",
+      "name": "Deadeye Rhythm II",
+      "family": "Deadeye Rhythm",
+      "kind": "player_attack",
+      "display_kind": "CRIT",
+      "icon": "fury.svg",
+      "checks": [
+        [
+          "Player_Log_L40_S_hit_pct",
+          ">=",
+          72
+        ],
+        [
+          "Trim10_SOG",
+          "<=",
+          3.8
+        ],
+        [
+          "Player_Log_L10_TOI_sd",
+          "<=",
+          2.2
+        ]
+      ],
+      "all_checks": [
+        [
+          "Goal_Profile",
+          ">=",
+          94
+        ],
+        [
+          "Player_Log_L40_S_hit_pct",
+          ">=",
+          72
+        ],
+        [
+          "Trim10_SOG",
+          "<=",
+          3.8
+        ],
+        [
+          "Player_Log_L10_TOI_sd",
+          "<=",
+          2.2
+        ]
+      ],
+      "parent": null,
+      "parent_name": "",
+      "character": "Panda · Executioner",
+      "record": {
+        "hits": 34,
+        "plays": 46,
+        "rate": 73.91304347826087,
+        "BE": 41.61225759305811,
+        "gap": 32.300785885202764,
+        "players": 9,
+        "dates": 25,
+        "games": 40,
+        "units": 36.86348463131072,
+        "ROI": 80.13801006806678
+      },
+      "recent": {
+        "hits": 12,
+        "plays": 16,
+        "rate": 75.0,
+        "BE": 41.13310165697035,
+        "gap": 33.86689834302965,
+        "players": 6,
+        "dates": 7,
+        "games": 14,
+        "units": 13.45,
+        "ROI": 84.0625
+      },
+      "rule": "Goal 0.5 + Matrix_Goal Green + Goal_Profile >= 94 + Player_Log_L40_S_hit_pct >= 72 + Trim10_SOG <= 3.8 + Player_Log_L10_TOI_sd <= 2.2"
+    },
+    {
+      "id": "WAR",
+      "name": "War Chant",
+      "family": "WAR",
+      "kind": "environment_buff",
+      "display_kind": "SPECIAL ATTACK",
+      "icon": "fenrir_claw.svg",
+      "checks": [
+        [
+          "Official_Own_PP_Venue_O_PG",
+          ">=",
+          2.95
+        ]
+      ],
+      "all_checks": [
+        [
+          "Goal_Profile",
+          ">=",
+          94
+        ],
+        [
+          "Player_Log_L20_TOI_median",
+          ">=",
+          20.3
+        ],
+        [
+          "Trim10_SOG",
+          "<=",
+          3.8
+        ],
+        [
+          "Player_Log_L5_PPP_per60_total_TOI",
+          "<=",
+          2.85
+        ],
+        [
+          "Official_Own_PP_Venue_O_PG",
+          ">=",
+          2.95
+        ]
+      ],
+      "parent": "T_coldPP",
+      "parent_name": "Iron Prowl",
+      "character": "Gorilla · Ravager",
+      "record": {
+        "hits": 72,
+        "plays": 120,
+        "rate": 60.0,
+        "BE": 39.53696260744787,
+        "gap": 20.46303739255213,
+        "players": 21,
+        "dates": 33,
+        "games": 83,
+        "units": 64.26069835115537,
+        "ROI": 53.55058195929614
+      },
+      "recent": {
+        "hits": 18,
+        "plays": 31,
+        "rate": 58.064516129032256,
+        "BE": 39.99605673277846,
+        "gap": 18.068459396253793,
+        "players": 10,
+        "dates": 7,
+        "games": 21,
+        "units": 15.15,
+        "ROI": 48.87096774193548
+      },
+      "rule": "Goal 0.5 + Matrix_Goal Green + Goal_Profile >= 94 + Player_Log_L20_TOI_median >= 20.3 + Trim10_SOG <= 3.8 + Player_Log_L5_PPP_per60_total_TOI <= 2.85 + Official_Own_PP_Venue_O_PG >= 2.95"
+    },
+    {
+      "id": "BLOOD",
+      "name": "Blood Frenzy",
+      "family": "BLOOD",
+      "kind": "environment_buff",
+      "display_kind": "CRIT",
+      "icon": "fury.svg",
+      "checks": [
+        [
+          "Official_Opp_PP_Season_G60",
+          ">=",
+          9.1
+        ]
+      ],
+      "all_checks": [
+        [
+          "Goal_Profile",
+          ">=",
+          94
+        ],
+        [
+          "Player_Log_L20_TOI_median",
+          ">=",
+          20.3
+        ],
+        [
+          "Trim10_SOG",
+          "<=",
+          3.8
+        ],
+        [
+          "Player_Log_L5_PPP_per60_total_TOI",
+          "<=",
+          2.85
+        ],
+        [
+          "Official_Opp_PP_Season_G60",
+          ">=",
+          9.1
+        ]
+      ],
+      "parent": "T_coldPP",
+      "parent_name": "Iron Prowl",
+      "character": "Gorilla · Ravager",
+      "record": {
+        "hits": 32,
+        "plays": 41,
+        "rate": 78.04878048780488,
+        "BE": 39.974478730700454,
+        "gap": 38.07430175710442,
+        "players": 15,
+        "dates": 19,
+        "games": 26,
+        "units": 41.46391941391941,
+        "ROI": 101.13151076565711
+      },
+      "recent": {
+        "hits": 11,
+        "plays": 15,
+        "rate": 73.33333333333333,
+        "BE": 39.838931667155165,
+        "gap": 33.49440166617816,
+        "players": 10,
+        "dates": 6,
+        "games": 10,
+        "units": 13.7,
+        "ROI": 91.33333333333333
+      },
+      "rule": "Goal 0.5 + Matrix_Goal Green + Goal_Profile >= 94 + Player_Log_L20_TOI_median >= 20.3 + Trim10_SOG <= 3.8 + Player_Log_L5_PPP_per60_total_TOI <= 2.85 + Official_Opp_PP_Season_G60 >= 9.1"
+    },
+    {
+      "id": "SIEGE2",
+      "name": "Siegebreaker’s Mark II",
+      "family": "SIEGE2",
+      "kind": "environment_buff",
+      "display_kind": "CRIT",
+      "icon": "fury.svg",
+      "checks": [
+        [
+          "Official_Opp_L10_SA_PG",
+          ">=",
+          27.8
+        ]
+      ],
+      "all_checks": [
+        [
+          "Goal_Profile",
+          ">=",
+          94
+        ],
+        [
+          "Pregame_xG_L5_per_game",
+          ">=",
+          0.48
+        ],
+        [
+          "Player_Log_L5_S_sd",
+          "<=",
+          1.7
+        ],
+        [
+          "Player_Log_L10_TOI_sd",
+          "<=",
+          2.3
+        ],
+        [
+          "Official_Opp_L10_SA_PG",
+          ">=",
+          27.8
+        ]
+      ],
+      "parent": "X_stable",
+      "parent_name": "Predator’s Focus II",
+      "character": "Chimp · Reaper",
+      "record": {
+        "hits": 24,
+        "plays": 31,
+        "rate": 77.41935483870968,
+        "BE": 41.40998086389524,
+        "gap": 36.00937397481444,
+        "players": 14,
+        "dates": 16,
+        "games": 29,
+        "units": 27.760915823971267,
+        "ROI": 89.55134136764926
+      },
+      "recent": {
+        "hits": 10,
+        "plays": 12,
+        "rate": 83.33333333333333,
+        "BE": 42.15216842979502,
+        "gap": 41.18116490353831,
+        "players": 8,
+        "dates": 4,
+        "games": 10,
+        "units": 11.95,
+        "ROI": 99.58333333333333
+      },
+      "rule": "Goal 0.5 + Matrix_Goal Green + Goal_Profile >= 94 + Pregame_xG_L5_per_game >= 0.48 + Player_Log_L5_S_sd <= 1.7 + Player_Log_L10_TOI_sd <= 2.3 + Official_Opp_L10_SA_PG >= 27.8"
+    },
+    {
+      "id": "EV",
+      "name": "Even-Strength Siege",
+      "family": "EV",
+      "kind": "environment_buff",
+      "display_kind": "CRIT",
+      "icon": "fury.svg",
+      "checks": [
+        [
+          "Official_Opp_PK_L10_G60",
+          "<=",
+          6.8
+        ]
+      ],
+      "all_checks": [
+        [
+          "Goal_Profile",
+          ">=",
+          94
+        ],
+        [
+          "PP_TOI_Pct_Game",
+          "<=",
+          17
+        ],
+        [
+          "Official_Opp_PK_L10_G60",
+          "<=",
+          6.8
+        ]
+      ],
+      "parent": "B1",
+      "parent_name": "Primal Tempo I",
+      "character": "Panda · Executioner",
+      "record": {
+        "hits": 31,
+        "plays": 42,
+        "rate": 73.80952380952381,
+        "BE": 38.82822049649428,
+        "gap": 34.98130331302953,
+        "players": 14,
+        "dates": 19,
+        "games": 28,
+        "units": 42.31,
+        "ROI": 100.73809523809524
+      },
+      "recent": {
+        "hits": 14,
+        "plays": 16,
+        "rate": 87.5,
+        "BE": 36.53601493255227,
+        "gap": 50.96398506744773,
+        "players": 8,
+        "dates": 6,
+        "games": 10,
+        "units": 22.48,
+        "ROI": 140.5
+      },
+      "rule": "Goal 0.5 + Matrix_Goal Green + Goal_Profile >= 94 + PP_TOI_Pct_Game <= 17 + Official_Opp_PK_L10_G60 <= 6.8"
+    },
+    {
+      "id": "SILENT",
+      "name": "Silent Battlefield",
+      "family": "SILENT",
+      "kind": "environment_buff",
+      "display_kind": "CRIT",
+      "icon": "fury.svg",
+      "checks": [
+        [
+          "Official_Opp_PK_Season_O_PG",
+          "<=",
+          3.35
+        ]
+      ],
+      "all_checks": [
+        [
+          "Goal_Profile",
+          ">=",
+          94
+        ],
+        [
+          "Pregame_xG_L5_per_game",
+          ">=",
+          0.48
+        ],
+        [
+          "i5v5_primaryAssists60",
+          "<=",
+          0.85
+        ],
+        [
+          "Drought_PPP",
+          ">=",
+          2
+        ],
+        [
+          "Official_Opp_PK_Season_O_PG",
+          "<=",
+          3.35
+        ]
+      ],
+      "parent": "C_rebound",
+      "parent_name": "Creator’s Bane · Blood Moon",
+      "character": "Chimp · Reaper",
+      "record": {
+        "hits": 29,
+        "plays": 37,
+        "rate": 78.37837837837837,
+        "BE": 38.72689605383422,
+        "gap": 39.651482324544155,
+        "players": 18,
+        "dates": 20,
+        "games": 32,
+        "units": 38.54896965419901,
+        "ROI": 104.18640447080814
+      },
+      "recent": {
+        "hits": 11,
+        "plays": 12,
+        "rate": 91.66666666666667,
+        "BE": 40.82636411877051,
+        "gap": 50.84030254789616,
+        "players": 8,
+        "dates": 6,
+        "games": 11,
+        "units": 15.22,
+        "ROI": 126.83333333333333
+      },
+      "rule": "Goal 0.5 + Matrix_Goal Green + Goal_Profile >= 94 + Pregame_xG_L5_per_game >= 0.48 + i5v5_primaryAssists60 <= 0.85 + Drought_PPP >= 2 + Official_Opp_PK_Season_O_PG <= 3.35"
+    },
+    {
+      "id": "GUARD",
+      "name": "Fractured Guard",
+      "family": "GUARD",
+      "kind": "environment_buff",
+      "display_kind": "SPECIAL ATTACK",
+      "icon": "fenrir_claw.svg",
+      "checks": [
+        [
+          "Goalie_Expected_SV",
+          "<=",
+          0.894
+        ]
+      ],
+      "all_checks": [
+        [
+          "Goal_Profile",
+          ">=",
+          94
+        ],
+        [
+          "Pregame_xG_L5_per_game",
+          ">=",
+          0.48
+        ],
+        [
+          "i5v5_primaryAssists60",
+          "<=",
+          0.65
+        ],
+        [
+          "Goalie_Expected_SV",
+          "<=",
+          0.894
+        ]
+      ],
+      "parent": "X_creatorII",
+      "parent_name": "Creator’s Bane II",
+      "character": "Chimp · Reaper",
+      "record": {
+        "hits": 24,
+        "plays": 36,
+        "rate": 66.66666666666667,
+        "BE": 37.65193538947892,
+        "gap": 29.01473127718775,
+        "players": 15,
+        "dates": 20,
+        "games": 30,
+        "units": 29.819565217391304,
+        "ROI": 82.83212560386474
+      },
+      "recent": {
+        "hits": 11,
+        "plays": 12,
+        "rate": 91.66666666666667,
+        "BE": 39.65596715981003,
+        "gap": 52.01069950685664,
+        "players": 7,
+        "dates": 7,
+        "games": 11,
+        "units": 16.28,
+        "ROI": 135.66666666666666
+      },
+      "rule": "Goal 0.5 + Matrix_Goal Green + Goal_Profile >= 94 + Pregame_xG_L5_per_game >= 0.48 + i5v5_primaryAssists60 <= 0.65 + Goalie_Expected_SV <= 0.894"
+    },
+    {
+      "id": "EXEC",
+      "name": "Execution Window",
+      "family": "EXEC",
+      "kind": "environment_buff",
+      "display_kind": "CRIT",
+      "icon": "fury.svg",
+      "checks": [
+        [
+          "Official_Opp_Season_GA_PG",
+          ">=",
+          2.95
+        ]
+      ],
+      "all_checks": [
+        [
+          "Goal_Profile",
+          ">=",
+          94
+        ],
+        [
+          "Player_Log_L40_S_hit_pct",
+          ">=",
+          72
+        ],
+        [
+          "Trim10_SOG",
+          "<=",
+          3.8
+        ],
+        [
+          "Player_Log_L10_TOI_sd",
+          "<=",
+          2.2
+        ],
+        [
+          "Official_Opp_Season_GA_PG",
+          ">=",
+          2.95
+        ]
+      ],
+      "parent": "R_stable",
+      "parent_name": "Deadeye Rhythm II",
+      "character": "Panda · Executioner",
+      "record": {
+        "hits": 27,
+        "plays": 31,
+        "rate": 87.09677419354838,
+        "BE": 42.539845605141196,
+        "gap": 44.55692858840719,
+        "players": 9,
+        "dates": 21,
+        "games": 28,
+        "units": 34.55348463131072,
+        "ROI": 111.46285364938942
+      },
+      "recent": {
+        "hits": 9,
+        "plays": 10,
+        "rate": 90.0,
+        "BE": 41.41680246775832,
+        "gap": 48.58319753224168,
+        "players": 5,
+        "dates": 6,
+        "games": 9,
+        "units": 11.85,
+        "ROI": 118.5
+      },
+      "rule": "Goal 0.5 + Matrix_Goal Green + Goal_Profile >= 94 + Player_Log_L40_S_hit_pct >= 72 + Trim10_SOG <= 3.8 + Player_Log_L10_TOI_sd <= 2.2 + Official_Opp_Season_GA_PG >= 2.95"
+    },
+    {
+      "id": "runic47",
+      "name": "Runic Barrage · Open Stance",
+      "family": "P",
+      "kind": "player_attack",
+      "display_kind": "HEAVY ATTACK",
+      "icon": "fenrir_claw.svg",
+      "checks": [
+        [
+          "Pregame_xG_L5_per_game",
+          ">=",
+          0.47
+        ],
+        [
+          "Player_Log_L5_TOI_per_game",
+          ">=",
+          18.8
+        ],
+        [
+          "PP_SOG60",
+          ">=",
+          14.4
+        ]
+      ],
+      "all_checks": [
+        [
+          "Pregame_xG_L5_per_game",
+          ">=",
+          0.47
+        ],
+        [
+          "Player_Log_L5_TOI_per_game",
+          ">=",
+          18.8
+        ],
+        [
+          "PP_SOG60",
+          ">=",
+          14.4
+        ]
+      ],
+      "parent": null,
+      "parent_name": "",
+      "character": "Panda · Executioner",
+      "record": {
+        "hits": 61,
+        "plays": 113,
+        "hit_rate": 53.982300884955755,
+        "be": 39.778711146818445,
+        "gap": 14.20358973813731,
+        "players": 20,
+        "dates": 30,
+        "games": 91,
+        "units": 42.85069835115537,
+        "roi": 37.920971992172895,
+        "rate": 53.982300884955755,
+        "BE": 39.778711146818445,
+        "ROI": 37.920971992172895
+      },
+      "recent": {
+        "hits": 16,
+        "plays": 31,
+        "hit_rate": 51.61290322580645,
+        "be": 40.65769691041071,
+        "gap": 10.955206315395735,
+        "players": 10,
+        "dates": 7,
+        "games": 29,
+        "units": 8.49,
+        "roi": 27.387096774193548
+      },
+      "broader_047": true,
+      "rule": "Goal 0.5 + Matrix_Goal Green + Pregame_xG_L5_per_game >= 0.47 + Player_Log_L5_TOI_per_game >= 18.8 + PP_SOG60 >= 14.4"
+    },
+    {
+      "id": "measured47",
+      "name": "Measured Strike II · Open Stance",
+      "family": "X",
+      "kind": "player_attack",
+      "display_kind": "HEAVY ATTACK",
+      "icon": "fenrir_claw.svg",
+      "checks": [
+        [
+          "Pregame_xG_L5_per_game",
+          ">=",
+          0.47
+        ],
+        [
+          "Player_Log_L5_TOI_per_game",
+          ">=",
+          18.8
+        ],
+        [
+          "i5v5_xG60",
+          "<=",
+          0.92
+        ]
+      ],
+      "all_checks": [
+        [
+          "Pregame_xG_L5_per_game",
+          ">=",
+          0.47
+        ],
+        [
+          "Player_Log_L5_TOI_per_game",
+          ">=",
+          18.8
+        ],
+        [
+          "i5v5_xG60",
+          "<=",
+          0.92
+        ]
+      ],
+      "parent": null,
+      "parent_name": "",
+      "character": "Chimp · Reaper",
+      "record": {
+        "hits": 42,
+        "plays": 82,
+        "hit_rate": 51.21951219512195,
+        "be": 38.17969363344723,
+        "gap": 13.039818561674721,
+        "players": 22,
+        "dates": 29,
+        "games": 71,
+        "units": 28.872163479565053,
+        "roi": 35.20995546288421,
+        "rate": 51.21951219512195,
+        "BE": 38.17969363344723,
+        "ROI": 35.20995546288421
+      },
+      "recent": {
+        "hits": 13,
+        "plays": 31,
+        "hit_rate": 41.935483870967744,
+        "be": 38.93783655010926,
+        "gap": 2.9976473208584835,
+        "players": 11,
+        "dates": 8,
+        "games": 26,
+        "units": 3.04,
+        "roi": 9.806451612903226
+      },
+      "broader_047": true,
+      "rule": "Goal 0.5 + Matrix_Goal Green + Pregame_xG_L5_per_game >= 0.47 + Player_Log_L5_TOI_per_game >= 18.8 + i5v5_xG60 <= 0.92"
+    }
+  ],
+  "inspect_only_research": [
+    {
+      "id": "S",
+      "name": "Astral Ambush I",
+      "family": "Astral Ambush",
+      "character": "Gorilla · Ravager",
+      "role": "player_attack_proposal",
+      "common": "Goal0.5 + saved Green + current Goal confidence >=94",
+      "checks": [
+        [
+          "StarScore",
+          ">=",
+          93
+        ],
+        [
+          "Player_Log_L5_PPP_per60_total_TOI",
+          "<=",
+          2.2
+        ]
+      ],
+      "full": {
+        "hits": 89,
+        "plays": 176,
+        "rate": 50.56818181818182,
+        "BE": 40.074512957361875,
+        "gap": 10.493668860819945,
+        "players": 23,
+        "dates": 36,
+        "games": 129,
+        "units": 47.58307930353632,
+        "ROI": 27.03584051337291
+      },
+      "recent": {
+        "hits": 27,
+        "plays": 51,
+        "rate": 52.94117647058823,
+        "BE": 39.156821740642386,
+        "gap": 13.784354729945846,
+        "players": 17,
+        "dates": 8,
+        "games": 42,
+        "units": 18.8,
+        "ROI": 36.86274509803921
+      },
+      "noise": {
+        "full": {
+          "top_players": [
+            [
+              "Auston Matthews",
+              17
+            ],
+            [
+              "Brandon Hagel",
+              15
+            ],
+            [
+              "Macklin Celebrini",
+              15
+            ],
+            [
+              "Leon Draisaitl",
+              14
+            ],
+            [
+              "Jack Hughes",
+              14
+            ]
+          ],
+          "top_teams": [
+            [
+              "MIN",
+              31
+            ],
+            [
+              "TOR",
+              28
+            ],
+            [
+              "EDM",
+              22
+            ],
+            [
+              "TBL",
+              17
+            ],
+            [
+              "SJS",
+              15
+            ]
+          ],
+          "teams": 17,
+          "dates": 36,
+          "games": 129,
+          "available_history_range": [
+            5,
+            24
+          ]
+        },
+        "recent": {
+          "top_players": [
+            [
+              "Leon Draisaitl",
+              5
+            ],
+            [
+              "Macklin Celebrini",
+              5
+            ],
+            [
+              "Auston Matthews",
+              5
+            ],
+            [
+              "Bo Horvat",
+              5
+            ],
+            [
+              "Matt Boldy",
+              4
+            ]
+          ],
+          "top_teams": [
+            [
+              "EDM",
+              8
+            ],
+            [
+              "MIN",
+              7
+            ],
+            [
+              "SJS",
+              5
+            ],
+            [
+              "TBL",
+              5
+            ],
+            [
+              "TOR",
+              5
+            ]
+          ],
+          "teams": 13,
+          "dates": 8,
+          "games": 42,
+          "available_history_range": [
+            17,
+            24
+          ]
+        }
+      },
+      "members": [
+        1,
+        2,
+        10,
+        11,
+        12,
+        14,
+        15,
+        17,
+        18,
+        21,
+        23,
+        26,
+        31,
+        33,
+        35,
+        36,
+        41,
+        42,
+        47,
+        49,
+        52,
+        54,
+        55,
+        57,
+        58,
+        59,
+        61,
+        62,
+        64,
+        66,
+        67,
+        69,
+        72,
+        76,
+        77,
+        79,
+        84,
+        87,
+        91,
+        92,
+        95,
+        98,
+        100,
+        102,
+        104,
+        108,
+        109,
+        110,
+        113,
+        122,
+        124,
+        125,
+        129,
+        130,
+        131,
+        133,
+        134,
+        137,
+        138,
+        139,
+        142,
+        145,
+        146,
+        147,
+        148,
+        149,
+        150,
+        154,
+        158,
+        161,
+        162,
+        166,
+        168,
+        169,
+        173,
+        174,
+        175,
+        177,
+        178,
+        179,
+        183,
+        184,
+        189,
+        191,
+        192,
+        193,
+        194,
+        195,
+        196,
+        197,
+        198,
+        202,
+        203,
+        204,
+        205,
+        207,
+        210,
+        211,
+        214,
+        219,
+        220,
+        221,
+        222,
+        223,
+        228,
+        229,
+        230,
+        234,
+        235,
+        236,
+        237,
+        238,
+        241,
+        243,
+        244,
+        245,
+        247,
+        250,
+        252,
+        255,
+        257,
+        261,
+        262,
+        263,
+        267,
+        270,
+        271,
+        273,
+        280,
+        282,
+        283,
+        284,
+        285,
+        290,
+        291,
+        293,
+        297,
+        300,
+        301,
+        306,
+        307,
+        310,
+        311,
+        312,
+        316,
+        318,
+        319,
+        322,
+        326,
+        327,
+        329,
+        330,
+        331,
+        336,
+        337,
+        339,
+        340,
+        342,
+        343,
+        346,
+        347,
+        348,
+        349,
+        350,
+        351,
+        353,
+        354,
+        355,
+        361,
+        362,
+        365,
+        368,
+        369,
+        372,
+        373,
+        374
+      ],
+      "recommendation": "PRESERVE_BROADER_PROFILE_INSPECT_OPTION_NOT_RECOMMENDED_STANDALONE_LEAD",
+      "replaces": "NEW; no healthy existing rule removed"
+    },
+    {
+      "id": "X",
+      "name": "Predator’s Focus I",
+      "family": "Predator’s Focus",
+      "character": "Chimp · Reaper",
+      "role": "player_attack_proposal",
+      "common": "Goal0.5 + saved Green + current Goal confidence >=94",
+      "checks": [
+        [
+          "Pregame_xG_L5_per_game",
+          ">=",
+          0.48
+        ],
+        [
+          "Player_Log_L5_S_sd",
+          "<=",
+          1.7
+        ]
+      ],
+      "full": {
+        "hits": 66,
+        "plays": 128,
+        "rate": 51.5625,
+        "BE": 38.954592776665436,
+        "gap": 12.607907223334564,
+        "players": 28,
+        "dates": 28,
+        "games": 104,
+        "units": 42.80831739877442,
+        "ROI": 33.44399796779251
+      },
+      "recent": {
+        "hits": 24,
+        "plays": 43,
+        "rate": 55.81395348837209,
+        "BE": 40.06101280174023,
+        "gap": 15.75294068663186,
+        "players": 14,
+        "dates": 8,
+        "games": 35,
+        "units": 17.67,
+        "ROI": 41.093023255813954
+      },
+      "noise": {
+        "full": {
+          "top_players": [
+            [
+              "Kirill Kaprizov",
+              13
+            ],
+            [
+              "Auston Matthews",
+              11
+            ],
+            [
+              "Leon Draisaitl",
+              10
+            ],
+            [
+              "Sam Reinhart",
+              10
+            ],
+            [
+              "Kyle Connor",
+              8
+            ]
+          ],
+          "top_teams": [
+            [
+              "MIN",
+              19
+            ],
+            [
+              "EDM",
+              14
+            ],
+            [
+              "TOR",
+              14
+            ],
+            [
+              "WPG",
+              11
+            ],
+            [
+              "FLA",
+              10
+            ]
+          ],
+          "teams": 18,
+          "dates": 28,
+          "games": 104,
+          "available_history_range": [
+            5,
+            24
+          ]
+        },
+        "recent": {
+          "top_players": [
+            [
+              "Leon Draisaitl",
+              5
+            ],
+            [
+              "Macklin Celebrini",
+              5
+            ],
+            [
+              "Sam Reinhart",
+              5
+            ],
+            [
+              "Wyatt Johnston",
+              5
+            ],
+            [
+              "Beckett Sennecke",
+              4
+            ]
+          ],
+          "top_teams": [
+            [
+              "ANA",
+              7
+            ],
+            [
+              "EDM",
+              5
+            ],
+            [
+              "SJS",
+              5
+            ],
+            [
+              "FLA",
+              5
+            ],
+            [
+              "DAL",
+              5
+            ]
+          ],
+          "teams": 12,
+          "dates": 8,
+          "games": 35,
+          "available_history_range": [
+            15,
+            24
+          ]
+        }
+      },
+      "members": [
+        2,
+        4,
+        5,
+        6,
+        9,
+        12,
+        13,
+        17,
+        18,
+        20,
+        22,
+        24,
+        26,
+        27,
+        29,
+        34,
+        35,
+        36,
+        37,
+        40,
+        42,
+        43,
+        46,
+        56,
+        63,
+        64,
+        66,
+        71,
+        78,
+        84,
+        95,
+        97,
+        100,
+        103,
+        113,
+        115,
+        116,
+        118,
+        122,
+        126,
+        128,
+        130,
+        131,
+        132,
+        134,
+        138,
+        139,
+        141,
+        142,
+        144,
+        146,
+        148,
+        152,
+        153,
+        154,
+        156,
+        157,
+        160,
+        161,
+        164,
+        168,
+        172,
+        173,
+        175,
+        176,
+        185,
+        186,
+        194,
+        195,
+        197,
+        200,
+        219,
+        222,
+        226,
+        227,
+        236,
+        241,
+        242,
+        243,
+        244,
+        246,
+        257,
+        260,
+        262,
+        264,
+        268,
+        270,
+        271,
+        279,
+        283,
+        287,
+        290,
+        291,
+        294,
+        300,
+        301,
+        303,
+        307,
+        308,
+        309,
+        311,
+        312,
+        315,
+        316,
+        317,
+        319,
+        320,
+        321,
+        322,
+        324,
+        327,
+        329,
+        331,
+        332,
+        337,
+        338,
+        342,
+        343,
+        345,
+        346,
+        348,
+        354,
+        359,
+        360,
+        361,
+        364,
+        369,
+        374
+      ],
+      "recommendation": "PRESERVE_BROADER_PROFILE_INSPECT_OPTION_NOT_RECOMMENDED_STANDALONE_LEAD",
+      "replaces": "NEW; no healthy existing rule removed"
+    },
+    {
+      "id": "X_creator",
+      "name": "Creator’s Bane I",
+      "family": "Creator’s Bane",
+      "character": "Chimp · Reaper",
+      "role": "player_attack_proposal",
+      "common": "Goal0.5 + saved Green + current Goal confidence >=94",
+      "checks": [
+        [
+          "Pregame_xG_L5_per_game",
+          ">=",
+          0.48
+        ],
+        [
+          "i5v5_primaryAssists60",
+          "<=",
+          0.85
+        ]
+      ],
+      "full": {
+        "hits": 62,
+        "plays": 121,
+        "rate": 51.239669421487605,
+        "BE": 38.245997116385944,
+        "gap": 12.993672305101661,
+        "players": 26,
+        "dates": 28,
+        "games": 89,
+        "units": 44.40091582397127,
+        "ROI": 36.694971755348156
+      },
+      "recent": {
+        "hits": 21,
+        "plays": 34,
+        "rate": 61.76470588235294,
+        "BE": 39.56495584181395,
+        "gap": 22.199750040538994,
+        "players": 10,
+        "dates": 7,
+        "games": 26,
+        "units": 19.77,
+        "ROI": 58.14705882352941
+      },
+      "noise": {
+        "full": {
+          "top_players": [
+            [
+              "Kyle Connor",
+              12
+            ],
+            [
+              "Kirill Kaprizov",
+              12
+            ],
+            [
+              "Sam Reinhart",
+              10
+            ],
+            [
+              "Joel Eriksson Ek",
+              8
+            ],
+            [
+              "Wyatt Johnston",
+              8
+            ]
+          ],
+          "top_teams": [
+            [
+              "MIN",
+              26
+            ],
+            [
+              "WPG",
+              16
+            ],
+            [
+              "ANA",
+              10
+            ],
+            [
+              "FLA",
+              10
+            ],
+            [
+              "SJS",
+              9
+            ]
+          ],
+          "teams": 18,
+          "dates": 28,
+          "games": 89,
+          "available_history_range": [
+            6,
+            23
+          ]
+        },
+        "recent": {
+          "top_players": [
+            [
+              "Sam Reinhart",
+              5
+            ],
+            [
+              "Wyatt Johnston",
+              5
+            ],
+            [
+              "Kyle Connor",
+              5
+            ],
+            [
+              "Cutter Gauthier",
+              5
+            ],
+            [
+              "Beckett Sennecke",
+              3
+            ]
+          ],
+          "top_teams": [
+            [
+              "ANA",
+              8
+            ],
+            [
+              "WPG",
+              8
+            ],
+            [
+              "FLA",
+              5
+            ],
+            [
+              "DAL",
+              5
+            ],
+            [
+              "SJS",
+              3
+            ]
+          ],
+          "teams": 8,
+          "dates": 7,
+          "games": 26,
+          "available_history_range": [
+            15,
+            23
+          ]
+        }
+      },
+      "members": [
+        30,
+        34,
+        37,
+        39,
+        40,
+        42,
+        44,
+        45,
+        46,
+        49,
+        50,
+        53,
+        56,
+        60,
+        63,
+        64,
+        65,
+        66,
+        67,
+        80,
+        83,
+        84,
+        85,
+        95,
+        97,
+        98,
+        99,
+        100,
+        101,
+        102,
+        103,
+        105,
+        111,
+        112,
+        113,
+        115,
+        116,
+        118,
+        125,
+        126,
+        128,
+        129,
+        130,
+        132,
+        134,
+        142,
+        144,
+        145,
+        146,
+        147,
+        148,
+        150,
+        151,
+        152,
+        153,
+        156,
+        157,
+        161,
+        164,
+        167,
+        172,
+        173,
+        174,
+        175,
+        176,
+        185,
+        186,
+        190,
+        193,
+        194,
+        195,
+        200,
+        201,
+        205,
+        208,
+        211,
+        219,
+        222,
+        227,
+        232,
+        236,
+        242,
+        246,
+        260,
+        262,
+        265,
+        266,
+        268,
+        271,
+        279,
+        285,
+        287,
+        289,
+        290,
+        294,
+        303,
+        308,
+        309,
+        311,
+        312,
+        314,
+        315,
+        316,
+        317,
+        320,
+        321,
+        324,
+        329,
+        332,
+        337,
+        338,
+        344,
+        345,
+        346,
+        354,
+        356,
+        358,
+        359,
+        360,
+        369,
+        372
+      ],
+      "recommendation": "PRESERVE_BROADER_PROFILE_INSPECT_OPTION_NOT_RECOMMENDED_STANDALONE_LEAD",
+      "replaces": "NEW; no healthy existing rule removed"
+    },
+    {
+      "id": "B1",
+      "name": "Primal Tempo I",
+      "family": "Primal Tempo",
+      "character": "Panda · Executioner",
+      "role": "player_attack_proposal",
+      "common": "Goal0.5 + saved Green + current Goal confidence >=94",
+      "checks": [
+        [
+          "PP_TOI_Pct_Game",
+          "<=",
+          17
+        ]
+      ],
+      "full": {
+        "hits": 79,
+        "plays": 160,
+        "rate": 49.375,
+        "BE": 39.27071061055915,
+        "gap": 10.10428938944085,
+        "players": 22,
+        "dates": 31,
+        "games": 98,
+        "units": 45.660915823971266,
+        "ROI": 28.538072389982045
+      },
+      "recent": {
+        "hits": 24,
+        "plays": 45,
+        "rate": 53.333333333333336,
+        "BE": 38.16072308859592,
+        "gap": 15.172610244737413,
+        "players": 14,
+        "dates": 8,
+        "games": 30,
+        "units": 18.83,
+        "ROI": 41.84444444444444
+      },
+      "noise": {
+        "full": {
+          "top_players": [
+            [
+              "Kyle Connor",
+              19
+            ],
+            [
+              "Connor McDavid",
+              18
+            ],
+            [
+              "Jack Hughes",
+              14
+            ],
+            [
+              "Leon Draisaitl",
+              13
+            ],
+            [
+              "Joel Eriksson Ek",
+              13
+            ]
+          ],
+          "top_teams": [
+            [
+              "MIN",
+              36
+            ],
+            [
+              "EDM",
+              32
+            ],
+            [
+              "WPG",
+              27
+            ],
+            [
+              "TOR",
+              19
+            ],
+            [
+              "NJD",
+              14
+            ]
+          ],
+          "teams": 14,
+          "dates": 31,
+          "games": 98,
+          "available_history_range": [
+            5,
+            24
+          ]
+        },
+        "recent": {
+          "top_players": [
+            [
+              "Connor McDavid",
+              5
+            ],
+            [
+              "Auston Matthews",
+              5
+            ],
+            [
+              "Bo Horvat",
+              5
+            ],
+            [
+              "Wyatt Johnston",
+              5
+            ],
+            [
+              "Kyle Connor",
+              5
+            ]
+          ],
+          "top_teams": [
+            [
+              "WPG",
+              10
+            ],
+            [
+              "EDM",
+              9
+            ],
+            [
+              "TOR",
+              6
+            ],
+            [
+              "NYI",
+              5
+            ],
+            [
+              "DAL",
+              5
+            ]
+          ],
+          "teams": 10,
+          "dates": 8,
+          "games": 30,
+          "available_history_range": [
+            15,
+            24
+          ]
+        }
+      },
+      "members": [
+        0,
+        1,
+        5,
+        6,
+        7,
+        9,
+        21,
+        24,
+        25,
+        29,
+        32,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        49,
+        50,
+        59,
+        61,
+        62,
+        63,
+        64,
+        65,
+        66,
+        73,
+        76,
+        78,
+        79,
+        83,
+        84,
+        85,
+        90,
+        98,
+        99,
+        100,
+        101,
+        106,
+        107,
+        112,
+        113,
+        114,
+        115,
+        119,
+        120,
+        123,
+        128,
+        129,
+        130,
+        131,
+        133,
+        135,
+        136,
+        138,
+        139,
+        140,
+        145,
+        146,
+        147,
+        152,
+        153,
+        154,
+        156,
+        157,
+        159,
+        160,
+        168,
+        169,
+        170,
+        172,
+        173,
+        174,
+        176,
+        185,
+        186,
+        191,
+        192,
+        193,
+        194,
+        195,
+        196,
+        197,
+        198,
+        199,
+        201,
+        203,
+        204,
+        209,
+        211,
+        213,
+        214,
+        218,
+        219,
+        227,
+        228,
+        229,
+        230,
+        232,
+        233,
+        235,
+        240,
+        243,
+        244,
+        245,
+        247,
+        249,
+        250,
+        254,
+        257,
+        258,
+        261,
+        264,
+        266,
+        267,
+        269,
+        283,
+        284,
+        285,
+        287,
+        289,
+        290,
+        291,
+        294,
+        297,
+        299,
+        300,
+        301,
+        302,
+        304,
+        307,
+        310,
+        314,
+        315,
+        318,
+        319,
+        320,
+        326,
+        329,
+        330,
+        331,
+        333,
+        334,
+        337,
+        338,
+        339,
+        341,
+        346,
+        347,
+        348,
+        350,
+        355,
+        356,
+        357,
+        361,
+        366,
+        367,
+        368,
+        372,
+        373
+      ],
+      "recommendation": "PRESERVE_BROADER_PROFILE_INSPECT_OPTION_NOT_RECOMMENDED_STANDALONE_LEAD",
+      "replaces": "NEW; no healthy existing rule removed"
+    },
+    {
+      "id": "SIEGE1",
+      "name": "Siegebreaker’s Mark I",
+      "parent_id": "X_stable",
+      "parent_name": "Predator’s Focus II",
+      "role": "optional_exact_parent_buff",
+      "field": "Official_Opp_L10_SA_PG",
+      "op": ">=",
+      "cut": 25.4,
+      "full": {
+        "hits": 35,
+        "plays": 55,
+        "rate": 63.63636363636363,
+        "BE": 40.13862781857344,
+        "gap": 23.497735817790193,
+        "players": 18,
+        "dates": 21,
+        "games": 52,
+        "units": 33.04091582397127,
+        "ROI": 60.074392407220486
+      },
+      "recent": {
+        "hits": 18,
+        "plays": 25,
+        "rate": 72.0,
+        "BE": 40.250262742412545,
+        "gap": 31.749737257587455,
+        "players": 10,
+        "dates": 7,
+        "games": 22,
+        "units": 19.98,
+        "ROI": 79.92
+      },
+      "available_parent": {
+        "full": {
+          "hits": 42,
+          "plays": 72,
+          "rate": 58.333333333333336,
+          "BE": 39.746575121768096,
+          "gap": 18.58675821156524,
+          "players": 19,
+          "dates": 23,
+          "games": 65,
+          "units": 34.67091582397127,
+          "ROI": 48.15404975551565
+        },
+        "recent": {
+          "hits": 20,
+          "plays": 28,
+          "rate": 71.42857142857143,
+          "BE": 40.56483626823089,
+          "gap": 30.86373516034054,
+          "players": 10,
+          "dates": 7,
+          "games": 25,
+          "units": 21.88,
+          "ROI": 78.14285714285714
+        }
+      },
+      "parent": {
+        "full": {
+          "hits": 58,
+          "plays": 99,
+          "rate": 58.58585858585859,
+          "BE": 39.21450636301292,
+          "gap": 19.371352222845665,
+          "players": 25,
+          "dates": 27,
+          "games": 85,
+          "units": 49.78091582397127,
+          "ROI": 50.283753357546736
+        },
+        "recent": {
+          "hits": 20,
+          "plays": 28,
+          "rate": 71.42857142857143,
+          "BE": 40.56483626823089,
+          "gap": 30.86373516034054,
+          "players": 10,
+          "dates": 7,
+          "games": 25,
+          "units": 21.88,
+          "ROI": 78.14285714285714
+        }
+      },
+      "lift_over_available_parent": 5.303030303030297,
+      "noise": {
+        "full": {
+          "top_players": [
+            [
+              "Auston Matthews",
+              8
+            ],
+            [
+              "Wyatt Johnston",
+              7
+            ],
+            [
+              "Kirill Kaprizov",
+              6
+            ],
+            [
+              "Sebastian Aho",
+              4
+            ],
+            [
+              "Leon Draisaitl",
+              4
+            ]
+          ],
+          "top_teams": [
+            [
+              "TOR",
+              8
+            ],
+            [
+              "MIN",
+              7
+            ],
+            [
+              "DAL",
+              7
+            ],
+            [
+              "ANA",
+              6
+            ],
+            [
+              "CAR",
+              4
+            ]
+          ],
+          "teams": 15,
+          "dates": 21,
+          "games": 52,
+          "available_history_range": [
+            10,
+            24
+          ]
+        },
+        "recent": {
+          "top_players": [
+            [
+              "Wyatt Johnston",
+              5
+            ],
+            [
+              "Macklin Celebrini",
+              3
+            ],
+            [
+              "Auston Matthews",
+              3
+            ],
+            [
+              "Leon Draisaitl",
+              3
+            ],
+            [
+              "Beckett Sennecke",
+              3
+            ]
+          ],
+          "top_teams": [
+            [
+              "ANA",
+              6
+            ],
+            [
+              "DAL",
+              5
+            ],
+            [
+              "SJS",
+              3
+            ],
+            [
+              "TOR",
+              3
+            ],
+            [
+              "EDM",
+              3
+            ]
+          ],
+          "teams": 9,
+          "dates": 7,
+          "games": 22,
+          "available_history_range": [
+            15,
+            24
+          ]
+        }
+      },
+      "members": [
+        95,
+        100,
+        113,
+        115,
+        118,
+        122,
+        134,
+        138,
+        139,
+        141,
+        142,
+        144,
+        153,
+        154,
+        157,
+        160,
+        164,
+        168,
+        173,
+        175,
+        185,
+        195,
+        197,
+        200,
+        219,
+        222,
+        226,
+        257,
+        260,
+        262,
+        271,
+        283,
+        287,
+        294,
+        300,
+        301,
+        303,
+        308,
+        309,
+        312,
+        316,
+        317,
+        320,
+        322,
+        324,
+        329,
+        331,
+        343,
+        345,
+        346,
+        348,
+        359,
+        361,
+        364,
+        374
+      ],
+      "complement": {
+        "full": {
+          "hits": 7,
+          "plays": 17,
+          "rate": 41.1764705882353,
+          "BE": 38.478169337986095,
+          "gap": 2.6983012502492016,
+          "players": 10,
+          "dates": 12,
+          "games": 16,
+          "units": 1.63,
+          "ROI": 9.588235294117647
+        },
+        "recent": {
+          "hits": 2,
+          "plays": 3,
+          "rate": 66.66666666666667,
+          "BE": 43.1862823167171,
+          "gap": 23.480384349949574,
+          "players": 2,
+          "dates": 3,
+          "games": 3,
+          "units": 1.9,
+          "ROI": 63.333333333333336
+        }
+      },
+      "definition": "Strictly-prior official Opp L10_SA_PG; complete5/10-game windows or actual prior season/venue denominator. PPP credits are goals plus skater assists, not team goals.",
+      "display_recommendation": "INSPECT_ONLY_BROAD_CURRENT_COVERAGE_29_OF_32"
+    }
+  ]
+}

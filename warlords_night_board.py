@@ -22,7 +22,7 @@ from sog_profiles_2026 import profile_values as sog_profile_values, display_move
 from sog_profiles_2026 import inspect_moves as sog_profile_inspect
 from player_availability import is_unavailable
 from player_form import summarize_form
-from goal_routes_v2 import profile_values as goal_v2_values
+from goal_routes_v3 import profile_values as goal_v2_values, LABELS as GOAL_V3_LABELS
 from points05_v6 import goalie_context as points05_goalie_context, goalie_badge as points05_goalie_badge, goalie_inspect as points05_goalie_details, CSS as POINTS05_GOALIE_CSS, LABELS as POINTS05_LABELS
 from points15_research import context as points15_research_context
 from assist_routes_2026 import assist_display_tier, assist_display_name
@@ -68,6 +68,8 @@ def _value(row, *keys):
 
 
 _GOAL_V2_LABELS = {'Pregame_xG_L5_per_game': 'L5 individual xG/game', 'Player_Log_L5_TOI_per_game': 'L5 actual ice time min/game', 'Player_Log_L10_Shooting_pct': 'L10 shooting %', 'Player_Log_L20_Goal_fraction_pct': 'L20 goal share of points %', 'Player_Rebuilt_Gap_G10': 'Saved10-game goal-pace gap', 'L20_A': 'Assists L20', 'PP_SOG60': 'Individual PP SOG/60', 'i5v5_xG60': 'Individual5v5 xG/60', 'NHL_Opp_PP_L5_O_PG': 'Opp L5 earned PPO/game', 'NHL_Opp_PP_Season_SecondsPerOpportunity': 'Opp season PP seconds/opportunity', 'NHL_Team_PP_Season_G60': 'Team actual season PP goals/60', 'NHL_Opp_PP_L10_Time_PG': 'Opp L10 PP time/game', 'NHL_Team_PK_L10_SecondsPerOpportunity': 'Team L10 PK seconds/opportunity', 'NHL_Team_SA_Season_PG': 'Team season SOG allowed/game', 'NHL_Opp_SA_L5_PG': 'Opp L5 SOG allowed/game'}
+
+_GOAL_V2_LABELS.update(GOAL_V3_LABELS)
 
 _CARD_LABELS = {
     'Conf_Points': 'Points profile confidence', 'Conf_Goal': 'Goal profile confidence',
@@ -142,7 +144,7 @@ def _fact_line(field, value, op=None, cutoff=None, *, goal_v2=False, label=None,
         seconds = round(value * 60)
         actual = f'{seconds // 60}:{seconds % 60:02d}'
     else:
-        digits = 3 if field == 'Opp_SV' else 0 if field in {'Drought_G', 'Drought_PPP', 'L10_S', 'L10_G', 'PPP10_total'} else 2
+        digits = 3 if field in {'Opp_SV','Goalie_Expected_SV'} else 0 if field in {'Drought_G', 'Drought_PPP', 'L10_S', 'L10_G', 'PPP10_total'} else 2
         actual = f'{value:.{digits}f}'
     target = ''
     if op is not None and cutoff is not None:
@@ -174,17 +176,16 @@ def _render_goal_facts(card, move):
     profile_fields = ['iXG%', 'StarScore', 'TOI_per_game', 'ShotIntent', 'ShotIntent_Pct', 'Avg5_SOG', 'L10_S', 'L10_G', 'Drought_G', 'Drought_PPP', 'Goal_mu', 'Points_mu']
     if (move or {}).get('goal_v2'):
         for field,op,cut in move.get('all_checks',[]):checks[field]=(op,cut)
-        checks.update(Pregame_xG_L5_per_game=('>=',.52),Player_Log_L5_TOI_per_game=('>=',18.8))
         for buff in goal_buffs_for_attack(card.get('moves',[]),move):
             if buff.get('goal_visible_buff'):
                 for field,op,cut in buff.get('checks',[]):
-                    if field.startswith(('NHL_','Team_')):checks[field]=(op,cut)
-        profile_fields=['Pregame_xG_L5_per_game','Player_Log_L5_TOI_per_game']+[f for f in checks if not f.startswith(('NHL_','Team_')) and f not in {'Pregame_xG_L5_per_game','Player_Log_L5_TOI_per_game'}]
+                    if field.startswith(('NHL_','Team_','Official_','Goalie_')):checks[field]=(op,cut)
+        profile_fields=[f for f in checks if not f.startswith(('NHL_','Team_','Official_','Goalie_'))]
     profile = '<br>'.join(_fact_line(field, values.get(field), *checks.get(field, (None, None)), goal_v2=bool((move or {}).get('goal_v2')))
                           for field in profile_fields if values.get(field) is not None)
     environment = '<br>'.join(_fact_line(field, values.get(field), op, cut, goal_v2=bool((move or {}).get('goal_v2')))
                               for field, (op, cut) in checks.items()
-                              if field.startswith(('NHL_', 'Opp_', 'opp_', 'Team_', 'team_', 'Goalie_')))
+                              if field.startswith(('NHL_', 'Opp_', 'opp_', 'Team_', 'team_', 'Goalie_', 'Official_')))
     environment = environment or 'Move-specific matchup requirements are listed in the full fired move list.'
     sample = _number((move or {}).get('sample_book_be_pct'))
     sample_note = f'<div class="wn-assist-sample">MOVE SAMPLE AVG BOOK BE <b>{sample:.1f}%</b></div>' if sample is not None else ''
@@ -212,7 +213,9 @@ def _class_identity(role, card, move):
         if (move or {}).get('matchup_buff'):
             return 'Panda', 'Warden'
         return 'Gorilla', 'Berserker'
-    if (move or {}).get("goal_v2"):
+    if (move or {}).get("goal_v3"):
+        return tuple(move["goal_character"].split(" · ",1))
+    if (move or {}).get("goal_v2"): 
         return {"A":("Gorilla","Ravager"),"F":("Chimp","Reaper"),"P":("Panda","Executioner"),"X":("Chimp","Reaper"),"G":("Gorilla","Ravager"),"S":("Panda","Executioner")}.get(goal_player_route_family(move),("Gorilla","Ravager"))
     text = str((move or {}).get('name', ''))
     if (move or {}).get('crit') or any(word in text for word in ('Reaper', 'Measured', 'Creator', 'Controlled', 'Patient')):
@@ -327,7 +330,7 @@ def _render_points_facts(card, move):
                               label=new_label, help_text=TOOLTIPS.get(field) or field_help(field) or new_label)
         else:
             line = _fact_line(field, values.get(field), op, cut)
-        target = environment if field.startswith(('NHL_', 'Opp_', 'opp_', 'Team_', 'team_', 'Goalie_')) else profile
+        target = environment if field.startswith(('NHL_', 'Opp_', 'opp_', 'Team_', 'team_', 'Goalie_', 'Official_')) else profile
         target.append(line)
     alternatives = []
     for group in move.get('any_conditions', []):
@@ -1279,6 +1282,8 @@ def _card_quick_summary(role, card):
     if role == 'Carry':
         values = {**values, **(card.get('goal_profile') or {})}
         fields = [('Pregame_xG_L5_per_game', 'L5 xG/g', 2), ('Player_Log_L5_TOI_per_game', 'L5 TOI', 1), ('Player_Log_L10_Shooting_pct', 'L10 shooting %', 1)] if (card.get('move') or {}).get('goal_v2') else [('iXG%', 'iXG rank', 0), ('ShotIntent', 'Shot intent', 2), ('Goal_mu', 'Goal μ', 2)]
+        if (card.get('move') or {}).get('goal_v3'):
+            fields=[(f,GOAL_V3_LABELS.get(f,_CARD_LABELS.get(f,f)),2) for f,op,cut in card['move'].get('all_checks',[]) if f!='Goal_Profile'][:3]
     elif role == 'Support':
         values = {**values, **(card.get('assist_context') or {})}
         fields = [('iXA%', 'Assist rank', 0), ('Assists_mu', 'Assist μ', 2), ('PP_TOI_per_game', 'PP min/g', 1)]
@@ -1467,7 +1472,7 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
                     goal_signals = ('<div class="wn-assist-sample">BUFF RECORDS · NAMED ATTACK + MATCHUP</div>'
                                     if move.get('goal_v2') else '') + '<div class="wn-goal-signals">' + ''.join(
                         f'<div class="wn-goal-signal"><strong>{_h(goal_buff_parent_name(m)) + " + " if m.get("goal_v2") else "+ "}{_h(m["name"])}</strong>'
-                        f'<span>{"V2" if m.get("goal_v2") else "V1"} {m["wins"]}/{m["picks"]} · {100*m["wins"]/m["picks"]:.1f}%</span></div>'
+                        f'<span>{"V3" if m.get("goal_v3") else "V2" if m.get("goal_v2") else "V1"} {m["wins"]}/{m["picks"]} · {100*m["wins"]/m["picks"]:.1f}%</span></div>'
                         for m in buffs) + '</div>'
             support_badges = ""
             assist_facts = _render_assist_facts(card, move) if role == "Support" else ""
@@ -1650,7 +1655,7 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
             if points_tier:
                 record_label = "2026–27 REG MOVE"
             if role == 'Carry' and goal_return_panel(move):
-                record_label = "V2 MOVE %" if move.get("goal_v2") else "V1 MOVE %"
+                record_label = "V3 MOVE %" if move.get("goal_v3") else "V2 MOVE %" if move.get("goal_v2") else "V1 MOVE %"
             if role == 'Support' and assist_return_panel(move):
                 record_label = "V2 MOVE %"
             if role == 'Tank' and points_original_caption(move):
@@ -1725,7 +1730,7 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
         backdrop = f'<img class="wn-gorilla" src="{character_uri}" alt="" />' if character_uri else ""
         backdrop = _class_roster_art(role)
         count_label = "FEATURED" if cards and "confidence" in cards[0] else "PRICED"
-        lane_subtitle = ("GOALS V2 ✦ 6 PLAYER FAMILIES ✦ 8 LEVELS ✦ OPTIONAL BUFFS ✦ ARCHIVED V1 IN INSPECT"
+        lane_subtitle = ("GOALS V3 ✦ 8 NEW ATTACKS ✦ 7 OPTIONAL BUFFS ✦ HEALTHY EXISTING + .47 ROUTES PRESERVED"
                          if role == "Carry" else
                          "POINTS ✦ CURRENT-SEASON MOVE % ✦ BOOK BREAK-EVEN %" if role == "Tank" else
                          f"{market.upper()} ✦ HISTORICAL MOVE % ✦ BOOK BREAK-EVEN % FROM POSTED ODDS")

@@ -62,7 +62,7 @@ def return_record(move):
     if row and not row.get('legacy'):
         # A record rollover must not erase already-observed recent health or
         # demote S solely because the new V2 tracking counter starts at zero.
-        if (market in ('Assists','Points','SOG') or move.get('pp_v2') or move.get('pp_v3')) and 'health_since_check' in row:
+        if (market in ('Assists','Points','SOG') or move.get('pp_v2') or move.get('pp_v3') or move.get('goal_v3')) and 'health_since_check' in row:
             return {**row, 'since_check':row['health_since_check'],
                     'previous':row['health_previous'], 'health_since_from':row['health_since_from']}
         return row

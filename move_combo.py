@@ -19,6 +19,8 @@ LABELS = {
  'Goalie_GSAx_per_game':'Opp goalie GSAx/game', 'PP_OnIce_xG_per_game':'PP on-ice xG/game',
 }
 SIGNS={'>=':'≥','<=':'≤','==':'=','>':'>','<':'<'}
+from goal_routes_v3 import LABELS as GOAL_V3_LABELS
+LABELS.update(GOAL_V3_LABELS)
 
 def combo_parts(move, labels=None):
     if not move:return []

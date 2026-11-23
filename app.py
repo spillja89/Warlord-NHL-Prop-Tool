@@ -26,7 +26,7 @@ from points_moves_current import attach_points_moves, VERSION as POINTS_CURRENT_
 from sog_matrix import VERSION as SOG_MATRIX_VERSION
 from warlord_moves_2026 import best_move, points_moves, sog_moves, assists_moves as _assists_mapped_moves
 from goal_moves_current import goal_profile_score
-from goal_routes_v2 import profile_values as goal_v2_values
+from goal_routes_v3 import profile_values as goal_v2_values, LABELS as GOAL_V3_LABELS
 from goal_card_routes import card_moves as _goals_carry_moves, summary as goal_move_summary, move_rank as _goal_family_rank
 from warlords_night_board import CLASSES, baseline_audit, rank_warlords, rank_priced_slate, featured_warlords, unfeatured_baselines, goal_display_cards, render_warlords, render_power_play_form, render_power_play_quotes_table, _character_uri
 from pp_card_context import attach_pp_card_context, VERSION as PP_CARD_CONTEXT_VERSION
@@ -919,7 +919,7 @@ def _render_class_shortlist(frame: pd.DataFrame, role: str,
     if role == "Tank":
         watch = [card for card in watch if not card.get("points_current_tier")]
     if role == "Carry":
-        st.caption("Goals Moves V2 · six player families · eight levels · L5 individual xG ≥0.52 + L5 actual TOI ≥18.8 · no confidence gate. Optional buffs never admit a card; archived V1 records remain in Inspect.")
+        st.caption('Goals Moves V3 · 8 new attacks · 7 optional exact-parent buffs · healthy existing and approved .47 routes preserved · all matched records grouped in Inspect')
         render_markable_boards({"Carry": goal_cards}, slate_frame, render=render_warlords,
                                owner_access=owner_access, setting=_owner_setting,
                                key='played_carry', limit=len(goal_cards), roles=("Carry",), show_hero=False)
@@ -2643,8 +2643,8 @@ COLUMN_HELP = {
     "Goal_Attack_Record": "Goals/plays for the displayed attack level in the saved 2026-27 research sample. This is not tonight's probability.",
     "Goal_Attack_Sample_BE": "Mean posted-price break-even percentage in the selected attack's historical sample. Compare separately with today's price; this is not a predicted edge.",
     "Goal_All_Attacks": "Approved primary Goal families. Other qualified profiles and levels retain their exact records in Inspect; overlapping samples must not be added together.",
-    "Goal_Crits": "Goal V2 has no newly assigned Crit policy. Return grades use the existing S/A/B/Watch rules; no confidence gate is required.",
-    "Goal_Buffs": "Goal V2 optional buffs, each graded on its exact player-route parent. Strongest matching level per buff family; buffs never admit a player by themselves.",
+    "Goal_Crits": "Goal V3 Crit candidates use the approved 70%+ research record with at least 30 plays. S/A/B return grades are separate from the move label.",
+    "Goal_Buffs": "Optional buffs use their exact named player-route parent. Each displayed record is that full combination, never a universal matchup record.",
     "Drought_PPP": "Consecutive completed games without a credited power-play point. Archived V1 Runic levels used this; Goal V2 Runic Barrage uses individual PP shots/60 instead.",
     # Assists
     "PP_PROOF": "PP Proof combines PP usage, observed assist production, and matchup. It is a heuristic, not an expected-assists model.",
@@ -6246,10 +6246,13 @@ elif page == "GOALS (0.5)":
     df_g["_goal_conf"] = safe_num(df_g, "Conf_Goal", 0)
     df_g = df_g.sort_values(["_goal_conf"], ascending=[False]).drop(columns=["_goal_conf"], errors="ignore")
     df_g["Green"] = to_bool_series(column_or(df_g, "Green_Goal", False)).map(lambda x: "🟢" if x else "")
-    st.caption("Goals Moves V2 · six player families · eight levels · no confidence gate · buffs are optional")
+    st.caption('Goals Moves V3 · 8 new attacks · 7 optional exact-parent buffs · healthy existing and approved .47 routes preserved · all matched records grouped in Inspect')
     goal_tracker = df_g.copy()
     goal_tracker["Goal_Profile"] = [goal_profile_score(row) for _, row in goal_tracker.iterrows()]
     _goal_v2_values = [goal_v2_values(row) for _, row in goal_tracker.iterrows()]
+    for _field, _label in GOAL_V3_LABELS.items():
+        goal_tracker["GoalV3_"+_field]=[v.get(_field) for v in _goal_v2_values]
+        COLUMN_LABELS["GoalV3_"+_field]=_label
     for _field in ("Player_Log_L5_TOI_per_game", "Player_Log_L10_Shooting_pct", "Player_Log_L20_Goal_fraction_pct", "Player_Rebuilt_Gap_G10", "L20_A", "PP_SOG60", "i5v5_xG60"):
         goal_tracker["GoalV2_" + _field] = [v.get(_field) for v in _goal_v2_values]
     goal_tracker_moves = [_goals_carry_moves(row) for _, row in goal_tracker.iterrows()]
@@ -6278,7 +6281,7 @@ elif page == "GOALS (0.5)":
         "Player", "Pos",
         "Tier_Tag",
         "Goal_Attack", "Goal_Attack_Record", "Goal_All_Attacks", "Goal_Crits", "Goal_Buffs",
-        "Goal_Attack_Sample_BE", "Pregame_xG_L5_per_game", "GoalV2_Player_Log_L5_TOI_per_game", "GoalV2_Player_Log_L10_Shooting_pct", "GoalV2_Player_Log_L20_Goal_fraction_pct", "GoalV2_Player_Rebuilt_Gap_G10", "GoalV2_L20_A", "GoalV2_PP_SOG60", "GoalV2_i5v5_xG60", "StarScore", "Drought_G", "Drought_PPP", "TOI_Pct", "TOI_per_game", "Goal_Profile",
+        "Goal_Attack_Sample_BE", *["GoalV3_"+f for f in GOAL_V3_LABELS], "Pregame_xG_L5_per_game", "GoalV2_Player_Log_L5_TOI_per_game", "GoalV2_Player_Log_L10_Shooting_pct", "GoalV2_Player_Log_L20_Goal_fraction_pct", "GoalV2_Player_Rebuilt_Gap_G10", "GoalV2_L20_A", "GoalV2_PP_SOG60", "GoalV2_i5v5_xG60", "StarScore", "Drought_G", "Drought_PPP", "TOI_Pct", "TOI_per_game", "Goal_Profile",
         "L10_S", "ShotIntent", "Points_mu", "ShotIntent_Pct", "Avg5_SOG", "L10_G",
         "team_5v5_SF60", "Opp_PK_GA60", "Team_PP_xGF60", "Pregame_xG_L5_per_game",
 
@@ -6355,7 +6358,7 @@ elif page == "GOALS (0.5)":
     st.markdown("---")
 
     goal_cols = list(dict.fromkeys(goal_cols))
-    st.caption("Goals Moves V2 · six player families · eight levels · L5 individual xG ≥0.52 + L5 actual TOI ≥18.8 · no confidence gate. Optional buffs never admit a card; archived V1 records remain in Inspect.")
+    st.caption('Goals Moves V3 · 8 new attacks · 7 optional exact-parent buffs · healthy existing and approved .47 routes preserved · all matched records grouped in Inspect')
     show_table(goal_tracker, goal_cols, f"Goal tracker · {len(goal_tracker)} skaters")
 
 
