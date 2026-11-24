@@ -14,7 +14,7 @@
     "2026-11-19": "e9b1ec13b6561ad3cc578b7a94626e89e243e3fd543b03cbb0cd831b3cfee820",
     "2026-11-21": "5cb12ab1dfa731230e3d9f85b161382c333febbc88de956842f12f3e486db86c",
     "2026-11-22": "71d98a9ab8aebcd411aa412327339c5ac5d475796b2728b1b95ff7a8f2587735",
-    "2026-11-23": "0e928d92d94e6ff4e0051469a7422e96b5525d9ed89956cfc9aa047b1ea1a6d5"
+    "2026-11-23": "84c17d9782f1db814a080869378a53d93e0d5bdca2e2419c362802f411ef16f7"
   },
   "counts": {
     "seed_outcomes_checked": 591,
@@ -26,6 +26,6 @@
   "memberships": 44233,
   "V1_fixed": true,
   "rules_unchanged": true,
-  "generation": "bfb1d80e59f6ec39c8694fb1bc4686bb17dc20110cd33227278ab7779a04d57c",
-  "generated_utc": "2026-11-24T20:43:23.970930+00:00"
+  "generation": "4cc07f3f8c4babdc620fc99eb4b598ae60b6222f03f6b2ddd1e5be7395957190",
+  "generated_utc": "2026-11-24T21:17:59.469056+00:00"
 }
