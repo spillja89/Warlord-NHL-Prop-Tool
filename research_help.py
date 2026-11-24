@@ -140,7 +140,36 @@ ALIASES.update({
 
 _GOAL_V3_HELP = {'Player_Log_L20_TOI_median': 'Middle ice-time value across up to the last 20 completed games, in minutes.', 'Player_Log_L5_PPP_per60_total_TOI': 'Power-play points over the last five games per 60 minutes of TOTAL ice time. This is not per 60 PP minutes.', 'Player_Log_L5_S_sd': 'How much the player’s shots vary across the last five games. Lower means steadier shot totals.', 'Player_Log_L10_TOI_sd': 'How much ice time varies across up to the last ten games, in minutes. Lower means steadier usage.', 'Player_Log_L40_S_hit_pct': 'Percentage of available completed games, up to 40, with at least three shots. Uses the actual game count.', 'PP_TOI_Pct_Game': 'Percentage of this player’s TOTAL ice time spent on the power play. This is not team PP time share.', 'Goalie_Expected_SV': 'Expected share of shots saved based on the quality of shots faced: 1 minus xGA/shots. It is not actual save percentage or a goalie skill score.', 'Official_Opp_Season_GA_PG': 'Opponent TEAM goals allowed per game, all strengths. This is not the goalie’s GAA.', 'Official_Own_PP_Venue_O_PG': 'Own team’s earned PP opportunities per game in the relevant home or away games before this slate.', 'Official_Opp_PP_Season_G60': 'Opponent’s actual PP goals scored per 60 PP minutes before this slate.', 'Official_Opp_L10_SA_PG': 'Opponent’s average shots allowed in its last ten completed games.', 'Official_Opp_PK_L10_G60': 'Opponent’s goals allowed per 60 shorthanded minutes across its last ten completed games.', 'Official_Opp_PK_Season_O_PG': 'Opponent’s times shorthanded per game this season before the slate.'}
 
+_ASSIST_V3_HELP = {
+ 'Log_L10_Goals_per60':'Goals in up to10 completed games, divided by TOTAL ice minutes and scaled to60. It is not per60 PP or5v5 minutes.',
+ 'Log_L10_SOG_per60':'Shots in up to10 completed games, divided by TOTAL ice minutes and scaled to60.',
+ 'Log_L20_TOI_median':'The middle ice-time value in up to20 completed games. Higher means more typical minutes on the ice.',
+ 'Log_L20_TOI_SD':'How much ice time varies across up to20 completed games, in minutes. Higher means more variation, not more playing time.',
+ 'Log_L5_SOG_SD':'How much shots vary across up to5 completed games. Lower means steadier totals; this uses population standard deviation.',
+ 'Log_L20_A_per_game':'Actual assists divided by the available completed games, up to20.',
+ 'Log_L40_S_per_game':'Actual shots divided by the available completed games, up to40.',
+ 'Log_L40_S_4plus_pct':'Percentage of up to40 completed games with4 or more shots, using the actual available game count.',
+ 'Log_L40_A_1plus_pct':'Percentage of up to40 completed games with an assist. The window stops at40 even later in the season.',
+ 'Log_Season_A_1plus_pct':'Percentage of ALL completed current-season games with an assist; it is not capped at40.',
+ 'Log_Season_Assists_per60':'Actual assists this season divided by ALL total ice minutes, scaled to60. It is not5v5 assists/60 and is not capped at40 games.',
+ 'Log_L5_A_2plus_pct':'Percentage of up to5 completed games with2 or more assists.',
+ 'Official_Player_MinutesPG_Season':'Official saved PP minutes divided by dressed games in that pregame source. Different source from MoneyPuck PP minutes.',
+ 'Official_Own_PK_Season_Goals_PG':'PP goals allowed by the PLAYER’S OWN team per game this season. This is a tested context correlation, not the opponent’s PK.',
+ 'Official_Opp_L10_GA_PG':'Opponent TEAM goals allowed per game in10 complete prior games. All strengths; not goalie GAA.',
+ 'Official_Opp_L20_GF_PG':'Opponent goals scored per game in20 complete prior games. Shorter histories stay unavailable.',
+ 'Official_Opp_L20_SA_PG':'Opponent shots allowed per game in20 complete prior games. Shorter histories stay unavailable.',
+ 'Official_Opp_PP_Venue_G60':'Opponent’s offensive PP goals/60 in its matching home or away games. This measures opponent PP scoring, not its penalty kill.',
+ 'Official_Own_PP_Season_O_PG':'PP opportunities earned per game by the player’s own team before this slate.',
+ 'Opp_EV_DZ_Time_Pct':'Share of opponent tracked even-strength time spent in its defensive zone. This is zone time, not zone starts; even strength is not asserted to be exact5v5.',
+ 'Pace_Gap_A10':'Saved expected10-game assist pace minus actual recent10-game pace. Positive means actual assists trailed the saved baseline; it does not promise a rebound.',
+ 'Pace_Gap_S10':'Saved expected10-game shot pace minus actual recent10-game pace. Positive means shots trailed the saved baseline; it does not promise a rebound.'
+}
+
 def field_help(field):
+    if isinstance(field,str):
+        f=field.removeprefix('AssistV3_Value_')
+        if f in _ASSIST_V3_HELP:return _ASSIST_V3_HELP[f]
+
     if isinstance(field,str):
         _field=field.removeprefix('GoalV3_')
         if _field in _GOAL_V3_HELP:return _GOAL_V3_HELP[_field]
@@ -276,3 +305,4 @@ def class_guide(role):
             '<p><b>Confidence</b> is a player-profile score. <b>Move %</b> is a historical hit rate. <b>BE</b> is the hit rate needed at the posted odds. '
             '<b>Units</b> show record profit; <b>ROI</b> is profit divided by stakes. <b>S/A/B</b> grade returns and recent health. '
             'Buffs add researched matchup context; they are not extra independent bets. Hover dotted stat labels for details.</p></details>')
+

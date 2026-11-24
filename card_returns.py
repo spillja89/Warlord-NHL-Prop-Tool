@@ -97,7 +97,13 @@ def capture_row(row,*,root=ROOT):
                 result.append(dict(file=s['file'],key=s['key'],market=market,line=line,odds=quote[0],book=quote[1],rule=s['rule'],kit_version=s['kit']))
     for market,fn,line in [('Goal',goals_moves,.5),('Assists',assists_moves,.5),('SOG',sog_moves,2.5)]:
         quote=_quote(row,market,line)
-        if quote:add(market,fn(row)+(profile_moves(row,monitors=True) if market=='SOG' else []),quote,line)
+        if quote:
+            moves=fn(row)+(profile_moves(row,monitors=True) if market=='SOG' else [])
+            if market=='Assists':
+                from assist_routes_v3 import all_fired
+                ids={m.get('move_id') for m in moves}
+                moves += [m for m in all_fired(row) if m['move_id'] not in ids]
+            add(market,moves,quote,line)
     for line in (.5,1.5):
         quote=_quote(row,'Points',line)
         if not quote:continue
@@ -257,4 +263,5 @@ def main():
     bundle=refresh(args.repo);print(json.dumps(bundle['manifest'],indent=2))
 
 if __name__=='__main__':main()
+
 

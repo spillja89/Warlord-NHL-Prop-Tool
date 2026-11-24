@@ -96,5 +96,11 @@ def assists_moves(row):
     """Preserve the existing kit and add independently gated November routes."""
     from assist_routes_2026 import new_assists_moves
     from assist_additions import fired as v2_additions
-    return existing_assists_moves(row) + new_assists_moves(row) + v2_additions(row)
+    from assist_routes_v3 import all_fired
+    old = existing_assists_moves(row) + new_assists_moves(row) + v2_additions(row)
+    new = all_fired(row)
+    attacks = [m for m in new if not m['optional_buff']]
+    # Context never admits a player by itself; tracking still captures its full parent.
+    return old + attacks + ([m for m in new if m['optional_buff']] if old or attacks else [])
+
 

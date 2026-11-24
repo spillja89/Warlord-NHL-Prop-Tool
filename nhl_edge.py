@@ -6008,6 +6008,8 @@ def build_tracker(today_local: date, debug: bool = False, api_key: str | None = 
 
     from goal_routes_v3 import attach_routes as attach_goal_v2_routes
     tracker = attach_goal_v2_routes(tracker)
+    from assist_routes_v3 import attach_routes as attach_assist_v3_routes
+    tracker = attach_assist_v3_routes(tracker)
 
     # Freeze the displayed move rules with the pregame tracker. The grader
     # reads these tags instead of applying future code to an old slate.
@@ -6072,3 +6074,4 @@ def main() -> None:
 if __name__ == "__main__":
 
     main()
+

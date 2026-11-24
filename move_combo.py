@@ -21,6 +21,8 @@ LABELS = {
 SIGNS={'>=':'≥','<=':'≤','==':'=','>':'>','<':'<'}
 from goal_routes_v3 import LABELS as GOAL_V3_LABELS
 LABELS.update(GOAL_V3_LABELS)
+from assist_routes_v3 import LABELS as ASSIST_V3_LABELS
+LABELS.update(ASSIST_V3_LABELS)
 
 def combo_parts(move, labels=None):
     if not move:return []
@@ -54,3 +56,4 @@ def combo_html(move, labels=None):
     chips=''.join('<span style="display:inline-block;margin:2px 4px 2px 0;padding:2px 6px;background:#111b2b;border:1px solid #53647b;border-radius:4px">'+condition_hint(p, {**(labels or {}), **LABELS})+'</span>' for p in parts)
     return ('<div class="wn-move-combo" style="margin:8px 0 4px;font-size:11px;line-height:1.6;color:#e3edfc">'
             '<strong style="display:block;font-size:10px;color:#f2d388;letter-spacing:.05em">MOVE COMBO · ALL REQUIRED</strong>'+chips+'</div>')
+

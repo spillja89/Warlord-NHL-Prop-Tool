@@ -24,6 +24,19 @@ def return_panel(move, *, compact=True):
     row = record_for(move)
     if not row:return ''
     data = records()
+    if move.get('assist_v3'):
+        data={**data,'move_version_label':'Moves V3','wired_on':'2026-11-24','full_from':'2026-10-13','previous_through':'2026-11-23','since_from':'2026-11-24','kit':move['kit_version']}
+        result=render_return_panel(row,data,compact=compact).replace('vs V1','vs V3').replace('SINCE CHECK %','SINCE V3 CHECK %')
+        if not compact:
+            start=result.find('<div class="wn-gr-note">Full record:');end=result.find('</div>',start)
+            if start>=0 and end>=0:
+                note='V3 research baseline Oct13–Nov23; wired Nov24. The new V3 counter starts Nov24; earlier research is not live V3 performance. Flat1u saved pregame prices.'
+                result=result[:start]+'<div class="wn-gr-note">'+note+'</div>'+result[end+6:]
+            recent=row['research_recent']
+            result += ('<p class="wn-gr-note">Research diagnostic Nov14–23, already included in the V3 baseline: '
+                       f"{recent['hits']}/{recent['plays']} · {recent['hit_rate']:.1f}% · BE {recent['be']:.1f}% · gap {recent['gap']:+.1f}pp · {recent['players']} players · {recent['units']:+.2f}u · {recent['roi']:+.1f}% ROI. "
+                       'Retrospective health check; not additional bets or independent validation. New V3 tracking begins Nov24.</p>')
+        return result
     result = render_return_panel(row, data, compact=compact).replace('vs V1', 'vs V2').replace('SINCE CHECK %', 'SINCE V2 CHECK %')
     if not compact:
         start = result.find('<div class="wn-gr-note">Full record:');end = result.find('</div>', start)
@@ -43,3 +56,4 @@ def return_panel(move, *, compact=True):
                        + '; prior since-check ' + escape(old['since_from']) + '–' + escape(old['through'])
                        + '. These appearances are already included in V2, not additional bets.</div></div></details>')
     return result
+

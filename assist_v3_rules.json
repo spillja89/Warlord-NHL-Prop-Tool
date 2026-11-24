@@ -1,0 +1,8309 @@
+{
+  "version": "assist-2026-27-moves-v3-2026-11-24",
+  "wired_on": "2026-11-24",
+  "full_from": "2026-10-13",
+  "full_through": "2026-11-23",
+  "recent_from": "2026-11-14",
+  "recent_through": "2026-11-23",
+  "moves": [
+    {
+      "review_id": "G",
+      "name": "Oracle’s Refrain",
+      "family": "G",
+      "animal": "Gorilla",
+      "variant": "Oracle",
+      "display_level": "ATTACK",
+      "conditions": [
+        [
+          "Log_L10_Goals_per60",
+          "<=",
+          1.2
+        ]
+      ],
+      "full": {
+        "hits": 202,
+        "plays": 335,
+        "hit_rate": 60.298507462686565,
+        "be": 51.26216584153893,
+        "gap": 9.036341621147635,
+        "players": 61,
+        "units": 59.14817137444869,
+        "roi": 17.65617055953692,
+        "dates": 40,
+        "games": 222,
+        "teams": 28,
+        "opponents": 31,
+        "team_games": 269
+      },
+      "recent": {
+        "hits": 53,
+        "plays": 87,
+        "hit_rate": 60.91954022988506,
+        "be": 52.476312341623135,
+        "gap": 8.443227888261923,
+        "players": 35,
+        "units": 13.845110680879486,
+        "roi": 15.913920322849984,
+        "dates": 9,
+        "games": 58,
+        "teams": 25,
+        "opponents": 28,
+        "team_games": 70
+      },
+      "noise": {
+        "flags": [],
+        "concentration": {
+          "Player": [
+            [
+              "Quinn Hughes",
+              17
+            ],
+            [
+              "Matthew Tkachuk",
+              16
+            ],
+            [
+              "Mitch Marner",
+              15
+            ],
+            [
+              "Leo Carlsson",
+              14
+            ],
+            [
+              "Zach Benson",
+              14
+            ]
+          ],
+          "Team": [
+            [
+              "FLA",
+              29
+            ],
+            [
+              "MIN",
+              25
+            ],
+            [
+              "VGK",
+              23
+            ],
+            [
+              "UTA",
+              22
+            ],
+            [
+              "ANA",
+              21
+            ]
+          ],
+          "Opp": [
+            [
+              "PHI",
+              19
+            ],
+            [
+              "WPG",
+              16
+            ],
+            [
+              "CHI",
+              16
+            ],
+            [
+              "VAN",
+              16
+            ],
+            [
+              "CGY",
+              15
+            ]
+          ]
+        }
+      },
+      "source_record_id": "G",
+      "source_ladder_scope": "Approved player root",
+      "new_rule_recommendation": false,
+      "proposed_move_id": "assist-v3-g",
+      "id": "assist-v3-g",
+      "optional_buff": false,
+      "route_variant": "Oracle",
+      "display_family": "G",
+      "parent_name": "",
+      "parent_id": null,
+      "display_group": "Player · Oracle"
+    },
+    {
+      "review_id": "G_P1_1",
+      "name": "Oracle’s Refrain II",
+      "family": "G",
+      "animal": "Gorilla",
+      "variant": "Oracle",
+      "display_level": "HEAVY",
+      "conditions": [
+        [
+          "Log_L10_Goals_per60",
+          "<=",
+          1.2
+        ],
+        [
+          "Assists_mu",
+          ">=",
+          1.07
+        ]
+      ],
+      "full": {
+        "hits": 166,
+        "plays": 254,
+        "hit_rate": 65.35433070866142,
+        "be": 53.15843652322614,
+        "gap": 12.195894185435279,
+        "players": 38,
+        "units": 61.164092490369804,
+        "roi": 24.08035137416134,
+        "dates": 40,
+        "games": 179,
+        "teams": 23,
+        "opponents": 31,
+        "team_games": 211
+      },
+      "recent": {
+        "hits": 42,
+        "plays": 64,
+        "hit_rate": 65.625,
+        "be": 54.76428373430828,
+        "gap": 10.860716265691721,
+        "players": 23,
+        "units": 12.874547910316714,
+        "roi": 20.116481109869866,
+        "dates": 9,
+        "games": 46,
+        "teams": 17,
+        "opponents": 25,
+        "team_games": 51
+      },
+      "noise": {
+        "flags": [],
+        "concentration": {
+          "Player": [
+            [
+              "Quinn Hughes",
+              17
+            ],
+            [
+              "Matthew Tkachuk",
+              16
+            ],
+            [
+              "Leo Carlsson",
+              14
+            ],
+            [
+              "Mitch Marner",
+              14
+            ],
+            [
+              "Adam Fox",
+              13
+            ]
+          ],
+          "Team": [
+            [
+              "FLA",
+              28
+            ],
+            [
+              "VGK",
+              22
+            ],
+            [
+              "ANA",
+              21
+            ],
+            [
+              "MIN",
+              20
+            ],
+            [
+              "UTA",
+              18
+            ]
+          ],
+          "Opp": [
+            [
+              "WPG",
+              13
+            ],
+            [
+              "NSH",
+              13
+            ],
+            [
+              "CGY",
+              12
+            ],
+            [
+              "STL",
+              12
+            ],
+            [
+              "PIT",
+              11
+            ]
+          ]
+        }
+      },
+      "source_record_id": "G_P1_1",
+      "source_ladder_scope": "G",
+      "new_rule_recommendation": true,
+      "proposed_move_id": "assist-v3-g-p1-1",
+      "id": "assist-v3-g-p1-1",
+      "optional_buff": false,
+      "route_variant": "Oracle",
+      "display_family": "G",
+      "parent_name": "",
+      "parent_id": null,
+      "display_group": "Player · Oracle"
+    },
+    {
+      "review_id": "G_P1_1_P1_1",
+      "name": "Oracle’s Refrain III",
+      "family": "G",
+      "animal": "Gorilla",
+      "variant": "Oracle",
+      "display_level": "SPECIAL",
+      "conditions": [
+        [
+          "Log_L10_Goals_per60",
+          "<=",
+          1.2
+        ],
+        [
+          "Assists_mu",
+          ">=",
+          1.07
+        ],
+        [
+          "Log_L5_A_2plus_pct",
+          "<=",
+          20.0
+        ]
+      ],
+      "full": {
+        "hits": 116,
+        "plays": 164,
+        "hit_rate": 70.73170731707317,
+        "be": 52.89243455095058,
+        "gap": 17.83927276612259,
+        "players": 30,
+        "units": 56.816440579968734,
+        "roi": 34.644171085346784,
+        "dates": 36,
+        "games": 133,
+        "teams": 21,
+        "opponents": 31,
+        "team_games": 148
+      },
+      "recent": {
+        "hits": 32,
+        "plays": 45,
+        "hit_rate": 71.11111111111111,
+        "be": 54.70454904899211,
+        "gap": 16.406562062119008,
+        "players": 18,
+        "units": 13.866413939024849,
+        "roi": 30.814253197832997,
+        "dates": 9,
+        "games": 39,
+        "teams": 15,
+        "opponents": 23,
+        "team_games": 41
+      },
+      "noise": {
+        "flags": [],
+        "concentration": {
+          "Player": [
+            [
+              "Quinn Hughes",
+              13
+            ],
+            [
+              "Matthew Tkachuk",
+              11
+            ],
+            [
+              "Evan Bouchard",
+              11
+            ],
+            [
+              "Jackson Blake",
+              10
+            ],
+            [
+              "Matthew Schaefer",
+              9
+            ]
+          ],
+          "Team": [
+            [
+              "FLA",
+              17
+            ],
+            [
+              "UTA",
+              14
+            ],
+            [
+              "MIN",
+              13
+            ],
+            [
+              "CAR",
+              13
+            ],
+            [
+              "EDM",
+              11
+            ]
+          ],
+          "Opp": [
+            [
+              "NSH",
+              11
+            ],
+            [
+              "WPG",
+              9
+            ],
+            [
+              "TOR",
+              8
+            ],
+            [
+              "STL",
+              8
+            ],
+            [
+              "CBJ",
+              8
+            ]
+          ]
+        }
+      },
+      "source_record_id": "G_P1_1_P1_1",
+      "source_ladder_scope": "G_P1_1",
+      "new_rule_recommendation": true,
+      "proposed_move_id": "assist-v3-g-p1-1-p1-1",
+      "id": "assist-v3-g-p1-1-p1-1",
+      "optional_buff": false,
+      "route_variant": "Oracle",
+      "display_family": "G",
+      "parent_name": "",
+      "parent_id": null,
+      "display_group": "Player · Oracle"
+    },
+    {
+      "review_id": "G_P1_1_P5_3",
+      "name": "Moonlit Invocation",
+      "family": "G",
+      "animal": "Gorilla",
+      "variant": "Oracle",
+      "display_level": "CRIT II",
+      "conditions": [
+        [
+          "Log_L10_Goals_per60",
+          "<=",
+          1.2
+        ],
+        [
+          "Assists_mu",
+          ">=",
+          1.07
+        ],
+        [
+          "Log_L40_A_1plus_pct",
+          "<=",
+          52.0
+        ]
+      ],
+      "full": {
+        "hits": 27,
+        "plays": 33,
+        "hit_rate": 81.81818181818181,
+        "be": 52.26241704069025,
+        "gap": 29.55576477749156,
+        "players": 12,
+        "units": 18.94774618395783,
+        "roi": 57.417412678660085,
+        "dates": 25,
+        "games": 31,
+        "teams": 10,
+        "opponents": 20,
+        "team_games": 31
+      },
+      "recent": {
+        "hits": 6,
+        "plays": 6,
+        "hit_rate": 100.0,
+        "be": 54.224167045150175,
+        "gap": 45.775832954849825,
+        "players": 3,
+        "units": 5.195712656696638,
+        "roi": 86.59521094494397,
+        "dates": 5,
+        "games": 6,
+        "teams": 3,
+        "opponents": 6,
+        "team_games": 6
+      },
+      "noise": {
+        "flags": [
+          "Under10recentplays"
+        ],
+        "concentration": {
+          "Player": [
+            [
+              "Seth Jones",
+              6
+            ],
+            [
+              "Macklin Celebrini",
+              6
+            ],
+            [
+              "Jack Eichel",
+              5
+            ],
+            [
+              "Matthew Tkachuk",
+              3
+            ],
+            [
+              "Martin Necas",
+              3
+            ]
+          ],
+          "Team": [
+            [
+              "FLA",
+              9
+            ],
+            [
+              "COL",
+              6
+            ],
+            [
+              "SJS",
+              6
+            ],
+            [
+              "VGK",
+              5
+            ],
+            [
+              "TBL",
+              2
+            ]
+          ],
+          "Opp": [
+            [
+              "CHI",
+              3
+            ],
+            [
+              "SEA",
+              3
+            ],
+            [
+              "UTA",
+              3
+            ],
+            [
+              "DET",
+              3
+            ],
+            [
+              "NSH",
+              3
+            ]
+          ]
+        }
+      },
+      "source_record_id": "G_P1_1_P5_3",
+      "source_ladder_scope": "G_P1_1",
+      "new_rule_recommendation": true,
+      "proposed_move_id": "assist-v3-g-p1-1-p5-3",
+      "id": "assist-v3-g-p1-1-p5-3",
+      "optional_buff": false,
+      "route_variant": "Oracle",
+      "display_family": "G",
+      "parent_name": "",
+      "parent_id": null,
+      "display_group": "Player · Oracle"
+    },
+    {
+      "review_id": "M1",
+      "name": "Runewarden’s Vigil I",
+      "family": "M",
+      "animal": "Orangutan",
+      "variant": "Runesmith",
+      "display_level": "ATTACK",
+      "conditions": [
+        [
+          "Log_L20_TOI_median",
+          ">=",
+          20.7
+        ]
+      ],
+      "full": {
+        "hits": 198,
+        "plays": 311,
+        "hit_rate": 63.665594855305464,
+        "be": 54.13416782475939,
+        "gap": 9.531427030546077,
+        "players": 43,
+        "units": 56.63790838780293,
+        "roi": 18.21154610540287,
+        "dates": 39,
+        "games": 190,
+        "teams": 24,
+        "opponents": 32,
+        "team_games": 236
+      },
+      "recent": {
+        "hits": 55,
+        "plays": 87,
+        "hit_rate": 63.2183908045977,
+        "be": 54.04857788338605,
+        "gap": 9.169812921211651,
+        "players": 28,
+        "units": 15.92264198765426,
+        "roi": 18.301887342131334,
+        "dates": 9,
+        "games": 50,
+        "teams": 18,
+        "opponents": 30,
+        "team_games": 61
+      },
+      "noise": {
+        "flags": [],
+        "concentration": {
+          "Player": [
+            [
+              "Evan Bouchard",
+              20
+            ],
+            [
+              "Leon Draisaitl",
+              20
+            ],
+            [
+              "Macklin Celebrini",
+              18
+            ],
+            [
+              "Quinn Hughes",
+              17
+            ],
+            [
+              "Nikita Kucherov",
+              16
+            ]
+          ],
+          "Team": [
+            [
+              "EDM",
+              50
+            ],
+            [
+              "MIN",
+              42
+            ],
+            [
+              "TBL",
+              25
+            ],
+            [
+              "SJS",
+              18
+            ],
+            [
+              "VGK",
+              17
+            ]
+          ],
+          "Opp": [
+            [
+              "PHI",
+              16
+            ],
+            [
+              "UTA",
+              16
+            ],
+            [
+              "TOR",
+              16
+            ],
+            [
+              "NYI",
+              16
+            ],
+            [
+              "CGY",
+              15
+            ]
+          ]
+        }
+      },
+      "source_record_id": "M1",
+      "source_ladder_scope": "Approved player root",
+      "new_rule_recommendation": false,
+      "proposed_move_id": "assist-v3-m1",
+      "id": "assist-v3-m1",
+      "optional_buff": false,
+      "route_variant": "Runesmith",
+      "display_family": "M",
+      "parent_name": "",
+      "parent_id": null,
+      "display_group": "Player · Runewarden"
+    },
+    {
+      "review_id": "M2",
+      "name": "Runewarden’s Vigil II",
+      "family": "M",
+      "animal": "Orangutan",
+      "variant": "Runesmith",
+      "display_level": "HEAVY",
+      "conditions": [
+        [
+          "Log_L20_TOI_median",
+          ">=",
+          20.9
+        ]
+      ],
+      "full": {
+        "hits": 183,
+        "plays": 282,
+        "hit_rate": 64.8936170212766,
+        "be": 54.45214182746486,
+        "gap": 10.44147519381174,
+        "players": 39,
+        "units": 55.30484846826166,
+        "roi": 19.61164839300059,
+        "dates": 39,
+        "games": 182,
+        "teams": 24,
+        "opponents": 32,
+        "team_games": 222
+      },
+      "recent": {
+        "hits": 52,
+        "plays": 76,
+        "hit_rate": 68.42105263157895,
+        "be": 54.690900049343014,
+        "gap": 13.730152582235931,
+        "players": 25,
+        "units": 20.56355107856335,
+        "roi": 27.05730405074125,
+        "dates": 9,
+        "games": 48,
+        "teams": 18,
+        "opponents": 29,
+        "team_games": 58
+      },
+      "noise": {
+        "flags": [],
+        "concentration": {
+          "Player": [
+            [
+              "Evan Bouchard",
+              20
+            ],
+            [
+              "Leon Draisaitl",
+              18
+            ],
+            [
+              "Macklin Celebrini",
+              18
+            ],
+            [
+              "Quinn Hughes",
+              17
+            ],
+            [
+              "Kirill Kaprizov",
+              16
+            ]
+          ],
+          "Team": [
+            [
+              "EDM",
+              48
+            ],
+            [
+              "MIN",
+              42
+            ],
+            [
+              "TBL",
+              22
+            ],
+            [
+              "SJS",
+              18
+            ],
+            [
+              "OTT",
+              15
+            ]
+          ],
+          "Opp": [
+            [
+              "TOR",
+              16
+            ],
+            [
+              "PHI",
+              15
+            ],
+            [
+              "UTA",
+              15
+            ],
+            [
+              "NYI",
+              14
+            ],
+            [
+              "VAN",
+              14
+            ]
+          ]
+        }
+      },
+      "source_record_id": "M2",
+      "source_ladder_scope": "Approved player root",
+      "new_rule_recommendation": false,
+      "proposed_move_id": "assist-v3-m2",
+      "id": "assist-v3-m2",
+      "optional_buff": false,
+      "route_variant": "Runesmith",
+      "display_family": "M",
+      "parent_name": "",
+      "parent_id": null,
+      "display_group": "Player · Runewarden"
+    },
+    {
+      "review_id": "M1_P1_1",
+      "name": "Runewarden’s Volley",
+      "family": "M",
+      "animal": "Orangutan",
+      "variant": "Runesmith",
+      "display_level": "HEAVY",
+      "conditions": [
+        [
+          "Log_L20_TOI_median",
+          ">=",
+          20.7
+        ],
+        [
+          "Log_L40_S_per_game",
+          ">=",
+          2.5
+        ]
+      ],
+      "full": {
+        "hits": 147,
+        "plays": 215,
+        "hit_rate": 68.37209302325581,
+        "be": 54.81887935065305,
+        "gap": 13.553213672602766,
+        "players": 29,
+        "units": 56.2582759403686,
+        "roi": 26.166639972264463,
+        "dates": 38,
+        "games": 135,
+        "teams": 18,
+        "opponents": 32,
+        "team_games": 157
+      },
+      "recent": {
+        "hits": 41,
+        "plays": 58,
+        "hit_rate": 70.6896551724138,
+        "be": 55.50365499539118,
+        "gap": 15.186000177022613,
+        "players": 17,
+        "units": 17.43431939619239,
+        "roi": 30.059171372745496,
+        "dates": 8,
+        "games": 35,
+        "teams": 11,
+        "opponents": 27,
+        "team_games": 40
+      },
+      "noise": {
+        "flags": [],
+        "concentration": {
+          "Player": [
+            [
+              "Evan Bouchard",
+              20
+            ],
+            [
+              "Leon Draisaitl",
+              20
+            ],
+            [
+              "Macklin Celebrini",
+              18
+            ],
+            [
+              "Quinn Hughes",
+              17
+            ],
+            [
+              "Kirill Kaprizov",
+              16
+            ]
+          ],
+          "Team": [
+            [
+              "EDM",
+              47
+            ],
+            [
+              "MIN",
+              42
+            ],
+            [
+              "TBL",
+              23
+            ],
+            [
+              "SJS",
+              18
+            ],
+            [
+              "NYI",
+              15
+            ]
+          ],
+          "Opp": [
+            [
+              "TOR",
+              13
+            ],
+            [
+              "NSH",
+              12
+            ],
+            [
+              "CGY",
+              11
+            ],
+            [
+              "UTA",
+              10
+            ],
+            [
+              "NYI",
+              10
+            ]
+          ]
+        }
+      },
+      "source_record_id": "M1_P1_1",
+      "source_ladder_scope": "M1",
+      "new_rule_recommendation": true,
+      "proposed_move_id": "assist-v3-m1-p1-1",
+      "id": "assist-v3-m1-p1-1",
+      "optional_buff": false,
+      "route_variant": "Runesmith",
+      "display_family": "M",
+      "parent_name": "",
+      "parent_id": null,
+      "display_group": "Player · Runewarden"
+    },
+    {
+      "review_id": "M1_P1_1_P1_1",
+      "name": "Runewarden’s Rhythm",
+      "family": "M",
+      "animal": "Orangutan",
+      "variant": "Runesmith",
+      "display_level": "SPECIAL",
+      "conditions": [
+        [
+          "Log_L20_TOI_median",
+          ">=",
+          20.7
+        ],
+        [
+          "Log_L40_S_per_game",
+          ">=",
+          2.5
+        ],
+        [
+          "Log_L10_SOG_per60",
+          "<=",
+          10.35
+        ]
+      ],
+      "full": {
+        "hits": 121,
+        "plays": 166,
+        "hit_rate": 72.89156626506023,
+        "be": 55.24048933890645,
+        "gap": 17.651076926153785,
+        "players": 25,
+        "units": 56.60888340517396,
+        "roi": 34.101736991068655,
+        "dates": 37,
+        "games": 115,
+        "teams": 15,
+        "opponents": 32,
+        "team_games": 132
+      },
+      "recent": {
+        "hits": 31,
+        "plays": 44,
+        "hit_rate": 70.45454545454545,
+        "be": 55.72375607718615,
+        "gap": 14.7307893773593,
+        "players": 15,
+        "units": 13.116774380821289,
+        "roi": 29.81085086550293,
+        "dates": 7,
+        "games": 29,
+        "teams": 10,
+        "opponents": 25,
+        "team_games": 32
+      },
+      "noise": {
+        "flags": [],
+        "concentration": {
+          "Player": [
+            [
+              "Evan Bouchard",
+              20
+            ],
+            [
+              "Quinn Hughes",
+              17
+            ],
+            [
+              "Matthew Schaefer",
+              14
+            ],
+            [
+              "Kirill Kaprizov",
+              14
+            ],
+            [
+              "Nikita Kucherov",
+              13
+            ]
+          ],
+          "Team": [
+            [
+              "EDM",
+              36
+            ],
+            [
+              "MIN",
+              34
+            ],
+            [
+              "NYI",
+              15
+            ],
+            [
+              "TBL",
+              15
+            ],
+            [
+              "TOR",
+              9
+            ]
+          ],
+          "Opp": [
+            [
+              "TOR",
+              10
+            ],
+            [
+              "NSH",
+              10
+            ],
+            [
+              "CGY",
+              9
+            ],
+            [
+              "SJS",
+              8
+            ],
+            [
+              "NYI",
+              8
+            ]
+          ]
+        }
+      },
+      "source_record_id": "M1_P1_1_P1_1",
+      "source_ladder_scope": "M1_P1_1",
+      "new_rule_recommendation": true,
+      "proposed_move_id": "assist-v3-m1-p1-1-p1-1",
+      "id": "assist-v3-m1-p1-1-p1-1",
+      "optional_buff": false,
+      "route_variant": "Runesmith",
+      "display_family": "M",
+      "parent_name": "",
+      "parent_id": null,
+      "display_group": "Player · Runewarden"
+    },
+    {
+      "review_id": "M1_P6_2",
+      "name": "Runewarden’s Resurgence",
+      "family": "M",
+      "animal": "Orangutan",
+      "variant": "Runesmith",
+      "display_level": "CRIT II",
+      "conditions": [
+        [
+          "Log_L20_TOI_median",
+          ">=",
+          20.7
+        ],
+        [
+          "Log_L20_A_per_game",
+          "<=",
+          0.65
+        ]
+      ],
+      "full": {
+        "hits": 28,
+        "plays": 34,
+        "hit_rate": 82.3529411764706,
+        "be": 49.8942764135063,
+        "gap": 32.4586647629643,
+        "players": 15,
+        "units": 22.40190723755941,
+        "roi": 65.88796246341002,
+        "dates": 22,
+        "games": 32,
+        "teams": 12,
+        "opponents": 19,
+        "team_games": 32
+      },
+      "recent": {
+        "hits": 12,
+        "plays": 12,
+        "hit_rate": 100.0,
+        "be": 49.88829710830097,
+        "gap": 50.11170289169903,
+        "players": 10,
+        "units": 12.382252127904302,
+        "roi": 103.1854343992025,
+        "dates": 7,
+        "games": 12,
+        "teams": 10,
+        "opponents": 10,
+        "team_games": 12
+      },
+      "noise": {
+        "flags": [],
+        "concentration": {
+          "Player": [
+            [
+              "Kirill Kaprizov",
+              7
+            ],
+            [
+              "Matt Boldy",
+              7
+            ],
+            [
+              "Brandon Hagel",
+              6
+            ],
+            [
+              "Beckett Sennecke",
+              2
+            ],
+            [
+              "Tim Sttzle",
+              2
+            ]
+          ],
+          "Team": [
+            [
+              "MIN",
+              14
+            ],
+            [
+              "TBL",
+              7
+            ],
+            [
+              "VGK",
+              2
+            ],
+            [
+              "ANA",
+              2
+            ],
+            [
+              "OTT",
+              2
+            ]
+          ],
+          "Opp": [
+            [
+              "CGY",
+              4
+            ],
+            [
+              "VAN",
+              3
+            ],
+            [
+              "WPG",
+              3
+            ],
+            [
+              "SEA",
+              2
+            ],
+            [
+              "UTA",
+              2
+            ]
+          ]
+        }
+      },
+      "source_record_id": "M1_P6_2",
+      "source_ladder_scope": "M1",
+      "new_rule_recommendation": true,
+      "proposed_move_id": "assist-v3-m1-p6-2",
+      "id": "assist-v3-m1-p6-2",
+      "optional_buff": false,
+      "route_variant": "Runesmith",
+      "display_family": "M",
+      "parent_name": "",
+      "parent_id": null,
+      "display_group": "Player · Runewarden"
+    },
+    {
+      "review_id": "E1",
+      "name": "Stormkeeper’s Flow I",
+      "family": "E",
+      "animal": "Chimp",
+      "variant": "Stormcaller",
+      "display_level": "ATTACK",
+      "conditions": [
+        [
+          "EV5_TOI_per_game",
+          ">=",
+          15.6
+        ]
+      ],
+      "full": {
+        "hits": 163,
+        "plays": 256,
+        "hit_rate": 63.671875,
+        "be": 54.092478570732986,
+        "gap": 9.579396429267014,
+        "players": 27,
+        "units": 47.08123943404456,
+        "roi": 18.391109153923658,
+        "dates": 38,
+        "games": 170,
+        "teams": 18,
+        "opponents": 32,
+        "team_games": 205
+      },
+      "recent": {
+        "hits": 44,
+        "plays": 69,
+        "hit_rate": 63.768115942028984,
+        "be": 54.10641799698019,
+        "gap": 9.661697945048793,
+        "players": 21,
+        "units": 12.567674500347293,
+        "roi": 18.214021014996078,
+        "dates": 9,
+        "games": 44,
+        "teams": 16,
+        "opponents": 28,
+        "team_games": 54
+      },
+      "noise": {
+        "flags": [],
+        "concentration": {
+          "Player": [
+            [
+              "Evan Bouchard",
+              18
+            ],
+            [
+              "Leon Draisaitl",
+              18
+            ],
+            [
+              "Macklin Celebrini",
+              18
+            ],
+            [
+              "Jack Hughes",
+              17
+            ],
+            [
+              "Kirill Kaprizov",
+              17
+            ]
+          ],
+          "Team": [
+            [
+              "EDM",
+              45
+            ],
+            [
+              "MIN",
+              32
+            ],
+            [
+              "NSH",
+              20
+            ],
+            [
+              "SJS",
+              18
+            ],
+            [
+              "NJD",
+              17
+            ]
+          ],
+          "Opp": [
+            [
+              "TOR",
+              15
+            ],
+            [
+              "NYI",
+              13
+            ],
+            [
+              "STL",
+              13
+            ],
+            [
+              "ANA",
+              11
+            ],
+            [
+              "CBJ",
+              11
+            ]
+          ]
+        }
+      },
+      "source_record_id": "E1",
+      "source_ladder_scope": "Approved player root",
+      "new_rule_recommendation": false,
+      "proposed_move_id": "assist-v3-e1",
+      "id": "assist-v3-e1",
+      "optional_buff": false,
+      "route_variant": "Stormcaller",
+      "display_family": "E",
+      "parent_name": "",
+      "parent_id": null,
+      "display_group": "Player · Stormkeeper"
+    },
+    {
+      "review_id": "E2",
+      "name": "Stormkeeper’s Flow II",
+      "family": "E",
+      "animal": "Chimp",
+      "variant": "Stormcaller",
+      "display_level": "HEAVY",
+      "conditions": [
+        [
+          "EV5_TOI_per_game",
+          ">=",
+          16.1
+        ]
+      ],
+      "full": {
+        "hits": 118,
+        "plays": 176,
+        "hit_rate": 67.04545454545455,
+        "be": 55.43019824971171,
+        "gap": 11.615256295742839,
+        "players": 20,
+        "units": 38.3456737358194,
+        "roi": 21.787314622624663,
+        "dates": 35,
+        "games": 126,
+        "teams": 16,
+        "opponents": 32,
+        "team_games": 143
+      },
+      "recent": {
+        "hits": 34,
+        "plays": 52,
+        "hit_rate": 65.38461538461539,
+        "be": 55.54335691555735,
+        "gap": 9.84125846905804,
+        "players": 17,
+        "units": 9.24546189813469,
+        "roi": 17.779734419489788,
+        "dates": 9,
+        "games": 37,
+        "teams": 14,
+        "opponents": 26,
+        "team_games": 43
+      },
+      "noise": {
+        "flags": [],
+        "concentration": {
+          "Player": [
+            [
+              "Evan Bouchard",
+              18
+            ],
+            [
+              "Macklin Celebrini",
+              18
+            ],
+            [
+              "Kirill Kaprizov",
+              17
+            ],
+            [
+              "Quinn Hughes",
+              15
+            ],
+            [
+              "Matthew Schaefer",
+              14
+            ]
+          ],
+          "Team": [
+            [
+              "EDM",
+              37
+            ],
+            [
+              "MIN",
+              32
+            ],
+            [
+              "SJS",
+              18
+            ],
+            [
+              "NYI",
+              14
+            ],
+            [
+              "NJD",
+              12
+            ]
+          ],
+          "Opp": [
+            [
+              "TOR",
+              15
+            ],
+            [
+              "NYI",
+              10
+            ],
+            [
+              "ANA",
+              9
+            ],
+            [
+              "CGY",
+              9
+            ],
+            [
+              "VAN",
+              9
+            ]
+          ]
+        }
+      },
+      "source_record_id": "E2",
+      "source_ladder_scope": "Approved player root",
+      "new_rule_recommendation": false,
+      "proposed_move_id": "assist-v3-e2",
+      "id": "assist-v3-e2",
+      "optional_buff": false,
+      "route_variant": "Stormcaller",
+      "display_family": "E",
+      "parent_name": "",
+      "parent_id": null,
+      "display_group": "Player · Stormkeeper"
+    },
+    {
+      "review_id": "E1_P1_1",
+      "name": "Stormkeeper’s Balance",
+      "family": "E",
+      "animal": "Chimp",
+      "variant": "Stormcaller",
+      "display_level": "HEAVY",
+      "conditions": [
+        [
+          "EV5_TOI_per_game",
+          ">=",
+          15.6
+        ],
+        [
+          "Log_L5_SOG_SD",
+          "<=",
+          1.7
+        ]
+      ],
+      "full": {
+        "hits": 133,
+        "plays": 193,
+        "hit_rate": 68.9119170984456,
+        "be": 54.306748877337995,
+        "gap": 14.605168221107604,
+        "players": 26,
+        "units": 52.81216709939203,
+        "roi": 27.363817149944055,
+        "dates": 36,
+        "games": 142,
+        "teams": 18,
+        "opponents": 32,
+        "team_games": 157
+      },
+      "recent": {
+        "hits": 41,
+        "plays": 60,
+        "hit_rate": 68.33333333333333,
+        "be": 54.88346299671899,
+        "gap": 13.449870336614339,
+        "players": 19,
+        "units": 15.467674500347293,
+        "roi": 25.779457500578822,
+        "dates": 9,
+        "games": 41,
+        "teams": 15,
+        "opponents": 27,
+        "team_games": 48
+      },
+      "noise": {
+        "flags": [],
+        "concentration": {
+          "Player": [
+            [
+              "Kirill Kaprizov",
+              15
+            ],
+            [
+              "Quinn Hughes",
+              14
+            ],
+            [
+              "Leon Draisaitl",
+              13
+            ],
+            [
+              "Evan Bouchard",
+              13
+            ],
+            [
+              "David Pastrnak",
+              12
+            ]
+          ],
+          "Team": [
+            [
+              "EDM",
+              35
+            ],
+            [
+              "MIN",
+              29
+            ],
+            [
+              "NSH",
+              14
+            ],
+            [
+              "BOS",
+              12
+            ],
+            [
+              "FLA",
+              12
+            ]
+          ],
+          "Opp": [
+            [
+              "PHI",
+              11
+            ],
+            [
+              "TOR",
+              11
+            ],
+            [
+              "NYI",
+              10
+            ],
+            [
+              "ANA",
+              9
+            ],
+            [
+              "STL",
+              9
+            ]
+          ]
+        }
+      },
+      "source_record_id": "E1_P1_1",
+      "source_ladder_scope": "E1",
+      "new_rule_recommendation": true,
+      "proposed_move_id": "assist-v3-e1-p1-1",
+      "id": "assist-v3-e1-p1-1",
+      "optional_buff": false,
+      "route_variant": "Stormcaller",
+      "display_family": "E",
+      "parent_name": "",
+      "parent_id": null,
+      "display_group": "Player · Stormkeeper"
+    },
+    {
+      "review_id": "E1_P1_1_P1_1",
+      "name": "Stormkeeper’s Pulse",
+      "family": "E",
+      "animal": "Chimp",
+      "variant": "Stormcaller",
+      "display_level": "SPECIAL",
+      "conditions": [
+        [
+          "EV5_TOI_per_game",
+          ">=",
+          15.6
+        ],
+        [
+          "Log_L5_SOG_SD",
+          "<=",
+          1.7
+        ],
+        [
+          "Pace_Gap_S10",
+          ">=",
+          -0.4
+        ]
+      ],
+      "full": {
+        "hits": 106,
+        "plays": 144,
+        "hit_rate": 73.61111111111111,
+        "be": 54.92420815000882,
+        "gap": 18.68690296110229,
+        "players": 20,
+        "units": 50.15069683971437,
+        "roi": 34.826872805357205,
+        "dates": 36,
+        "games": 111,
+        "teams": 15,
+        "opponents": 31,
+        "team_games": 117
+      },
+      "recent": {
+        "hits": 38,
+        "plays": 51,
+        "hit_rate": 74.50980392156863,
+        "be": 54.950125907399276,
+        "gap": 19.559678014169357,
+        "players": 16,
+        "units": 18.98517650543137,
+        "roi": 37.225836285159545,
+        "dates": 9,
+        "games": 37,
+        "teams": 12,
+        "opponents": 24,
+        "team_games": 41
+      },
+      "noise": {
+        "flags": [],
+        "concentration": {
+          "Player": [
+            [
+              "Kirill Kaprizov",
+              14
+            ],
+            [
+              "David Pastrnak",
+              12
+            ],
+            [
+              "Quinn Hughes",
+              12
+            ],
+            [
+              "Evan Bouchard",
+              12
+            ],
+            [
+              "Seth Jones",
+              11
+            ]
+          ],
+          "Team": [
+            [
+              "EDM",
+              31
+            ],
+            [
+              "MIN",
+              26
+            ],
+            [
+              "BOS",
+              12
+            ],
+            [
+              "FLA",
+              11
+            ],
+            [
+              "SJS",
+              8
+            ]
+          ],
+          "Opp": [
+            [
+              "NYI",
+              10
+            ],
+            [
+              "TBL",
+              8
+            ],
+            [
+              "VAN",
+              8
+            ],
+            [
+              "PHI",
+              8
+            ],
+            [
+              "CGY",
+              7
+            ]
+          ]
+        }
+      },
+      "source_record_id": "E1_P1_1_P1_1",
+      "source_ladder_scope": "E1_P1_1",
+      "new_rule_recommendation": true,
+      "proposed_move_id": "assist-v3-e1-p1-1-p1-1",
+      "id": "assist-v3-e1-p1-1-p1-1",
+      "optional_buff": false,
+      "route_variant": "Stormcaller",
+      "display_family": "E",
+      "parent_name": "",
+      "parent_id": null,
+      "display_group": "Player · Stormkeeper"
+    },
+    {
+      "review_id": "E1_P4_2",
+      "name": "Stormkeeper’s Ascendance",
+      "family": "E",
+      "animal": "Chimp",
+      "variant": "Stormcaller",
+      "display_level": "CRIT I",
+      "conditions": [
+        [
+          "EV5_TOI_per_game",
+          ">=",
+          15.6
+        ],
+        [
+          "Official_Player_MinutesPG_Season",
+          ">=",
+          4.05
+        ]
+      ],
+      "full": {
+        "hits": 26,
+        "plays": 34,
+        "hit_rate": 76.47058823529412,
+        "be": 55.50370636002255,
+        "gap": 20.966881875271568,
+        "players": 9,
+        "units": 13.225153727802121,
+        "roi": 38.89751096412389,
+        "dates": 11,
+        "games": 25,
+        "teams": 7,
+        "opponents": 20,
+        "team_games": 27
+      },
+      "recent": {
+        "hits": 16,
+        "plays": 19,
+        "hit_rate": 84.21052631578948,
+        "be": 55.134874642297014,
+        "gap": 29.075651673492466,
+        "players": 8,
+        "units": 10.19283829548669,
+        "roi": 53.64651734466678,
+        "dates": 6,
+        "games": 13,
+        "teams": 6,
+        "opponents": 13,
+        "team_games": 15
+      },
+      "noise": {
+        "flags": [],
+        "concentration": {
+          "Player": [
+            [
+              "Kirill Kaprizov",
+              7
+            ],
+            [
+              "Macklin Celebrini",
+              6
+            ],
+            [
+              "Seth Jones",
+              5
+            ],
+            [
+              "Quinn Hughes",
+              5
+            ],
+            [
+              "Evan Bouchard",
+              3
+            ]
+          ],
+          "Team": [
+            [
+              "MIN",
+              12
+            ],
+            [
+              "SJS",
+              6
+            ],
+            [
+              "EDM",
+              5
+            ],
+            [
+              "FLA",
+              5
+            ],
+            [
+              "ANA",
+              2
+            ]
+          ],
+          "Opp": [
+            [
+              "TOR",
+              5
+            ],
+            [
+              "MTL",
+              3
+            ],
+            [
+              "NSH",
+              3
+            ],
+            [
+              "PIT",
+              2
+            ],
+            [
+              "NYI",
+              2
+            ]
+          ]
+        }
+      },
+      "source_record_id": "E1_P4_2",
+      "source_ladder_scope": "E1",
+      "new_rule_recommendation": true,
+      "proposed_move_id": "assist-v3-e1-p4-2",
+      "id": "assist-v3-e1-p4-2",
+      "optional_buff": false,
+      "route_variant": "Stormcaller",
+      "display_family": "E",
+      "parent_name": "",
+      "parent_id": null,
+      "display_group": "Player · Stormkeeper"
+    },
+    {
+      "review_id": "E1_P7_2",
+      "name": "Stormkeeper’s Flux",
+      "family": "E",
+      "animal": "Chimp",
+      "variant": "Stormcaller",
+      "display_level": "CRIT II",
+      "conditions": [
+        [
+          "EV5_TOI_per_game",
+          ">=",
+          15.6
+        ],
+        [
+          "Log_L20_TOI_SD",
+          ">=",
+          2.85
+        ]
+      ],
+      "full": {
+        "hits": 25,
+        "plays": 31,
+        "hit_rate": 80.64516129032258,
+        "be": 57.771517693899696,
+        "gap": 22.87364359642288,
+        "players": 7,
+        "units": 12.839279898211132,
+        "roi": 41.41703192971333,
+        "dates": 20,
+        "games": 29,
+        "teams": 7,
+        "opponents": 21,
+        "team_games": 31
+      },
+      "recent": {
+        "hits": 7,
+        "plays": 8,
+        "hit_rate": 87.5,
+        "be": 56.67404075682607,
+        "gap": 30.825959243173934,
+        "players": 5,
+        "units": 4.423491783735798,
+        "roi": 55.29364729669748,
+        "dates": 4,
+        "games": 7,
+        "teams": 5,
+        "opponents": 7,
+        "team_games": 8
+      },
+      "noise": {
+        "flags": [
+          "Under10recentplays",
+          "Over60% from top3players"
+        ],
+        "concentration": {
+          "Player": [
+            [
+              "Quinn Hughes",
+              15
+            ],
+            [
+              "Jackson LaCombe",
+              5
+            ],
+            [
+              "Jack Hughes",
+              3
+            ],
+            [
+              "Mikhail Sergachev",
+              3
+            ],
+            [
+              "Matthew Schaefer",
+              3
+            ]
+          ],
+          "Team": [
+            [
+              "MIN",
+              15
+            ],
+            [
+              "ANA",
+              5
+            ],
+            [
+              "NJD",
+              3
+            ],
+            [
+              "UTA",
+              3
+            ],
+            [
+              "NYI",
+              3
+            ]
+          ],
+          "Opp": [
+            [
+              "ANA",
+              3
+            ],
+            [
+              "WSH",
+              2
+            ],
+            [
+              "PIT",
+              2
+            ],
+            [
+              "CGY",
+              2
+            ],
+            [
+              "LAK",
+              2
+            ]
+          ]
+        }
+      },
+      "source_record_id": "E1_P7_2",
+      "source_ladder_scope": "E1",
+      "new_rule_recommendation": true,
+      "proposed_move_id": "assist-v3-e1-p7-2",
+      "id": "assist-v3-e1-p7-2",
+      "optional_buff": false,
+      "route_variant": "Stormcaller",
+      "display_family": "E",
+      "parent_name": "",
+      "parent_id": null,
+      "display_group": "Player · Stormkeeper"
+    },
+    {
+      "review_id": "E1_P1_1_P4_2",
+      "name": "Stormkeeper’s Reckoning",
+      "family": "E",
+      "animal": "Chimp",
+      "variant": "Stormcaller",
+      "display_level": "CRIT II",
+      "conditions": [
+        [
+          "EV5_TOI_per_game",
+          ">=",
+          15.6
+        ],
+        [
+          "Log_L5_SOG_SD",
+          "<=",
+          1.7
+        ],
+        [
+          "Pace_Gap_A10",
+          ">=",
+          2.9
+        ]
+      ],
+      "full": {
+        "hits": 26,
+        "plays": 30,
+        "hit_rate": 86.66666666666667,
+        "be": 58.544632789225034,
+        "gap": 28.122033877441638,
+        "players": 10,
+        "units": 14.620995430050277,
+        "roi": 48.736651433500924,
+        "dates": 20,
+        "games": 25,
+        "teams": 8,
+        "opponents": 20,
+        "team_games": 25
+      },
+      "recent": {
+        "hits": 14,
+        "plays": 16,
+        "hit_rate": 87.5,
+        "be": 56.94220051109669,
+        "gap": 30.557799488903314,
+        "players": 7,
+        "units": 9.16810322908721,
+        "roi": 57.30064518179506,
+        "dates": 8,
+        "games": 11,
+        "teams": 5,
+        "opponents": 11,
+        "team_games": 11
+      },
+      "noise": {
+        "flags": [
+          "Over50% from one Team",
+          "Over60% from top3players"
+        ],
+        "concentration": {
+          "Player": [
+            [
+              "Connor McDavid",
+              9
+            ],
+            [
+              "Macklin Celebrini",
+              6
+            ],
+            [
+              "Leon Draisaitl",
+              5
+            ],
+            [
+              "Evan Bouchard",
+              3
+            ],
+            [
+              "Quinn Hughes",
+              2
+            ]
+          ],
+          "Team": [
+            [
+              "EDM",
+              17
+            ],
+            [
+              "SJS",
+              6
+            ],
+            [
+              "MIN",
+              2
+            ],
+            [
+              "NJD",
+              1
+            ],
+            [
+              "NYI",
+              1
+            ]
+          ],
+          "Opp": [
+            [
+              "PHI",
+              4
+            ],
+            [
+              "STL",
+              3
+            ],
+            [
+              "UTA",
+              2
+            ],
+            [
+              "NYI",
+              2
+            ],
+            [
+              "TBL",
+              2
+            ]
+          ]
+        }
+      },
+      "source_record_id": "E1_P1_1_P4_2",
+      "source_ladder_scope": "E1_P1_1",
+      "new_rule_recommendation": true,
+      "proposed_move_id": "assist-v3-e1-p1-1-p4-2",
+      "id": "assist-v3-e1-p1-1-p4-2",
+      "optional_buff": false,
+      "route_variant": "Stormcaller",
+      "display_family": "E",
+      "parent_name": "",
+      "parent_id": null,
+      "display_group": "Player · Stormkeeper"
+    },
+    {
+      "review_id": "F",
+      "name": "Eternal Conduit",
+      "family": "F",
+      "animal": "Gorilla",
+      "variant": "Oracle",
+      "display_level": "CRIT I",
+      "conditions": [
+        [
+          "Log_Season_A_1plus_pct",
+          ">=",
+          80
+        ]
+      ],
+      "full": {
+        "hits": 42,
+        "plays": 56,
+        "hit_rate": 75.0,
+        "be": 60.34603668842782,
+        "gap": 14.653963311572177,
+        "players": 10,
+        "units": 13.009780757566087,
+        "roi": 23.231751352796582,
+        "dates": 27,
+        "games": 44,
+        "teams": 7,
+        "opponents": 27,
+        "team_games": 45
+      },
+      "recent": {
+        "hits": 9,
+        "plays": 13,
+        "hit_rate": 69.23076923076923,
+        "be": 60.78442726203318,
+        "gap": 8.44634196873605,
+        "players": 4,
+        "units": 1.709572317891503,
+        "roi": 13.150556291473098,
+        "dates": 5,
+        "games": 9,
+        "teams": 3,
+        "opponents": 9,
+        "team_games": 9
+      },
+      "noise": {
+        "flags": [
+          "Over50% from one Team",
+          "Over60% from top3players"
+        ],
+        "concentration": {
+          "Player": [
+            [
+              "Evan Bouchard",
+              20
+            ],
+            [
+              "Quinn Hughes",
+              17
+            ],
+            [
+              "Connor McDavid",
+              10
+            ],
+            [
+              "Tim Sttzle",
+              2
+            ],
+            [
+              "Mitch Marner",
+              2
+            ]
+          ],
+          "Team": [
+            [
+              "EDM",
+              30
+            ],
+            [
+              "MIN",
+              17
+            ],
+            [
+              "ANA",
+              3
+            ],
+            [
+              "OTT",
+              2
+            ],
+            [
+              "VGK",
+              2
+            ]
+          ],
+          "Opp": [
+            [
+              "CGY",
+              5
+            ],
+            [
+              "TOR",
+              4
+            ],
+            [
+              "NYI",
+              4
+            ],
+            [
+              "UTA",
+              4
+            ],
+            [
+              "PHI",
+              4
+            ]
+          ]
+        }
+      },
+      "source_record_id": "F",
+      "source_ladder_scope": "Approved player root",
+      "new_rule_recommendation": false,
+      "proposed_move_id": "assist-v3-f",
+      "id": "assist-v3-f",
+      "optional_buff": false,
+      "route_variant": "Oracle",
+      "display_family": "F",
+      "parent_name": "",
+      "parent_id": null,
+      "display_group": "Player · Eternal Conduit"
+    },
+    {
+      "review_id": "F_P1_1",
+      "name": "Eternal Conduit · Intent",
+      "family": "F",
+      "animal": "Gorilla",
+      "variant": "Oracle",
+      "display_level": "CRIT II",
+      "conditions": [
+        [
+          "Log_Season_A_1plus_pct",
+          ">=",
+          80
+        ],
+        [
+          "ShotIntent_Pct",
+          ">=",
+          43.0
+        ]
+      ],
+      "full": {
+        "hits": 41,
+        "plays": 51,
+        "hit_rate": 80.3921568627451,
+        "be": 61.05977031923556,
+        "gap": 19.332386543509536,
+        "players": 7,
+        "units": 16.176447424232755,
+        "roi": 31.718524361240696,
+        "dates": 26,
+        "games": 40,
+        "teams": 6,
+        "opponents": 25,
+        "team_games": 41
+      },
+      "recent": {
+        "hits": 9,
+        "plays": 12,
+        "hit_rate": 75.0,
+        "be": 60.784436723411766,
+        "gap": 14.215563276588234,
+        "players": 4,
+        "units": 2.709572317891503,
+        "roi": 22.579769315762523,
+        "dates": 5,
+        "games": 8,
+        "teams": 3,
+        "opponents": 8,
+        "team_games": 8
+      },
+      "noise": {
+        "flags": [
+          "Over50% from one Team",
+          "Over60% from top3players"
+        ],
+        "concentration": {
+          "Player": [
+            [
+              "Evan Bouchard",
+              19
+            ],
+            [
+              "Quinn Hughes",
+              17
+            ],
+            [
+              "Connor McDavid",
+              10
+            ],
+            [
+              "Mitch Marner",
+              2
+            ],
+            [
+              "Mikael Granlund",
+              1
+            ]
+          ],
+          "Team": [
+            [
+              "EDM",
+              29
+            ],
+            [
+              "MIN",
+              17
+            ],
+            [
+              "VGK",
+              2
+            ],
+            [
+              "ANA",
+              1
+            ],
+            [
+              "UTA",
+              1
+            ]
+          ],
+          "Opp": [
+            [
+              "CGY",
+              4
+            ],
+            [
+              "NYI",
+              4
+            ],
+            [
+              "UTA",
+              4
+            ],
+            [
+              "PHI",
+              4
+            ],
+            [
+              "TOR",
+              3
+            ]
+          ]
+        }
+      },
+      "source_record_id": "F_P1_1",
+      "source_ladder_scope": "F",
+      "new_rule_recommendation": true,
+      "proposed_move_id": "assist-v3-f-p1-1",
+      "id": "assist-v3-f-p1-1",
+      "optional_buff": false,
+      "route_variant": "Oracle",
+      "display_family": "F",
+      "parent_name": "",
+      "parent_id": null,
+      "display_group": "Player · Eternal Conduit"
+    },
+    {
+      "review_id": "F_P7_2",
+      "name": "Eternal Conduit · Volley",
+      "family": "F",
+      "animal": "Gorilla",
+      "variant": "Oracle",
+      "display_level": "CRIT II",
+      "conditions": [
+        [
+          "Log_Season_A_1plus_pct",
+          ">=",
+          80
+        ],
+        [
+          "Log_L40_S_4plus_pct",
+          ">=",
+          28.0
+        ]
+      ],
+      "full": {
+        "hits": 31,
+        "plays": 35,
+        "hit_rate": 88.57142857142857,
+        "be": 61.84257277797907,
+        "gap": 26.728855793449497,
+        "players": 4,
+        "units": 15.59060782523526,
+        "roi": 44.54459378638646,
+        "dates": 23,
+        "games": 31,
+        "teams": 3,
+        "opponents": 23,
+        "team_games": 32
+      },
+      "recent": {
+        "hits": 4,
+        "plays": 4,
+        "hit_rate": 100.0,
+        "be": 61.66072489601901,
+        "gap": 38.33927510398099,
+        "players": 2,
+        "units": 2.516589861751152,
+        "roi": 62.9147465437788,
+        "dates": 4,
+        "games": 4,
+        "teams": 2,
+        "opponents": 4,
+        "team_games": 4
+      },
+      "noise": {
+        "flags": [
+          "Under10recentplays",
+          "Over60% from top3players"
+        ],
+        "concentration": {
+          "Player": [
+            [
+              "Quinn Hughes",
+              17
+            ],
+            [
+              "Evan Bouchard",
+              14
+            ],
+            [
+              "Connor McDavid",
+              3
+            ],
+            [
+              "Clayton Keller",
+              1
+            ]
+          ],
+          "Team": [
+            [
+              "EDM",
+              17
+            ],
+            [
+              "MIN",
+              17
+            ],
+            [
+              "UTA",
+              1
+            ]
+          ],
+          "Opp": [
+            [
+              "UTA",
+              4
+            ],
+            [
+              "TOR",
+              3
+            ],
+            [
+              "CGY",
+              3
+            ],
+            [
+              "LAK",
+              2
+            ],
+            [
+              "STL",
+              2
+            ]
+          ]
+        }
+      },
+      "source_record_id": "F_P7_2",
+      "source_ladder_scope": "F",
+      "new_rule_recommendation": true,
+      "proposed_move_id": "assist-v3-f-p7-2",
+      "id": "assist-v3-f-p7-2",
+      "optional_buff": false,
+      "route_variant": "Oracle",
+      "display_family": "F",
+      "parent_name": "",
+      "parent_id": null,
+      "display_group": "Player · Eternal Conduit"
+    },
+    {
+      "review_id": "A1",
+      "name": "Quiet Insight I",
+      "family": "A",
+      "animal": "Chimp",
+      "variant": "Stormcaller",
+      "display_level": "ATTACK",
+      "conditions": [
+        [
+          "Log_Season_Assists_per60",
+          "<=",
+          1.9
+        ]
+      ],
+      "full": {
+        "hits": 53,
+        "plays": 88,
+        "hit_rate": 60.22727272727273,
+        "be": 47.55905614178755,
+        "gap": 12.668216585485176,
+        "players": 31,
+        "units": 23.014820342992312,
+        "roi": 26.153204935218536,
+        "dates": 28,
+        "games": 72,
+        "teams": 20,
+        "opponents": 28,
+        "team_games": 78
+      },
+      "recent": {
+        "hits": 24,
+        "plays": 34,
+        "hit_rate": 70.58823529411765,
+        "be": 47.92888130566041,
+        "gap": 22.65935398845724,
+        "players": 18,
+        "units": 16.72554985845867,
+        "roi": 49.19279370134903,
+        "dates": 6,
+        "games": 26,
+        "teams": 13,
+        "opponents": 20,
+        "team_games": 30
+      },
+      "noise": {
+        "flags": [],
+        "concentration": {
+          "Player": [
+            [
+              "Matthew Schaefer",
+              11
+            ],
+            [
+              "Brandon Hagel",
+              9
+            ],
+            [
+              "Kirill Kaprizov",
+              9
+            ],
+            [
+              "Matt Boldy",
+              9
+            ],
+            [
+              "William Nylander",
+              5
+            ]
+          ],
+          "Team": [
+            [
+              "MIN",
+              21
+            ],
+            [
+              "TBL",
+              13
+            ],
+            [
+              "NYI",
+              13
+            ],
+            [
+              "TOR",
+              5
+            ],
+            [
+              "DET",
+              4
+            ]
+          ],
+          "Opp": [
+            [
+              "CBJ",
+              7
+            ],
+            [
+              "SJS",
+              7
+            ],
+            [
+              "VAN",
+              6
+            ],
+            [
+              "PHI",
+              5
+            ],
+            [
+              "CHI",
+              5
+            ]
+          ]
+        }
+      },
+      "source_record_id": "A1",
+      "source_ladder_scope": "Approved player root",
+      "new_rule_recommendation": false,
+      "proposed_move_id": "assist-v3-a1",
+      "id": "assist-v3-a1",
+      "optional_buff": false,
+      "route_variant": "Stormcaller",
+      "display_family": "A",
+      "parent_name": "",
+      "parent_id": null,
+      "display_group": "Player · Quiet Insight"
+    },
+    {
+      "review_id": "A2",
+      "name": "Quiet Insight II",
+      "family": "A",
+      "animal": "Chimp",
+      "variant": "Stormcaller",
+      "display_level": "CRIT I",
+      "conditions": [
+        [
+          "Log_Season_Assists_per60",
+          "<=",
+          1.65
+        ]
+      ],
+      "full": {
+        "hits": 25,
+        "plays": 32,
+        "hit_rate": 78.125,
+        "be": 49.05617635222872,
+        "gap": 29.068823647771282,
+        "players": 12,
+        "units": 20.285254047773844,
+        "roi": 63.391418899293264,
+        "dates": 19,
+        "games": 30,
+        "teams": 10,
+        "opponents": 18,
+        "team_games": 32
+      },
+      "recent": {
+        "hits": 13,
+        "plays": 15,
+        "hit_rate": 86.66666666666667,
+        "be": 48.49122739662138,
+        "gap": 38.17543927004529,
+        "players": 8,
+        "units": 12.497328514585153,
+        "roi": 83.3155234305677,
+        "dates": 5,
+        "games": 13,
+        "teams": 7,
+        "opponents": 11,
+        "team_games": 15
+      },
+      "noise": {
+        "flags": [],
+        "concentration": {
+          "Player": [
+            [
+              "Matt Boldy",
+              8
+            ],
+            [
+              "Brandon Hagel",
+              4
+            ],
+            [
+              "Matthew Schaefer",
+              4
+            ],
+            [
+              "Zach Werenski",
+              4
+            ],
+            [
+              "Kyle Connor",
+              2
+            ]
+          ],
+          "Team": [
+            [
+              "MIN",
+              10
+            ],
+            [
+              "NYI",
+              5
+            ],
+            [
+              "TBL",
+              4
+            ],
+            [
+              "CBJ",
+              4
+            ],
+            [
+              "WPG",
+              2
+            ]
+          ],
+          "Opp": [
+            [
+              "CHI",
+              5
+            ],
+            [
+              "VAN",
+              4
+            ],
+            [
+              "CBJ",
+              3
+            ],
+            [
+              "SEA",
+              2
+            ],
+            [
+              "NYI",
+              2
+            ]
+          ]
+        }
+      },
+      "source_record_id": "A2",
+      "source_ladder_scope": "Approved player root",
+      "new_rule_recommendation": false,
+      "proposed_move_id": "assist-v3-a2",
+      "id": "assist-v3-a2",
+      "optional_buff": false,
+      "route_variant": "Stormcaller",
+      "display_family": "A",
+      "parent_name": "",
+      "parent_id": null,
+      "display_group": "Player · Quiet Insight"
+    },
+    {
+      "review_id": "A1_P1_1",
+      "name": "Tempered Insight",
+      "family": "A",
+      "animal": "Chimp",
+      "variant": "Stormcaller",
+      "display_level": "HEAVY",
+      "conditions": [
+        [
+          "Log_Season_Assists_per60",
+          "<=",
+          1.9
+        ],
+        [
+          "Player_5v5_SOG_Share",
+          "<=",
+          14.0
+        ]
+      ],
+      "full": {
+        "hits": 48,
+        "plays": 74,
+        "hit_rate": 64.86486486486487,
+        "be": 47.38006985956185,
+        "gap": 17.48479500530302,
+        "players": 31,
+        "units": 26.452671608323783,
+        "roi": 35.74685352476187,
+        "dates": 27,
+        "games": 62,
+        "teams": 20,
+        "opponents": 27,
+        "team_games": 65
+      },
+      "recent": {
+        "hits": 22,
+        "plays": 30,
+        "hit_rate": 73.33333333333333,
+        "be": 47.51409671626316,
+        "gap": 25.819236617070167,
+        "players": 18,
+        "units": 16.74059410624628,
+        "roi": 55.80198035415427,
+        "dates": 6,
+        "games": 24,
+        "teams": 13,
+        "opponents": 20,
+        "team_games": 26
+      },
+      "noise": {
+        "flags": [],
+        "concentration": {
+          "Player": [
+            [
+              "Kirill Kaprizov",
+              9
+            ],
+            [
+              "Matt Boldy",
+              9
+            ],
+            [
+              "Brandon Hagel",
+              6
+            ],
+            [
+              "William Nylander",
+              5
+            ],
+            [
+              "Zach Werenski",
+              4
+            ]
+          ],
+          "Team": [
+            [
+              "MIN",
+              21
+            ],
+            [
+              "TBL",
+              10
+            ],
+            [
+              "TOR",
+              5
+            ],
+            [
+              "DET",
+              4
+            ],
+            [
+              "NYR",
+              4
+            ]
+          ],
+          "Opp": [
+            [
+              "CBJ",
+              7
+            ],
+            [
+              "VAN",
+              6
+            ],
+            [
+              "SJS",
+              6
+            ],
+            [
+              "PHI",
+              5
+            ],
+            [
+              "NYI",
+              5
+            ]
+          ]
+        }
+      },
+      "source_record_id": "A1_P1_1",
+      "source_ladder_scope": "A1",
+      "new_rule_recommendation": true,
+      "proposed_move_id": "assist-v3-a1-p1-1",
+      "id": "assist-v3-a1-p1-1",
+      "optional_buff": false,
+      "route_variant": "Stormcaller",
+      "display_family": "A",
+      "parent_name": "",
+      "parent_id": null,
+      "display_group": "Player · Quiet Insight"
+    },
+    {
+      "review_id": "A1_P4_2",
+      "name": "Runic Stillwater",
+      "family": "A",
+      "animal": "Chimp",
+      "variant": "Stormcaller",
+      "display_level": "CRIT II",
+      "conditions": [
+        [
+          "Log_Season_Assists_per60",
+          "<=",
+          1.9
+        ],
+        [
+          "PP_Points60",
+          "<=",
+          4.0
+        ]
+      ],
+      "full": {
+        "hits": 30,
+        "plays": 36,
+        "hit_rate": 83.33333333333333,
+        "be": 48.89862247169669,
+        "gap": 34.43471086163664,
+        "players": 14,
+        "units": 25.6942161323881,
+        "roi": 71.37282258996694,
+        "dates": 22,
+        "games": 36,
+        "teams": 11,
+        "opponents": 23,
+        "team_games": 36
+      },
+      "recent": {
+        "hits": 14,
+        "plays": 16,
+        "hit_rate": 87.5,
+        "be": 50.35747490793613,
+        "gap": 37.14252509206387,
+        "players": 9,
+        "units": 11.873168906077717,
+        "roi": 74.20730566298573,
+        "dates": 6,
+        "games": 16,
+        "teams": 8,
+        "opponents": 15,
+        "team_games": 16
+      },
+      "noise": {
+        "flags": [],
+        "concentration": {
+          "Player": [
+            [
+              "Matt Boldy",
+              8
+            ],
+            [
+              "Brandon Hagel",
+              4
+            ],
+            [
+              "Zach Werenski",
+              4
+            ],
+            [
+              "Zach Benson",
+              3
+            ],
+            [
+              "Matthew Schaefer",
+              3
+            ]
+          ],
+          "Team": [
+            [
+              "MIN",
+              10
+            ],
+            [
+              "TBL",
+              5
+            ],
+            [
+              "CBJ",
+              4
+            ],
+            [
+              "NYR",
+              3
+            ],
+            [
+              "BUF",
+              3
+            ]
+          ],
+          "Opp": [
+            [
+              "VAN",
+              5
+            ],
+            [
+              "TOR",
+              3
+            ],
+            [
+              "CHI",
+              3
+            ],
+            [
+              "SJS",
+              3
+            ],
+            [
+              "SEA",
+              2
+            ]
+          ]
+        }
+      },
+      "source_record_id": "A1_P4_2",
+      "source_ladder_scope": "A1",
+      "new_rule_recommendation": true,
+      "proposed_move_id": "assist-v3-a1-p4-2",
+      "id": "assist-v3-a1-p4-2",
+      "optional_buff": false,
+      "route_variant": "Stormcaller",
+      "display_family": "A",
+      "parent_name": "",
+      "parent_id": null,
+      "display_group": "Player · Quiet Insight"
+    },
+    {
+      "review_id": "B1",
+      "name": "Countermarch · I",
+      "family": "Countermarch",
+      "parent_id": "BASE81",
+      "parent_name": "Original .5 Green Conf81 baseline",
+      "parent_conditions": [],
+      "additional_condition": [
+        "Official_Own_PK_Season_Goals_PG",
+        ">=",
+        0.55
+      ],
+      "conditions": [
+        [
+          "Official_Own_PK_Season_Goals_PG",
+          ">=",
+          0.55
+        ]
+      ],
+      "full": {
+        "hits": 251,
+        "plays": 411,
+        "hit_rate": 61.070559610705594,
+        "be": 52.410627011519786,
+        "gap": 8.659932599185808,
+        "players": 65,
+        "units": 66.32645655708718,
+        "roi": 16.137823979826567,
+        "dates": 39,
+        "games": 204,
+        "teams": 27,
+        "opponents": 32,
+        "team_games": 242
+      },
+      "recent": {
+        "hits": 75,
+        "plays": 125,
+        "hit_rate": 60.0,
+        "be": 51.95801416542527,
+        "gap": 8.041985834574731,
+        "players": 42,
+        "units": 20.116955934169535,
+        "roi": 16.093564747335627,
+        "dates": 9,
+        "games": 59,
+        "teams": 20,
+        "opponents": 30,
+        "team_games": 71
+      },
+      "available_parent": {
+        "full": {
+          "hits": 333,
+          "plays": 599,
+          "hit_rate": 55.59265442404007,
+          "be": 51.21962098763868,
+          "gap": 4.373033436401393,
+          "players": 78,
+          "units": 49.240281757795735,
+          "roi": 8.220414316827336,
+          "dates": 41,
+          "games": 263,
+          "teams": 29,
+          "opponents": 32,
+          "team_games": 358
+        },
+        "recent": {
+          "hits": 89,
+          "plays": 160,
+          "hit_rate": 55.625,
+          "be": 51.206251079303094,
+          "gap": 4.418748920696906,
+          "players": 54,
+          "units": 14.42311854541487,
+          "roi": 9.014449090884295,
+          "dates": 9,
+          "games": 66,
+          "teams": 26,
+          "opponents": 30,
+          "team_games": 94
+        }
+      },
+      "lift_pp": 5.477905186665524,
+      "noise": {
+        "flags": [],
+        "concentration": {
+          "Player": [
+            [
+              "Evan Bouchard",
+              20
+            ],
+            [
+              "Leon Draisaitl",
+              20
+            ],
+            [
+              "David Pastrnak",
+              17
+            ],
+            [
+              "Jack Hughes",
+              17
+            ],
+            [
+              "Jack Eichel",
+              16
+            ]
+          ],
+          "Team": [
+            [
+              "EDM",
+              50
+            ],
+            [
+              "MIN",
+              43
+            ],
+            [
+              "TBL",
+              34
+            ],
+            [
+              "VGK",
+              32
+            ],
+            [
+              "ANA",
+              31
+            ]
+          ],
+          "Opp": [
+            [
+              "PHI",
+              22
+            ],
+            [
+              "TOR",
+              22
+            ],
+            [
+              "NYI",
+              19
+            ],
+            [
+              "VAN",
+              19
+            ],
+            [
+              "PIT",
+              19
+            ]
+          ]
+        }
+      },
+      "display_level": "BUFF",
+      "scope": "Optional exact-parent research condition. Never a universal entry gate; no automatic probability adjustment.",
+      "definition": "Strictly-prior official Own PK_Season_Goals_PG; complete5/10/20-game windows or actual prior season/venue denominator. PPP credits are goals plus skater assists, not team goals.",
+      "id": "assist-v3-b1",
+      "optional_buff": true,
+      "route_variant": "Oracle",
+      "display_family": "Countermarch",
+      "display_group": "Buff · Countermarch"
+    },
+    {
+      "review_id": "B2",
+      "name": "Countermarch · II",
+      "family": "Countermarch",
+      "parent_id": "BASE81",
+      "parent_name": "Original .5 Green Conf81 baseline",
+      "parent_conditions": [],
+      "additional_condition": [
+        "Official_Own_PK_Season_Goals_PG",
+        ">=",
+        1.0
+      ],
+      "conditions": [
+        [
+          "Official_Own_PK_Season_Goals_PG",
+          ">=",
+          1.0
+        ]
+      ],
+      "full": {
+        "hits": 42,
+        "plays": 64,
+        "hit_rate": 65.625,
+        "be": 48.07545563968539,
+        "gap": 17.549544360314613,
+        "players": 19,
+        "units": 23.19549415075731,
+        "roi": 36.242959610558295,
+        "dates": 26,
+        "games": 42,
+        "teams": 9,
+        "opponents": 25,
+        "team_games": 43
+      },
+      "recent": {
+        "hits": 12,
+        "plays": 18,
+        "hit_rate": 66.66666666666667,
+        "be": 46.820318323330014,
+        "gap": 19.846348343336658,
+        "players": 9,
+        "units": 8.285281385281385,
+        "roi": 46.029341029341026,
+        "dates": 8,
+        "games": 11,
+        "teams": 4,
+        "opponents": 11,
+        "team_games": 11
+      },
+      "available_parent": {
+        "full": {
+          "hits": 333,
+          "plays": 599,
+          "hit_rate": 55.59265442404007,
+          "be": 51.21962098763868,
+          "gap": 4.373033436401393,
+          "players": 78,
+          "units": 49.240281757795735,
+          "roi": 8.220414316827336,
+          "dates": 41,
+          "games": 263,
+          "teams": 29,
+          "opponents": 32,
+          "team_games": 358
+        },
+        "recent": {
+          "hits": 89,
+          "plays": 160,
+          "hit_rate": 55.625,
+          "be": 51.206251079303094,
+          "gap": 4.418748920696906,
+          "players": 54,
+          "units": 14.42311854541487,
+          "roi": 9.014449090884295,
+          "dates": 9,
+          "games": 66,
+          "teams": 26,
+          "opponents": 30,
+          "team_games": 94
+        }
+      },
+      "lift_pp": 10.03234557595993,
+      "noise": {
+        "flags": [],
+        "concentration": {
+          "Player": [
+            [
+              "Zach Benson",
+              14
+            ],
+            [
+              "Leo Carlsson",
+              8
+            ],
+            [
+              "Clayton Keller",
+              7
+            ],
+            [
+              "Mikhail Sergachev",
+              6
+            ],
+            [
+              "Alex DeBrincat",
+              5
+            ]
+          ],
+          "Team": [
+            [
+              "ANA",
+              18
+            ],
+            [
+              "UTA",
+              16
+            ],
+            [
+              "BUF",
+              14
+            ],
+            [
+              "EDM",
+              6
+            ],
+            [
+              "DET",
+              5
+            ]
+          ],
+          "Opp": [
+            [
+              "PHI",
+              6
+            ],
+            [
+              "CGY",
+              5
+            ],
+            [
+              "PIT",
+              5
+            ],
+            [
+              "STL",
+              5
+            ],
+            [
+              "LAK",
+              4
+            ]
+          ]
+        }
+      },
+      "display_level": "BUFF",
+      "scope": "Optional exact-parent research condition. Never a universal entry gate; no automatic probability adjustment.",
+      "definition": "Strictly-prior official Own PK_Season_Goals_PG; complete5/10/20-game windows or actual prior season/venue denominator. PPP credits are goals plus skater assists, not team goals.",
+      "id": "assist-v3-b2",
+      "optional_buff": true,
+      "route_variant": "Oracle",
+      "display_family": "Countermarch",
+      "display_group": "Buff · Countermarch"
+    },
+    {
+      "review_id": "B3",
+      "name": "Siegebrand · baseline",
+      "family": "Siegebrand",
+      "parent_id": "BASE81",
+      "parent_name": "Original .5 Green Conf81 baseline",
+      "parent_conditions": [],
+      "additional_condition": [
+        "Official_Opp_L10_GA_PG",
+        ">=",
+        4.2
+      ],
+      "conditions": [
+        [
+          "Official_Opp_L10_GA_PG",
+          ">=",
+          4.2
+        ]
+      ],
+      "full": {
+        "hits": 35,
+        "plays": 43,
+        "hit_rate": 81.3953488372093,
+        "be": 52.581231837986735,
+        "gap": 28.814116999222563,
+        "players": 33,
+        "units": 24.003926044286576,
+        "roi": 55.823083823922275,
+        "dates": 21,
+        "games": 24,
+        "teams": 18,
+        "opponents": 6,
+        "team_games": 24
+      },
+      "recent": {
+        "hits": 14,
+        "plays": 16,
+        "hit_rate": 87.5,
+        "be": 52.32492878218659,
+        "gap": 35.17507121781341,
+        "players": 16,
+        "units": 10.71826166223302,
+        "roi": 66.98913538895638,
+        "dates": 7,
+        "games": 9,
+        "teams": 9,
+        "opponents": 5,
+        "team_games": 9
+      },
+      "available_parent": {
+        "full": {
+          "hits": 268,
+          "plays": 484,
+          "hit_rate": 55.37190082644628,
+          "be": 51.39351363152475,
+          "gap": 3.978387194921531,
+          "players": 70,
+          "units": 34.967924032046206,
+          "roi": 7.22477769257153,
+          "dates": 35,
+          "games": 204,
+          "teams": 28,
+          "opponents": 32,
+          "team_games": 285
+        },
+        "recent": {
+          "hits": 89,
+          "plays": 160,
+          "hit_rate": 55.625,
+          "be": 51.206251079303094,
+          "gap": 4.418748920696906,
+          "players": 54,
+          "units": 14.42311854541487,
+          "roi": 9.014449090884295,
+          "dates": 9,
+          "games": 66,
+          "teams": 26,
+          "opponents": 30,
+          "team_games": 94
+        }
+      },
+      "lift_pp": 26.02344801076302,
+      "noise": {
+        "flags": [
+          "Over50% from one Opp"
+        ],
+        "concentration": {
+          "Player": [
+            [
+              "Jackson Blake",
+              2
+            ],
+            [
+              "Sebastian Aho",
+              2
+            ],
+            [
+              "Leo Carlsson",
+              2
+            ],
+            [
+              "Auston Matthews",
+              2
+            ],
+            [
+              "William Nylander",
+              2
+            ]
+          ],
+          "Team": [
+            [
+              "TOR",
+              6
+            ],
+            [
+              "CAR",
+              5
+            ],
+            [
+              "EDM",
+              4
+            ],
+            [
+              "VGK",
+              4
+            ],
+            [
+              "ANA",
+              3
+            ]
+          ],
+          "Opp": [
+            [
+              "VAN",
+              22
+            ],
+            [
+              "ANA",
+              8
+            ],
+            [
+              "CHI",
+              7
+            ],
+            [
+              "SEA",
+              3
+            ],
+            [
+              "UTA",
+              2
+            ]
+          ]
+        }
+      },
+      "display_level": "CRIT II",
+      "scope": "Optional exact-parent research condition. Never a universal entry gate; no automatic probability adjustment.",
+      "definition": "Strictly-prior official Opp L10_GA_PG; complete5/10/20-game windows or actual prior season/venue denominator. PPP credits are goals plus skater assists, not team goals.",
+      "id": "assist-v3-b3",
+      "optional_buff": true,
+      "route_variant": "Oracle",
+      "display_family": "Siegebrand",
+      "display_group": "Buff · Siegebrand"
+    },
+    {
+      "review_id": "B4",
+      "name": "Siegebrand · Runewarden I",
+      "family": "Siegebrand",
+      "parent_id": "M1",
+      "parent_name": "Runewarden’s Vigil I",
+      "parent_conditions": [
+        [
+          "Log_L20_TOI_median",
+          ">=",
+          20.7
+        ]
+      ],
+      "additional_condition": [
+        "Official_Opp_L10_GA_PG",
+        ">=",
+        3.85
+      ],
+      "conditions": [
+        [
+          "Log_L20_TOI_median",
+          ">=",
+          20.7
+        ],
+        [
+          "Official_Opp_L10_GA_PG",
+          ">=",
+          3.85
+        ]
+      ],
+      "full": {
+        "hits": 36,
+        "plays": 39,
+        "hit_rate": 92.3076923076923,
+        "be": 55.90078175829867,
+        "gap": 36.406910549393636,
+        "players": 25,
+        "units": 26.39905478479269,
+        "roi": 67.689884063571,
+        "dates": 18,
+        "games": 32,
+        "teams": 20,
+        "opponents": 9,
+        "team_games": 32
+      },
+      "recent": {
+        "hits": 14,
+        "plays": 15,
+        "hit_rate": 93.33333333333333,
+        "be": 55.24600546418565,
+        "gap": 38.08732786914768,
+        "players": 14,
+        "units": 10.708878634945341,
+        "roi": 71.39252423296894,
+        "dates": 6,
+        "games": 12,
+        "teams": 11,
+        "opponents": 6,
+        "team_games": 12
+      },
+      "available_parent": {
+        "full": {
+          "hits": 158,
+          "plays": 248,
+          "hit_rate": 63.70967741935484,
+          "be": 54.40808266224396,
+          "gap": 9.301594757110877,
+          "players": 37,
+          "units": 43.29943794868984,
+          "roi": 17.459450785762034,
+          "dates": 34,
+          "games": 149,
+          "teams": 22,
+          "opponents": 32,
+          "team_games": 185
+        },
+        "recent": {
+          "hits": 55,
+          "plays": 87,
+          "hit_rate": 63.2183908045977,
+          "be": 54.04857788338605,
+          "gap": 9.169812921211651,
+          "players": 28,
+          "units": 15.92264198765426,
+          "roi": 18.301887342131334,
+          "dates": 9,
+          "games": 50,
+          "teams": 18,
+          "opponents": 30,
+          "team_games": 61
+        }
+      },
+      "lift_pp": 28.598014888337467,
+      "noise": {
+        "flags": [],
+        "concentration": {
+          "Player": [
+            [
+              "Kirill Kaprizov",
+              3
+            ],
+            [
+              "Tim Sttzle",
+              3
+            ],
+            [
+              "Evan Bouchard",
+              3
+            ],
+            [
+              "Leon Draisaitl",
+              3
+            ],
+            [
+              "Seth Jones",
+              2
+            ]
+          ],
+          "Team": [
+            [
+              "MIN",
+              6
+            ],
+            [
+              "EDM",
+              6
+            ],
+            [
+              "OTT",
+              3
+            ],
+            [
+              "WPG",
+              3
+            ],
+            [
+              "FLA",
+              2
+            ]
+          ],
+          "Opp": [
+            [
+              "VAN",
+              12
+            ],
+            [
+              "ANA",
+              7
+            ],
+            [
+              "CHI",
+              5
+            ],
+            [
+              "UTA",
+              4
+            ],
+            [
+              "WPG",
+              3
+            ]
+          ]
+        }
+      },
+      "display_level": "CRIT II",
+      "scope": "Optional exact-parent research condition. Never a universal entry gate; no automatic probability adjustment.",
+      "definition": "Strictly-prior official Opp L10_GA_PG; complete5/10/20-game windows or actual prior season/venue denominator. PPP credits are goals plus skater assists, not team goals.",
+      "id": "assist-v3-b4",
+      "optional_buff": true,
+      "route_variant": "Runesmith",
+      "display_family": "Siegebrand",
+      "display_group": "Buff · Siegebrand"
+    },
+    {
+      "review_id": "B5",
+      "name": "Siegebrand · Runewarden II",
+      "family": "Siegebrand",
+      "parent_id": "M2",
+      "parent_name": "Runewarden’s Vigil II",
+      "parent_conditions": [
+        [
+          "Log_L20_TOI_median",
+          ">=",
+          20.9
+        ]
+      ],
+      "additional_condition": [
+        "Official_Opp_L10_GA_PG",
+        ">=",
+        3.85
+      ],
+      "conditions": [
+        [
+          "Log_L20_TOI_median",
+          ">=",
+          20.9
+        ],
+        [
+          "Official_Opp_L10_GA_PG",
+          ">=",
+          3.85
+        ]
+      ],
+      "full": {
+        "hits": 35,
+        "plays": 38,
+        "hit_rate": 92.10526315789474,
+        "be": 55.993408847176205,
+        "gap": 36.111854310718535,
+        "players": 24,
+        "units": 25.489963875701783,
+        "roi": 67.07885230447837,
+        "dates": 18,
+        "games": 31,
+        "teams": 19,
+        "opponents": 9,
+        "team_games": 31
+      },
+      "recent": {
+        "hits": 13,
+        "plays": 14,
+        "hit_rate": 92.85714285714286,
+        "be": 55.45065211298803,
+        "gap": 37.40649074415483,
+        "players": 13,
+        "units": 9.799787725854431,
+        "roi": 69.99848375610308,
+        "dates": 6,
+        "games": 11,
+        "teams": 10,
+        "opponents": 6,
+        "team_games": 11
+      },
+      "available_parent": {
+        "full": {
+          "hits": 148,
+          "plays": 226,
+          "hit_rate": 65.48672566371681,
+          "be": 54.841936107711156,
+          "gap": 10.644789556005655,
+          "players": 33,
+          "units": 44.63572605772581,
+          "roi": 19.750321264480448,
+          "dates": 34,
+          "games": 143,
+          "teams": 22,
+          "opponents": 32,
+          "team_games": 175
+        },
+        "recent": {
+          "hits": 52,
+          "plays": 76,
+          "hit_rate": 68.42105263157895,
+          "be": 54.690900049343014,
+          "gap": 13.730152582235931,
+          "players": 25,
+          "units": 20.56355107856335,
+          "roi": 27.05730405074125,
+          "dates": 9,
+          "games": 48,
+          "teams": 18,
+          "opponents": 29,
+          "team_games": 58
+        }
+      },
+      "lift_pp": 26.61853749417793,
+      "noise": {
+        "flags": [],
+        "concentration": {
+          "Player": [
+            [
+              "Kirill Kaprizov",
+              3
+            ],
+            [
+              "Tim Sttzle",
+              3
+            ],
+            [
+              "Evan Bouchard",
+              3
+            ],
+            [
+              "Leon Draisaitl",
+              3
+            ],
+            [
+              "Seth Jones",
+              2
+            ]
+          ],
+          "Team": [
+            [
+              "MIN",
+              6
+            ],
+            [
+              "EDM",
+              6
+            ],
+            [
+              "OTT",
+              3
+            ],
+            [
+              "WPG",
+              3
+            ],
+            [
+              "FLA",
+              2
+            ]
+          ],
+          "Opp": [
+            [
+              "VAN",
+              12
+            ],
+            [
+              "ANA",
+              7
+            ],
+            [
+              "CHI",
+              5
+            ],
+            [
+              "UTA",
+              4
+            ],
+            [
+              "WPG",
+              3
+            ]
+          ]
+        }
+      },
+      "display_level": "CRIT II",
+      "scope": "Optional exact-parent research condition. Never a universal entry gate; no automatic probability adjustment.",
+      "definition": "Strictly-prior official Opp L10_GA_PG; complete5/10/20-game windows or actual prior season/venue denominator. PPP credits are goals plus skater assists, not team goals.",
+      "id": "assist-v3-b5",
+      "optional_buff": true,
+      "route_variant": "Runesmith",
+      "display_family": "Siegebrand",
+      "display_group": "Buff · Siegebrand"
+    },
+    {
+      "review_id": "B6",
+      "name": "Siegebrand · Stormkeeper",
+      "family": "Siegebrand",
+      "parent_id": "E1",
+      "parent_name": "Stormkeeper’s Flow I",
+      "parent_conditions": [
+        [
+          "EV5_TOI_per_game",
+          ">=",
+          15.6
+        ]
+      ],
+      "additional_condition": [
+        "Official_Opp_L10_GA_PG",
+        ">=",
+        3.85
+      ],
+      "conditions": [
+        [
+          "EV5_TOI_per_game",
+          ">=",
+          15.6
+        ],
+        [
+          "Official_Opp_L10_GA_PG",
+          ">=",
+          3.85
+        ]
+      ],
+      "full": {
+        "hits": 30,
+        "plays": 32,
+        "hit_rate": 93.75,
+        "be": 55.23272953085443,
+        "gap": 38.51727046914557,
+        "players": 21,
+        "units": 23.46748506139403,
+        "roi": 73.33589081685633,
+        "dates": 15,
+        "games": 25,
+        "teams": 16,
+        "opponents": 8,
+        "team_games": 25
+      },
+      "recent": {
+        "hits": 10,
+        "plays": 11,
+        "hit_rate": 90.9090909090909,
+        "be": 53.80588745377268,
+        "gap": 37.10320345531823,
+        "players": 10,
+        "units": 7.906937022019746,
+        "roi": 71.88124565472496,
+        "dates": 4,
+        "games": 9,
+        "teams": 8,
+        "opponents": 5,
+        "team_games": 9
+      },
+      "available_parent": {
+        "full": {
+          "hits": 139,
+          "plays": 216,
+          "hit_rate": 64.35185185185185,
+          "be": 54.31107175168475,
+          "gap": 10.040780100167098,
+          "players": 27,
+          "units": 40.3444550492384,
+          "roi": 18.677988448721482,
+          "dates": 32,
+          "games": 143,
+          "teams": 18,
+          "opponents": 32,
+          "team_games": 171
+        },
+        "recent": {
+          "hits": 44,
+          "plays": 69,
+          "hit_rate": 63.768115942028984,
+          "be": 54.10641799698019,
+          "gap": 9.661697945048793,
+          "players": 21,
+          "units": 12.567674500347293,
+          "roi": 18.214021014996078,
+          "dates": 9,
+          "games": 44,
+          "teams": 16,
+          "opponents": 28,
+          "team_games": 54
+        }
+      },
+      "lift_pp": 29.398148148148152,
+      "noise": {
+        "flags": [],
+        "concentration": {
+          "Player": [
+            [
+              "Kirill Kaprizov",
+              3
+            ],
+            [
+              "Evan Bouchard",
+              3
+            ],
+            [
+              "Leon Draisaitl",
+              3
+            ],
+            [
+              "Seth Jones",
+              2
+            ],
+            [
+              "Quinn Hughes",
+              2
+            ]
+          ],
+          "Team": [
+            [
+              "EDM",
+              6
+            ],
+            [
+              "MIN",
+              5
+            ],
+            [
+              "WPG",
+              3
+            ],
+            [
+              "FLA",
+              2
+            ],
+            [
+              "TOR",
+              2
+            ]
+          ],
+          "Opp": [
+            [
+              "VAN",
+              10
+            ],
+            [
+              "ANA",
+              7
+            ],
+            [
+              "CHI",
+              5
+            ],
+            [
+              "TOR",
+              3
+            ],
+            [
+              "UTA",
+              2
+            ]
+          ]
+        }
+      },
+      "display_level": "CRIT II",
+      "scope": "Optional exact-parent research condition. Never a universal entry gate; no automatic probability adjustment.",
+      "definition": "Strictly-prior official Opp L10_GA_PG; complete5/10/20-game windows or actual prior season/venue denominator. PPP credits are goals plus skater assists, not team goals.",
+      "id": "assist-v3-b6",
+      "optional_buff": true,
+      "route_variant": "Stormcaller",
+      "display_family": "Siegebrand",
+      "display_group": "Buff · Siegebrand"
+    },
+    {
+      "review_id": "B7",
+      "name": "Rift Breach · I",
+      "family": "Rift Breach",
+      "parent_id": "M1",
+      "parent_name": "Runewarden’s Vigil I",
+      "parent_conditions": [
+        [
+          "Log_L20_TOI_median",
+          ">=",
+          20.7
+        ]
+      ],
+      "additional_condition": [
+        "Opp_5v5_xGA_relative_league",
+        ">=",
+        0.97
+      ],
+      "conditions": [
+        [
+          "Log_L20_TOI_median",
+          ">=",
+          20.7
+        ],
+        [
+          "Opp_5v5_xGA_relative_league",
+          ">=",
+          0.97
+        ]
+      ],
+      "full": {
+        "hits": 125,
+        "plays": 177,
+        "hit_rate": 70.62146892655367,
+        "be": 54.76442931999647,
+        "gap": 15.857039606557208,
+        "players": 37,
+        "units": 53.430241870295994,
+        "roi": 30.186577327850845,
+        "dates": 32,
+        "games": 121,
+        "teams": 23,
+        "opponents": 21,
+        "team_games": 131
+      },
+      "recent": {
+        "hits": 41,
+        "plays": 60,
+        "hit_rate": 68.33333333333333,
+        "be": 54.314928055111835,
+        "gap": 14.018405278221493,
+        "players": 28,
+        "units": 16.11935169120607,
+        "roi": 26.865586152010117,
+        "dates": 8,
+        "games": 37,
+        "teams": 18,
+        "opponents": 18,
+        "team_games": 41
+      },
+      "available_parent": {
+        "full": {
+          "hits": 173,
+          "plays": 269,
+          "hit_rate": 64.31226765799256,
+          "be": 54.33780213045982,
+          "gap": 9.974465527532743,
+          "players": 39,
+          "units": 50.80987440111412,
+          "roi": 18.888429145395584,
+          "dates": 35,
+          "games": 162,
+          "teams": 23,
+          "opponents": 32,
+          "team_games": 204
+        },
+        "recent": {
+          "hits": 55,
+          "plays": 87,
+          "hit_rate": 63.2183908045977,
+          "be": 54.04857788338605,
+          "gap": 9.169812921211651,
+          "players": 28,
+          "units": 15.92264198765426,
+          "roi": 18.301887342131334,
+          "dates": 9,
+          "games": 50,
+          "teams": 18,
+          "opponents": 30,
+          "team_games": 61
+        }
+      },
+      "lift_pp": 6.309201268561111,
+      "noise": {
+        "flags": [],
+        "concentration": {
+          "Player": [
+            [
+              "Kirill Kaprizov",
+              14
+            ],
+            [
+              "Quinn Hughes",
+              11
+            ],
+            [
+              "Evan Bouchard",
+              11
+            ],
+            [
+              "Leon Draisaitl",
+              11
+            ],
+            [
+              "Tim Sttzle",
+              9
+            ]
+          ],
+          "Team": [
+            [
+              "MIN",
+              33
+            ],
+            [
+              "EDM",
+              26
+            ],
+            [
+              "TBL",
+              12
+            ],
+            [
+              "ANA",
+              11
+            ],
+            [
+              "OTT",
+              10
+            ]
+          ],
+          "Opp": [
+            [
+              "CGY",
+              14
+            ],
+            [
+              "NSH",
+              13
+            ],
+            [
+              "TOR",
+              13
+            ],
+            [
+              "VAN",
+              12
+            ],
+            [
+              "NYI",
+              12
+            ]
+          ]
+        }
+      },
+      "display_level": "BUFF",
+      "scope": "Optional exact-parent research condition. Never a universal entry gate; no automatic probability adjustment.",
+      "definition": "opp_5v5_xGA60 / League_5v5_xGA60;1 means league average,1.08 means8% above league expected allowance. No changed weights.",
+      "id": "assist-v3-b7",
+      "optional_buff": true,
+      "route_variant": "Runesmith",
+      "display_family": "Rift Breach",
+      "display_group": "Buff · Rift Breach"
+    },
+    {
+      "review_id": "B8",
+      "name": "Rift Breach · II",
+      "family": "Rift Breach",
+      "parent_id": "M1",
+      "parent_name": "Runewarden’s Vigil I",
+      "parent_conditions": [
+        [
+          "Log_L20_TOI_median",
+          ">=",
+          20.7
+        ]
+      ],
+      "additional_condition": [
+        "Opp_5v5_xGA_relative_league",
+        ">=",
+        1.13
+      ],
+      "conditions": [
+        [
+          "Log_L20_TOI_median",
+          ">=",
+          20.7
+        ],
+        [
+          "Opp_5v5_xGA_relative_league",
+          ">=",
+          1.13
+        ]
+      ],
+      "full": {
+        "hits": 41,
+        "plays": 46,
+        "hit_rate": 89.1304347826087,
+        "be": 55.80244990893226,
+        "gap": 33.32798487367644,
+        "players": 25,
+        "units": 28.137047903462594,
+        "roi": 61.167495442309985,
+        "dates": 23,
+        "games": 37,
+        "teams": 20,
+        "opponents": 7,
+        "team_games": 37
+      },
+      "recent": {
+        "hits": 11,
+        "plays": 12,
+        "hit_rate": 91.66666666666667,
+        "be": 55.10429284321546,
+        "gap": 36.56237382345121,
+        "players": 10,
+        "units": 8.232220158286864,
+        "roi": 68.60183465239054,
+        "dates": 6,
+        "games": 9,
+        "teams": 8,
+        "opponents": 4,
+        "team_games": 9
+      },
+      "available_parent": {
+        "full": {
+          "hits": 173,
+          "plays": 269,
+          "hit_rate": 64.31226765799256,
+          "be": 54.33780213045982,
+          "gap": 9.974465527532743,
+          "players": 39,
+          "units": 50.80987440111412,
+          "roi": 18.888429145395584,
+          "dates": 35,
+          "games": 162,
+          "teams": 23,
+          "opponents": 32,
+          "team_games": 204
+        },
+        "recent": {
+          "hits": 55,
+          "plays": 87,
+          "hit_rate": 63.2183908045977,
+          "be": 54.04857788338605,
+          "gap": 9.169812921211651,
+          "players": 28,
+          "units": 15.92264198765426,
+          "roi": 18.301887342131334,
+          "dates": 9,
+          "games": 50,
+          "teams": 18,
+          "opponents": 30,
+          "team_games": 61
+        }
+      },
+      "lift_pp": 24.81816712461614,
+      "noise": {
+        "flags": [],
+        "concentration": {
+          "Player": [
+            [
+              "Kirill Kaprizov",
+              6
+            ],
+            [
+              "Matthew Schaefer",
+              3
+            ],
+            [
+              "Adam Fox",
+              3
+            ],
+            [
+              "Quinn Hughes",
+              3
+            ],
+            [
+              "Matt Boldy",
+              3
+            ]
+          ],
+          "Team": [
+            [
+              "MIN",
+              12
+            ],
+            [
+              "EDM",
+              4
+            ],
+            [
+              "NYI",
+              3
+            ],
+            [
+              "NYR",
+              3
+            ],
+            [
+              "WPG",
+              3
+            ]
+          ],
+          "Opp": [
+            [
+              "VAN",
+              12
+            ],
+            [
+              "ANA",
+              9
+            ],
+            [
+              "CHI",
+              9
+            ],
+            [
+              "SJS",
+              8
+            ],
+            [
+              "PHI",
+              4
+            ]
+          ]
+        }
+      },
+      "display_level": "CRIT II",
+      "scope": "Optional exact-parent research condition. Never a universal entry gate; no automatic probability adjustment.",
+      "definition": "opp_5v5_xGA60 / League_5v5_xGA60;1 means league average,1.08 means8% above league expected allowance. No changed weights.",
+      "id": "assist-v3-b8",
+      "optional_buff": true,
+      "route_variant": "Runesmith",
+      "display_family": "Rift Breach",
+      "display_group": "Buff · Rift Breach"
+    },
+    {
+      "review_id": "B9",
+      "name": "Stormfront · I",
+      "family": "Stormfront",
+      "parent_id": "M2",
+      "parent_name": "Runewarden’s Vigil II",
+      "parent_conditions": [
+        [
+          "Log_L20_TOI_median",
+          ">=",
+          20.9
+        ]
+      ],
+      "additional_condition": [
+        "Opp_EV_DZ_Time_Pct",
+        ">=",
+        40.5
+      ],
+      "conditions": [
+        [
+          "Log_L20_TOI_median",
+          ">=",
+          20.9
+        ],
+        [
+          "Opp_EV_DZ_Time_Pct",
+          ">=",
+          40.5
+        ]
+      ],
+      "full": {
+        "hits": 85,
+        "plays": 116,
+        "hit_rate": 73.27586206896552,
+        "be": 55.0646354869125,
+        "gap": 18.211226582053023,
+        "players": 28,
+        "units": 39.3198984873158,
+        "roi": 33.896464213203274,
+        "dates": 26,
+        "games": 87,
+        "teams": 20,
+        "opponents": 22,
+        "team_games": 93
+      },
+      "recent": {
+        "hits": 36,
+        "plays": 45,
+        "hit_rate": 80.0,
+        "be": 55.110213488847755,
+        "gap": 24.889786511152245,
+        "players": 22,
+        "units": 21.6391822953845,
+        "roi": 48.08707176752111,
+        "dates": 9,
+        "games": 32,
+        "teams": 17,
+        "opponents": 18,
+        "team_games": 36
+      },
+      "available_parent": {
+        "full": {
+          "hits": 123,
+          "plays": 184,
+          "hit_rate": 66.84782608695652,
+          "be": 54.941226320091474,
+          "gap": 11.906599766865043,
+          "players": 31,
+          "units": 40.768835384672585,
+          "roi": 22.15697575253945,
+          "dates": 26,
+          "games": 118,
+          "teams": 20,
+          "opponents": 30,
+          "team_games": 141
+        },
+        "recent": {
+          "hits": 49,
+          "plays": 71,
+          "hit_rate": 69.01408450704226,
+          "be": 54.79759109933289,
+          "gap": 14.216493407709365,
+          "players": 25,
+          "units": 19.915329734689834,
+          "roi": 28.049760189703992,
+          "dates": 9,
+          "games": 46,
+          "teams": 18,
+          "opponents": 28,
+          "team_games": 53
+        }
+      },
+      "lift_pp": 6.428035982009007,
+      "noise": {
+        "flags": [],
+        "concentration": {
+          "Player": [
+            [
+              "Kirill Kaprizov",
+              9
+            ],
+            [
+              "Matthew Schaefer",
+              8
+            ],
+            [
+              "Evan Bouchard",
+              7
+            ],
+            [
+              "Leon Draisaitl",
+              7
+            ],
+            [
+              "Macklin Celebrini",
+              7
+            ]
+          ],
+          "Team": [
+            [
+              "MIN",
+              21
+            ],
+            [
+              "EDM",
+              16
+            ],
+            [
+              "TBL",
+              9
+            ],
+            [
+              "NYI",
+              8
+            ],
+            [
+              "SJS",
+              7
+            ]
+          ],
+          "Opp": [
+            [
+              "PHI",
+              11
+            ],
+            [
+              "TOR",
+              10
+            ],
+            [
+              "VAN",
+              9
+            ],
+            [
+              "SJS",
+              8
+            ],
+            [
+              "DET",
+              8
+            ]
+          ]
+        }
+      },
+      "display_level": "BUFF",
+      "scope": "Optional exact-parent research condition. Never a universal entry gate; no automatic probability adjustment.",
+      "definition": "Unchanged saved current-season Opp_EV_DZ_Time_Pct; original frozen slate values.",
+      "id": "assist-v3-b9",
+      "optional_buff": true,
+      "route_variant": "Runesmith",
+      "display_family": "Stormfront",
+      "display_group": "Buff · Stormfront"
+    },
+    {
+      "review_id": "B10",
+      "name": "Stormfront · II",
+      "family": "Stormfront",
+      "parent_id": "M2",
+      "parent_name": "Runewarden’s Vigil II",
+      "parent_conditions": [
+        [
+          "Log_L20_TOI_median",
+          ">=",
+          20.9
+        ]
+      ],
+      "additional_condition": [
+        "Opp_EV_DZ_Time_Pct",
+        ">=",
+        41.9
+      ],
+      "conditions": [
+        [
+          "Log_L20_TOI_median",
+          ">=",
+          20.9
+        ],
+        [
+          "Opp_EV_DZ_Time_Pct",
+          ">=",
+          41.9
+        ]
+      ],
+      "full": {
+        "hits": 32,
+        "plays": 35,
+        "hit_rate": 91.42857142857143,
+        "be": 56.868652415478024,
+        "gap": 34.559919013093406,
+        "players": 22,
+        "units": 21.52293119395061,
+        "roi": 61.49408912557317,
+        "dates": 18,
+        "games": 27,
+        "teams": 17,
+        "opponents": 5,
+        "team_games": 27
+      },
+      "recent": {
+        "hits": 13,
+        "plays": 14,
+        "hit_rate": 92.85714285714286,
+        "be": 56.169821541180895,
+        "gap": 36.68732131596197,
+        "players": 14,
+        "units": 9.403637662447732,
+        "roi": 67.16884044605523,
+        "dates": 6,
+        "games": 10,
+        "teams": 10,
+        "opponents": 4,
+        "team_games": 10
+      },
+      "available_parent": {
+        "full": {
+          "hits": 123,
+          "plays": 184,
+          "hit_rate": 66.84782608695652,
+          "be": 54.941226320091474,
+          "gap": 11.906599766865043,
+          "players": 31,
+          "units": 40.768835384672585,
+          "roi": 22.15697575253945,
+          "dates": 26,
+          "games": 118,
+          "teams": 20,
+          "opponents": 30,
+          "team_games": 141
+        },
+        "recent": {
+          "hits": 49,
+          "plays": 71,
+          "hit_rate": 69.01408450704226,
+          "be": 54.79759109933289,
+          "gap": 14.216493407709365,
+          "players": 25,
+          "units": 19.915329734689834,
+          "roi": 28.049760189703992,
+          "dates": 9,
+          "games": 46,
+          "teams": 18,
+          "opponents": 28,
+          "team_games": 53
+        }
+      },
+      "lift_pp": 24.580745341614914,
+      "noise": {
+        "flags": [],
+        "concentration": {
+          "Player": [
+            [
+              "Kirill Kaprizov",
+              3
+            ],
+            [
+              "Adam Fox",
+              3
+            ],
+            [
+              "Evan Bouchard",
+              3
+            ],
+            [
+              "Leon Draisaitl",
+              3
+            ],
+            [
+              "Macklin Celebrini",
+              2
+            ]
+          ],
+          "Team": [
+            [
+              "EDM",
+              7
+            ],
+            [
+              "MIN",
+              6
+            ],
+            [
+              "NYR",
+              3
+            ],
+            [
+              "WPG",
+              3
+            ],
+            [
+              "SJS",
+              2
+            ]
+          ],
+          "Opp": [
+            [
+              "PHI",
+              11
+            ],
+            [
+              "VAN",
+              9
+            ],
+            [
+              "CHI",
+              7
+            ],
+            [
+              "SJS",
+              5
+            ],
+            [
+              "SEA",
+              3
+            ]
+          ]
+        }
+      },
+      "display_level": "CRIT II",
+      "scope": "Optional exact-parent research condition. Never a universal entry gate; no automatic probability adjustment.",
+      "definition": "Unchanged saved current-season Opp_EV_DZ_Time_Pct; original frozen slate values.",
+      "id": "assist-v3-b10",
+      "optional_buff": true,
+      "route_variant": "Runesmith",
+      "display_family": "Stormfront",
+      "display_group": "Buff · Stormfront"
+    },
+    {
+      "review_id": "B11",
+      "name": "Counterspell Echo · I",
+      "family": "Counterspell Echo",
+      "parent_id": "E1_P1_1_P1_1",
+      "parent_name": "Stormkeeper’s Pulse",
+      "parent_conditions": [
+        [
+          "EV5_TOI_per_game",
+          ">=",
+          15.6
+        ],
+        [
+          "Log_L5_SOG_SD",
+          "<=",
+          1.7
+        ],
+        [
+          "Pace_Gap_S10",
+          ">=",
+          -0.4
+        ]
+      ],
+      "additional_condition": [
+        "Official_Opp_PP_Venue_G60",
+        ">=",
+        4.1
+      ],
+      "conditions": [
+        [
+          "EV5_TOI_per_game",
+          ">=",
+          15.6
+        ],
+        [
+          "Log_L5_SOG_SD",
+          "<=",
+          1.7
+        ],
+        [
+          "Pace_Gap_S10",
+          ">=",
+          -0.4
+        ],
+        [
+          "Official_Opp_PP_Venue_G60",
+          ">=",
+          4.1
+        ]
+      ],
+      "full": {
+        "hits": 100,
+        "plays": 128,
+        "hit_rate": 78.125,
+        "be": 55.0620169209297,
+        "gap": 23.0629830790703,
+        "players": 20,
+        "units": 55.195641006478375,
+        "roi": 43.12159453631123,
+        "dates": 33,
+        "games": 97,
+        "teams": 15,
+        "opponents": 30,
+        "team_games": 103
+      },
+      "recent": {
+        "hits": 37,
+        "plays": 49,
+        "hit_rate": 75.51020408163265,
+        "be": 54.95160531399536,
+        "gap": 20.558598767637292,
+        "players": 15,
+        "units": 19.24443576469063,
+        "roi": 39.27435870345026,
+        "dates": 8,
+        "games": 35,
+        "teams": 11,
+        "opponents": 23,
+        "team_games": 39
+      },
+      "available_parent": {
+        "full": {
+          "hits": 106,
+          "plays": 144,
+          "hit_rate": 73.61111111111111,
+          "be": 54.92420815000882,
+          "gap": 18.68690296110229,
+          "players": 20,
+          "units": 50.15069683971437,
+          "roi": 34.826872805357205,
+          "dates": 36,
+          "games": 111,
+          "teams": 15,
+          "opponents": 31,
+          "team_games": 117
+        },
+        "recent": {
+          "hits": 38,
+          "plays": 51,
+          "hit_rate": 74.50980392156863,
+          "be": 54.950125907399276,
+          "gap": 19.559678014169357,
+          "players": 16,
+          "units": 18.98517650543137,
+          "roi": 37.225836285159545,
+          "dates": 9,
+          "games": 37,
+          "teams": 12,
+          "opponents": 24,
+          "team_games": 41
+        }
+      },
+      "lift_pp": 4.513888888888886,
+      "noise": {
+        "flags": [],
+        "concentration": {
+          "Player": [
+            [
+              "Kirill Kaprizov",
+              12
+            ],
+            [
+              "Evan Bouchard",
+              12
+            ],
+            [
+              "Seth Jones",
+              10
+            ],
+            [
+              "Leon Draisaitl",
+              10
+            ],
+            [
+              "David Pastrnak",
+              9
+            ]
+          ],
+          "Team": [
+            [
+              "EDM",
+              31
+            ],
+            [
+              "MIN",
+              21
+            ],
+            [
+              "FLA",
+              10
+            ],
+            [
+              "BOS",
+              9
+            ],
+            [
+              "SJS",
+              8
+            ]
+          ],
+          "Opp": [
+            [
+              "VAN",
+              8
+            ],
+            [
+              "PHI",
+              8
+            ],
+            [
+              "TBL",
+              7
+            ],
+            [
+              "NYI",
+              7
+            ],
+            [
+              "CBJ",
+              6
+            ]
+          ]
+        }
+      },
+      "display_level": "CRIT I",
+      "scope": "Optional exact-parent research condition. Never a universal entry gate; no automatic probability adjustment.",
+      "definition": "Strictly-prior official Opp PP_Venue_G60; complete5/10/20-game windows or actual prior season/venue denominator. PPP credits are goals plus skater assists, not team goals.",
+      "id": "assist-v3-b11",
+      "optional_buff": true,
+      "route_variant": "Stormcaller",
+      "display_family": "Counterspell Echo",
+      "display_group": "Buff · Counterspell Echo"
+    },
+    {
+      "review_id": "B12",
+      "name": "Counterspell Echo · II",
+      "family": "Counterspell Echo",
+      "parent_id": "E1_P1_1_P1_1",
+      "parent_name": "Stormkeeper’s Pulse",
+      "parent_conditions": [
+        [
+          "EV5_TOI_per_game",
+          ">=",
+          15.6
+        ],
+        [
+          "Log_L5_SOG_SD",
+          "<=",
+          1.7
+        ],
+        [
+          "Pace_Gap_S10",
+          ">=",
+          -0.4
+        ]
+      ],
+      "additional_condition": [
+        "Official_Opp_PP_Venue_G60",
+        ">=",
+        7.1
+      ],
+      "conditions": [
+        [
+          "EV5_TOI_per_game",
+          ">=",
+          15.6
+        ],
+        [
+          "Log_L5_SOG_SD",
+          "<=",
+          1.7
+        ],
+        [
+          "Pace_Gap_S10",
+          ">=",
+          -0.4
+        ],
+        [
+          "Official_Opp_PP_Venue_G60",
+          ">=",
+          7.1
+        ]
+      ],
+      "full": {
+        "hits": 70,
+        "plays": 80,
+        "hit_rate": 87.5,
+        "be": 55.33182837733833,
+        "gap": 32.16817162266167,
+        "players": 20,
+        "units": 47.431210012386366,
+        "roi": 59.28901251548295,
+        "dates": 28,
+        "games": 61,
+        "teams": 15,
+        "opponents": 26,
+        "team_games": 65
+      },
+      "recent": {
+        "hits": 28,
+        "plays": 34,
+        "hit_rate": 82.3529411764706,
+        "be": 54.333028102638735,
+        "gap": 28.01991307383186,
+        "players": 14,
+        "units": 18.018622113563787,
+        "roi": 52.995947392834665,
+        "dates": 8,
+        "games": 26,
+        "teams": 11,
+        "opponents": 19,
+        "team_games": 28
+      },
+      "available_parent": {
+        "full": {
+          "hits": 106,
+          "plays": 144,
+          "hit_rate": 73.61111111111111,
+          "be": 54.92420815000882,
+          "gap": 18.68690296110229,
+          "players": 20,
+          "units": 50.15069683971437,
+          "roi": 34.826872805357205,
+          "dates": 36,
+          "games": 111,
+          "teams": 15,
+          "opponents": 31,
+          "team_games": 117
+        },
+        "recent": {
+          "hits": 38,
+          "plays": 51,
+          "hit_rate": 74.50980392156863,
+          "be": 54.950125907399276,
+          "gap": 19.559678014169357,
+          "players": 16,
+          "units": 18.98517650543137,
+          "roi": 37.225836285159545,
+          "dates": 9,
+          "games": 37,
+          "teams": 12,
+          "opponents": 24,
+          "team_games": 41
+        }
+      },
+      "lift_pp": 13.888888888888886,
+      "noise": {
+        "flags": [],
+        "concentration": {
+          "Player": [
+            [
+              "Evan Bouchard",
+              8
+            ],
+            [
+              "Connor McDavid",
+              7
+            ],
+            [
+              "Kirill Kaprizov",
+              7
+            ],
+            [
+              "Leon Draisaitl",
+              7
+            ],
+            [
+              "David Pastrnak",
+              6
+            ]
+          ],
+          "Team": [
+            [
+              "EDM",
+              22
+            ],
+            [
+              "MIN",
+              12
+            ],
+            [
+              "BOS",
+              6
+            ],
+            [
+              "FLA",
+              6
+            ],
+            [
+              "SJS",
+              5
+            ]
+          ],
+          "Opp": [
+            [
+              "SEA",
+              6
+            ],
+            [
+              "TOR",
+              6
+            ],
+            [
+              "ANA",
+              5
+            ],
+            [
+              "UTA",
+              5
+            ],
+            [
+              "VAN",
+              5
+            ]
+          ]
+        }
+      },
+      "display_level": "CRIT II",
+      "scope": "Optional exact-parent research condition. Never a universal entry gate; no automatic probability adjustment.",
+      "definition": "Strictly-prior official Opp PP_Venue_G60; complete5/10/20-game windows or actual prior season/venue denominator. PPP credits are goals plus skater assists, not team goals.",
+      "id": "assist-v3-b12",
+      "optional_buff": true,
+      "route_variant": "Stormcaller",
+      "display_family": "Counterspell Echo",
+      "display_group": "Buff · Counterspell Echo"
+    },
+    {
+      "review_id": "B13",
+      "name": "Mana Spring · elite profile",
+      "family": "Mana Spring",
+      "parent_id": "F",
+      "parent_name": "Eternal Conduit",
+      "parent_conditions": [
+        [
+          "Log_Season_A_1plus_pct",
+          ">=",
+          80
+        ]
+      ],
+      "additional_condition": [
+        "Official_Own_PP_Season_O_PG",
+        ">=",
+        3.05
+      ],
+      "conditions": [
+        [
+          "Log_Season_A_1plus_pct",
+          ">=",
+          80
+        ],
+        [
+          "Official_Own_PP_Season_O_PG",
+          ">=",
+          3.05
+        ]
+      ],
+      "full": {
+        "hits": 39,
+        "plays": 49,
+        "hit_rate": 79.59183673469387,
+        "be": 60.7519897215749,
+        "gap": 18.83984701311897,
+        "players": 8,
+        "units": 15.027165958859333,
+        "roi": 30.66768563032517,
+        "dates": 26,
+        "games": 38,
+        "teams": 5,
+        "opponents": 23,
+        "team_games": 38
+      },
+      "recent": {
+        "hits": 9,
+        "plays": 12,
+        "hit_rate": 75.0,
+        "be": 61.465909944611774,
+        "gap": 13.534090055388226,
+        "players": 3,
+        "units": 2.709572317891503,
+        "roi": 22.579769315762523,
+        "dates": 5,
+        "games": 8,
+        "teams": 2,
+        "opponents": 8,
+        "team_games": 8
+      },
+      "available_parent": {
+        "full": {
+          "hits": 42,
+          "plays": 56,
+          "hit_rate": 75.0,
+          "be": 60.34603668842782,
+          "gap": 14.653963311572177,
+          "players": 10,
+          "units": 13.009780757566087,
+          "roi": 23.231751352796582,
+          "dates": 27,
+          "games": 44,
+          "teams": 7,
+          "opponents": 27,
+          "team_games": 45
+        },
+        "recent": {
+          "hits": 9,
+          "plays": 13,
+          "hit_rate": 69.23076923076923,
+          "be": 60.78442726203318,
+          "gap": 8.44634196873605,
+          "players": 4,
+          "units": 1.709572317891503,
+          "roi": 13.150556291473098,
+          "dates": 5,
+          "games": 9,
+          "teams": 3,
+          "opponents": 9,
+          "team_games": 9
+        }
+      },
+      "lift_pp": 4.591836734693871,
+      "noise": {
+        "flags": [
+          "Over50% from one Team",
+          "Over60% from top3players"
+        ],
+        "concentration": {
+          "Player": [
+            [
+              "Evan Bouchard",
+              19
+            ],
+            [
+              "Quinn Hughes",
+              14
+            ],
+            [
+              "Connor McDavid",
+              10
+            ],
+            [
+              "Tim Sttzle",
+              2
+            ],
+            [
+              "Leo Carlsson",
+              1
+            ]
+          ],
+          "Team": [
+            [
+              "EDM",
+              29
+            ],
+            [
+              "MIN",
+              14
+            ],
+            [
+              "ANA",
+              3
+            ],
+            [
+              "OTT",
+              2
+            ],
+            [
+              "UTA",
+              1
+            ]
+          ],
+          "Opp": [
+            [
+              "CGY",
+              5
+            ],
+            [
+              "TOR",
+              4
+            ],
+            [
+              "NYI",
+              4
+            ],
+            [
+              "UTA",
+              4
+            ],
+            [
+              "PHI",
+              4
+            ]
+          ]
+        }
+      },
+      "display_level": "CRIT I",
+      "scope": "Optional exact-parent research condition. Never a universal entry gate; no automatic probability adjustment.",
+      "definition": "Strictly-prior official Own PP_Season_O_PG; complete5/10/20-game windows or actual prior season/venue denominator. PPP credits are goals plus skater assists, not team goals.",
+      "id": "assist-v3-b13",
+      "optional_buff": true,
+      "route_variant": "Oracle",
+      "display_family": "Mana Spring",
+      "display_group": "Buff · Mana Spring"
+    },
+    {
+      "review_id": "B14",
+      "name": "Lunar Haven · baseline",
+      "family": "Lunar Haven",
+      "parent_id": "BASE81",
+      "parent_name": "Original .5 Green Conf81 baseline",
+      "parent_conditions": [],
+      "additional_condition": [
+        "Official_Opp_L20_GF_PG",
+        "<=",
+        2.8
+      ],
+      "conditions": [
+        [
+          "Official_Opp_L20_GF_PG",
+          "<=",
+          2.8
+        ]
+      ],
+      "full": {
+        "hits": 40,
+        "plays": 56,
+        "hit_rate": 71.42857142857143,
+        "be": 52.31078072538885,
+        "gap": 19.11779070318258,
+        "players": 37,
+        "units": 21.55018919932185,
+        "roi": 38.48248071307473,
+        "dates": 11,
+        "games": 29,
+        "teams": 20,
+        "opponents": 11,
+        "team_games": 30
+      },
+      "recent": {
+        "hits": 34,
+        "plays": 50,
+        "hit_rate": 68.0,
+        "be": 51.99160376404424,
+        "gap": 16.008396235955757,
+        "players": 33,
+        "units": 16.432300636271997,
+        "roi": 32.86460127254399,
+        "dates": 9,
+        "games": 26,
+        "teams": 18,
+        "opponents": 11,
+        "team_games": 27
+      },
+      "available_parent": {
+        "full": {
+          "hits": 81,
+          "plays": 140,
+          "hit_rate": 57.857142857142854,
+          "be": 51.826619874218984,
+          "gap": 6.03052298292387,
+          "players": 54,
+          "units": 16.43258363979724,
+          "roi": 11.737559742712314,
+          "dates": 12,
+          "games": 58,
+          "teams": 26,
+          "opponents": 29,
+          "team_games": 81
+        },
+        "recent": {
+          "hits": 72,
+          "plays": 127,
+          "hit_rate": 56.69291338582677,
+          "be": 51.76609324220481,
+          "gap": 4.92682014362196,
+          "players": 52,
+          "units": 12.95755221960453,
+          "roi": 10.202797023310653,
+          "dates": 9,
+          "games": 53,
+          "teams": 26,
+          "opponents": 29,
+          "team_games": 75
+        }
+      },
+      "lift_pp": 13.571428571428577,
+      "noise": {
+        "flags": [
+          "Most full appearances also recent; not independent evidence"
+        ],
+        "concentration": {
+          "Player": [
+            [
+              "Joel Eriksson Ek",
+              3
+            ],
+            [
+              "Kirill Kaprizov",
+              3
+            ],
+            [
+              "Matt Boldy",
+              3
+            ],
+            [
+              "Tim Sttzle",
+              3
+            ],
+            [
+              "Evan Bouchard",
+              2
+            ]
+          ],
+          "Team": [
+            [
+              "MIN",
+              10
+            ],
+            [
+              "ANA",
+              6
+            ],
+            [
+              "EDM",
+              5
+            ],
+            [
+              "NSH",
+              4
+            ],
+            [
+              "VGK",
+              4
+            ]
+          ],
+          "Opp": [
+            [
+              "VAN",
+              9
+            ],
+            [
+              "CGY",
+              9
+            ],
+            [
+              "SJS",
+              8
+            ],
+            [
+              "PHI",
+              7
+            ],
+            [
+              "DET",
+              5
+            ]
+          ]
+        }
+      },
+      "display_level": "BUFF",
+      "scope": "Optional exact-parent research condition. Never a universal entry gate; no automatic probability adjustment.",
+      "definition": "Strictly-prior official Opp L20_GF_PG; complete5/10/20-game windows or actual prior season/venue denominator. PPP credits are goals plus skater assists, not team goals.",
+      "id": "assist-v3-b14",
+      "optional_buff": true,
+      "route_variant": "Oracle",
+      "display_family": "Lunar Haven",
+      "display_group": "Buff · Lunar Haven"
+    },
+    {
+      "review_id": "B15",
+      "name": "Iron Veil · baseline",
+      "family": "Iron Veil",
+      "parent_id": "BASE81",
+      "parent_name": "Original .5 Green Conf81 baseline",
+      "parent_conditions": [],
+      "additional_condition": [
+        "Official_Opp_L20_SA_PG",
+        ">=",
+        29.2
+      ],
+      "conditions": [
+        [
+          "Official_Opp_L20_SA_PG",
+          ">=",
+          29.2
+        ]
+      ],
+      "full": {
+        "hits": 34,
+        "plays": 46,
+        "hit_rate": 73.91304347826087,
+        "be": 53.82033085636817,
+        "gap": 20.0927126218927,
+        "players": 27,
+        "units": 17.174125450745205,
+        "roi": 37.33505532770697,
+        "dates": 11,
+        "games": 21,
+        "teams": 14,
+        "opponents": 8,
+        "team_games": 23
+      },
+      "recent": {
+        "hits": 28,
+        "plays": 38,
+        "hit_rate": 73.6842105263158,
+        "be": 54.15475241405611,
+        "gap": 19.529458112259682,
+        "players": 23,
+        "units": 13.852773684232147,
+        "roi": 36.4546675900846,
+        "dates": 8,
+        "games": 18,
+        "teams": 12,
+        "opponents": 8,
+        "team_games": 20
+      },
+      "available_parent": {
+        "full": {
+          "hits": 81,
+          "plays": 140,
+          "hit_rate": 57.857142857142854,
+          "be": 51.826619874218984,
+          "gap": 6.03052298292387,
+          "players": 54,
+          "units": 16.43258363979724,
+          "roi": 11.737559742712314,
+          "dates": 12,
+          "games": 58,
+          "teams": 26,
+          "opponents": 29,
+          "team_games": 81
+        },
+        "recent": {
+          "hits": 72,
+          "plays": 127,
+          "hit_rate": 56.69291338582677,
+          "be": 51.76609324220481,
+          "gap": 4.92682014362196,
+          "players": 52,
+          "units": 12.95755221960453,
+          "roi": 10.202797023310653,
+          "dates": 9,
+          "games": 53,
+          "teams": 26,
+          "opponents": 29,
+          "team_games": 75
+        }
+      },
+      "lift_pp": 16.05590062111802,
+      "noise": {
+        "flags": [
+          "Most full appearances also recent; not independent evidence"
+        ],
+        "concentration": {
+          "Player": [
+            [
+              "Kirill Kaprizov",
+              5
+            ],
+            [
+              "Matt Boldy",
+              5
+            ],
+            [
+              "Joel Eriksson Ek",
+              4
+            ],
+            [
+              "Quinn Hughes",
+              3
+            ],
+            [
+              "Evan Bouchard",
+              2
+            ]
+          ],
+          "Team": [
+            [
+              "MIN",
+              17
+            ],
+            [
+              "EDM",
+              5
+            ],
+            [
+              "ANA",
+              5
+            ],
+            [
+              "NYR",
+              3
+            ],
+            [
+              "UTA",
+              2
+            ]
+          ],
+          "Opp": [
+            [
+              "VAN",
+              9
+            ],
+            [
+              "CGY",
+              9
+            ],
+            [
+              "SJS",
+              8
+            ],
+            [
+              "TOR",
+              7
+            ],
+            [
+              "NSH",
+              4
+            ]
+          ]
+        }
+      },
+      "display_level": "BUFF",
+      "scope": "Optional exact-parent research condition. Never a universal entry gate; no automatic probability adjustment.",
+      "definition": "Strictly-prior official Opp L20_SA_PG; complete5/10/20-game windows or actual prior season/venue denominator. PPP credits are goals plus skater assists, not team goals.",
+      "id": "assist-v3-b15",
+      "optional_buff": true,
+      "route_variant": "Oracle",
+      "display_family": "Iron Veil",
+      "display_group": "Buff · Iron Veil"
+    },
+    {
+      "review_id": "B16",
+      "name": "Sundered Ward · baseline · GAA 2.95",
+      "family": "Sundered Ward",
+      "parent_id": "BASE81",
+      "parent_name": "Original .5 Green Conf81 baseline",
+      "parent_conditions": [],
+      "additional_condition": [
+        "Goalie_GAA",
+        ">=",
+        2.95
+      ],
+      "conditions": [
+        [
+          "Goalie_GAA",
+          ">=",
+          2.95
+        ]
+      ],
+      "full": {
+        "hits": 90,
+        "plays": 152,
+        "hit_rate": 59.21052631578947,
+        "be": 51.05899943792931,
+        "gap": 8.151526877860164,
+        "players": 56,
+        "units": 24.066853859201316,
+        "roi": 15.833456486316654,
+        "dates": 30,
+        "games": 80,
+        "teams": 25,
+        "opponents": 24,
+        "team_games": 90
+      },
+      "recent": {
+        "hits": 33,
+        "plays": 58,
+        "hit_rate": 56.89655172413793,
+        "be": 50.343793229083374,
+        "gap": 6.5527584950545545,
+        "players": 40,
+        "units": 7.897519676650111,
+        "roi": 13.61641323560364,
+        "dates": 7,
+        "games": 27,
+        "teams": 20,
+        "opponents": 17,
+        "team_games": 32
+      },
+      "available_parent": {
+        "full": {
+          "hits": 182,
+          "plays": 337,
+          "hit_rate": 54.00593471810089,
+          "be": 50.919727840687976,
+          "gap": 3.0862068774129128,
+          "players": 62,
+          "units": 20.89066279724107,
+          "roi": 6.199009732119012,
+          "dates": 35,
+          "games": 155,
+          "teams": 27,
+          "opponents": 31,
+          "team_games": 202
+        },
+        "recent": {
+          "hits": 66,
+          "plays": 122,
+          "hit_rate": 54.09836065573771,
+          "be": 50.47847986932229,
+          "gap": 3.6198807864154148,
+          "players": 48,
+          "units": 9.980910923673735,
+          "roi": 8.181074527601421,
+          "dates": 9,
+          "games": 51,
+          "teams": 24,
+          "opponents": 28,
+          "team_games": 73
+        }
+      },
+      "lift_pp": 5.204591597688584,
+      "noise": {
+        "flags": [],
+        "concentration": {
+          "Player": [
+            [
+              "Clayton Keller",
+              7
+            ],
+            [
+              "Kirill Kaprizov",
+              7
+            ],
+            [
+              "Macklin Celebrini",
+              6
+            ],
+            [
+              "Leo Carlsson",
+              6
+            ],
+            [
+              "Tim Sttzle",
+              5
+            ]
+          ],
+          "Team": [
+            [
+              "MIN",
+              19
+            ],
+            [
+              "ANA",
+              15
+            ],
+            [
+              "COL",
+              14
+            ],
+            [
+              "UTA",
+              12
+            ],
+            [
+              "CAR",
+              11
+            ]
+          ],
+          "Opp": [
+            [
+              "SJS",
+              17
+            ],
+            [
+              "TOR",
+              13
+            ],
+            [
+              "CGY",
+              12
+            ],
+            [
+              "CBJ",
+              11
+            ],
+            [
+              "PIT",
+              10
+            ]
+          ]
+        }
+      },
+      "display_level": "BUFF",
+      "scope": "Optional exact-parent research condition. Never a universal entry gate; no automatic probability adjustment.",
+      "definition": "Matched confirmed goalie actual all-strength goals allowed per60 minutes.",
+      "id": "assist-v3-b16",
+      "optional_buff": true,
+      "route_variant": "Oracle",
+      "display_family": "Sundered Ward",
+      "display_group": "Buff · Sundered Ward"
+    },
+    {
+      "review_id": "B17",
+      "name": "Sundered Ward · Oracle’s Refrain II · GAA 2.95",
+      "family": "Sundered Ward",
+      "parent_id": "G_P1_1",
+      "parent_name": "Oracle’s Refrain II",
+      "parent_conditions": [
+        [
+          "Log_L10_Goals_per60",
+          "<=",
+          1.2
+        ],
+        [
+          "Assists_mu",
+          ">=",
+          1.07
+        ]
+      ],
+      "additional_condition": [
+        "Goalie_GAA",
+        ">=",
+        2.95
+      ],
+      "conditions": [
+        [
+          "Log_L10_Goals_per60",
+          "<=",
+          1.2
+        ],
+        [
+          "Assists_mu",
+          ">=",
+          1.07
+        ],
+        [
+          "Goalie_GAA",
+          ">=",
+          2.95
+        ]
+      ],
+      "full": {
+        "hits": 48,
+        "plays": 68,
+        "hit_rate": 70.58823529411765,
+        "be": 53.39873903298264,
+        "gap": 17.189496261135012,
+        "players": 28,
+        "units": 23.443842562387747,
+        "roi": 34.476239062334926,
+        "dates": 27,
+        "games": 54,
+        "teams": 19,
+        "opponents": 22,
+        "team_games": 58
+      },
+      "recent": {
+        "hits": 14,
+        "plays": 22,
+        "hit_rate": 63.63636363636363,
+        "be": 54.79469218382119,
+        "gap": 8.841671452542442,
+        "players": 16,
+        "units": 3.787699981178242,
+        "roi": 17.21681809626474,
+        "dates": 6,
+        "games": 17,
+        "teams": 11,
+        "opponents": 12,
+        "team_games": 18
+      },
+      "available_parent": {
+        "full": {
+          "hits": 97,
+          "plays": 147,
+          "hit_rate": 65.98639455782313,
+          "be": 52.845876213089774,
+          "gap": 13.140518344733358,
+          "players": 32,
+          "units": 39.078588414551184,
+          "roi": 26.584073751395366,
+          "dates": 34,
+          "games": 109,
+          "teams": 21,
+          "opponents": 30,
+          "team_games": 124
+        },
+        "recent": {
+          "hits": 31,
+          "plays": 51,
+          "hit_rate": 60.78431372549019,
+          "be": 54.168448524315664,
+          "gap": 6.615865201174529,
+          "players": 21,
+          "units": 6.763327642951175,
+          "roi": 13.261426750884658,
+          "dates": 9,
+          "games": 35,
+          "teams": 15,
+          "opponents": 23,
+          "team_games": 40
+        }
+      },
+      "lift_pp": 4.60184073629452,
+      "noise": {
+        "flags": [],
+        "concentration": {
+          "Player": [
+            [
+              "Clayton Keller",
+              6
+            ],
+            [
+              "Leo Carlsson",
+              6
+            ],
+            [
+              "Macklin Celebrini",
+              5
+            ],
+            [
+              "Quinn Hughes",
+              5
+            ],
+            [
+              "Adam Fox",
+              4
+            ]
+          ],
+          "Team": [
+            [
+              "UTA",
+              8
+            ],
+            [
+              "ANA",
+              8
+            ],
+            [
+              "FLA",
+              7
+            ],
+            [
+              "MIN",
+              7
+            ],
+            [
+              "SJS",
+              5
+            ]
+          ],
+          "Opp": [
+            [
+              "PIT",
+              7
+            ],
+            [
+              "CGY",
+              6
+            ],
+            [
+              "SJS",
+              6
+            ],
+            [
+              "TOR",
+              5
+            ],
+            [
+              "WPG",
+              5
+            ]
+          ]
+        }
+      },
+      "display_level": "BUFF",
+      "scope": "Optional exact-parent research condition. Never a universal entry gate; no automatic probability adjustment.",
+      "definition": "Matched confirmed goalie actual all-strength goals allowed per60 minutes.",
+      "id": "assist-v3-b17",
+      "optional_buff": true,
+      "route_variant": "Oracle",
+      "display_family": "Sundered Ward",
+      "display_group": "Buff · Sundered Ward"
+    },
+    {
+      "review_id": "B18",
+      "name": "Sundered Ward · Vigil I · broad · GAA 2.80",
+      "family": "Sundered Ward",
+      "parent_id": "M1",
+      "parent_name": "Runewarden’s Vigil I",
+      "parent_conditions": [
+        [
+          "Log_L20_TOI_median",
+          ">=",
+          20.7
+        ]
+      ],
+      "additional_condition": [
+        "Goalie_GAA",
+        ">=",
+        2.8
+      ],
+      "conditions": [
+        [
+          "Log_L20_TOI_median",
+          ">=",
+          20.7
+        ],
+        [
+          "Goalie_GAA",
+          ">=",
+          2.8
+        ]
+      ],
+      "full": {
+        "hits": 59,
+        "plays": 87,
+        "hit_rate": 67.816091954023,
+        "be": 53.800364925065885,
+        "gap": 14.015727028957109,
+        "players": 29,
+        "units": 23.47160401108741,
+        "roi": 26.978855185157943,
+        "dates": 26,
+        "games": 62,
+        "teams": 19,
+        "opponents": 22,
+        "team_games": 69
+      },
+      "recent": {
+        "hits": 19,
+        "plays": 29,
+        "hit_rate": 65.51724137931035,
+        "be": 54.68667613816814,
+        "gap": 10.83056524114221,
+        "players": 20,
+        "units": 5.712291653596001,
+        "roi": 19.697557426193107,
+        "dates": 6,
+        "games": 20,
+        "teams": 13,
+        "opponents": 13,
+        "team_games": 21
+      },
+      "available_parent": {
+        "full": {
+          "hits": 108,
+          "plays": 172,
+          "hit_rate": 62.7906976744186,
+          "be": 53.6131169652273,
+          "gap": 9.177580709191304,
+          "players": 35,
+          "units": 30.895056722592447,
+          "roi": 17.962242280577005,
+          "dates": 32,
+          "games": 104,
+          "teams": 21,
+          "opponents": 29,
+          "team_games": 127
+        },
+        "recent": {
+          "hits": 39,
+          "plays": 64,
+          "hit_rate": 60.9375,
+          "be": 53.538156732830956,
+          "gap": 7.399343267169044,
+          "players": 25,
+          "units": 9.500360107470744,
+          "roi": 14.844312667923038,
+          "dates": 9,
+          "games": 37,
+          "teams": 17,
+          "opponents": 26,
+          "team_games": 45
+        }
+      },
+      "lift_pp": 5.025394279604392,
+      "noise": {
+        "flags": [],
+        "concentration": {
+          "Player": [
+            [
+              "Tim Sttzle",
+              7
+            ],
+            [
+              "Kirill Kaprizov",
+              7
+            ],
+            [
+              "Matthew Schaefer",
+              6
+            ],
+            [
+              "Macklin Celebrini",
+              6
+            ],
+            [
+              "Mikhail Sergachev",
+              5
+            ]
+          ],
+          "Team": [
+            [
+              "MIN",
+              16
+            ],
+            [
+              "EDM",
+              9
+            ],
+            [
+              "OTT",
+              7
+            ],
+            [
+              "NYI",
+              6
+            ],
+            [
+              "SJS",
+              6
+            ]
+          ],
+          "Opp": [
+            [
+              "TOR",
+              11
+            ],
+            [
+              "PHI",
+              9
+            ],
+            [
+              "CGY",
+              9
+            ],
+            [
+              "PIT",
+              8
+            ],
+            [
+              "SJS",
+              8
+            ]
+          ]
+        }
+      },
+      "display_level": "BUFF",
+      "scope": "Optional exact-parent research condition. Never a universal entry gate; no automatic probability adjustment.",
+      "definition": "Matched confirmed goalie actual all-strength goals allowed per60 minutes.",
+      "id": "assist-v3-b18",
+      "optional_buff": true,
+      "route_variant": "Runesmith",
+      "display_family": "Sundered Ward",
+      "display_group": "Buff · Sundered Ward"
+    },
+    {
+      "review_id": "B19",
+      "name": "Sundered Ward · Vigil I · stronger · GAA 3.00",
+      "family": "Sundered Ward",
+      "parent_id": "M1",
+      "parent_name": "Runewarden’s Vigil I",
+      "parent_conditions": [
+        [
+          "Log_L20_TOI_median",
+          ">=",
+          20.7
+        ]
+      ],
+      "additional_condition": [
+        "Goalie_GAA",
+        ">=",
+        3.0
+      ],
+      "conditions": [
+        [
+          "Log_L20_TOI_median",
+          ">=",
+          20.7
+        ],
+        [
+          "Goalie_GAA",
+          ">=",
+          3.0
+        ]
+      ],
+      "full": {
+        "hits": 48,
+        "plays": 65,
+        "hit_rate": 73.84615384615384,
+        "be": 53.80371221520408,
+        "gap": 20.04244163094976,
+        "players": 29,
+        "units": 25.01481391331333,
+        "roi": 38.48432909740512,
+        "dates": 23,
+        "games": 47,
+        "teams": 19,
+        "opponents": 19,
+        "team_games": 51
+      },
+      "recent": {
+        "hits": 17,
+        "plays": 24,
+        "hit_rate": 70.83333333333333,
+        "be": 54.32101726049394,
+        "gap": 16.51231607283939,
+        "players": 20,
+        "units": 7.245624986929335,
+        "roi": 30.19010411220556,
+        "dates": 6,
+        "games": 16,
+        "teams": 13,
+        "opponents": 12,
+        "team_games": 17
+      },
+      "available_parent": {
+        "full": {
+          "hits": 108,
+          "plays": 172,
+          "hit_rate": 62.7906976744186,
+          "be": 53.6131169652273,
+          "gap": 9.177580709191304,
+          "players": 35,
+          "units": 30.895056722592447,
+          "roi": 17.962242280577005,
+          "dates": 32,
+          "games": 104,
+          "teams": 21,
+          "opponents": 29,
+          "team_games": 127
+        },
+        "recent": {
+          "hits": 39,
+          "plays": 64,
+          "hit_rate": 60.9375,
+          "be": 53.538156732830956,
+          "gap": 7.399343267169044,
+          "players": 25,
+          "units": 9.500360107470744,
+          "roi": 14.844312667923038,
+          "dates": 9,
+          "games": 37,
+          "teams": 17,
+          "opponents": 26,
+          "team_games": 45
+        }
+      },
+      "lift_pp": 11.055456171735237,
+      "noise": {
+        "flags": [],
+        "concentration": {
+          "Player": [
+            [
+              "Macklin Celebrini",
+              6
+            ],
+            [
+              "Kirill Kaprizov",
+              6
+            ],
+            [
+              "Tim Sttzle",
+              5
+            ],
+            [
+              "Matthew Schaefer",
+              4
+            ],
+            [
+              "Mikhail Sergachev",
+              4
+            ]
+          ],
+          "Team": [
+            [
+              "MIN",
+              13
+            ],
+            [
+              "SJS",
+              6
+            ],
+            [
+              "OTT",
+              5
+            ],
+            [
+              "EDM",
+              5
+            ],
+            [
+              "ANA",
+              5
+            ]
+          ],
+          "Opp": [
+            [
+              "PHI",
+              8
+            ],
+            [
+              "SJS",
+              8
+            ],
+            [
+              "CGY",
+              7
+            ],
+            [
+              "PIT",
+              6
+            ],
+            [
+              "TOR",
+              5
+            ]
+          ]
+        }
+      },
+      "display_level": "BUFF",
+      "scope": "Optional exact-parent research condition. Never a universal entry gate; no automatic probability adjustment.",
+      "definition": "Matched confirmed goalie actual all-strength goals allowed per60 minutes.",
+      "id": "assist-v3-b19",
+      "optional_buff": true,
+      "route_variant": "Runesmith",
+      "display_family": "Sundered Ward",
+      "display_group": "Buff · Sundered Ward"
+    },
+    {
+      "review_id": "B20",
+      "name": "Sundered Ward · Vigil II · broad · GAA 2.80",
+      "family": "Sundered Ward",
+      "parent_id": "M2",
+      "parent_name": "Runewarden’s Vigil II",
+      "parent_conditions": [
+        [
+          "Log_L20_TOI_median",
+          ">=",
+          20.9
+        ]
+      ],
+      "additional_condition": [
+        "Goalie_GAA",
+        ">=",
+        2.8
+      ],
+      "conditions": [
+        [
+          "Log_L20_TOI_median",
+          ">=",
+          20.9
+        ],
+        [
+          "Goalie_GAA",
+          ">=",
+          2.8
+        ]
+      ],
+      "full": {
+        "hits": 56,
+        "plays": 80,
+        "hit_rate": 70.0,
+        "be": 54.38096395118579,
+        "gap": 15.619036048814209,
+        "players": 25,
+        "units": 23.8125131019965,
+        "roi": 29.765641377495626,
+        "dates": 26,
+        "games": 60,
+        "teams": 19,
+        "opponents": 22,
+        "team_games": 66
+      },
+      "recent": {
+        "hits": 18,
+        "plays": 25,
+        "hit_rate": 72.0,
+        "be": 55.61716829400246,
+        "gap": 16.38283170599754,
+        "players": 16,
+        "units": 7.803200744505093,
+        "roi": 31.212802978020374,
+        "dates": 6,
+        "games": 19,
+        "teams": 12,
+        "opponents": 11,
+        "team_games": 19
+      },
+      "available_parent": {
+        "full": {
+          "hits": 101,
+          "plays": 155,
+          "hit_rate": 65.16129032258064,
+          "be": 54.20187052648578,
+          "gap": 10.959419796094863,
+          "players": 30,
+          "units": 33.22674542369644,
+          "roi": 21.4366099507719,
+          "dates": 32,
+          "games": 100,
+          "teams": 21,
+          "opponents": 29,
+          "team_games": 121
+        },
+        "recent": {
+          "hits": 36,
+          "plays": 54,
+          "hit_rate": 66.66666666666667,
+          "be": 54.58131158265425,
+          "gap": 12.08535508401242,
+          "players": 22,
+          "units": 13.141269198379835,
+          "roi": 24.3356837007034,
+          "dates": 9,
+          "games": 35,
+          "teams": 17,
+          "opponents": 24,
+          "team_games": 42
+        }
+      },
+      "lift_pp": 4.838709677419359,
+      "noise": {
+        "flags": [],
+        "concentration": {
+          "Player": [
+            [
+              "Tim Sttzle",
+              7
+            ],
+            [
+              "Kirill Kaprizov",
+              7
+            ],
+            [
+              "Matthew Schaefer",
+              6
+            ],
+            [
+              "Macklin Celebrini",
+              6
+            ],
+            [
+              "Mikhail Sergachev",
+              5
+            ]
+          ],
+          "Team": [
+            [
+              "MIN",
+              16
+            ],
+            [
+              "EDM",
+              9
+            ],
+            [
+              "OTT",
+              7
+            ],
+            [
+              "NYI",
+              6
+            ],
+            [
+              "SJS",
+              6
+            ]
+          ],
+          "Opp": [
+            [
+              "TOR",
+              11
+            ],
+            [
+              "PHI",
+              9
+            ],
+            [
+              "CGY",
+              9
+            ],
+            [
+              "SJS",
+              8
+            ],
+            [
+              "PIT",
+              7
+            ]
+          ]
+        }
+      },
+      "display_level": "BUFF",
+      "scope": "Optional exact-parent research condition. Never a universal entry gate; no automatic probability adjustment.",
+      "definition": "Matched confirmed goalie actual all-strength goals allowed per60 minutes.",
+      "id": "assist-v3-b20",
+      "optional_buff": true,
+      "route_variant": "Runesmith",
+      "display_family": "Sundered Ward",
+      "display_group": "Buff · Sundered Ward"
+    },
+    {
+      "review_id": "B21",
+      "name": "Sundered Ward · Vigil II · stronger · GAA 3.00",
+      "family": "Sundered Ward",
+      "parent_id": "M2",
+      "parent_name": "Runewarden’s Vigil II",
+      "parent_conditions": [
+        [
+          "Log_L20_TOI_median",
+          ">=",
+          20.9
+        ]
+      ],
+      "additional_condition": [
+        "Goalie_GAA",
+        ">=",
+        3.0
+      ],
+      "conditions": [
+        [
+          "Log_L20_TOI_median",
+          ">=",
+          20.9
+        ],
+        [
+          "Goalie_GAA",
+          ">=",
+          3.0
+        ]
+      ],
+      "full": {
+        "hits": 45,
+        "plays": 59,
+        "hit_rate": 76.27118644067797,
+        "be": 54.52689256953212,
+        "gap": 21.744293871145842,
+        "players": 24,
+        "units": 24.355723004222423,
+        "roi": 41.28088644783462,
+        "dates": 23,
+        "games": 46,
+        "teams": 18,
+        "opponents": 19,
+        "team_games": 49
+      },
+      "recent": {
+        "hits": 16,
+        "plays": 20,
+        "hit_rate": 80.0,
+        "be": 55.41100067975201,
+        "gap": 24.588999320247993,
+        "players": 16,
+        "units": 9.336534077838426,
+        "roi": 46.682670389192126,
+        "dates": 6,
+        "games": 15,
+        "teams": 12,
+        "opponents": 10,
+        "team_games": 15
+      },
+      "available_parent": {
+        "full": {
+          "hits": 101,
+          "plays": 155,
+          "hit_rate": 65.16129032258064,
+          "be": 54.20187052648578,
+          "gap": 10.959419796094863,
+          "players": 30,
+          "units": 33.22674542369644,
+          "roi": 21.4366099507719,
+          "dates": 32,
+          "games": 100,
+          "teams": 21,
+          "opponents": 29,
+          "team_games": 121
+        },
+        "recent": {
+          "hits": 36,
+          "plays": 54,
+          "hit_rate": 66.66666666666667,
+          "be": 54.58131158265425,
+          "gap": 12.08535508401242,
+          "players": 22,
+          "units": 13.141269198379835,
+          "roi": 24.3356837007034,
+          "dates": 9,
+          "games": 35,
+          "teams": 17,
+          "opponents": 24,
+          "team_games": 42
+        }
+      },
+      "lift_pp": 11.109896118097325,
+      "noise": {
+        "flags": [],
+        "concentration": {
+          "Player": [
+            [
+              "Macklin Celebrini",
+              6
+            ],
+            [
+              "Kirill Kaprizov",
+              6
+            ],
+            [
+              "Tim Sttzle",
+              5
+            ],
+            [
+              "Matthew Schaefer",
+              4
+            ],
+            [
+              "Mikhail Sergachev",
+              4
+            ]
+          ],
+          "Team": [
+            [
+              "MIN",
+              13
+            ],
+            [
+              "SJS",
+              6
+            ],
+            [
+              "OTT",
+              5
+            ],
+            [
+              "EDM",
+              5
+            ],
+            [
+              "NYI",
+              4
+            ]
+          ],
+          "Opp": [
+            [
+              "PHI",
+              8
+            ],
+            [
+              "SJS",
+              8
+            ],
+            [
+              "CGY",
+              7
+            ],
+            [
+              "TOR",
+              5
+            ],
+            [
+              "PIT",
+              5
+            ]
+          ]
+        }
+      },
+      "display_level": "CRIT I",
+      "scope": "Optional exact-parent research condition. Never a universal entry gate; no automatic probability adjustment.",
+      "definition": "Matched confirmed goalie actual all-strength goals allowed per60 minutes.",
+      "id": "assist-v3-b21",
+      "optional_buff": true,
+      "route_variant": "Runesmith",
+      "display_family": "Sundered Ward",
+      "display_group": "Buff · Sundered Ward"
+    },
+    {
+      "review_id": "B22",
+      "name": "Sundered Ward · Volley · broad · GAA 2.55",
+      "family": "Sundered Ward",
+      "parent_id": "M1_P1_1",
+      "parent_name": "Runewarden’s Volley",
+      "parent_conditions": [
+        [
+          "Log_L20_TOI_median",
+          ">=",
+          20.7
+        ],
+        [
+          "Log_L40_S_per_game",
+          ">=",
+          2.5
+        ]
+      ],
+      "additional_condition": [
+        "Goalie_GAA",
+        ">=",
+        2.55
+      ],
+      "conditions": [
+        [
+          "Log_L20_TOI_median",
+          ">=",
+          20.7
+        ],
+        [
+          "Log_L40_S_per_game",
+          ">=",
+          2.5
+        ],
+        [
+          "Goalie_GAA",
+          ">=",
+          2.55
+        ]
+      ],
+      "full": {
+        "hits": 55,
+        "plays": 75,
+        "hit_rate": 73.33333333333333,
+        "be": 54.31900933138127,
+        "gap": 19.014324001952062,
+        "players": 20,
+        "units": 27.75955907726049,
+        "roi": 37.01274543634732,
+        "dates": 28,
+        "games": 50,
+        "teams": 14,
+        "opponents": 22,
+        "team_games": 54
+      },
+      "recent": {
+        "hits": 15,
+        "plays": 21,
+        "hit_rate": 71.42857142857143,
+        "be": 54.84691835852643,
+        "gap": 16.581653070045,
+        "players": 13,
+        "units": 6.405014500666675,
+        "roi": 30.50006905079369,
+        "dates": 6,
+        "games": 15,
+        "teams": 9,
+        "opponents": 10,
+        "team_games": 15
+      },
+      "available_parent": {
+        "full": {
+          "hits": 82,
+          "plays": 121,
+          "hit_rate": 67.76859504132231,
+          "be": 54.263472871586565,
+          "gap": 13.505122169735749,
+          "players": 24,
+          "units": 31.78929463888732,
+          "roi": 26.27214432965894,
+          "dates": 31,
+          "games": 74,
+          "teams": 15,
+          "opponents": 27,
+          "team_games": 85
+        },
+        "recent": {
+          "hits": 28,
+          "plays": 39,
+          "hit_rate": 71.7948717948718,
+          "be": 54.876900541818465,
+          "gap": 16.91797125305333,
+          "players": 15,
+          "units": 12.933983685781131,
+          "roi": 33.164060732772136,
+          "dates": 8,
+          "games": 24,
+          "teams": 10,
+          "opponents": 19,
+          "team_games": 27
+        }
+      },
+      "lift_pp": 5.564738292011015,
+      "noise": {
+        "flags": [],
+        "concentration": {
+          "Player": [
+            [
+              "Kirill Kaprizov",
+              8
+            ],
+            [
+              "Matthew Schaefer",
+              7
+            ],
+            [
+              "Macklin Celebrini",
+              7
+            ],
+            [
+              "Quinn Hughes",
+              6
+            ],
+            [
+              "Evan Bouchard",
+              6
+            ]
+          ],
+          "Team": [
+            [
+              "MIN",
+              19
+            ],
+            [
+              "EDM",
+              14
+            ],
+            [
+              "NYI",
+              7
+            ],
+            [
+              "SJS",
+              7
+            ],
+            [
+              "TBL",
+              6
+            ]
+          ],
+          "Opp": [
+            [
+              "TOR",
+              12
+            ],
+            [
+              "CGY",
+              10
+            ],
+            [
+              "SJS",
+              7
+            ],
+            [
+              "PIT",
+              5
+            ],
+            [
+              "PHI",
+              5
+            ]
+          ]
+        }
+      },
+      "display_level": "BUFF",
+      "scope": "Optional exact-parent research condition. Never a universal entry gate; no automatic probability adjustment.",
+      "definition": "Matched confirmed goalie actual all-strength goals allowed per60 minutes.",
+      "id": "assist-v3-b22",
+      "optional_buff": true,
+      "route_variant": "Runesmith",
+      "display_family": "Sundered Ward",
+      "display_group": "Buff · Sundered Ward"
+    },
+    {
+      "review_id": "B23",
+      "name": "Sundered Ward · Volley · stronger · GAA 3.05",
+      "family": "Sundered Ward",
+      "parent_id": "M1_P1_1",
+      "parent_name": "Runewarden’s Volley",
+      "parent_conditions": [
+        [
+          "Log_L20_TOI_median",
+          ">=",
+          20.7
+        ],
+        [
+          "Log_L40_S_per_game",
+          ">=",
+          2.5
+        ]
+      ],
+      "additional_condition": [
+        "Goalie_GAA",
+        ">=",
+        3.05
+      ],
+      "conditions": [
+        [
+          "Log_L20_TOI_median",
+          ">=",
+          20.7
+        ],
+        [
+          "Log_L40_S_per_game",
+          ">=",
+          2.5
+        ],
+        [
+          "Goalie_GAA",
+          ">=",
+          3.05
+        ]
+      ],
+      "full": {
+        "hits": 33,
+        "plays": 41,
+        "hit_rate": 80.48780487804878,
+        "be": 53.76018349973253,
+        "gap": 26.72762137831625,
+        "players": 19,
+        "units": 21.19036178627712,
+        "roi": 51.683809234822235,
+        "dates": 19,
+        "games": 30,
+        "teams": 13,
+        "opponents": 16,
+        "team_games": 31
+      },
+      "recent": {
+        "hits": 11,
+        "plays": 14,
+        "hit_rate": 78.57142857142857,
+        "be": 55.3504260456751,
+        "gap": 23.22100252575347,
+        "players": 12,
+        "units": 5.837446933099107,
+        "roi": 41.696049522136484,
+        "dates": 5,
+        "games": 9,
+        "teams": 8,
+        "opponents": 7,
+        "team_games": 9
+      },
+      "available_parent": {
+        "full": {
+          "hits": 82,
+          "plays": 121,
+          "hit_rate": 67.76859504132231,
+          "be": 54.263472871586565,
+          "gap": 13.505122169735749,
+          "players": 24,
+          "units": 31.78929463888732,
+          "roi": 26.27214432965894,
+          "dates": 31,
+          "games": 74,
+          "teams": 15,
+          "opponents": 27,
+          "team_games": 85
+        },
+        "recent": {
+          "hits": 28,
+          "plays": 39,
+          "hit_rate": 71.7948717948718,
+          "be": 54.876900541818465,
+          "gap": 16.91797125305333,
+          "players": 15,
+          "units": 12.933983685781131,
+          "roi": 33.164060732772136,
+          "dates": 8,
+          "games": 24,
+          "teams": 10,
+          "opponents": 19,
+          "team_games": 27
+        }
+      },
+      "lift_pp": 12.719209836726463,
+      "noise": {
+        "flags": [],
+        "concentration": {
+          "Player": [
+            [
+              "Kirill Kaprizov",
+              6
+            ],
+            [
+              "Macklin Celebrini",
+              5
+            ],
+            [
+              "Matthew Schaefer",
+              4
+            ],
+            [
+              "Quinn Hughes",
+              4
+            ],
+            [
+              "Matt Boldy",
+              3
+            ]
+          ],
+          "Team": [
+            [
+              "MIN",
+              13
+            ],
+            [
+              "SJS",
+              5
+            ],
+            [
+              "NYI",
+              4
+            ],
+            [
+              "NSH",
+              3
+            ],
+            [
+              "TBL",
+              3
+            ]
+          ],
+          "Opp": [
+            [
+              "SJS",
+              7
+            ],
+            [
+              "CGY",
+              7
+            ],
+            [
+              "PHI",
+              5
+            ],
+            [
+              "PIT",
+              4
+            ],
+            [
+              "TOR",
+              3
+            ]
+          ]
+        }
+      },
+      "display_level": "CRIT II",
+      "scope": "Optional exact-parent research condition. Never a universal entry gate; no automatic probability adjustment.",
+      "definition": "Matched confirmed goalie actual all-strength goals allowed per60 minutes.",
+      "id": "assist-v3-b23",
+      "optional_buff": true,
+      "route_variant": "Runesmith",
+      "display_family": "Sundered Ward",
+      "display_group": "Buff · Sundered Ward"
+    },
+    {
+      "review_id": "B24",
+      "name": "Sundered Ward · Rhythm · broad · GAA 2.55",
+      "family": "Sundered Ward",
+      "parent_id": "M1_P1_1_P1_1",
+      "parent_name": "Runewarden’s Rhythm",
+      "parent_conditions": [
+        [
+          "Log_L20_TOI_median",
+          ">=",
+          20.7
+        ],
+        [
+          "Log_L40_S_per_game",
+          ">=",
+          2.5
+        ],
+        [
+          "Log_L10_SOG_per60",
+          "<=",
+          10.35
+        ]
+      ],
+      "additional_condition": [
+        "Goalie_GAA",
+        ">=",
+        2.55
+      ],
+      "conditions": [
+        [
+          "Log_L20_TOI_median",
+          ">=",
+          20.7
+        ],
+        [
+          "Log_L40_S_per_game",
+          ">=",
+          2.5
+        ],
+        [
+          "Log_L10_SOG_per60",
+          "<=",
+          10.35
+        ],
+        [
+          "Goalie_GAA",
+          ">=",
+          2.55
+        ]
+      ],
+      "full": {
+        "hits": 48,
+        "plays": 63,
+        "hit_rate": 76.19047619047619,
+        "be": 54.33381069396457,
+        "gap": 21.856665496511617,
+        "players": 20,
+        "units": 26.839582499892607,
+        "roi": 42.602511904591445,
+        "dates": 27,
+        "games": 46,
+        "teams": 14,
+        "opponents": 21,
+        "team_games": 49
+      },
+      "recent": {
+        "hits": 12,
+        "plays": 17,
+        "hit_rate": 70.58823529411765,
+        "be": 54.43739914747233,
+        "gap": 16.150836146645325,
+        "players": 11,
+        "units": 5.088516184168358,
+        "roi": 29.932448142166812,
+        "dates": 5,
+        "games": 13,
+        "teams": 8,
+        "opponents": 9,
+        "team_games": 13
+      },
+      "available_parent": {
+        "full": {
+          "hits": 68,
+          "plays": 97,
+          "hit_rate": 70.10309278350516,
+          "be": 54.32496333305311,
+          "gap": 15.778129450452049,
+          "players": 22,
+          "units": 29.83160989540048,
+          "roi": 30.754237005567504,
+          "dates": 30,
+          "games": 67,
+          "teams": 14,
+          "opponents": 26,
+          "team_games": 75
+        },
+        "recent": {
+          "hits": 22,
+          "plays": 31,
+          "hit_rate": 70.96774193548387,
+          "be": 54.79285152079998,
+          "gap": 16.174890414683894,
+          "players": 14,
+          "units": 9.95717941115077,
+          "roi": 32.11993358435732,
+          "dates": 7,
+          "games": 21,
+          "teams": 10,
+          "opponents": 17,
+          "team_games": 23
+        }
+      },
+      "lift_pp": 6.087383406971028,
+      "noise": {
+        "flags": [],
+        "concentration": {
+          "Player": [
+            [
+              "Kirill Kaprizov",
+              8
+            ],
+            [
+              "Matthew Schaefer",
+              7
+            ],
+            [
+              "Quinn Hughes",
+              6
+            ],
+            [
+              "Evan Bouchard",
+              6
+            ],
+            [
+              "Auston Matthews",
+              4
+            ]
+          ],
+          "Team": [
+            [
+              "MIN",
+              16
+            ],
+            [
+              "EDM",
+              11
+            ],
+            [
+              "NYI",
+              7
+            ],
+            [
+              "TBL",
+              5
+            ],
+            [
+              "NSH",
+              4
+            ]
+          ],
+          "Opp": [
+            [
+              "TOR",
+              9
+            ],
+            [
+              "CGY",
+              8
+            ],
+            [
+              "SJS",
+              6
+            ],
+            [
+              "PIT",
+              5
+            ],
+            [
+              "CBJ",
+              4
+            ]
+          ]
+        }
+      },
+      "display_level": "CRIT I",
+      "scope": "Optional exact-parent research condition. Never a universal entry gate; no automatic probability adjustment.",
+      "definition": "Matched confirmed goalie actual all-strength goals allowed per60 minutes.",
+      "id": "assist-v3-b24",
+      "optional_buff": true,
+      "route_variant": "Runesmith",
+      "display_family": "Sundered Ward",
+      "display_group": "Buff · Sundered Ward"
+    },
+    {
+      "review_id": "B25",
+      "name": "Sundered Ward · Rhythm · stronger · GAA 2.95",
+      "family": "Sundered Ward",
+      "parent_id": "M1_P1_1_P1_1",
+      "parent_name": "Runewarden’s Rhythm",
+      "parent_conditions": [
+        [
+          "Log_L20_TOI_median",
+          ">=",
+          20.7
+        ],
+        [
+          "Log_L40_S_per_game",
+          ">=",
+          2.5
+        ],
+        [
+          "Log_L10_SOG_per60",
+          "<=",
+          10.35
+        ]
+      ],
+      "additional_condition": [
+        "Goalie_GAA",
+        ">=",
+        2.95
+      ],
+      "conditions": [
+        [
+          "Log_L20_TOI_median",
+          ">=",
+          20.7
+        ],
+        [
+          "Log_L40_S_per_game",
+          ">=",
+          2.5
+        ],
+        [
+          "Log_L10_SOG_per60",
+          "<=",
+          10.35
+        ],
+        [
+          "Goalie_GAA",
+          ">=",
+          2.95
+        ]
+      ],
+      "full": {
+        "hits": 34,
+        "plays": 42,
+        "hit_rate": 80.95238095238095,
+        "be": 54.10652868106021,
+        "gap": 26.845852271320737,
+        "players": 19,
+        "units": 21.792471749371064,
+        "roi": 51.88683749850254,
+        "dates": 22,
+        "games": 30,
+        "teams": 13,
+        "opponents": 17,
+        "team_games": 32
+      },
+      "recent": {
+        "hits": 10,
+        "plays": 12,
+        "hit_rate": 83.33333333333333,
+        "be": 54.8797053847855,
+        "gap": 28.453627948547826,
+        "players": 10,
+        "units": 6.187615283267458,
+        "roi": 51.56346069389548,
+        "dates": 5,
+        "games": 8,
+        "teams": 7,
+        "opponents": 7,
+        "team_games": 8
+      },
+      "available_parent": {
+        "full": {
+          "hits": 68,
+          "plays": 97,
+          "hit_rate": 70.10309278350516,
+          "be": 54.32496333305311,
+          "gap": 15.778129450452049,
+          "players": 22,
+          "units": 29.83160989540048,
+          "roi": 30.754237005567504,
+          "dates": 30,
+          "games": 67,
+          "teams": 14,
+          "opponents": 26,
+          "team_games": 75
+        },
+        "recent": {
+          "hits": 22,
+          "plays": 31,
+          "hit_rate": 70.96774193548387,
+          "be": 54.79285152079998,
+          "gap": 16.174890414683894,
+          "players": 14,
+          "units": 9.95717941115077,
+          "roi": 32.11993358435732,
+          "dates": 7,
+          "games": 21,
+          "teams": 10,
+          "opponents": 17,
+          "team_games": 23
+        }
+      },
+      "lift_pp": 10.849288168875788,
+      "noise": {
+        "flags": [],
+        "concentration": {
+          "Player": [
+            [
+              "Kirill Kaprizov",
+              7
+            ],
+            [
+              "Quinn Hughes",
+              5
+            ],
+            [
+              "Matthew Schaefer",
+              4
+            ],
+            [
+              "Evan Bouchard",
+              3
+            ],
+            [
+              "Auston Matthews",
+              2
+            ]
+          ],
+          "Team": [
+            [
+              "MIN",
+              14
+            ],
+            [
+              "EDM",
+              5
+            ],
+            [
+              "NYI",
+              4
+            ],
+            [
+              "NSH",
+              3
+            ],
+            [
+              "TBL",
+              3
+            ]
+          ],
+          "Opp": [
+            [
+              "SJS",
+              6
+            ],
+            [
+              "PIT",
+              5
+            ],
+            [
+              "CGY",
+              5
+            ],
+            [
+              "TOR",
+              4
+            ],
+            [
+              "PHI",
+              4
+            ]
+          ]
+        }
+      },
+      "display_level": "CRIT II",
+      "scope": "Optional exact-parent research condition. Never a universal entry gate; no automatic probability adjustment.",
+      "definition": "Matched confirmed goalie actual all-strength goals allowed per60 minutes.",
+      "id": "assist-v3-b25",
+      "optional_buff": true,
+      "route_variant": "Runesmith",
+      "display_family": "Sundered Ward",
+      "display_group": "Buff · Sundered Ward"
+    },
+    {
+      "review_id": "B26",
+      "name": "Sundered Ward · Flow I · broad · GAA 2.80",
+      "family": "Sundered Ward",
+      "parent_id": "E1",
+      "parent_name": "Stormkeeper’s Flow I",
+      "parent_conditions": [
+        [
+          "EV5_TOI_per_game",
+          ">=",
+          15.6
+        ]
+      ],
+      "additional_condition": [
+        "Goalie_GAA",
+        ">=",
+        2.8
+      ],
+      "conditions": [
+        [
+          "EV5_TOI_per_game",
+          ">=",
+          15.6
+        ],
+        [
+          "Goalie_GAA",
+          ">=",
+          2.8
+        ]
+      ],
+      "full": {
+        "hits": 53,
+        "plays": 78,
+        "hit_rate": 67.94871794871794,
+        "be": 54.25143950943295,
+        "gap": 13.697278439284993,
+        "players": 24,
+        "units": 20.73118225397714,
+        "roi": 26.57843878715018,
+        "dates": 26,
+        "games": 61,
+        "teams": 17,
+        "opponents": 23,
+        "team_games": 65
+      },
+      "recent": {
+        "hits": 17,
+        "plays": 23,
+        "hit_rate": 73.91304347826087,
+        "be": 55.100856471579945,
+        "gap": 18.81218700668093,
+        "players": 17,
+        "units": 8.503596001422089,
+        "roi": 36.97215652792213,
+        "dates": 6,
+        "games": 18,
+        "teams": 13,
+        "opponents": 12,
+        "team_games": 18
+      },
+      "available_parent": {
+        "full": {
+          "hits": 99,
+          "plays": 158,
+          "hit_rate": 62.65822784810127,
+          "be": 53.74187577095532,
+          "gap": 8.916352077145952,
+          "players": 25,
+          "units": 26.892497061433517,
+          "roi": 17.020567760400958,
+          "dates": 33,
+          "games": 108,
+          "teams": 18,
+          "opponents": 31,
+          "team_games": 128
+        },
+        "recent": {
+          "hits": 34,
+          "plays": 52,
+          "hit_rate": 65.38461538461539,
+          "be": 53.93739002897201,
+          "gap": 11.447225355643376,
+          "players": 20,
+          "units": 11.249757811216273,
+          "roi": 21.63414963695437,
+          "dates": 9,
+          "games": 35,
+          "teams": 16,
+          "opponents": 25,
+          "team_games": 42
+        }
+      },
+      "lift_pp": 5.2904901006166725,
+      "noise": {
+        "flags": [],
+        "concentration": {
+          "Player": [
+            [
+              "Kirill Kaprizov",
+              7
+            ],
+            [
+              "Matthew Schaefer",
+              6
+            ],
+            [
+              "Macklin Celebrini",
+              6
+            ],
+            [
+              "Mikhail Sergachev",
+              5
+            ],
+            [
+              "Quinn Hughes",
+              5
+            ]
+          ],
+          "Team": [
+            [
+              "MIN",
+              12
+            ],
+            [
+              "EDM",
+              9
+            ],
+            [
+              "COL",
+              7
+            ],
+            [
+              "NYI",
+              6
+            ],
+            [
+              "SJS",
+              6
+            ]
+          ],
+          "Opp": [
+            [
+              "TOR",
+              11
+            ],
+            [
+              "SJS",
+              8
+            ],
+            [
+              "PHI",
+              7
+            ],
+            [
+              "PIT",
+              6
+            ],
+            [
+              "CGY",
+              6
+            ]
+          ]
+        }
+      },
+      "display_level": "BUFF",
+      "scope": "Optional exact-parent research condition. Never a universal entry gate; no automatic probability adjustment.",
+      "definition": "Matched confirmed goalie actual all-strength goals allowed per60 minutes.",
+      "id": "assist-v3-b26",
+      "optional_buff": true,
+      "route_variant": "Stormcaller",
+      "display_family": "Sundered Ward",
+      "display_group": "Buff · Sundered Ward"
+    },
+    {
+      "review_id": "B27",
+      "name": "Sundered Ward · Flow I · stronger · GAA 2.95",
+      "family": "Sundered Ward",
+      "parent_id": "E1",
+      "parent_name": "Stormkeeper’s Flow I",
+      "parent_conditions": [
+        [
+          "EV5_TOI_per_game",
+          ">=",
+          15.6
+        ]
+      ],
+      "additional_condition": [
+        "Goalie_GAA",
+        ">=",
+        2.95
+      ],
+      "conditions": [
+        [
+          "EV5_TOI_per_game",
+          ">=",
+          15.6
+        ],
+        [
+          "Goalie_GAA",
+          ">=",
+          2.95
+        ]
+      ],
+      "full": {
+        "hits": 48,
+        "plays": 66,
+        "hit_rate": 72.72727272727273,
+        "be": 54.43975971910242,
+        "gap": 18.287513008170315,
+        "players": 24,
+        "units": 23.41300043579532,
+        "roi": 35.474243084538365,
+        "dates": 24,
+        "games": 52,
+        "teams": 17,
+        "opponents": 20,
+        "team_games": 54
+      },
+      "recent": {
+        "hits": 16,
+        "plays": 20,
+        "hit_rate": 80.0,
+        "be": 54.65235065139126,
+        "gap": 25.34764934860874,
+        "players": 17,
+        "units": 9.836929334755421,
+        "roi": 49.1846466737771,
+        "dates": 6,
+        "games": 16,
+        "teams": 13,
+        "opponents": 11,
+        "team_games": 16
+      },
+      "available_parent": {
+        "full": {
+          "hits": 99,
+          "plays": 158,
+          "hit_rate": 62.65822784810127,
+          "be": 53.74187577095532,
+          "gap": 8.916352077145952,
+          "players": 25,
+          "units": 26.892497061433517,
+          "roi": 17.020567760400958,
+          "dates": 33,
+          "games": 108,
+          "teams": 18,
+          "opponents": 31,
+          "team_games": 128
+        },
+        "recent": {
+          "hits": 34,
+          "plays": 52,
+          "hit_rate": 65.38461538461539,
+          "be": 53.93739002897201,
+          "gap": 11.447225355643376,
+          "players": 20,
+          "units": 11.249757811216273,
+          "roi": 21.63414963695437,
+          "dates": 9,
+          "games": 35,
+          "teams": 16,
+          "opponents": 25,
+          "team_games": 42
+        }
+      },
+      "lift_pp": 10.069044879171464,
+      "noise": {
+        "flags": [],
+        "concentration": {
+          "Player": [
+            [
+              "Kirill Kaprizov",
+              7
+            ],
+            [
+              "Macklin Celebrini",
+              6
+            ],
+            [
+              "Quinn Hughes",
+              5
+            ],
+            [
+              "Matthew Schaefer",
+              4
+            ],
+            [
+              "Adam Fox",
+              4
+            ]
+          ],
+          "Team": [
+            [
+              "MIN",
+              12
+            ],
+            [
+              "EDM",
+              7
+            ],
+            [
+              "SJS",
+              6
+            ],
+            [
+              "NSH",
+              5
+            ],
+            [
+              "COL",
+              5
+            ]
+          ],
+          "Opp": [
+            [
+              "TOR",
+              8
+            ],
+            [
+              "SJS",
+              8
+            ],
+            [
+              "PHI",
+              7
+            ],
+            [
+              "CGY",
+              6
+            ],
+            [
+              "ANA",
+              5
+            ]
+          ]
+        }
+      },
+      "display_level": "BUFF",
+      "scope": "Optional exact-parent research condition. Never a universal entry gate; no automatic probability adjustment.",
+      "definition": "Matched confirmed goalie actual all-strength goals allowed per60 minutes.",
+      "id": "assist-v3-b27",
+      "optional_buff": true,
+      "route_variant": "Stormcaller",
+      "display_family": "Sundered Ward",
+      "display_group": "Buff · Sundered Ward"
+    },
+    {
+      "review_id": "B28",
+      "name": "Sundered Ward · Flow II · GAA 2.90",
+      "family": "Sundered Ward",
+      "parent_id": "E2",
+      "parent_name": "Stormkeeper’s Flow II",
+      "parent_conditions": [
+        [
+          "EV5_TOI_per_game",
+          ">=",
+          16.1
+        ]
+      ],
+      "additional_condition": [
+        "Goalie_GAA",
+        ">=",
+        2.9
+      ],
+      "conditions": [
+        [
+          "EV5_TOI_per_game",
+          ">=",
+          16.1
+        ],
+        [
+          "Goalie_GAA",
+          ">=",
+          2.9
+        ]
+      ],
+      "full": {
+        "hits": 37,
+        "plays": 50,
+        "hit_rate": 74.0,
+        "be": 55.68277934580591,
+        "gap": 18.317220654194088,
+        "players": 18,
+        "units": 17.338619858325497,
+        "roi": 34.677239716650995,
+        "dates": 23,
+        "games": 40,
+        "teams": 14,
+        "opponents": 16,
+        "team_games": 41
+      },
+      "recent": {
+        "hits": 12,
+        "plays": 16,
+        "hit_rate": 75.0,
+        "be": 55.967877338629314,
+        "gap": 19.032122661370686,
+        "players": 14,
+        "units": 5.727838425664513,
+        "roi": 35.79899016040321,
+        "dates": 6,
+        "games": 13,
+        "teams": 11,
+        "opponents": 9,
+        "team_games": 13
+      },
+      "available_parent": {
+        "full": {
+          "hits": 72,
+          "plays": 106,
+          "hit_rate": 67.9245283018868,
+          "be": 55.32508267055774,
+          "gap": 12.599445631329054,
+          "players": 19,
+          "units": 24.33711827455469,
+          "roi": 22.95954554203273,
+          "dates": 31,
+          "games": 77,
+          "teams": 15,
+          "opponents": 28,
+          "team_games": 86
+        },
+        "recent": {
+          "hits": 25,
+          "plays": 40,
+          "hit_rate": 62.5,
+          "be": 55.251725257546106,
+          "gap": 7.248274742453894,
+          "players": 17,
+          "units": 4.9275452090036715,
+          "roi": 12.318863022509179,
+          "dates": 9,
+          "games": 29,
+          "teams": 14,
+          "opponents": 21,
+          "team_games": 33
+        }
+      },
+      "lift_pp": 6.075471698113205,
+      "noise": {
+        "flags": [],
+        "concentration": {
+          "Player": [
+            [
+              "Kirill Kaprizov",
+              7
+            ],
+            [
+              "Macklin Celebrini",
+              6
+            ],
+            [
+              "Matthew Schaefer",
+              5
+            ],
+            [
+              "Quinn Hughes",
+              5
+            ],
+            [
+              "Adam Fox",
+              3
+            ]
+          ],
+          "Team": [
+            [
+              "MIN",
+              12
+            ],
+            [
+              "EDM",
+              7
+            ],
+            [
+              "SJS",
+              6
+            ],
+            [
+              "NYI",
+              5
+            ],
+            [
+              "NYR",
+              3
+            ]
+          ],
+          "Opp": [
+            [
+              "TOR",
+              8
+            ],
+            [
+              "PHI",
+              7
+            ],
+            [
+              "CGY",
+              6
+            ],
+            [
+              "UTA",
+              5
+            ],
+            [
+              "SJS",
+              5
+            ]
+          ]
+        }
+      },
+      "display_level": "BUFF",
+      "scope": "Optional exact-parent research condition. Never a universal entry gate; no automatic probability adjustment.",
+      "definition": "Matched confirmed goalie actual all-strength goals allowed per60 minutes.",
+      "id": "assist-v3-b28",
+      "optional_buff": true,
+      "route_variant": "Stormcaller",
+      "display_family": "Sundered Ward",
+      "display_group": "Buff · Sundered Ward"
+    },
+    {
+      "review_id": "B29",
+      "name": "Sundered Ward · Balance · GAA 2.80",
+      "family": "Sundered Ward",
+      "parent_id": "E1_P1_1",
+      "parent_name": "Stormkeeper’s Balance",
+      "parent_conditions": [
+        [
+          "EV5_TOI_per_game",
+          ">=",
+          15.6
+        ],
+        [
+          "Log_L5_SOG_SD",
+          "<=",
+          1.7
+        ]
+      ],
+      "additional_condition": [
+        "Goalie_GAA",
+        ">=",
+        2.8
+      ],
+      "conditions": [
+        [
+          "EV5_TOI_per_game",
+          ">=",
+          15.6
+        ],
+        [
+          "Log_L5_SOG_SD",
+          "<=",
+          1.7
+        ],
+        [
+          "Goalie_GAA",
+          ">=",
+          2.8
+        ]
+      ],
+      "full": {
+        "hits": 43,
+        "plays": 60,
+        "hit_rate": 71.66666666666667,
+        "be": 54.21988389526625,
+        "gap": 17.44678277140042,
+        "players": 23,
+        "units": 19.585376705250848,
+        "roi": 32.64229450875141,
+        "dates": 23,
+        "games": 48,
+        "teams": 17,
+        "opponents": 20,
+        "team_games": 49
+      },
+      "recent": {
+        "hits": 16,
+        "plays": 21,
+        "hit_rate": 76.19047619047619,
+        "be": 55.533918054012744,
+        "gap": 20.656558136463445,
+        "players": 16,
+        "units": 8.403596001422088,
+        "roi": 40.01712381629566,
+        "dates": 6,
+        "games": 16,
+        "teams": 12,
+        "opponents": 11,
+        "team_games": 16
+      },
+      "available_parent": {
+        "full": {
+          "hits": 81,
+          "plays": 121,
+          "hit_rate": 66.94214876033058,
+          "be": 53.88524156950961,
+          "gap": 13.056907190820972,
+          "players": 24,
+          "units": 29.651582488272076,
+          "roi": 24.505440072952126,
+          "dates": 31,
+          "games": 90,
+          "teams": 18,
+          "opponents": 31,
+          "team_games": 99
+        },
+        "recent": {
+          "hits": 32,
+          "plays": 45,
+          "hit_rate": 71.11111111111111,
+          "be": 54.737549051620654,
+          "gap": 16.37356205949046,
+          "players": 19,
+          "units": 14.149757811216274,
+          "roi": 31.44390624714727,
+          "dates": 9,
+          "games": 31,
+          "teams": 15,
+          "opponents": 24,
+          "team_games": 36
+        }
+      },
+      "lift_pp": 4.724517906336089,
+      "noise": {
+        "flags": [],
+        "concentration": {
+          "Player": [
+            [
+              "Kirill Kaprizov",
+              7
+            ],
+            [
+              "Mikhail Sergachev",
+              5
+            ],
+            [
+              "Quinn Hughes",
+              5
+            ],
+            [
+              "Adam Fox",
+              4
+            ],
+            [
+              "Auston Matthews",
+              3
+            ]
+          ],
+          "Team": [
+            [
+              "MIN",
+              12
+            ],
+            [
+              "EDM",
+              6
+            ],
+            [
+              "UTA",
+              5
+            ],
+            [
+              "COL",
+              5
+            ],
+            [
+              "NYR",
+              4
+            ]
+          ],
+          "Opp": [
+            [
+              "SJS",
+              7
+            ],
+            [
+              "TOR",
+              7
+            ],
+            [
+              "PHI",
+              7
+            ],
+            [
+              "UTA",
+              5
+            ],
+            [
+              "PIT",
+              5
+            ]
+          ]
+        }
+      },
+      "display_level": "BUFF",
+      "scope": "Optional exact-parent research condition. Never a universal entry gate; no automatic probability adjustment.",
+      "definition": "Matched confirmed goalie actual all-strength goals allowed per60 minutes.",
+      "id": "assist-v3-b29",
+      "optional_buff": true,
+      "route_variant": "Stormcaller",
+      "display_family": "Sundered Ward",
+      "display_group": "Buff · Sundered Ward"
+    },
+    {
+      "review_id": "B30",
+      "name": "Sundered Ward · Pulse · GAA 2.55",
+      "family": "Sundered Ward",
+      "parent_id": "E1_P1_1_P1_1",
+      "parent_name": "Stormkeeper’s Pulse",
+      "parent_conditions": [
+        [
+          "EV5_TOI_per_game",
+          ">=",
+          15.6
+        ],
+        [
+          "Log_L5_SOG_SD",
+          "<=",
+          1.7
+        ],
+        [
+          "Pace_Gap_S10",
+          ">=",
+          -0.4
+        ]
+      ],
+      "additional_condition": [
+        "Goalie_GAA",
+        ">=",
+        2.55
+      ],
+      "conditions": [
+        [
+          "EV5_TOI_per_game",
+          ">=",
+          15.6
+        ],
+        [
+          "Log_L5_SOG_SD",
+          "<=",
+          1.7
+        ],
+        [
+          "Pace_Gap_S10",
+          ">=",
+          -0.4
+        ],
+        [
+          "Goalie_GAA",
+          ">=",
+          2.55
+        ]
+      ],
+      "full": {
+        "hits": 43,
+        "plays": 55,
+        "hit_rate": 78.18181818181819,
+        "be": 54.272121850808624,
+        "gap": 23.909696331009563,
+        "players": 18,
+        "units": 24.65637536123207,
+        "roi": 44.829773384058306,
+        "dates": 24,
+        "games": 44,
+        "teams": 14,
+        "opponents": 19,
+        "team_games": 46
+      },
+      "recent": {
+        "hits": 20,
+        "plays": 24,
+        "hit_rate": 83.33333333333333,
+        "be": 54.093513565776526,
+        "gap": 29.239819767556803,
+        "players": 14,
+        "units": 13.389138794451986,
+        "roi": 55.788078310216605,
+        "dates": 6,
+        "games": 19,
+        "teams": 11,
+        "opponents": 14,
+        "team_games": 21
+      },
+      "available_parent": {
+        "full": {
+          "hits": 63,
+          "plays": 89,
+          "hit_rate": 70.78651685393258,
+          "be": 54.28394229518398,
+          "gap": 16.502574558748606,
+          "players": 19,
+          "units": 27.366890377892357,
+          "roi": 30.749315031339723,
+          "dates": 30,
+          "games": 68,
+          "teams": 15,
+          "opponents": 27,
+          "team_games": 73
+        },
+        "recent": {
+          "hits": 30,
+          "plays": 38,
+          "hit_rate": 78.94736842105263,
+          "be": 54.47722201142331,
+          "gap": 24.470146409629322,
+          "players": 15,
+          "units": 17.55221556851274,
+          "roi": 46.19004096977037,
+          "dates": 9,
+          "games": 28,
+          "teams": 12,
+          "opponents": 21,
+          "team_games": 31
+        }
+      },
+      "lift_pp": 7.395301327885605,
+      "noise": {
+        "flags": [],
+        "concentration": {
+          "Player": [
+            [
+              "Kirill Kaprizov",
+              7
+            ],
+            [
+              "Auston Matthews",
+              5
+            ],
+            [
+              "Quinn Hughes",
+              5
+            ],
+            [
+              "Seth Jones",
+              4
+            ],
+            [
+              "Adam Fox",
+              3
+            ]
+          ],
+          "Team": [
+            [
+              "MIN",
+              12
+            ],
+            [
+              "EDM",
+              8
+            ],
+            [
+              "TOR",
+              5
+            ],
+            [
+              "FLA",
+              4
+            ],
+            [
+              "COL",
+              4
+            ]
+          ],
+          "Opp": [
+            [
+              "CGY",
+              6
+            ],
+            [
+              "PHI",
+              6
+            ],
+            [
+              "CBJ",
+              5
+            ],
+            [
+              "PIT",
+              5
+            ],
+            [
+              "TOR",
+              5
+            ]
+          ]
+        }
+      },
+      "display_level": "CRIT I",
+      "scope": "Optional exact-parent research condition. Never a universal entry gate; no automatic probability adjustment.",
+      "definition": "Matched confirmed goalie actual all-strength goals allowed per60 minutes.",
+      "id": "assist-v3-b30",
+      "optional_buff": true,
+      "route_variant": "Stormcaller",
+      "display_family": "Sundered Ward",
+      "display_group": "Buff · Sundered Ward"
+    }
+  ]
+}

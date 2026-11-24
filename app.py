@@ -1246,9 +1246,8 @@ def _probe_assists_best(r: dict) -> dict | None:
     moves = [m for m in _assists_mapped_moves(r) if m["kind"] != "CONTEXT"]
     if not moves:
         return None
-    move = max(moves, key=lambda m: (assist_display_tier(m)["priority"],
-                                     _adj_win(100*assist_display_stats(m)["hits"]/assist_display_stats(m)["plays"], assist_display_stats(m)["plays"], k=20),
-                                     m["picks"]))
+    from warlords_night_board import _move_rank
+    move = max(moves, key=_move_rank)
     shown = assist_display_stats(move)
     win = 100.0 * shown["hits"] / shown["plays"]
     return {"title": assist_display_name(move), "win": win, "n": shown["plays"],
@@ -8110,4 +8109,5 @@ elif page == "Ledger":
 else:
     st.subheader("Raw CSV (all columns)")
     st.dataframe(with_matchup_times(df_f), width="stretch", height=620, hide_index=True)
+
 
