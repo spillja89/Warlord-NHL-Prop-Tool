@@ -956,6 +956,7 @@ def _render_pp_player_signal_details(details):
 
 def render_power_play_quotes_table(rows, signals_by_team, *, row_controls=None):
     """Full PP scouting table with clickable, typed column sorting."""
+    from pp_pk_windows import cell as pk_window_cell, COLUMN_HELP as PK_COLUMN_HELP, CSS as PK_WINDOW_CSS
     def cell(value):
         if value is None or pd.isna(value):
             return "—"
@@ -1005,7 +1006,9 @@ def render_power_play_quotes_table(rows, signals_by_team, *, row_controls=None):
         ("Game", "Game", cell),
         ("Best price", "Best feed price", cell),
         ("PP on-ice xG/g", "PP on-ice xG/game", lambda value: decimal(value, 3)),
-        ("Opp PK %", "Opp PK %", decimal),
+        ("Opp PK L5 %", "Opp PK L5 %", decimal),
+        ("Opp PK L10 %", "Opp PK L10 %", decimal),
+        ("Opp PK season %", "Opp PK season %", decimal),
         ("Opp PK xGA/60", "Opp PK xGA/60 now", lambda value: decimal(value, 2)),
         ("Team PP matchup signals", None, None),
         ("Player signals", "PP research signals", cell),
@@ -1038,6 +1041,8 @@ def render_power_play_quotes_table(rows, signals_by_team, *, row_controls=None):
         for label, key, render in columns:
             css = ' class="pp-player"' if label == "Player" else ' class="pp-signals"' if key is None else ""
             content = stack if key is None else render(row.get(key))
+            if label in PK_COLUMN_HELP:
+                content = pk_window_cell(row,label.split()[2])
             if label == "Game":
                 content = cell(matchup_label(row.get("Game"), row.get("StartTimeUTC"), row.get("StartTimeLocal")))
             if label == "Player" and row.get("PP Assist beta"):
@@ -1058,10 +1063,10 @@ def render_power_play_quotes_table(rows, signals_by_team, *, row_controls=None):
         kind = "text" if label in ("Player", "Team", "Game", "PP unit", "Assists cross-check") else "number"
         headings.append(
             f'<th scope="col" aria-sort="none"{css}>'
-            f'<button type="button" class="pp-sort" data-kind="{kind}" title="{_h(field_help(field) or field_help(label) or ("Click to sort by " + label))}">'
+            f'<button type="button" class="pp-sort" data-kind="{kind}" title="{_h(PK_COLUMN_HELP.get(label) or field_help(field) or field_help(label) or ("Click to sort by " + label))}">'
             f'{_h(label)} <span class="pp-sort-arrow" aria-hidden="true">↕</span></button></th>'
         )
-    return BETA_CSS + '''<style>
+    return BETA_CSS + '<style>' + PK_WINDOW_CSS + '</style><p class="pp-pk-legend">Recent PK vs season: ↑ stronger kill = tougher PP opponent · ↓ weaker kill = softer recent kill. These are observed rates, not new betting gates.</p>' + '''<style>
       .pp-scout-wrap{max-height:650px;overflow:auto;border:1px solid #d7dce4;border-radius:8px;margin:8px 0 12px}
       .pp-scout{border-collapse:separate;border-spacing:0;width:max-content;min-width:100%;font:12px Inter,system-ui,sans-serif;color:#1c2a3b}
       .pp-scout th,.pp-scout td{padding:7px 9px;border-bottom:1px solid #dce1e8;text-align:left;vertical-align:top;background:#fff}

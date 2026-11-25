@@ -8,6 +8,7 @@ import math
 import pandas as pd
 import requests
 from pp_assist_beta import assist_ppp_beta
+from pp_pk_windows import columns as pk_window_columns, COLUMNS as PK_WINDOW_COLUMNS
 
 
 # Dated team-game replay; these records do not set player eligibility.
@@ -38,7 +39,7 @@ COLUMNS = ("Game", "Player", "Team", "Opponent", "PPP line", "Over odds",
            "PP research signals", "PP research count", "PP research eligible",
            "PP player signal details", "PP Assist beta",
            "Tonight PPP mean", "Tonight PPP 1+ %", "Tonight PPP status",
-           "Stats season", "Context", "Book prices")
+           "Stats season", "Context", "Book prices") + PK_WINDOW_COLUMNS
 
 
 def summarize_pp_usage(rows: list[dict], before_date: str) -> dict[int, tuple[float, int]]:
@@ -357,6 +358,7 @@ def priced_ppp_quotes(frame: pd.DataFrame, *, line_filter: float | None = None) 
                 "Context": _context_label(row),
                 "Book prices": str(row.get("PPP_Book_Prices_05") or "") if line == 0.5 else "",
             }
+            candidate.update(pk_window_columns(row))
             if key not in quotes or odds > quotes[key]["Over odds"]:
                 quotes[key] = candidate
     result = pd.DataFrame(quotes.values(), columns=COLUMNS)
@@ -364,5 +366,3 @@ def priced_ppp_quotes(frame: pd.DataFrame, *, line_filter: float | None = None) 
         result = result.sort_values(["Game", "Player", "PPP line"],
                                     kind="stable").reset_index(drop=True)
     return result
-
-
