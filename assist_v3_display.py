@@ -1,5 +1,6 @@
 """Distinguish the main Assist move, team buffs and goalie buffs visually."""
 from html import escape
+from base64 import b64encode
 
 FLAIR={
  'Countermarch':('#ffa594','M4 7h13l-4-4m7 14H7l4 4M17 7l3 3M7 17l-3-3','Crossed counterattack banners'),
@@ -17,7 +18,10 @@ def _flair(move):
     family=move.get('display_family') or move.get('family')
     accent,path,title=FLAIR.get(family,('#a6e5e0','M12 3 3 12l9 9 9-9ZM7 12h10','Arcane matchup rune'))
     style=f'--buff-accent:{accent};--buff-soft:{accent}18;--buff-dim:{accent}66'
-    emblem=('<span class="wn-assist-emblem" aria-hidden="true"><svg viewBox="0 0 24 24" width="23" height="23" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="'+path+'"/></svg></span>')
+    # Streamlit sanitizes inline SVG out of st.html; a fixed local data image
+    # preserves these code-owned emblems without loading any outside asset.
+    svg='<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="23" height="23" fill="none" stroke="'+accent+'" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="'+path+'"/></svg>'
+    emblem='<span class="wn-assist-emblem" aria-hidden="true"><img alt="" width="23" height="23" src="data:image/svg+xml;base64,'+b64encode(svg.encode()).decode()+'"></span>'
     return style,emblem,title
 
 def buff_type(move):
@@ -87,7 +91,7 @@ CSS="""
 .wn-lane--support .wn-assist-buff--team{color:var(--buff-accent);border:1px solid var(--buff-dim);background:linear-gradient(110deg,var(--buff-soft),#12202b);box-shadow:none;animation:none}
 .wn-lane--support .wn-assist-buff--team b{color:#fff}.wn-lane--support .wn-assist-buff--goalie{margin:0;letter-spacing:0}
 .wn-lane--support .wn-assist-emblem{display:inline-flex;align-items:center;justify-content:center;flex:0 0 29px;width:29px;height:29px;border:1px solid var(--buff-dim);border-radius:7px;background:var(--buff-soft);color:var(--buff-accent);box-shadow:inset 0 0 8px var(--buff-soft);padding:2px}
-.wn-lane--support .wn-assist-emblem svg{display:block;width:23px;height:23px}
+.wn-lane--support .wn-assist-emblem img{display:block;width:23px;height:23px;object-fit:contain}
 .wn-lane--support .wn-assist-buff .wn-assist-emblem{font-size:inherit;text-shadow:none}
 .wn-lane--support .wn-assist-buff:hover{border-color:var(--buff-accent);box-shadow:0 0 10px var(--buff-soft)}
 .wn-lane--support .wn-assist-buff--goalie>span:not(.wn-assist-emblem){font-size:11px;text-shadow:none}
