@@ -2,10 +2,11 @@
 from collections import OrderedDict
 import math
 import pandas as pd
+from chosen_priority import priority_key
 
 BOARD_ORDERS = ("Top ranked", "Earliest start", "Latest start", "Player A–Z",
                 "Highest odds", "Lowest odds")
-CHOSEN_ORDERS = ("Tier · S first", "Earliest start", "Latest start", "Player A–Z",
+CHOSEN_ORDERS = ("Top ranked", "Tier · S first", "Earliest start", "Latest start", "Player A–Z",
                  "Highest odds", "Lowest odds")
 TIER_ORDER = {"S": 0, "A": 1, "B": 2, "Review": 3, "Unrated": 4}
 
@@ -100,7 +101,7 @@ def prop_label(pick):
     return f'{market} · {float(pick["line"]):g}'
 
 
-def browse_picks(picks, metadata, *, props=(), tiers=(), slots=(), order="Tier · S first", group="Prop"):
+def browse_picks(picks, metadata, *, props=(), tiers=(), slots=(), order="Top ranked", group="Prop"):
     """Every selected prop appears once. Tier belongs to that exact prop, not its teammate/other market."""
     selected = [pick for pick in picks
                 if (not props or prop_label(pick) in props)
@@ -110,8 +111,8 @@ def browse_picks(picks, metadata, *, props=(), tiers=(), slots=(), order="Tier �
         meta = metadata[pick["pick_id"]]
         stamp = start_stamp(pick.get("start_utc"))
         start = (pd.isna(stamp), 0 if pd.isna(stamp) else stamp.value)
-        if order == "Tier · S first":
-            return (TIER_ORDER[meta["tier"]], meta.get("watch", False))
+        if order in ("Top ranked", "Tier · S first"):
+            return priority_key(pick,metadata)
         if order == "Player A–Z":
             return (str(pick.get("player") or "").casefold(),)
         if order == "Latest start":
@@ -141,3 +142,4 @@ def browse_picks(picks, metadata, *, props=(), tiers=(), slots=(), order="Tier �
     for pick in selected:
         grouped.setdefault(group_key(pick), []).append(pick)
     return grouped
+
