@@ -1,0 +1,242 @@
+{
+  "version": "pk-ppp-context-research-2026-11-25",
+  "through": "2026-11-24",
+  "full_start": "2026-10-13",
+  "recent_start": "2026-11-01",
+  "parent": "All ordinary priced pregame PPP over 0.5; no PP1, xG, Layer 1 or player filters",
+  "recent_included_in_full": true,
+  "source_sha256": "37f4fd8eedeed46830fc013e4afe2a42d0d7147c9e6b146c534fdbbbcad9fec0",
+  "records": [
+    {
+      "field": "Opp_L10_Success_pct",
+      "direction": ">=",
+      "cutoff": 87.0,
+      "full": {
+        "hits": 83,
+        "plays": 511,
+        "rate": 16.2426614481409,
+        "BE": 22.78476480553291,
+        "gap": -6.542103357392008,
+        "players": 292,
+        "units": -186.39912621359224,
+        "ROI": -36.47732411224897,
+        "dates": 30,
+        "games": 59,
+        "team_games": 64,
+        "opponents": 11
+      },
+      "recent": {
+        "hits": 50,
+        "plays": 311,
+        "rate": 16.077170418006432,
+        "BE": 23.212227549855417,
+        "gap": -7.135057131848985,
+        "players": 210,
+        "units": -112.09,
+        "ROI": -36.041800643086816,
+        "dates": 18,
+        "games": 37,
+        "team_games": 39,
+        "opponents": 9
+      },
+      "available_parent": {
+        "full": {
+          "hits": 744,
+          "plays": 3572,
+          "rate": 20.828667413213886,
+          "BE": 22.768691831932376,
+          "gap": -1.9400244187184903,
+          "players": 379,
+          "units": -464.22091572259114,
+          "ROI": -12.996106263230436,
+          "dates": 36,
+          "games": 231,
+          "team_games": 442,
+          "opponents": 32
+        },
+        "recent": {
+          "hits": 514,
+          "plays": 2505,
+          "rate": 20.518962075848304,
+          "BE": 22.719806061106095,
+          "gap": -2.200843985257791,
+          "players": 353,
+          "units": -346.48266329540667,
+          "ROI": -13.831643245325616,
+          "dates": 23,
+          "games": 156,
+          "team_games": 310,
+          "opponents": 32
+        }
+      },
+      "team_goal_diagnostic": {
+        "full": {
+          "hits": 29,
+          "games": 64,
+          "rate": 45.3125,
+          "defending_teams": 11
+        },
+        "recent": {
+          "hits": 16,
+          "games": 39,
+          "rate": 41.02564102564103,
+          "defending_teams": 9
+        }
+      }
+    },
+    {
+      "field": "Opp_L10_Success_pct",
+      "direction": "<=",
+      "cutoff": 65.0,
+      "full": {
+        "hits": 104,
+        "plays": 388,
+        "rate": 26.804123711340207,
+        "BE": 22.469827020697647,
+        "gap": 4.33429669064256,
+        "players": 240,
+        "units": 37.589999999999996,
+        "ROI": 9.688144329896906,
+        "dates": 26,
+        "games": 46,
+        "team_games": 48,
+        "opponents": 10
+      },
+      "recent": {
+        "hits": 71,
+        "plays": 267,
+        "rate": 26.591760299625467,
+        "BE": 22.218300173686963,
+        "gap": 4.373460125938504,
+        "players": 189,
+        "units": 31.61,
+        "ROI": 11.838951310861423,
+        "dates": 18,
+        "games": 32,
+        "team_games": 34,
+        "opponents": 9
+      },
+      "available_parent": {
+        "full": {
+          "hits": 744,
+          "plays": 3572,
+          "rate": 20.828667413213886,
+          "BE": 22.768691831932376,
+          "gap": -1.9400244187184903,
+          "players": 379,
+          "units": -464.22091572259114,
+          "ROI": -12.996106263230436,
+          "dates": 36,
+          "games": 231,
+          "team_games": 442,
+          "opponents": 32
+        },
+        "recent": {
+          "hits": 514,
+          "plays": 2505,
+          "rate": 20.518962075848304,
+          "BE": 22.719806061106095,
+          "gap": -2.200843985257791,
+          "players": 353,
+          "units": -346.48266329540667,
+          "ROI": -13.831643245325616,
+          "dates": 23,
+          "games": 156,
+          "team_games": 310,
+          "opponents": 32
+        }
+      },
+      "team_goal_diagnostic": {
+        "full": {
+          "hits": 32,
+          "games": 48,
+          "rate": 66.66666666666667,
+          "defending_teams": 10
+        },
+        "recent": {
+          "hits": 21,
+          "games": 34,
+          "rate": 61.76470588235294,
+          "defending_teams": 9
+        }
+      }
+    },
+    {
+      "field": "Opp_L5_Success_pct",
+      "direction": "<=",
+      "cutoff": 60.0,
+      "full": {
+        "hits": 120,
+        "plays": 477,
+        "rate": 25.157232704402517,
+        "BE": 22.453441312466133,
+        "gap": 2.7037913919363845,
+        "players": 256,
+        "units": 50.99495575221239,
+        "ROI": 10.690766405075973,
+        "dates": 30,
+        "games": 55,
+        "team_games": 57,
+        "opponents": 14
+      },
+      "recent": {
+        "hits": 73,
+        "plays": 292,
+        "rate": 25.0,
+        "BE": 22.671591725086206,
+        "gap": 2.3284082749137944,
+        "players": 183,
+        "units": 30.21495575221239,
+        "ROI": 10.347587586374106,
+        "dates": 18,
+        "games": 34,
+        "team_games": 36,
+        "opponents": 11
+      },
+      "available_parent": {
+        "full": {
+          "hits": 951,
+          "plays": 4750,
+          "rate": 20.021052631578947,
+          "BE": 22.693656641876835,
+          "gap": -2.6726040102978885,
+          "players": 407,
+          "units": -781.2909157225911,
+          "ROI": -16.448229804686125,
+          "dates": 42,
+          "games": 293,
+          "team_games": 582,
+          "opponents": 32
+        },
+        "recent": {
+          "hits": 514,
+          "plays": 2505,
+          "rate": 20.518962075848304,
+          "BE": 22.719806061106095,
+          "gap": -2.200843985257791,
+          "players": 353,
+          "units": -346.48266329540667,
+          "ROI": -13.831643245325616,
+          "dates": 23,
+          "games": 156,
+          "team_games": 310,
+          "opponents": 32
+        }
+      },
+      "team_goal_diagnostic": {
+        "full": {
+          "hits": 37,
+          "games": 57,
+          "rate": 64.91228070175438,
+          "defending_teams": 14
+        },
+        "recent": {
+          "hits": 23,
+          "games": 36,
+          "rate": 63.888888888888886,
+          "defending_teams": 11
+        }
+      }
+    }
+  ]
+}
