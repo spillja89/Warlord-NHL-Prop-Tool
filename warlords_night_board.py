@@ -1006,9 +1006,7 @@ def render_power_play_quotes_table(rows, signals_by_team, *, row_controls=None):
         ("Team", "Team", cell),
         ("Game", "Game", cell),
         ("Best price", "Best feed price", cell),
-        ("PP on-ice xG/g season", "PP on-ice xG/game", lambda value: decimal(value, 3)),
-        ("PP on-ice xG/g L5", "PP on-ice xG/game L5", lambda value: decimal(value, 3)),
-        ("PP on-ice xG/g L10", "PP on-ice xG/game L10", lambda value: decimal(value, 3)),
+        ("PP on-ice xG/g", "PP on-ice xG/game", lambda value: decimal(value, 3)),
         ("Opp PK L5 %", "Opp PK L5 %", decimal),
         ("Opp PK L10 %", "Opp PK L10 %", decimal),
         ("Opp PK season %", "Opp PK season %", decimal),
@@ -1044,12 +1042,6 @@ def render_power_play_quotes_table(rows, signals_by_team, *, row_controls=None):
         for label, key, render in columns:
             css = ' class="pp-player"' if label == "Player" else ' class="pp-signals"' if key is None else ""
             content = stack if key is None else render(row.get(key))
-            if label in ("PP on-ice xG/g L5", "PP on-ice xG/g L10"):
-                window = 5 if label.endswith("L5") else 10
-                n = _number(row.get(f"PP xG L{window} games"))
-                value = _number(row.get(key))
-                if value is not None:
-                    content = f'<strong>{value:.3f}</strong>' + (f'<small style="display:block;color:#607089">{int(n)} games</small>' if n is not None else '')
             if label in PK_COLUMN_HELP:
                 content = pk_window_cell(row,label.split()[2])
             if label == "Game":
@@ -1920,3 +1912,4 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
     goal_return_styles = '<style>' + GOAL_RETURN_CSS + (GOAL_V4_DISPLAY_CSS if any(item[0]=='Carry' for item in selected) else '') + '</style>' if any(item[0] in ('Carry', 'Support', 'Tank') for item in selected) else ''
     assist_goalie_styles = '<style>' + ASSIST_GOALIE_CSS + POINTS05_GOALIE_CSS + (ASSIST_V3_DISPLAY_CSS if any(item[0]=='Support' for item in selected) else '') + '</style>' if selected else ''
     return BETA_CSS + '<style>' + GRADE_CSS + '</style>' + styles + goal_return_styles + assist_goalie_styles + f'<div class="{board_class}">' + (hero if show_hero else "") + '<div class="wn-grid">' + ''.join(lanes) + '</div></div>'
+
