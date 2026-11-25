@@ -22,7 +22,7 @@ from sog_profiles_2026 import profile_values as sog_profile_values, display_move
 from sog_profiles_2026 import inspect_moves as sog_profile_inspect
 from player_availability import is_unavailable
 from player_form import summarize_form
-from goal_routes_v3 import profile_values as goal_v2_values, LABELS as GOAL_V3_LABELS
+from goal_routes_v4 import profile_values as goal_v2_values, LABELS as GOAL_V3_LABELS
 from points05_v6 import goalie_context as points05_goalie_context, goalie_badge as points05_goalie_badge, goalie_inspect as points05_goalie_details, CSS as POINTS05_GOALIE_CSS, LABELS as POINTS05_LABELS
 from points15_research import context as points15_research_context
 from assist_routes_2026 import assist_display_tier, assist_display_name
@@ -35,6 +35,7 @@ from goal_card_routes import parent_attack_name as goal_buff_parent_name, buffs_
 from goal_card_routes import best_move as goal_best_move, move_rank as goal_move_rank, player_route_family as goal_player_route_family
 from assist_return_monitor import return_panel as assist_return_panel
 from assist_v3_display import badges as assist_v3_badges, lead_context as assist_lead_context, CSS as ASSIST_V3_DISPLAY_CSS
+from goal_v4_display import badges as goal_v4_badges, lead_context as goal_v4_lead_context, CSS as GOAL_V4_DISPLAY_CSS
 from assist_goalie_buff import context as assist_goalie_context, badge_html as assist_goalie_badge
 from assist_goalie_buff import goalie_html as assist_goalie_stats, inspect_html as assist_goalie_details, CSS as ASSIST_GOALIE_CSS
 from points_return_monitor import return_panel as points_return_panel, original_caption as points_original_caption, display_stats as points_display_stats, record_for as points_record_for
@@ -1005,7 +1006,9 @@ def render_power_play_quotes_table(rows, signals_by_team, *, row_controls=None):
         ("Team", "Team", cell),
         ("Game", "Game", cell),
         ("Best price", "Best feed price", cell),
-        ("PP on-ice xG/g", "PP on-ice xG/game", lambda value: decimal(value, 3)),
+        ("PP on-ice xG/g season", "PP on-ice xG/game", lambda value: decimal(value, 3)),
+        ("PP on-ice xG/g L5", "PP on-ice xG/game L5", lambda value: decimal(value, 3)),
+        ("PP on-ice xG/g L10", "PP on-ice xG/game L10", lambda value: decimal(value, 3)),
         ("Opp PK L5 %", "Opp PK L5 %", decimal),
         ("Opp PK L10 %", "Opp PK L10 %", decimal),
         ("Opp PK season %", "Opp PK season %", decimal),
@@ -1041,6 +1044,12 @@ def render_power_play_quotes_table(rows, signals_by_team, *, row_controls=None):
         for label, key, render in columns:
             css = ' class="pp-player"' if label == "Player" else ' class="pp-signals"' if key is None else ""
             content = stack if key is None else render(row.get(key))
+            if label in ("PP on-ice xG/g L5", "PP on-ice xG/g L10"):
+                window = 5 if label.endswith("L5") else 10
+                n = _number(row.get(f"PP xG L{window} games"))
+                value = _number(row.get(key))
+                if value is not None:
+                    content = f'<strong>{value:.3f}</strong>' + (f'<small style="display:block;color:#607089">{int(n)} games</small>' if n is not None else '')
             if label in PK_COLUMN_HELP:
                 content = pk_window_cell(row,label.split()[2])
             if label == "Game":
@@ -1483,7 +1492,7 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
                     goal_signals = ('<div class="wn-assist-sample">BUFF RECORDS · NAMED ATTACK + MATCHUP</div>'
                                     if move.get('goal_v2') else '') + '<div class="wn-goal-signals">' + ''.join(
                         f'<div class="wn-goal-signal"><strong>{_h(goal_buff_parent_name(m)) + " + " if m.get("goal_v2") else "+ "}{_h(m["name"])}</strong>'
-                        f'<span>{"V3" if m.get("goal_v3") else "V2" if m.get("goal_v2") else "V1"} {m["wins"]}/{m["picks"]} · {100*m["wins"]/m["picks"]:.1f}%</span></div>'
+                        f'<span>{"V4" if m.get("goal_v4") else "V3" if m.get("goal_v3") else "V2" if m.get("goal_v2") else "V1"} {m["wins"]}/{m["picks"]} · {100*m["wins"]/m["picks"]:.1f}%</span></div>'
                         for m in buffs) + '</div>'
             support_badges = ""
             assist_facts = _render_assist_facts(card, move) if role == "Support" else ""
@@ -1592,7 +1601,7 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
                         s=rec['full']
                         later_text=f"{sog_record_caption(fired_move)} · current record · BE {s['be']:.1f}% · {s['players']} players · {s['dates']} slate dates"
                 move_row = f'''<div class="wn-move-entry">
-                  <div class="wn-move-title"><strong>{_h(fired_move["name"])}</strong>{grade_badges(fired_move)}<em>{_h(fired_label)}</em></div>
+                  <div class="wn-move-title"><strong>{_h((fired_move.get("goal_parent_name", "") + " + " if fired_move.get("goal_v4") else "") + fired_move["name"])}</strong>{grade_badges(fired_move)}<em>{_h(fired_label)}</em></div>
                   <div class="wn-move-record">{fired_wins}/{fired_picks} · {fired_pct:.1f}% <span>{later_text}</span></div>
                   <div class="wn-move-rule">{_h(fired_rule)}</div>{points15_condition_note(fired_move) if role == 'Tank' and card.get('line') == 1.5 else ''}
                   {goal_return_panel(fired_move, compact=False) if role == 'Carry' else ''}
@@ -1666,7 +1675,7 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
             if points_tier:
                 record_label = "2026–27 REG MOVE"
             if role == 'Carry' and goal_return_panel(move):
-                record_label = "V3 MOVE %" if move.get("goal_v3") else "V2 MOVE %" if move.get("goal_v2") else "V1 MOVE %"
+                record_label = "V4 MOVE %" if move.get("goal_v4") else "V3 MOVE %" if move.get("goal_v3") else "V2 MOVE %" if move.get("goal_v2") else "V1 MOVE %"
             if role == 'Support' and assist_return_panel(move):
                 record_label = "V3 MOVE %" if move.get('assist_v3') else "V2 MOVE %"
             if role == 'Tank' and points_original_caption(move):
@@ -1697,10 +1706,10 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
               <div class="wn-portrait" aria-hidden="true">{portrait}</div>
               <div class="wn-unit-body">
                 <div class="wn-card-heading"><div class="wn-unit-head"><span class="wn-rank">{rank:02d}</span>{tier_badge}<strong>{_h(card['player'])}</strong><span class="wn-match">{_h(matchup)}</span></div>
-                {assist_lead_context(move) if role == 'Support' else ''}<div class="wn-attack"><span class="wn-attack-name">{_h(move_name)}</span><span class="wn-badge">{_h(status + sample)}</span></div>
+                {assist_lead_context(move) if role == 'Support' else goal_v4_lead_context(move) if role == 'Carry' else ''}<div class="wn-attack"><span class="wn-attack-name">{_h(move_name)}</span><span class="wn-badge">{_h(status + sample)}</span></div>
                 {support_route_note}
                 <div class="wn-unit-foot"><span>{_h(line)} <b>{_h(price)}</b>{book_note}</span><span>{_h(later_note)}{confidence_note}</span></div>
-                {book_rate_note}{points05_goalie_badge(card.get('points05_goalie_buff')) if role=='Tank' else ''}{assist_goalie_badge(card.get('assist_goalie_buff')) if role == 'Support' and not (move or {}).get('assist_v3') else ''}{assist_v3_badges(card.get('moves', []), lead=move) if role == 'Support' else ''}{card_controls(card) if card_controls else ''}
+                {book_rate_note}{points05_goalie_badge(card.get('points05_goalie_buff')) if role=='Tank' else ''}{assist_goalie_badge(card.get('assist_goalie_buff')) if role == 'Support' and not (move or {}).get('assist_v3') else ''}{assist_v3_badges(card.get('moves', []), lead=move) if role == 'Support' else goal_v4_badges(card.get('moves', []), lead=move) if role == 'Carry' else ''}{card_controls(card) if card_controls else ''}
                 {beta_summary(card.get('pp_assist_beta')) if role == 'Support' else ''}</div>
                 {combo_html(move, {**_CARD_LABELS, **_GOAL_V2_LABELS, **POINTS05_LABELS})}
                 {goal_return_panel(move) if role == 'Carry' else ''}
@@ -1741,7 +1750,7 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
         backdrop = f'<img class="wn-gorilla" src="{character_uri}" alt="" />' if character_uri else ""
         backdrop = _class_roster_art(role)
         count_label = "FEATURED" if cards and "confidence" in cards[0] else "PRICED"
-        lane_subtitle = ("GOALS V3 ✦ 8 NEW ATTACKS ✦ 7 OPTIONAL BUFFS ✦ HEALTHY EXISTING + .47 ROUTES PRESERVED"
+        lane_subtitle = ("GOALS V4 ✦ 5 OPTIONAL BUFF FAMILIES ✦ EXISTING PLAYER ROUTES + .47 ROUTES PRESERVED"
                          if role == "Carry" else
                          "POINTS ✦ CURRENT-SEASON MOVE % ✦ BOOK BREAK-EVEN %" if role == "Tank" else
                          f"{market.upper()} ✦ HISTORICAL MOVE % ✦ BOOK BREAK-EVEN % FROM POSTED ODDS")
@@ -1908,6 +1917,6 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
       <h1>THE NIGHT RAID</h1><p>{_h(hero_text)}</p>
       <div class="wn-hero-foot">{_h(hero_foot)} · HISTORICAL MOVE RATE IS NOT A FORECAST</div></div>"""
     board_class = "wn-board" if show_hero else "wn-board wn-board--compact"
-    goal_return_styles = '<style>' + GOAL_RETURN_CSS + '</style>' if any(item[0] in ('Carry', 'Support', 'Tank') for item in selected) else ''
+    goal_return_styles = '<style>' + GOAL_RETURN_CSS + (GOAL_V4_DISPLAY_CSS if any(item[0]=='Carry' for item in selected) else '') + '</style>' if any(item[0] in ('Carry', 'Support', 'Tank') for item in selected) else ''
     assist_goalie_styles = '<style>' + ASSIST_GOALIE_CSS + POINTS05_GOALIE_CSS + (ASSIST_V3_DISPLAY_CSS if any(item[0]=='Support' for item in selected) else '') + '</style>' if selected else ''
     return BETA_CSS + '<style>' + GRADE_CSS + '</style>' + styles + goal_return_styles + assist_goalie_styles + f'<div class="{board_class}">' + (hero if show_hero else "") + '<div class="wn-grid">' + ''.join(lanes) + '</div></div>'

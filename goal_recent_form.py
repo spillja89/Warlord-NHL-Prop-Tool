@@ -33,7 +33,9 @@ def recent_goal_form_by_player(session, season_start: int, slate_date: str) -> d
     with ZipFile(BytesIO(response.content)) as archive:
         with archive.open(f"{season_start}.csv") as source:
             frame = pd.read_csv(source,
-                                usecols=["playerId", "gameDate", "situation", "I_F_goals", "I_F_xGoals"])
+                                usecols=lambda name: name in {"playerId", "gameId", "gameDate", "situation", "I_F_goals", "I_F_xGoals", "OnIce_F_xGoals", "icetime"})
+    from pp_recent_xg import from_game_frame
+    recent_pp = from_game_frame(frame, slate_date, season_start)
     frame = frame.loc[frame["situation"].eq("all")].copy()
     frame["gameDate"] = frame["gameDate"].astype(str)
     frame = frame.loc[frame["gameDate"].lt(slate_date.replace("-", ""))]
@@ -43,7 +45,11 @@ def recent_goal_form_by_player(session, season_start: int, slate_date: str) -> d
     grouped = defaultdict(list)
     for player_id, game_date, goals, xg in frame[["playerId", "gameDate", "I_F_goals", "I_F_xGoals"]].itertuples(index=False, name=None):
         grouped[int(player_id)].append((game_date, float(goals), float(xg)))
-    return {player_id: {
+    result = {player_id: {
                 "G": round(sum(game[1] for game in sorted(games)[-5:]) / min(5, len(games)), 4),
                 "xG": round(sum(game[2] for game in sorted(games)[-5:]) / min(5, len(games)), 4),
             } for player_id, games in grouped.items()}
+
+    for player_id, values in recent_pp.items():
+        result.setdefault(player_id, {}).update(values)
+    return result

@@ -26,7 +26,7 @@ from points_moves_current import attach_points_moves, VERSION as POINTS_CURRENT_
 from sog_matrix import VERSION as SOG_MATRIX_VERSION
 from warlord_moves_2026 import best_move, points_moves, sog_moves, assists_moves as _assists_mapped_moves
 from goal_moves_current import goal_profile_score
-from goal_routes_v3 import profile_values as goal_v2_values, LABELS as GOAL_V3_LABELS
+from goal_routes_v4 import profile_values as goal_v2_values, LABELS as GOAL_V3_LABELS
 from goal_card_routes import card_moves as _goals_carry_moves, summary as goal_move_summary, move_rank as _goal_family_rank
 from warlords_night_board import CLASSES, baseline_audit, rank_warlords, rank_priced_slate, featured_warlords, unfeatured_baselines, goal_display_cards, render_warlords, render_power_play_form, render_power_play_quotes_table, _character_uri
 from pp_card_context import attach_pp_card_context, VERSION as PP_CARD_CONTEXT_VERSION
@@ -6251,6 +6251,8 @@ elif page == "GOALS (0.5)":
     _goal_v2_values = [goal_v2_values(row) for _, row in goal_tracker.iterrows()]
     for _field, _label in GOAL_V3_LABELS.items():
         goal_tracker["GoalV3_"+_field]=[v.get(_field) for v in _goal_v2_values]
+        goal_tracker["GoalV4_"+_field]=[v.get(_field) for v in _goal_v2_values]
+        COLUMN_LABELS["GoalV4_"+_field]=_label
         COLUMN_LABELS["GoalV3_"+_field]=_label
     for _field in ("Player_Log_L5_TOI_per_game", "Player_Log_L10_Shooting_pct", "Player_Log_L20_Goal_fraction_pct", "Player_Rebuilt_Gap_G10", "L20_A", "PP_SOG60", "i5v5_xG60"):
         goal_tracker["GoalV2_" + _field] = [v.get(_field) for v in _goal_v2_values]
@@ -6280,7 +6282,7 @@ elif page == "GOALS (0.5)":
         "Player", "Pos",
         "Tier_Tag",
         "Goal_Attack", "Goal_Attack_Record", "Goal_All_Attacks", "Goal_Crits", "Goal_Buffs",
-        "Goal_Attack_Sample_BE", *["GoalV3_"+f for f in GOAL_V3_LABELS], "Pregame_xG_L5_per_game", "GoalV2_Player_Log_L5_TOI_per_game", "GoalV2_Player_Log_L10_Shooting_pct", "GoalV2_Player_Log_L20_Goal_fraction_pct", "GoalV2_Player_Rebuilt_Gap_G10", "GoalV2_L20_A", "GoalV2_PP_SOG60", "GoalV2_i5v5_xG60", "StarScore", "Drought_G", "Drought_PPP", "TOI_Pct", "TOI_per_game", "Goal_Profile",
+        "Goal_Attack_Sample_BE", *["GoalV4_"+f for f in GOAL_V3_LABELS], *["GoalV3_"+f for f in GOAL_V3_LABELS], "Pregame_xG_L5_per_game", "GoalV2_Player_Log_L5_TOI_per_game", "GoalV2_Player_Log_L10_Shooting_pct", "GoalV2_Player_Log_L20_Goal_fraction_pct", "GoalV2_Player_Rebuilt_Gap_G10", "GoalV2_L20_A", "GoalV2_PP_SOG60", "GoalV2_i5v5_xG60", "StarScore", "Drought_G", "Drought_PPP", "TOI_Pct", "TOI_per_game", "Goal_Profile",
         "L10_S", "ShotIntent", "Points_mu", "ShotIntent_Pct", "Avg5_SOG", "L10_G",
         "team_5v5_SF60", "Opp_PK_GA60", "Team_PP_xGF60", "Pregame_xG_L5_per_game",
 
@@ -6731,7 +6733,7 @@ elif page == "Power Play":
         if pp_view.empty:
             st.info("No priced players with recorded PP ice time in this team view. Check the separate list above.")
             pp_view = without_pp_time
-        display_quotes = pp_view[["PP rank", "Player", "PP on-ice xG/game",
+        display_quotes = pp_view[["PP rank", "Player", "PP on-ice xG/game", "PP on-ice xG/game L5", "PP on-ice xG/game L10",
                                   "PP matchup stack",
                                   "Best feed price", "Game", "Opp PK %", "Opp PK xGA/60 now", "PP unit",
                                   "Current PP min/game", "PP research signals",
@@ -6761,7 +6763,7 @@ elif page == "Power Play":
             display_quotes["PPP drought"], errors="coerce").astype("Int64")
         display_quotes["PP min/game"] = pd.to_numeric(
             display_quotes["PP min/game"], errors="coerce").round(1)
-        for column, digits in (("PP on-ice xG/game", 3), ("PP iXG/game", 3),
+        for column, digits in (("PP on-ice xG/game", 3), ("PP on-ice xG/game L5", 3), ("PP on-ice xG/game L10", 3), ("PP iXG/game", 3),
                                ("Team PP xGF/60", 2), ("Opp PK xGA/60", 2)):
             display_quotes[column] = pd.to_numeric(
                 display_quotes[column], errors="coerce").round(digits)
@@ -6914,7 +6916,7 @@ elif page == "Power Play":
             "PP_TOI_PG", "PP_TeamShare_pct", "PP_Tier", "PP_Path", "PP_BOOST",
             "PP_TOI_Pct", "PP_TOI_min", "PP_Points60", "PP_ActualPoints60", "PP_iXG60", "PP_iXA60",
             "Team_PP_xGF60", "Opp_PK_xGA60",
-            "PP_OnIce_xG_per_game", "PP_iXG_per_game", "PPP10_total", "Drought_PPP",
+            "PP_OnIce_xG_per_game", "PP_OnIce_xG_L5_per_game", "PP_OnIce_xG_L10_per_game", "PP_OnIce_xG_L5_Games", "PP_OnIce_xG_L10_Games", "PP_OnIce_xG_Recent_SourceDate", "PP_iXG_per_game", "PPP10_total", "Drought_PPP",
         ]
         show_table(df_pp, pp_cols, "Power Play (5v4) — Usage, production, matchup, PPP drought")
         st.caption("Weighted PP assists/60 is observed assist production, not expected assists. The involvement rate is a legacy proxy used by historical moves; check PP minutes before trusting an early-season rate.")

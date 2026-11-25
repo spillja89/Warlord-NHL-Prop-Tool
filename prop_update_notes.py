@@ -10,7 +10,7 @@ def entries():return _entries(tuple((ROOT/f).stat().st_mtime_ns for f in FILES))
 @lru_cache(maxsize=8)
 def _entries(signature):
  docs={f:json.loads((ROOT/f).read_text(encoding='utf-8')) for f in FILES};out=[]
- groups=[('Goals .5',FILES[0],lambda r:True,'Goals V3: eight independent attacks, seven exact-parent optional buffs, plus approved .47 routes. Healthy existing moves preserved.'),('Assists .5',FILES[1],lambda r:True,'Assists V3: five player families, 23 levels and nine exact-parent optional buff families, including optimized GAA. Healthy existing routes and all records preserved.'),('Points .5',FILES[2],lambda r:r.get('line')==.5,'V6 Tank profiles and combos; Shattered Aegis optional GAA2.95+ buff. Healthy existing moves preserved.'),('Points 1.5',FILES[2],lambda r:r.get('line')==1.5 and not r.get('legacy'),'Existing 1.5 Tank routes preserved; V5 combined-record patch.'),('Shots 2.5',FILES[3],lambda r:r.get('market')=='SOG' and not r.get('research_monitor'),'SOG V3: steadier-minutes routes, Deadeye Precision and optional buffs. Healthy profiles preserved; Swipe/Rage/Paralysis archived from leads.'),('Power Play .5',FILES[3],lambda r:r.get('market')=='PPP','PP V3: two player routes + seven environment families on .55xG + Layer1;15point card floor, grouped levels, V1/V2 preserved. Table first, compact cards below.')]
+ groups=[('Goals .5',FILES[0],lambda r:True,'Goals V4: five optional buff families, 20 new exact-parent records and reused Fractured Guard. All existing player routes and records preserved.'),('Assists .5',FILES[1],lambda r:True,'Assists V3: five player families, 23 levels and nine exact-parent optional buff families, including optimized GAA. Healthy existing routes and all records preserved.'),('Points .5',FILES[2],lambda r:r.get('line')==.5,'V6 Tank profiles and combos; Shattered Aegis optional GAA2.95+ buff. Healthy existing moves preserved.'),('Points 1.5',FILES[2],lambda r:r.get('line')==1.5 and not r.get('legacy'),'Existing 1.5 Tank routes preserved; V5 combined-record patch.'),('Shots 2.5',FILES[3],lambda r:r.get('market')=='SOG' and not r.get('research_monitor'),'SOG V3: steadier-minutes routes, Deadeye Precision and optional buffs. Healthy profiles preserved; Swipe/Rage/Paralysis archived from leads.'),('Power Play .5',FILES[3],lambda r:r.get('market')=='PPP','PP V3: two player routes + seven environment families on .55xG + Layer1;15point card floor, grouped levels, V1/V2 preserved. Table first, compact cards below.')]
  for label,file,select,note in groups:
   doc=docs[file];rs=[r for r in doc['moves'] if select(r)]
   versions=[]
@@ -21,7 +21,7 @@ def _entries(signature):
   out.append({'Prop':label,'Version':f'V{v}' if v else 'Tracked research','Updated':max(dates) if dates else 'Date unavailable','Update':note,'Results graded through':doc.get('full_through','—')})
  return out
 def render(st):
- st.caption('⚔️ Move updates · Assists V3 — five player families + route-specific optional buffs; existing routes preserved · Nov24')
+ st.caption('⚔️ Move updates · Goals V4 — five optional buff families; existing routes preserved · Nov25')
  with st.expander('Version & move updates · all props',expanded=False):
   rows=entries()
   def day(v):

@@ -1,6 +1,6 @@
 {
   "version": "card-return-tracking-2026-11-10-v1",
-  "seed_version": "card-return-seed-2026-11-08-v1-sog-v2-added-2026-11-10-goals-v2-2026-11-11-points15-v2-2026-11-14-assist-v2-2026-11-15-assist-all-v2-baseline-2026-11-15-points15-iron-cadence-v3-2026-11-17-points15-backbone-v4-2026-11-18-points-v5-baseline-2026-11-18-points05-v6-2026-11-18-pp-v2-2026-11-19-sog-v3-2026-11-19-pp-v3-2026-11-21+goal-v3-2026-11-23-assist-v3-2026-11-24",
+  "seed_version": "card-return-seed-2026-11-08-v1-sog-v2-added-2026-11-10-goals-v2-2026-11-11-points15-v2-2026-11-14-assist-v2-2026-11-15-assist-all-v2-baseline-2026-11-15-points15-iron-cadence-v3-2026-11-17-points15-backbone-v4-2026-11-18-points-v5-baseline-2026-11-18-points05-v6-2026-11-18-pp-v2-2026-11-19-sog-v3-2026-11-19-pp-v3-2026-11-21+goal-v3-2026-11-23-assist-v3-2026-11-24-goal-v4-buffs-2026-11-25",
   "through": "2026-11-24",
   "source_files": {
     "2026-11-11": "98a20468268ef10f34cb1fe570e318c6980c32fb42cc7291f96597fec7eee555",
@@ -27,6 +27,6 @@
   "memberships": 44651,
   "V1_fixed": true,
   "rules_unchanged": true,
-  "generation": "7d9bfbe2a66878189ca54ea1706938f9e58d421b3b05e64de10e575af1e16b0f",
+  "generation": "5bfc1ef2b4bff73bc5971e3f9e7dd5aed27dc2f364f132609213c3a0fdb5b5f8",
   "generated_utc": "2026-11-25T20:31:37.214623+00:00"
 }

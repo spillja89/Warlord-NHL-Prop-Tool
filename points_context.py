@@ -205,6 +205,8 @@ def attach_points_context(frame, session=None, before_day=None, reports=None, co
     out = attach_goal_v2_context(out, before, reports, codes or {})
     from goal_routes_v3 import attach_context as attach_goal_v3_context
     out = attach_goal_v3_context(out, before, reports, codes or {})
+    from goal_routes_v4 import attach_context as attach_goal_v4_context
+    out = attach_goal_v4_context(out, before, reports, codes or {})
     from assist_v3_context import attach_context as attach_assist_v3_context
     out = attach_assist_v3_context(out, before, reports, codes or {})
     return out

@@ -4521,6 +4521,9 @@ def build_tracker(today_local: date, debug: bool = False, api_key: str | None = 
     sk["Pregame_G_L5_per_game"] = sk["Pregame_G_L5_per_game"].fillna(fallback_goals)
     sk["Pregame_xG_L5_per_game"] = sk["playerId"].map(
         lambda pid: recent_goal_form.get(int(pid), {}).get("xG") if pd.notna(pid) else None)
+    from pp_recent_xg import FIELDS as PP_RECENT_XG_FIELDS
+    for field in PP_RECENT_XG_FIELDS:
+        sk[field] = sk["playerId"].map(lambda pid: recent_goal_form.get(int(pid), {}).get(field) if pd.notna(pid) else None)
     for window in (10, 20, 40):
         if f"L{window}_Games" not in sk.columns:
             sk[f"L{window}_Games"] = np.nan
@@ -5391,6 +5394,7 @@ def build_tracker(today_local: date, debug: bool = False, api_key: str | None = 
         "PP_iXG60": sk.get("PP_iXG60"),
         "PP_OnIce_xGF60": sk.get("PP_OnIce_xGF60"),
         "PP_OnIce_xG_per_game": sk.get("PP_OnIce_xG_per_game"),
+        **{field: sk.get(field) for field in PP_RECENT_XG_FIELDS},
         "PP_iXG_per_game": sk.get("PP_iXG_per_game"),
         "PP_Matchup_Equal": sk.get("PP_Matchup_Equal"),
         "Opportunity_View_Version": sk.get("Opportunity_View_Version"),
@@ -6006,7 +6010,7 @@ def build_tracker(today_local: date, debug: bool = False, api_key: str | None = 
     tracker.loc[_sog25_current,"Plays_SOG"] = tracker.loc[_sog25_current,"SOG_Attack"].ne("")
     tracker.loc[_sog25_current,"SOG_Why"] = tracker.loc[_sog25_current,"SOG_Attack"]
 
-    from goal_routes_v3 import attach_routes as attach_goal_v2_routes
+    from goal_routes_v4 import attach_routes as attach_goal_v2_routes
     tracker = attach_goal_v2_routes(tracker)
     from assist_routes_v3 import attach_routes as attach_assist_v3_routes
     tracker = attach_assist_v3_routes(tracker)

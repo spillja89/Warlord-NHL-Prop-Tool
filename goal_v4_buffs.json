@@ -1,0 +1,1473 @@
+{
+  "version": "goal-2026-27-buffs-v4-2026-11-25",
+  "wired_on": "2026-11-25",
+  "through": "2026-11-24",
+  "families": [
+    {
+      "id": "vital_breach",
+      "name": "Vital Breach",
+      "condition": "Opponent 5v5 high-danger chances allowed/60 ≥1.65",
+      "flavor": "An opening near the net.",
+      "emblem": "Crimson weak-point mark",
+      "parents": 7
+    },
+    {
+      "id": "war_chant",
+      "name": "War Chant",
+      "condition": "Own PP opportunities/game at the matching home/away venue ≥3.30 on the three newly tested parents; existing Iron Prowl2.95 preserved",
+      "flavor": "More opportunities to bring the weapons out.",
+      "emblem": "Amber war horn",
+      "parents": 3
+    },
+    {
+      "id": "battleforged_fury",
+      "name": "Battleforged Fury",
+      "condition": "Own PK minutes/game at the matching home/away venue ≥5.40 (5:24)",
+      "flavor": "A battle-hardened team context.",
+      "emblem": "Molten shield and fist",
+      "parents": 2
+    },
+    {
+      "id": "fractured_guard",
+      "name": "Fractured Guard",
+      "condition": "Opponent goalie expected save percentage ≤.894",
+      "flavor": "Shot-quality pressure on the opposing crease.",
+      "emblem": "Violet split goalie mask",
+      "parents": 4
+    },
+    {
+      "id": "counterstrike_sigil",
+      "name": "Counterstrike Sigil",
+      "condition": "Opponent L10 PK success percentage ≥80%",
+      "flavor": "A situational mark from the Goal research—not a weak-PK label.",
+      "emblem": "Ice-blue counterstrike rune",
+      "parents": 5
+    }
+  ],
+  "moves": [
+    {
+      "id": "vital_breach__goal_v2_X",
+      "name": "Vital Breach",
+      "family": "vital_breach",
+      "parent_id": "goal_v2:X",
+      "parent_name": "Measured Strike I",
+      "rule": "Goal 0.5 + Matrix_Goal Green + Pregame_xG_L5_per_game >= 0.52 + Player_Log_L5_TOI_per_game >= 18.8 + i5v5_xG60 <= 1.03 + opp_5v5_HDCA60 >= 1.65",
+      "icon": "armor_shred.svg",
+      "checks": [
+        [
+          "opp_5v5_HDCA60",
+          ">=",
+          1.65
+        ]
+      ],
+      "all_checks": [
+        [
+          "Pregame_xG_L5_per_game",
+          ">=",
+          0.52
+        ],
+        [
+          "Player_Log_L5_TOI_per_game",
+          ">=",
+          18.8
+        ],
+        [
+          "i5v5_xG60",
+          "<=",
+          1.03
+        ],
+        [
+          "opp_5v5_HDCA60",
+          ">=",
+          1.65
+        ]
+      ],
+      "record": {
+        "hits": 27,
+        "plays": 48,
+        "rate": 56.25,
+        "BE": 40.397669066872695,
+        "gap": 15.852330933127305,
+        "players": 21,
+        "units": 18.198317398774417,
+        "ROI": 37.9131612474467,
+        "dates": 24,
+        "games": 45,
+        "team_games": 45
+      },
+      "research_recent": {
+        "hits": 9,
+        "plays": 22,
+        "rate": 40.90909090909091,
+        "BE": 39.30917137601098,
+        "gap": 1.5999195330799267,
+        "players": 13,
+        "units": 0.45,
+        "ROI": 2.0454545454545454,
+        "dates": 10,
+        "games": 20,
+        "team_games": 20
+      }
+    },
+    {
+      "id": "vital_breach__goal_v3_T_coldPP",
+      "name": "Vital Breach",
+      "family": "vital_breach",
+      "parent_id": "goal_v3:T_coldPP",
+      "parent_name": "Iron Prowl",
+      "rule": "Goal 0.5 + Matrix_Goal Green + Goal_Profile >= 94 + Player_Log_L20_TOI_median >= 20.3 + Trim10_SOG <= 3.8 + Player_Log_L5_PPP_per60_total_TOI <= 2.85 + opp_5v5_HDCA60 >= 1.65",
+      "icon": "armor_shred.svg",
+      "checks": [
+        [
+          "opp_5v5_HDCA60",
+          ">=",
+          1.65
+        ]
+      ],
+      "all_checks": [
+        [
+          "Goal_Profile",
+          ">=",
+          94
+        ],
+        [
+          "Player_Log_L20_TOI_median",
+          ">=",
+          20.3
+        ],
+        [
+          "Trim10_SOG",
+          "<=",
+          3.8
+        ],
+        [
+          "Player_Log_L5_PPP_per60_total_TOI",
+          "<=",
+          2.85
+        ],
+        [
+          "opp_5v5_HDCA60",
+          ">=",
+          1.65
+        ]
+      ],
+      "record": {
+        "hits": 48,
+        "plays": 78,
+        "rate": 61.53846153846154,
+        "BE": 40.53961120719395,
+        "gap": 20.99885033126759,
+        "players": 21,
+        "units": 41.47069835115537,
+        "ROI": 53.16756198866073,
+        "dates": 29,
+        "games": 58,
+        "team_games": 59
+      },
+      "research_recent": {
+        "hits": 17,
+        "plays": 29,
+        "rate": 58.62068965517241,
+        "BE": 40.810160174178314,
+        "gap": 17.8105294809941,
+        "players": 9,
+        "units": 13.2,
+        "ROI": 45.51724137931034,
+        "dates": 10,
+        "games": 21,
+        "team_games": 21
+      }
+    },
+    {
+      "id": "vital_breach__goal_v3_X_stable",
+      "name": "Vital Breach",
+      "family": "vital_breach",
+      "parent_id": "goal_v3:X_stable",
+      "parent_name": "Predator’s Focus II",
+      "rule": "Goal 0.5 + Matrix_Goal Green + Goal_Profile >= 94 + Pregame_xG_L5_per_game >= 0.48 + Player_Log_L5_S_sd <= 1.7 + Player_Log_L10_TOI_sd <= 2.3 + opp_5v5_HDCA60 >= 1.65",
+      "icon": "armor_shred.svg",
+      "checks": [
+        [
+          "opp_5v5_HDCA60",
+          ">=",
+          1.65
+        ]
+      ],
+      "all_checks": [
+        [
+          "Goal_Profile",
+          ">=",
+          94
+        ],
+        [
+          "Pregame_xG_L5_per_game",
+          ">=",
+          0.48
+        ],
+        [
+          "Player_Log_L5_S_sd",
+          "<=",
+          1.7
+        ],
+        [
+          "Player_Log_L10_TOI_sd",
+          "<=",
+          2.3
+        ],
+        [
+          "opp_5v5_HDCA60",
+          ">=",
+          1.65
+        ]
+      ],
+      "record": {
+        "hits": 31,
+        "plays": 49,
+        "rate": 63.265306122448976,
+        "BE": 41.157367091616784,
+        "gap": 22.107939030832192,
+        "players": 16,
+        "units": 27.740915823971267,
+        "ROI": 56.61411392647198,
+        "dates": 22,
+        "games": 48,
+        "team_games": 48
+      },
+      "research_recent": {
+        "hits": 17,
+        "plays": 25,
+        "rate": 68.0,
+        "BE": 40.64736816007627,
+        "gap": 27.35263183992373,
+        "players": 10,
+        "units": 17.53,
+        "ROI": 70.12,
+        "dates": 10,
+        "games": 24,
+        "team_games": 24
+      }
+    },
+    {
+      "id": "vital_breach__goal_v3_X_creatorII",
+      "name": "Vital Breach",
+      "family": "vital_breach",
+      "parent_id": "goal_v3:X_creatorII",
+      "parent_name": "Creator’s Bane II",
+      "rule": "Goal 0.5 + Matrix_Goal Green + Goal_Profile >= 94 + Pregame_xG_L5_per_game >= 0.48 + i5v5_primaryAssists60 <= 0.65 + opp_5v5_HDCA60 >= 1.65",
+      "icon": "armor_shred.svg",
+      "checks": [
+        [
+          "opp_5v5_HDCA60",
+          ">=",
+          1.65
+        ]
+      ],
+      "all_checks": [
+        [
+          "Goal_Profile",
+          ">=",
+          94
+        ],
+        [
+          "Pregame_xG_L5_per_game",
+          ">=",
+          0.48
+        ],
+        [
+          "i5v5_primaryAssists60",
+          "<=",
+          0.65
+        ],
+        [
+          "opp_5v5_HDCA60",
+          ">=",
+          1.65
+        ]
+      ],
+      "record": {
+        "hits": 24,
+        "plays": 39,
+        "rate": 61.53846153846154,
+        "BE": 39.74562638604694,
+        "gap": 21.792835152414597,
+        "players": 14,
+        "units": 22.938534871590317,
+        "ROI": 58.81675608100081,
+        "dates": 18,
+        "games": 35,
+        "team_games": 36
+      },
+      "research_recent": {
+        "hits": 13,
+        "plays": 17,
+        "rate": 76.47058823529412,
+        "BE": 40.32705512574337,
+        "gap": 36.143533109550745,
+        "players": 8,
+        "units": 15.88,
+        "ROI": 93.41176470588235,
+        "dates": 7,
+        "games": 15,
+        "team_games": 16
+      }
+    },
+    {
+      "id": "vital_breach__goal_v3_R",
+      "name": "Vital Breach",
+      "family": "vital_breach",
+      "parent_id": "goal_v3:R",
+      "parent_name": "Deadeye Rhythm I",
+      "rule": "Goal 0.5 + Matrix_Goal Green + Goal_Profile >= 94 + Player_Log_L40_S_hit_pct >= 72 + Trim10_SOG <= 3.8 + opp_5v5_HDCA60 >= 1.65",
+      "icon": "armor_shred.svg",
+      "checks": [
+        [
+          "opp_5v5_HDCA60",
+          ">=",
+          1.65
+        ]
+      ],
+      "all_checks": [
+        [
+          "Goal_Profile",
+          ">=",
+          94
+        ],
+        [
+          "Player_Log_L40_S_hit_pct",
+          ">=",
+          72
+        ],
+        [
+          "Trim10_SOG",
+          "<=",
+          3.8
+        ],
+        [
+          "opp_5v5_HDCA60",
+          ">=",
+          1.65
+        ]
+      ],
+      "record": {
+        "hits": 26,
+        "plays": 38,
+        "rate": 68.42105263157895,
+        "BE": 42.010916431670225,
+        "gap": 26.41013619990872,
+        "players": 10,
+        "units": 23.59069835115537,
+        "ROI": 62.0807851346194,
+        "dates": 21,
+        "games": 33,
+        "team_games": 33
+      },
+      "research_recent": {
+        "hits": 11,
+        "plays": 13,
+        "rate": 84.61538461538461,
+        "BE": 40.47437162190114,
+        "gap": 44.14101299348347,
+        "players": 6,
+        "units": 13.95,
+        "ROI": 107.3076923076923,
+        "dates": 7,
+        "games": 12,
+        "team_games": 12
+      }
+    },
+    {
+      "id": "vital_breach__goal_v3_runic47",
+      "name": "Vital Breach",
+      "family": "vital_breach",
+      "parent_id": "goal_v3:runic47",
+      "parent_name": "Runic Barrage · Open Stance",
+      "rule": "Goal 0.5 + Matrix_Goal Green + Pregame_xG_L5_per_game >= 0.47 + Player_Log_L5_TOI_per_game >= 18.8 + PP_SOG60 >= 14.4 + opp_5v5_HDCA60 >= 1.65",
+      "icon": "armor_shred.svg",
+      "checks": [
+        [
+          "opp_5v5_HDCA60",
+          ">=",
+          1.65
+        ]
+      ],
+      "all_checks": [
+        [
+          "Pregame_xG_L5_per_game",
+          ">=",
+          0.47
+        ],
+        [
+          "Player_Log_L5_TOI_per_game",
+          ">=",
+          18.8
+        ],
+        [
+          "PP_SOG60",
+          ">=",
+          14.4
+        ],
+        [
+          "opp_5v5_HDCA60",
+          ">=",
+          1.65
+        ]
+      ],
+      "record": {
+        "hits": 31,
+        "plays": 55,
+        "rate": 56.36363636363637,
+        "BE": 41.53813852179515,
+        "gap": 14.82549784184122,
+        "players": 15,
+        "units": 21.04069835115537,
+        "ROI": 38.255815183918855,
+        "dates": 23,
+        "games": 46,
+        "team_games": 47
+      },
+      "research_recent": {
+        "hits": 13,
+        "plays": 25,
+        "rate": 52.0,
+        "BE": 41.095707506376726,
+        "gap": 10.904292493623274,
+        "players": 11,
+        "units": 7.69,
+        "ROI": 30.76,
+        "dates": 10,
+        "games": 24,
+        "team_games": 25
+      }
+    },
+    {
+      "id": "vital_breach__goal_v3_measured47",
+      "name": "Vital Breach",
+      "family": "vital_breach",
+      "parent_id": "goal_v3:measured47",
+      "parent_name": "Measured Strike II · Open Stance",
+      "rule": "Goal 0.5 + Matrix_Goal Green + Pregame_xG_L5_per_game >= 0.47 + Player_Log_L5_TOI_per_game >= 18.8 + i5v5_xG60 <= 0.92 + opp_5v5_HDCA60 >= 1.65",
+      "icon": "armor_shred.svg",
+      "checks": [
+        [
+          "opp_5v5_HDCA60",
+          ">=",
+          1.65
+        ]
+      ],
+      "all_checks": [
+        [
+          "Pregame_xG_L5_per_game",
+          ">=",
+          0.47
+        ],
+        [
+          "Player_Log_L5_TOI_per_game",
+          ">=",
+          18.8
+        ],
+        [
+          "i5v5_xG60",
+          "<=",
+          0.92
+        ],
+        [
+          "opp_5v5_HDCA60",
+          ">=",
+          1.65
+        ]
+      ],
+      "record": {
+        "hits": 22,
+        "plays": 40,
+        "rate": 55.0,
+        "BE": 39.178527146894595,
+        "gap": 15.821472853105405,
+        "players": 16,
+        "units": 15.942163479565055,
+        "ROI": 39.85540869891263,
+        "dates": 22,
+        "games": 37,
+        "team_games": 38
+      },
+      "research_recent": {
+        "hits": 9,
+        "plays": 21,
+        "rate": 42.857142857142854,
+        "BE": 39.80564325388405,
+        "gap": 3.0514996032588044,
+        "players": 11,
+        "units": 2.14,
+        "ROI": 10.19047619047619,
+        "dates": 10,
+        "games": 19,
+        "team_games": 20
+      }
+    },
+    {
+      "id": "war_chant__goal_v3_S_rebound",
+      "name": "War Chant",
+      "family": "war_chant",
+      "parent_id": "goal_v3:S_rebound",
+      "parent_name": "Astral Ambush II",
+      "rule": "Goal 0.5 + Matrix_Goal Green + Goal_Profile >= 94 + StarScore >= 93 + Player_Log_L5_PPP_per60_total_TOI <= 2.2 + Drought_G >= 1 + Official_Own_PP_Venue_O_PG >= 3.3",
+      "icon": "fury.svg",
+      "checks": [
+        [
+          "Official_Own_PP_Venue_O_PG",
+          ">=",
+          3.3
+        ]
+      ],
+      "all_checks": [
+        [
+          "Goal_Profile",
+          ">=",
+          94
+        ],
+        [
+          "StarScore",
+          ">=",
+          93
+        ],
+        [
+          "Player_Log_L5_PPP_per60_total_TOI",
+          "<=",
+          2.2
+        ],
+        [
+          "Drought_G",
+          ">=",
+          1
+        ],
+        [
+          "Official_Own_PP_Venue_O_PG",
+          ">=",
+          3.3
+        ]
+      ],
+      "record": {
+        "hits": 40,
+        "plays": 61,
+        "rate": 65.57377049180327,
+        "BE": 38.91234598588214,
+        "gap": 26.661424505921133,
+        "players": 17,
+        "units": 41.554761904761904,
+        "ROI": 68.12256049960968,
+        "dates": 28,
+        "games": 49,
+        "team_games": 51
+      },
+      "research_recent": {
+        "hits": 11,
+        "plays": 17,
+        "rate": 64.70588235294117,
+        "BE": 37.88179627503079,
+        "gap": 26.824086077910387,
+        "players": 11,
+        "units": 12.29,
+        "ROI": 72.29411764705883,
+        "dates": 8,
+        "games": 14,
+        "team_games": 14
+      }
+    },
+    {
+      "id": "war_chant__goal_v3_X_stable",
+      "name": "War Chant",
+      "family": "war_chant",
+      "parent_id": "goal_v3:X_stable",
+      "parent_name": "Predator’s Focus II",
+      "rule": "Goal 0.5 + Matrix_Goal Green + Goal_Profile >= 94 + Pregame_xG_L5_per_game >= 0.48 + Player_Log_L5_S_sd <= 1.7 + Player_Log_L10_TOI_sd <= 2.3 + Official_Own_PP_Venue_O_PG >= 3.3",
+      "icon": "fury.svg",
+      "checks": [
+        [
+          "Official_Own_PP_Venue_O_PG",
+          ">=",
+          3.3
+        ]
+      ],
+      "all_checks": [
+        [
+          "Goal_Profile",
+          ">=",
+          94
+        ],
+        [
+          "Pregame_xG_L5_per_game",
+          ">=",
+          0.48
+        ],
+        [
+          "Player_Log_L5_S_sd",
+          "<=",
+          1.7
+        ],
+        [
+          "Player_Log_L10_TOI_sd",
+          "<=",
+          2.3
+        ],
+        [
+          "Official_Own_PP_Venue_O_PG",
+          ">=",
+          3.3
+        ]
+      ],
+      "record": {
+        "hits": 23,
+        "plays": 38,
+        "rate": 60.526315789473685,
+        "BE": 40.60048052809089,
+        "gap": 19.925835261382794,
+        "players": 14,
+        "units": 19.552380952380954,
+        "ROI": 51.45363408521303,
+        "dates": 21,
+        "games": 36,
+        "team_games": 36
+      },
+      "research_recent": {
+        "hits": 13,
+        "plays": 20,
+        "rate": 65.0,
+        "BE": 42.20753677754795,
+        "gap": 22.79246322245205,
+        "players": 8,
+        "units": 11.18,
+        "ROI": 55.9,
+        "dates": 10,
+        "games": 18,
+        "team_games": 18
+      }
+    },
+    {
+      "id": "war_chant__goal_v3_measured47",
+      "name": "War Chant",
+      "family": "war_chant",
+      "parent_id": "goal_v3:measured47",
+      "parent_name": "Measured Strike II · Open Stance",
+      "rule": "Goal 0.5 + Matrix_Goal Green + Pregame_xG_L5_per_game >= 0.47 + Player_Log_L5_TOI_per_game >= 18.8 + i5v5_xG60 <= 0.92 + Official_Own_PP_Venue_O_PG >= 3.3",
+      "icon": "fury.svg",
+      "checks": [
+        [
+          "Official_Own_PP_Venue_O_PG",
+          ">=",
+          3.3
+        ]
+      ],
+      "all_checks": [
+        [
+          "Pregame_xG_L5_per_game",
+          ">=",
+          0.47
+        ],
+        [
+          "Player_Log_L5_TOI_per_game",
+          ">=",
+          18.8
+        ],
+        [
+          "i5v5_xG60",
+          "<=",
+          0.92
+        ],
+        [
+          "Official_Own_PP_Venue_O_PG",
+          ">=",
+          3.3
+        ]
+      ],
+      "record": {
+        "hits": 22,
+        "plays": 42,
+        "rate": 52.38095238095238,
+        "BE": 39.86357607641094,
+        "gap": 12.517376304541436,
+        "players": 13,
+        "units": 13.492163479565054,
+        "ROI": 32.12419876086918,
+        "dates": 23,
+        "games": 39,
+        "team_games": 39
+      },
+      "research_recent": {
+        "hits": 9,
+        "plays": 19,
+        "rate": 47.36842105263158,
+        "BE": 40.81667260950025,
+        "gap": 6.551748443131331,
+        "players": 7,
+        "units": 2.64,
+        "ROI": 13.894736842105264,
+        "dates": 10,
+        "games": 18,
+        "team_games": 18
+      }
+    },
+    {
+      "id": "battleforged_fury__goal_v3_T_coldPP",
+      "name": "Battleforged Fury",
+      "family": "battleforged_fury",
+      "parent_id": "goal_v3:T_coldPP",
+      "parent_name": "Iron Prowl",
+      "rule": "Goal 0.5 + Matrix_Goal Green + Goal_Profile >= 94 + Player_Log_L20_TOI_median >= 20.3 + Trim10_SOG <= 3.8 + Player_Log_L5_PPP_per60_total_TOI <= 2.85 + Official_Own_PK_Venue_Minutes_PG >= 5.4",
+      "icon": "fury.svg",
+      "checks": [
+        [
+          "Official_Own_PK_Venue_Minutes_PG",
+          ">=",
+          5.4
+        ]
+      ],
+      "all_checks": [
+        [
+          "Goal_Profile",
+          ">=",
+          94
+        ],
+        [
+          "Player_Log_L20_TOI_median",
+          ">=",
+          20.3
+        ],
+        [
+          "Trim10_SOG",
+          "<=",
+          3.8
+        ],
+        [
+          "Player_Log_L5_PPP_per60_total_TOI",
+          "<=",
+          2.85
+        ],
+        [
+          "Official_Own_PK_Venue_Minutes_PG",
+          ">=",
+          5.4
+        ]
+      ],
+      "record": {
+        "hits": 48,
+        "plays": 79,
+        "rate": 60.75949367088607,
+        "BE": 38.2619327436111,
+        "gap": 22.497560927274975,
+        "players": 20,
+        "units": 48.31896965419901,
+        "ROI": 61.163252726834195,
+        "dates": 28,
+        "games": 60,
+        "team_games": 62
+      },
+      "research_recent": {
+        "hits": 9,
+        "plays": 15,
+        "rate": 60.0,
+        "BE": 38.314335942684,
+        "gap": 21.685664057316004,
+        "players": 7,
+        "units": 9.3,
+        "ROI": 62.0,
+        "dates": 6,
+        "games": 12,
+        "team_games": 12
+      }
+    },
+    {
+      "id": "battleforged_fury__goal_v3_S_rebound",
+      "name": "Battleforged Fury",
+      "family": "battleforged_fury",
+      "parent_id": "goal_v3:S_rebound",
+      "parent_name": "Astral Ambush II",
+      "rule": "Goal 0.5 + Matrix_Goal Green + Goal_Profile >= 94 + StarScore >= 93 + Player_Log_L5_PPP_per60_total_TOI <= 2.2 + Drought_G >= 1 + Official_Own_PK_Venue_Minutes_PG >= 5.4",
+      "icon": "fury.svg",
+      "checks": [
+        [
+          "Official_Own_PK_Venue_Minutes_PG",
+          ">=",
+          5.4
+        ]
+      ],
+      "all_checks": [
+        [
+          "Goal_Profile",
+          ">=",
+          94
+        ],
+        [
+          "StarScore",
+          ">=",
+          93
+        ],
+        [
+          "Player_Log_L5_PPP_per60_total_TOI",
+          "<=",
+          2.2
+        ],
+        [
+          "Drought_G",
+          ">=",
+          1
+        ],
+        [
+          "Official_Own_PK_Venue_Minutes_PG",
+          ">=",
+          5.4
+        ]
+      ],
+      "record": {
+        "hits": 25,
+        "plays": 35,
+        "rate": 71.42857142857143,
+        "BE": 39.486931698744584,
+        "gap": 31.941639729826846,
+        "players": 15,
+        "units": 29.951538461538462,
+        "ROI": 85.57582417582418,
+        "dates": 18,
+        "games": 31,
+        "team_games": 32
+      },
+      "research_recent": {
+        "hits": 4,
+        "plays": 6,
+        "rate": 66.66666666666667,
+        "BE": 39.11890435146249,
+        "gap": 27.54776231520418,
+        "players": 6,
+        "units": 5.4,
+        "ROI": 90.0,
+        "dates": 4,
+        "games": 6,
+        "team_games": 6
+      }
+    },
+    {
+      "id": "fractured_guard__goal_v3_T_coldPP",
+      "name": "Fractured Guard",
+      "family": "fractured_guard",
+      "parent_id": "goal_v3:T_coldPP",
+      "parent_name": "Iron Prowl",
+      "rule": "Goal 0.5 + Matrix_Goal Green + Goal_Profile >= 94 + Player_Log_L20_TOI_median >= 20.3 + Trim10_SOG <= 3.8 + Player_Log_L5_PPP_per60_total_TOI <= 2.85 + Goalie_Expected_SV <= 0.894",
+      "icon": "armor_shred.svg",
+      "checks": [
+        [
+          "Goalie_Expected_SV",
+          "<=",
+          0.894
+        ]
+      ],
+      "all_checks": [
+        [
+          "Goal_Profile",
+          ">=",
+          94
+        ],
+        [
+          "Player_Log_L20_TOI_median",
+          ">=",
+          20.3
+        ],
+        [
+          "Trim10_SOG",
+          "<=",
+          3.8
+        ],
+        [
+          "Player_Log_L5_PPP_per60_total_TOI",
+          "<=",
+          2.85
+        ],
+        [
+          "Goalie_Expected_SV",
+          "<=",
+          0.894
+        ]
+      ],
+      "record": {
+        "hits": 29,
+        "plays": 48,
+        "rate": 60.416666666666664,
+        "BE": 38.921052397423495,
+        "gap": 21.49561426924317,
+        "players": 17,
+        "units": 27.841946169772257,
+        "ROI": 58.00405452035887,
+        "dates": 23,
+        "games": 35,
+        "team_games": 36
+      },
+      "research_recent": {
+        "hits": 13,
+        "plays": 21,
+        "rate": 61.904761904761905,
+        "BE": 39.257635726289266,
+        "gap": 22.64712617847264,
+        "players": 9,
+        "units": 12.05,
+        "ROI": 57.38095238095238,
+        "dates": 8,
+        "games": 13,
+        "team_games": 13
+      }
+    },
+    {
+      "id": "fractured_guard__goal_v3_X_stable",
+      "name": "Fractured Guard",
+      "family": "fractured_guard",
+      "parent_id": "goal_v3:X_stable",
+      "parent_name": "Predator’s Focus II",
+      "rule": "Goal 0.5 + Matrix_Goal Green + Goal_Profile >= 94 + Pregame_xG_L5_per_game >= 0.48 + Player_Log_L5_S_sd <= 1.7 + Player_Log_L10_TOI_sd <= 2.3 + Goalie_Expected_SV <= 0.894",
+      "icon": "armor_shred.svg",
+      "checks": [
+        [
+          "Goalie_Expected_SV",
+          "<=",
+          0.894
+        ]
+      ],
+      "all_checks": [
+        [
+          "Goal_Profile",
+          ">=",
+          94
+        ],
+        [
+          "Pregame_xG_L5_per_game",
+          ">=",
+          0.48
+        ],
+        [
+          "Player_Log_L5_S_sd",
+          "<=",
+          1.7
+        ],
+        [
+          "Player_Log_L10_TOI_sd",
+          "<=",
+          2.3
+        ],
+        [
+          "Goalie_Expected_SV",
+          "<=",
+          0.894
+        ]
+      ],
+      "record": {
+        "hits": 20,
+        "plays": 35,
+        "rate": 57.142857142857146,
+        "BE": 39.906049057706916,
+        "gap": 17.23680808515023,
+        "players": 14,
+        "units": 15.871946169772256,
+        "ROI": 45.34841762792073,
+        "dates": 19,
+        "games": 31,
+        "team_games": 33
+      },
+      "research_recent": {
+        "hits": 12,
+        "plays": 16,
+        "rate": 75.0,
+        "BE": 40.888492562361506,
+        "gap": 34.111507437638494,
+        "players": 9,
+        "units": 13.53,
+        "ROI": 84.5625,
+        "dates": 9,
+        "games": 15,
+        "team_games": 15
+      }
+    },
+    {
+      "id": "fractured_guard__goal_v3_runic47",
+      "name": "Fractured Guard",
+      "family": "fractured_guard",
+      "parent_id": "goal_v3:runic47",
+      "parent_name": "Runic Barrage · Open Stance",
+      "rule": "Goal 0.5 + Matrix_Goal Green + Pregame_xG_L5_per_game >= 0.47 + Player_Log_L5_TOI_per_game >= 18.8 + PP_SOG60 >= 14.4 + Goalie_Expected_SV <= 0.894",
+      "icon": "armor_shred.svg",
+      "checks": [
+        [
+          "Goalie_Expected_SV",
+          "<=",
+          0.894
+        ]
+      ],
+      "all_checks": [
+        [
+          "Pregame_xG_L5_per_game",
+          ">=",
+          0.47
+        ],
+        [
+          "Player_Log_L5_TOI_per_game",
+          ">=",
+          18.8
+        ],
+        [
+          "PP_SOG60",
+          ">=",
+          14.4
+        ],
+        [
+          "Goalie_Expected_SV",
+          "<=",
+          0.894
+        ]
+      ],
+      "record": {
+        "hits": 22,
+        "plays": 40,
+        "rate": 55.0,
+        "BE": 39.927007470898346,
+        "gap": 15.072992529101654,
+        "players": 14,
+        "units": 16.491946169772255,
+        "ROI": 41.22986542443064,
+        "dates": 24,
+        "games": 35,
+        "team_games": 36
+      },
+      "research_recent": {
+        "hits": 8,
+        "plays": 14,
+        "rate": 57.142857142857146,
+        "BE": 40.37310446579005,
+        "gap": 16.769752677067096,
+        "players": 9,
+        "units": 5.5,
+        "ROI": 39.285714285714285,
+        "dates": 9,
+        "games": 14,
+        "team_games": 14
+      }
+    },
+    {
+      "id": "counterstrike_sigil__goal_v2_X",
+      "name": "Counterstrike Sigil",
+      "family": "counterstrike_sigil",
+      "parent_id": "goal_v2:X",
+      "parent_name": "Measured Strike I",
+      "rule": "Goal 0.5 + Matrix_Goal Green + Pregame_xG_L5_per_game >= 0.52 + Player_Log_L5_TOI_per_game >= 18.8 + i5v5_xG60 <= 1.03 + Official_Opp_PK_L10_Success_pct >= 80",
+      "icon": "smash.svg",
+      "checks": [
+        [
+          "Official_Opp_PK_L10_Success_pct",
+          ">=",
+          80.0
+        ]
+      ],
+      "all_checks": [
+        [
+          "Pregame_xG_L5_per_game",
+          ">=",
+          0.52
+        ],
+        [
+          "Player_Log_L5_TOI_per_game",
+          ">=",
+          18.8
+        ],
+        [
+          "i5v5_xG60",
+          "<=",
+          1.03
+        ],
+        [
+          "Official_Opp_PK_L10_Success_pct",
+          ">=",
+          80.0
+        ]
+      ],
+      "record": {
+        "hits": 21,
+        "plays": 35,
+        "rate": 60.0,
+        "BE": 38.884575117506984,
+        "gap": 21.115424882493016,
+        "players": 18,
+        "units": 17.889565217391304,
+        "ROI": 51.11304347826087,
+        "dates": 20,
+        "games": 31,
+        "team_games": 32
+      },
+      "research_recent": {
+        "hits": 8,
+        "plays": 16,
+        "rate": 50.0,
+        "BE": 38.56886456339944,
+        "gap": 11.431135436600563,
+        "players": 10,
+        "units": 3.8,
+        "ROI": 23.75,
+        "dates": 7,
+        "games": 13,
+        "team_games": 14
+      }
+    },
+    {
+      "id": "counterstrike_sigil__goal_v2_S",
+      "name": "Counterstrike Sigil",
+      "family": "counterstrike_sigil",
+      "parent_id": "goal_v2:S",
+      "parent_name": "Predator’s Mark I",
+      "rule": "Goal 0.5 + Matrix_Goal Green + Pregame_xG_L5_per_game >= 0.52 + Player_Log_L5_TOI_per_game >= 18.8 + Player_Log_L20_Goal_fraction_pct >= 43 + Official_Opp_PK_L10_Success_pct >= 80",
+      "icon": "smash.svg",
+      "checks": [
+        [
+          "Official_Opp_PK_L10_Success_pct",
+          ">=",
+          80.0
+        ]
+      ],
+      "all_checks": [
+        [
+          "Pregame_xG_L5_per_game",
+          ">=",
+          0.52
+        ],
+        [
+          "Player_Log_L5_TOI_per_game",
+          ">=",
+          18.8
+        ],
+        [
+          "Player_Log_L20_Goal_fraction_pct",
+          ">=",
+          43
+        ],
+        [
+          "Official_Opp_PK_L10_Success_pct",
+          ">=",
+          80.0
+        ]
+      ],
+      "record": {
+        "hits": 19,
+        "plays": 33,
+        "rate": 57.57575757575758,
+        "BE": 40.400927514840205,
+        "gap": 17.174830060917373,
+        "players": 13,
+        "units": 14.849565217391305,
+        "ROI": 44.998682476943344,
+        "dates": 18,
+        "games": 30,
+        "team_games": 31
+      },
+      "research_recent": {
+        "hits": 10,
+        "plays": 17,
+        "rate": 58.8235294117647,
+        "BE": 40.91657416584944,
+        "gap": 17.906955245915263,
+        "players": 8,
+        "units": 6.48,
+        "ROI": 38.11764705882353,
+        "dates": 8,
+        "games": 14,
+        "team_games": 15
+      }
+    },
+    {
+      "id": "counterstrike_sigil__goal_v3_T_coldPP",
+      "name": "Counterstrike Sigil",
+      "family": "counterstrike_sigil",
+      "parent_id": "goal_v3:T_coldPP",
+      "parent_name": "Iron Prowl",
+      "rule": "Goal 0.5 + Matrix_Goal Green + Goal_Profile >= 94 + Player_Log_L20_TOI_median >= 20.3 + Trim10_SOG <= 3.8 + Player_Log_L5_PPP_per60_total_TOI <= 2.85 + Official_Opp_PK_L10_Success_pct >= 80",
+      "icon": "smash.svg",
+      "checks": [
+        [
+          "Official_Opp_PK_L10_Success_pct",
+          ">=",
+          80.0
+        ]
+      ],
+      "all_checks": [
+        [
+          "Goal_Profile",
+          ">=",
+          94
+        ],
+        [
+          "Player_Log_L20_TOI_median",
+          ">=",
+          20.3
+        ],
+        [
+          "Trim10_SOG",
+          "<=",
+          3.8
+        ],
+        [
+          "Player_Log_L5_PPP_per60_total_TOI",
+          "<=",
+          2.85
+        ],
+        [
+          "Official_Opp_PK_L10_Success_pct",
+          ">=",
+          80.0
+        ]
+      ],
+      "record": {
+        "hits": 25,
+        "plays": 38,
+        "rate": 65.78947368421052,
+        "BE": 38.83649542777386,
+        "gap": 26.95297825643666,
+        "players": 18,
+        "units": 27.489565217391306,
+        "ROI": 72.34096109839817,
+        "dates": 19,
+        "games": 28,
+        "team_games": 28
+      },
+      "research_recent": {
+        "hits": 12,
+        "plays": 16,
+        "rate": 75.0,
+        "BE": 37.972567972312326,
+        "gap": 37.027432027687674,
+        "players": 10,
+        "units": 15.5,
+        "ROI": 96.875,
+        "dates": 6,
+        "games": 12,
+        "team_games": 12
+      }
+    },
+    {
+      "id": "counterstrike_sigil__goal_v3_X_creatorII",
+      "name": "Counterstrike Sigil",
+      "family": "counterstrike_sigil",
+      "parent_id": "goal_v3:X_creatorII",
+      "parent_name": "Creator’s Bane II",
+      "rule": "Goal 0.5 + Matrix_Goal Green + Goal_Profile >= 94 + Pregame_xG_L5_per_game >= 0.48 + i5v5_primaryAssists60 <= 0.65 + Official_Opp_PK_L10_Success_pct >= 80",
+      "icon": "smash.svg",
+      "checks": [
+        [
+          "Official_Opp_PK_L10_Success_pct",
+          ">=",
+          80.0
+        ]
+      ],
+      "all_checks": [
+        [
+          "Goal_Profile",
+          ">=",
+          94
+        ],
+        [
+          "Pregame_xG_L5_per_game",
+          ">=",
+          0.48
+        ],
+        [
+          "i5v5_primaryAssists60",
+          "<=",
+          0.65
+        ],
+        [
+          "Official_Opp_PK_L10_Success_pct",
+          ">=",
+          80.0
+        ]
+      ],
+      "record": {
+        "hits": 26,
+        "plays": 37,
+        "rate": 70.27027027027027,
+        "BE": 37.667742744611665,
+        "gap": 32.60252752565861,
+        "players": 16,
+        "units": 35.159565217391304,
+        "ROI": 95.02585193889541,
+        "dates": 17,
+        "games": 33,
+        "team_games": 33
+      },
+      "research_recent": {
+        "hits": 12,
+        "plays": 14,
+        "rate": 85.71428571428571,
+        "BE": 39.705729910418555,
+        "gap": 46.008555803867154,
+        "players": 6,
+        "units": 17.43,
+        "ROI": 124.5,
+        "dates": 6,
+        "games": 12,
+        "team_games": 12
+      }
+    },
+    {
+      "id": "counterstrike_sigil__goal_v3_runic47",
+      "name": "Counterstrike Sigil",
+      "family": "counterstrike_sigil",
+      "parent_id": "goal_v3:runic47",
+      "parent_name": "Runic Barrage · Open Stance",
+      "rule": "Goal 0.5 + Matrix_Goal Green + Pregame_xG_L5_per_game >= 0.47 + Player_Log_L5_TOI_per_game >= 18.8 + PP_SOG60 >= 14.4 + Official_Opp_PK_L10_Success_pct >= 80",
+      "icon": "smash.svg",
+      "checks": [
+        [
+          "Official_Opp_PK_L10_Success_pct",
+          ">=",
+          80.0
+        ]
+      ],
+      "all_checks": [
+        [
+          "Pregame_xG_L5_per_game",
+          ">=",
+          0.47
+        ],
+        [
+          "Player_Log_L5_TOI_per_game",
+          ">=",
+          18.8
+        ],
+        [
+          "PP_SOG60",
+          ">=",
+          14.4
+        ],
+        [
+          "Official_Opp_PK_L10_Success_pct",
+          ">=",
+          80.0
+        ]
+      ],
+      "record": {
+        "hits": 22,
+        "plays": 39,
+        "rate": 56.41025641025641,
+        "BE": 40.14201285887947,
+        "gap": 16.26824355137694,
+        "players": 17,
+        "units": 17.879565217391303,
+        "ROI": 45.845039018952065,
+        "dates": 23,
+        "games": 35,
+        "team_games": 37
+      },
+      "research_recent": {
+        "hits": 8,
+        "plays": 15,
+        "rate": 53.333333333333336,
+        "BE": 40.13607845436487,
+        "gap": 13.197254878968465,
+        "players": 9,
+        "units": 4.7,
+        "ROI": 31.333333333333332,
+        "dates": 9,
+        "games": 14,
+        "team_games": 15
+      }
+    }
+  ],
+  "reused_existing": {
+    "id": "goal_v3:GUARD",
+    "family": "fractured_guard",
+    "parent_id": "goal_v3:X_creatorII",
+    "name": "Fractured Guard",
+    "record_preserved": {
+      "hits": 24,
+      "plays": 36,
+      "hit_rate": 66.66666666666667,
+      "be": 37.65193538947892,
+      "gap": 29.01473127718775,
+      "players": 15,
+      "dates": 20,
+      "games": 30,
+      "units": 29.819565217391304,
+      "roi": 82.83212560386474
+    }
+  },
+  "monitor_not_wired": [
+    {
+      "route": "goal_v3:T_coldPP",
+      "name": "War Chant proposed3.30 level on Iron Prowl",
+      "reason": "Only2.23pp full /1.48pp recent rate lift over existing2.95 War Chant, cuts profitable40full/6recent plays and recentROI slightly lower. Preserve broad existing and monitor proposed level.",
+      "record": {
+        "full": {
+          "hits": 52,
+          "plays": 84,
+          "rate": 61.904761904761905,
+          "BE": 40.19165345476409,
+          "gap": 21.71310844999782,
+          "players": 19,
+          "units": 47.142163479565056,
+          "ROI": 56.1216231899584,
+          "dates": 30,
+          "games": 58,
+          "team_games": 61
+        },
+        "recent": {
+          "hits": 17,
+          "plays": 29,
+          "rate": 58.62068965517241,
+          "BE": 41.34887696186851,
+          "gap": 17.2718126933039,
+          "players": 8,
+          "units": 12.85,
+          "ROI": 44.310344827586206,
+          "dates": 10,
+          "games": 19,
+          "team_games": 19
+        }
+      },
+      "existing": {
+        "full": {
+          "hits": 74,
+          "plays": 124,
+          "rate": 59.67741935483871,
+          "BE": 39.6333673686296,
+          "gap": 20.044051986209112,
+          "players": 21,
+          "units": 64.76069835115537,
+          "ROI": 52.22636963802852
+        },
+        "recent": {
+          "hits": 20,
+          "plays": 35,
+          "rate": 57.142857142857146,
+          "BE": 40.28513712949883,
+          "gap": 16.857720013358318,
+          "players": 10,
+          "units": 15.65,
+          "ROI": 44.714285714285715
+        }
+      },
+      "exclusive_of_existing": {
+        "full": {
+          "hits": 22,
+          "plays": 40,
+          "rate": 55.0,
+          "BE": 38.46096658774719,
+          "gap": 16.539033412252813,
+          "players": 11,
+          "units": 17.618534871590317,
+          "ROI": 44.04633717897579
+        },
+        "recent": {
+          "hits": 3,
+          "plays": 6,
+          "rate": 50.0,
+          "BE": 35.143727939712015,
+          "gap": 14.856272060287985,
+          "players": 4,
+          "units": 2.8,
+          "ROI": 46.666666666666664
+        }
+      }
+    }
+  ],
+  "all18_player_routes_unchanged": true,
+  "old19_buff_identities_preserved": true
+}

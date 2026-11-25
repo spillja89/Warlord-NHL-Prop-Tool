@@ -9,6 +9,7 @@ import pandas as pd
 import requests
 from pp_assist_beta import assist_ppp_beta
 from pp_pk_windows import columns as pk_window_columns, COLUMNS as PK_WINDOW_COLUMNS
+from pp_recent_xg import display_value as recent_pp_xg_value
 
 
 # Dated team-game replay; these records do not set player eligibility.
@@ -35,7 +36,7 @@ COLUMNS = ("Game", "Player", "Team", "Opponent", "PPP line", "Over odds",
            "Team EV OZ time %", "Team PP OZ time %",
            "Opp PK xGA/60", "PP matchup /100", "PPP last 10",
            "PPP drought (games)",
-           "PP on-ice xG/game", "PP shooter xG/game", "Equal-weight PP context",
+           "PP on-ice xG/game", "PP on-ice xG/game L5", "PP on-ice xG/game L10", "PP xG L5 games", "PP xG L10 games", "PP shooter xG/game", "Equal-weight PP context",
            "PP research signals", "PP research count", "PP research eligible",
            "PP player signal details", "PP Assist beta",
            "Tonight PPP mean", "Tonight PPP 1+ %", "Tonight PPP status",
@@ -342,6 +343,10 @@ def priced_ppp_quotes(frame: pd.DataFrame, *, line_filter: float | None = None) 
                 if _finite(row.get("Opp_PK_xGA60")) is not None
                 and _finite(row.get("Team_PP_xGF60")) is not None else None,
                 "PP on-ice xG/game": _finite(row.get("PP_OnIce_xG_per_game")),
+                "PP on-ice xG/game L5": recent_pp_xg_value(row,5),
+                "PP on-ice xG/game L10": recent_pp_xg_value(row,10),
+                "PP xG L5 games": _finite(row.get("PP_OnIce_xG_L5_Games")),
+                "PP xG L10 games": _finite(row.get("PP_OnIce_xG_L10_Games")),
                 "PP shooter xG/game": _finite(row.get("PP_iXG_per_game")),
                 "Equal-weight PP context": _finite(row.get("PP_Matchup_Equal")),
                 "PP research signals": research_label,

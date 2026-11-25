@@ -56,7 +56,7 @@ def return_panel(move, *, compact=True):
                     f'{health["hits"]}/{n} · {health["hit_rate"]:.1f}% · avg posted BE {health["be"]:.1f}% · '
                     f'gap {health["gap"]:+.1f} pp · {health["players"]} players · '
                     f'{health["units"]:+.2f}u · {health["roi"]:+.1f}% ROI. '
-                    'This subset is already included in the total; earlier research is not live V3 performance.</div>')
+                    'This subset is already included in the total; earlier research is not post-patch performance.</div>')
     return panel
 
 
@@ -86,8 +86,8 @@ def render_return_panel(row,data, *, compact=True):
             f'Previous record through {_date(data["previous_through"])}: '
             f'{prior["units"]:+.2f}u · {prior["roi"]:+.1f}% ROI. '
             'Flat 1u at saved pregame prices. Overlapping moves are separate records.</div>')
-    if data.get('kit') in ('goal-2026-27-moves-v2-2026-11-11','goal-2026-27-moves-v3-2026-11-23') and not recent['plays'] and not compact:
-        patch='V3' if data['kit']=='goal-2026-27-moves-v3-2026-11-23' else 'V2'
+    if data.get('kit') in ('goal-2026-27-moves-v2-2026-11-11','goal-2026-27-moves-v3-2026-11-23','goal-2026-27-buffs-v4-2026-11-25') and not recent['plays'] and not compact:
+        patch=str(data.get('move_version_label') or ('Moves V3' if data['kit']=='goal-2026-27-moves-v3-2026-11-23' else 'Moves V2')).split()[-1]
         detail=('<div class="wn-gr-note">'+patch+' research baseline: '+_date(data['full_from'])+'–'+_date(data['previous_through'])+
                 '. No new settled plays since wiring. Earlier research is not live '+patch+' performance. Flat1u at saved pregame prices.</div>')
     return (f'<div class="wn-goal-returns" data-return-version="{escape(data["version"])}">'

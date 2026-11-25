@@ -1,17 +1,19 @@
 """Approved Goal V2 board; immutable V1 records remain separately in Inspect."""
 from collections import OrderedDict
 from goal_routes_v2 import records_for as v2_records, catalog
-from goal_routes_v3 import records_for as v3_records, VERSION
+from goal_routes_v3 import records_for as v3_records
+from goal_routes_v4 import records_for as v4_records, decorate_existing, VERSION
 
 def records_for(row):
     """Additive eligibility. Never pass new route gates into retained rules."""
-    return v2_records(row)+v3_records(row)
+    return [decorate_existing(m) for m in v2_records(row)+v3_records(row)]+v4_records(row)
 
 GROUP_NAMES={'A':'Creator Fade · base attack','F':'Reaper’s Return · finishing','P':'Runic Barrage · PP shooting',
  'X':'Measured Strike · levels','G':'Controlled Strike · goal pace','S':'Predator’s Mark · scoring share'}
 
 def parent_attack_name(move):
     """Name the exact attack whose population produced a buff's record."""
+    if move.get('goal_v4'):return move.get('goal_parent_name','')
     if move.get('goal_v3'):return move.get('goal_parent_name','')
     return next((s['name'] for s in catalog()['moves']
                  if s['id']==move.get('goal_parent') and s['kind']=='player_attack'), '')
@@ -57,6 +59,7 @@ def inspect_groups(moves):
     for m in moves:
         family=m.get('goal_family')
         name=('Archived V1 · prior rules and returns' if m.get('goal_archived') else
+              'V4 buff family · '+m['name'] if m.get('goal_v4') else
               f'{"V3" if m.get("goal_v3") else "V2"} buffs · {parent_attack_name(m)}' if m.get('goal_v2') and m.get('matchup_buff') else
               'V1 buffs · exact player-parent records' if m.get('matchup_buff') else
               'V3 · '+str(family) if m.get('goal_v3') else GROUP_NAMES.get(family,'Other Goal records'))
