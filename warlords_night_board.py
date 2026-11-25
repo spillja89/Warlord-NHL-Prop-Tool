@@ -34,7 +34,7 @@ from goal_card_routes import records_for as goal_card_records, display_moves as 
 from goal_card_routes import parent_attack_name as goal_buff_parent_name, buffs_for_attack as goal_buffs_for_attack
 from goal_card_routes import best_move as goal_best_move, move_rank as goal_move_rank, player_route_family as goal_player_route_family
 from assist_return_monitor import return_panel as assist_return_panel
-from assist_v3_display import badges as assist_v3_badges
+from assist_v3_display import badges as assist_v3_badges, lead_context as assist_lead_context, CSS as ASSIST_V3_DISPLAY_CSS
 from assist_goalie_buff import context as assist_goalie_context, badge_html as assist_goalie_badge
 from assist_goalie_buff import goalie_html as assist_goalie_stats, inspect_html as assist_goalie_details, CSS as ASSIST_GOALIE_CSS
 from points_return_monitor import return_panel as points_return_panel, original_caption as points_original_caption, display_stats as points_display_stats, record_for as points_record_for
@@ -1692,10 +1692,10 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
               <div class="wn-portrait" aria-hidden="true">{portrait}</div>
               <div class="wn-unit-body">
                 <div class="wn-card-heading"><div class="wn-unit-head"><span class="wn-rank">{rank:02d}</span>{tier_badge}<strong>{_h(card['player'])}</strong><span class="wn-match">{_h(matchup)}</span></div>
-                <div class="wn-attack"><span class="wn-attack-name">{_h(move_name)}</span><span class="wn-badge">{_h(status + sample)}</span></div>
+                {assist_lead_context(move) if role == 'Support' else ''}<div class="wn-attack"><span class="wn-attack-name">{_h(move_name)}</span><span class="wn-badge">{_h(status + sample)}</span></div>
                 {support_route_note}
                 <div class="wn-unit-foot"><span>{_h(line)} <b>{_h(price)}</b>{book_note}</span><span>{_h(later_note)}{confidence_note}</span></div>
-                {book_rate_note}{points05_goalie_badge(card.get('points05_goalie_buff')) if role=='Tank' else ''}{assist_goalie_badge(card.get('assist_goalie_buff')) if role == 'Support' and not (move or {}).get('assist_v3') else ''}{assist_v3_badges(card.get('moves', [])) if role == 'Support' else ''}{card_controls(card) if card_controls else ''}
+                {book_rate_note}{points05_goalie_badge(card.get('points05_goalie_buff')) if role=='Tank' else ''}{assist_goalie_badge(card.get('assist_goalie_buff')) if role == 'Support' and not (move or {}).get('assist_v3') else ''}{assist_v3_badges(card.get('moves', []), lead=move) if role == 'Support' else ''}{card_controls(card) if card_controls else ''}
                 {beta_summary(card.get('pp_assist_beta')) if role == 'Support' else ''}</div>
                 {combo_html(move, {**_CARD_LABELS, **_GOAL_V2_LABELS, **POINTS05_LABELS})}
                 {goal_return_panel(move) if role == 'Carry' else ''}
@@ -1904,15 +1904,5 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
       <div class="wn-hero-foot">{_h(hero_foot)} · HISTORICAL MOVE RATE IS NOT A FORECAST</div></div>"""
     board_class = "wn-board" if show_hero else "wn-board wn-board--compact"
     goal_return_styles = '<style>' + GOAL_RETURN_CSS + '</style>' if any(item[0] in ('Carry', 'Support', 'Tank') for item in selected) else ''
-    assist_goalie_styles = '<style>' + ASSIST_GOALIE_CSS + POINTS05_GOALIE_CSS + '</style>' if selected else ''
+    assist_goalie_styles = '<style>' + ASSIST_GOALIE_CSS + POINTS05_GOALIE_CSS + (ASSIST_V3_DISPLAY_CSS if any(item[0]=='Support' for item in selected) else '') + '</style>' if selected else ''
     return BETA_CSS + '<style>' + GRADE_CSS + '</style>' + styles + goal_return_styles + assist_goalie_styles + f'<div class="{board_class}">' + (hero if show_hero else "") + '<div class="wn-grid">' + ''.join(lanes) + '</div></div>'
-
-
-
-
-
-
-
-
-
-
