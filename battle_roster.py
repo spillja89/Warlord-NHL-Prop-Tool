@@ -4,6 +4,8 @@ import streamlit as st
 from matchup_display import matchup_label
 from slate_browsing import CHOSEN_ORDERS, TIER_ORDER, browse_picks, prop_label, slot_key, slot_options
 from chosen_priority import assign_priorities, priority_key, priority_html, book_be, number
+from chosen_live_ui import render_live_badges,pick_placeholder,CSS as LIVE_CSS
+import json
 
 ROLES={'Goal':'Carry','Assists':'Support','Points':'Tank','SOG':'Jungle','PPP':'Support'}
 
@@ -104,6 +106,7 @@ def _open_champion(selections, boards, frame, initial_pick_id=None, request_key=
                       f'Over {by_id[key]["line"]:g} {"Power-play point" if by_id[key]["market"]=="PPP" else by_id[key]["market"]} · {by_id[key]["odds"]:+g} · {by_id[key].get("book","")}')
     pick=by_id[selected]
     st.caption(f'{pick["player"]} · Played selection at the saved quote above. Card details use the loaded slate snapshot.')
+    st.html('<style>'+LIVE_CSS+'</style>'+pick_placeholder(pick))
     st.html(champion_details_html(pick,boards,frame))
 
 
@@ -188,7 +191,8 @@ def roster_html(picks, boards, *, scope='chosen_champion_details', metadata=None
                          f' data-battle-pick="{escape(pick["pick_id"],quote=True)}" data-battle-scope="{escape(scope,quote=True)}"'
                          f' aria-label="Open {escape(str(pick.get("player") or "champion"),quote=True)} over {float(pick["line"]):g} {escape(market,quote=True)}">'
                          f'Over {float(pick["line"]):g} {escape(market)}'
-                         f' <b>{float(pick["odds"]):+g}</b> · {escape(str(pick.get("book") or ""))} {badge}</button>')
+                         f' <b>{float(pick["odds"]):+g}</b> · {escape(str(pick.get("book") or ""))} {badge}'
+                         +pick_placeholder(pick,scope)+'</button>')
         lead_info=(metadata or {}).get(lead['pick_id'],{})
         tiles.append(f'<article class="battle-champion" data-chosen-priority="{lead_info.get("priority", "")}"><button type="button" class="battle-champion-main" data-battle-champion="{escape(champion_key(lead),quote=True)}"'
                      f' data-battle-pick="{escape(lead["pick_id"],quote=True)}" data-battle-scope="{escape(scope,quote=True)}"'
@@ -196,8 +200,10 @@ def roster_html(picks, boards, *, scope='chosen_champion_details', metadata=None
                      f'<strong>{escape(str(lead.get("player") or "Champion"))}</strong>'
                      f'<small>{escape(matchup_label(lead.get("game"),lead.get("start_utc")))}</small>'
                      +priority_html(lead_info)
-                     +''.join(props)+'<span class="battle-open">Click a prop to inspect →</span></div></article>')
-    return '''<style>
+                     +''.join(props)+f'<span class="chosen-live-champion" data-chosen-live-champion="{escape(champion_key(lead),quote=True)}"'
+                     f' data-chosen-live-scope="{escape(scope,quote=True)}" data-chosen-live-picks="{escape(json.dumps([p["pick_id"] for p in selections]),quote=True)}"></span>'
+                     +'<span class="battle-open">Click a prop to inspect →</span></div></article>')
+    return '<style>'+LIVE_CSS+'</style>'+'''<style>
       .battle-roster{display:grid;grid-template-columns:repeat(auto-fit,minmax(285px,1fr));gap:10px;margin:8px 0 18px}
       .battle-champion{display:flex;gap:12px;align-items:center;background:linear-gradient(125deg,#172436,#2c2634);border:1px solid #88734c;border-left:3px solid #e8bb55;border-radius:10px;padding:10px;color:#f1f5fb;font:13px/1.45 system-ui,sans-serif;min-width:0}
       .battle-champion img{width:82px;height:100px;object-fit:cover;object-position:center top;border:1px solid #b69b62;border-radius:7px;flex:none}
@@ -227,6 +233,7 @@ def render_battle_roster(day, boards, frame=None, *, owner_access, setting):
     from played_picks import PickStore
     st.subheader("⚔️ The Warlord’s Chosen for Battle")
     st.caption('Champions deployed to cook the books.')
+    st.caption('Live battle badges check official NHL stats every minute while this page is open. Live hits can change with scoring corrections; units and ROI update after final grading.')
     st.button('↻ Update the Chosen',key='refresh_battle_roster',help='Refreshes only this roster, without rebuilding the board or running the slate.')
     url=storage_url(setting)
     if not url:
@@ -290,6 +297,7 @@ def render_battle_roster(day, boards, frame=None, *, owner_access, setting):
             st.session_state['chosen_open_request']={'champion':action['champion'],'pick_id':pick_id,'nonce':request_key}
     _champion_bridge(data={'scope':bridge_key,'has_champions':bool(registry)},
                      key=bridge_key,on_selection_change=on_selection)
+    render_live_badges(picks,scope=bridge_key)
     request=st.session_state.pop('chosen_open_request',None)
     if request and request['champion'] in registry:
         _open_champion(registry[request['champion']],boards,frame,request['pick_id'],request['nonce'])
