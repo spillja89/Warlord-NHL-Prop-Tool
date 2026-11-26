@@ -1,7 +1,7 @@
 {
   "version": "card-return-tracking-2026-11-10-v1",
   "seed_version": "card-return-seed-2026-11-08-v1-sog-v2-added-2026-11-10-goals-v2-2026-11-11-points15-v2-2026-11-14-assist-v2-2026-11-15-assist-all-v2-baseline-2026-11-15-points15-iron-cadence-v3-2026-11-17-points15-backbone-v4-2026-11-18-points-v5-baseline-2026-11-18-points05-v6-2026-11-18-pp-v2-2026-11-19-sog-v3-2026-11-19-pp-v3-2026-11-21+goal-v3-2026-11-23-assist-v3-2026-11-24-goal-v4-buffs-2026-11-25",
-  "through": "2026-11-24",
+  "through": "2026-11-25",
   "source_files": {
     "2026-11-11": "98a20468268ef10f34cb1fe570e318c6980c32fb42cc7291f96597fec7eee555",
     "2026-11-12": "1b9dc353de2948627c7f2abf7160dc3c75a22b010aa26bb7d45764527834c31e",
@@ -15,18 +15,19 @@
     "2026-11-21": "5cb12ab1dfa731230e3d9f85b161382c333febbc88de956842f12f3e486db86c",
     "2026-11-22": "71d98a9ab8aebcd411aa412327339c5ac5d475796b2728b1b95ff7a8f2587735",
     "2026-11-23": "84c17d9782f1db814a080869378a53d93e0d5bdca2e2419c362802f411ef16f7",
-    "2026-11-24": "80304964757f467e5ed033dc82b36672ecfb87606f7fc418a9ac5417326c4e55"
+    "2026-11-24": "80304964757f467e5ed033dc82b36672ecfb87606f7fc418a9ac5417326c4e55",
+    "2026-11-25": "b0f4c8cfccb28dad5e1553d2ed73873936e2977ddc2c883d88bddb68df8825d6"
   },
   "counts": {
     "seed_outcomes_checked": 591,
-    "new_memberships": 7659,
-    "unsettled_rows": 395,
+    "new_memberships": 9809,
+    "unsettled_rows": 449,
     "other_kit_tags": 71,
     "noncurrent_rows": 4
   },
-  "memberships": 45558,
+  "memberships": 47708,
   "V1_fixed": true,
   "rules_unchanged": true,
-  "generation": "0501801eb85acbb0ac2dcb17d48be81e16713fa8a71aef10fce3fb53d26111eb",
-  "generated_utc": "2026-11-25T22:22:50.052316+00:00"
+  "generation": "9f9d33d0cd309c849a795eb0036e325ca06236b99ff2e79fd88952593aa48074",
+  "generated_utc": "2026-11-26T16:29:49.692841+00:00"
 }
