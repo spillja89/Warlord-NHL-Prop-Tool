@@ -1087,6 +1087,12 @@ def render_power_play_quotes_table(rows, signals_by_team, *, row_controls=None):
       @media(prefers-reduced-motion:reduce){.pp-scout .pp-signal--move,.pp-scout .pp-player-move{animation:none}}
       .pp-scout tbody tr:nth-child(even) td{background:#f8fafc}
       .pp-scout tbody tr:nth-child(even) .pp-player{background:#f8fafc}
+      /* Phones must be able to swipe every column clear of the player name. */
+      @media(max-width:900px){
+        .pp-scout-wrap{max-width:100%;min-width:0;-webkit-overflow-scrolling:touch}
+        .pp-scout .pp-player{position:static;left:auto;z-index:auto}
+        .pp-scout thead .pp-player{position:sticky;top:0;left:auto;z-index:2}
+      }
     </style><div class="pp-scout-root"><div class="pp-scout-wrap"><table class="pp-scout"><thead><tr>''' + "".join(headings) + '</tr></thead><tbody>' + "".join(body) + '''</tbody></table></div>
     <script>
     (() => {
