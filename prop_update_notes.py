@@ -21,7 +21,7 @@ def _entries(signature):
   out.append({'Prop':label,'Version':f'V{v}' if v else 'Tracked research','Updated':max(dates) if dates else 'Date unavailable','Update':note,'Results graded through':doc.get('full_through','—')})
  return out
 def render(st):
- st.caption('⚔️ Move updates · Goals V4 — five optional buff families; existing routes preserved · Nov25')
+ st.caption('⚔️ Board display V2 · Nov27 · All prop cards require a current combined hit rate of 50% rounded (49.5% minimum). BE/ROI cannot bypass it. Move rules and records preserved.')
  with st.expander('Version & move updates · all props',expanded=False):
   rows=entries()
   def day(v):

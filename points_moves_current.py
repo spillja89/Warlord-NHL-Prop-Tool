@@ -77,7 +77,9 @@ def points_moves(row):
     return moves + moves6(row)
 
 def display_moves(moves):
-    """One visible badge/record per nested family; every rule remains frozen."""
+    """One eligible visible badge per family; every frozen rule is preserved."""
+    from board_move_policy import board_eligible
+    moves = [move for move in moves if board_eligible(move)]
     if any(move.get('kit_version')==VERSION or move.get('points05_v6') or move.get('points15_v2') or move.get('points15_v3') or move.get('points15_v4') for move in moves):
         from move_return_grades import grade_rank, stable_identity
         selected={}

@@ -38,10 +38,14 @@ def move_rank(move):
     return grade_rank(move) or (0,False,move['wins']/n if n else -1,n,0,stable_identity(move))
 
 def display_moves(moves,rank=move_rank):
+    from board_move_policy import board_eligible
+    # A qualified exact-parent buff can lead even when its broader parent is
+    # below the display floor. Frozen matching already verifies that parent.
+    admitted=any(m.get('goal_primary') or m.get('goal_complete_entry') for m in moves)
     selected=OrderedDict()
-    for m in sorted(moves,key=rank,reverse=True):
+    for m in sorted((m for m in moves if board_eligible(m)),key=rank,reverse=True):
         if m.get('goal_v2'):selected.setdefault((bool(m.get('matchup_buff')),m['goal_family']),m)
-    return list(selected.values()) if any(m.get('goal_primary') or m.get('goal_complete_entry') for m in selected.values()) else []
+    return list(selected.values()) if admitted else []
 
 def best_move(moves):
     """A player route admits the card; the best qualified complete rule leads it."""

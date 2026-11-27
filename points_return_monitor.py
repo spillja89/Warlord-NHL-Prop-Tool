@@ -23,11 +23,11 @@ def record_for(move):
 
 def original_caption(move):
     row=record_for(move)
-    return (row.get('baseline_label') or 'V1 MOVE %') if row and not row.get('legacy') else ''
+    return ('2026–27 REPLAY %' if row.get('legacy') else (row.get('baseline_label') or 'V1 MOVE %')) if row else ''
 
 def display_stats(move):
     row=record_for(move)
-    return row['full'] if row and not row.get('legacy') else {'hits':int(move.get('wins',0)), 'plays':int(move.get('picks',0)), 'be':move.get('sample_book_be_pct')}
+    return row['full'] if row else {'hits':int(move.get('wins',0)), 'plays':int(move.get('picks',0)), 'be':move.get('sample_book_be_pct')}
 
 def return_panel(move, *, compact=True):
     row=record_for(move)

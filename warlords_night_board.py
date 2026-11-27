@@ -43,6 +43,7 @@ from points15_card_families import inspect_group as points15_inspect_group, rend
 from sog_record_display import display_stats as sog_display_stats, caption as sog_record_caption, record_for as sog_record_for
 from special_return_monitor import sog_return_panel
 from move_return_grades import grade_rank, move_grade, grade_badges, stable_identity, GRADE_CSS
+from board_move_policy import board_eligible, current_stats as board_stats
 
 
 CLASSES = (
@@ -502,9 +503,10 @@ def _baseline_rule(row, market, line):
 
 
 def _display_moves(moves, market, line):
-    """Keep Points 1.5 cards focused without changing saved move records."""
+    """Collapse only qualifying current-record moves; Inspect retains all."""
     if market == 'Goal' and line == .5:
         return goal_family_display(moves, _move_rank)
+    moves = [move for move in moves if board_eligible(move)]
     if market=='SOG' and line==2.5:
         return sog_profile_display(moves,_move_rank)
     if market == "Points" and line in (0.5, 1.5):
@@ -530,12 +532,11 @@ def _inspect_moves(moves, market, line):
 
 def points_current_tier(row, line, baseline):
     """Strongest current Points move; no additional hand-built tier policy."""
-    original = current_points_best(row) if baseline and line in (0.5, 1.5) else None
-    if original is None:
+    if not baseline or line not in (0.5, 1.5):
         return None
     moves = [move for move in _display_moves(current_points_moves(row), 'Points', line)
              if move['kind'] != 'CONTEXT']
-    return max(moves, key=_move_rank, default=original)
+    return max(moves, key=_move_rank, default=None)
 
 
 @record_snapshot()
@@ -757,13 +758,9 @@ def featured_warlords(boards: dict[str, list[dict]]) -> dict[str, list[dict]]:
         for card in cards:
             if not card.get("baseline_rule"):
                 continue
-            if role == "Tank" and card.get("points_current_tier"):
-                selected.append({**card, "move": card["points_current_tier"]})
-                continue
             qualifying = [move for move in card["moves"] if move["kind"] != "CONTEXT"
                           and (not move.get("matchup_buff") or move.get("market")=="SOG")
-                          and int(move["picks"]) > 0
-                          and int(move["wins"]) / int(move["picks"]) >= 0.5]
+                          and board_eligible(move)]
             if not qualifying:
                 continue
             selected.append({**card, "move": max(qualifying, key=_move_rank)})
@@ -776,8 +773,7 @@ def featured_warlords(boards: dict[str, list[dict]]) -> dict[str, list[dict]]:
 def unfeatured_baselines(cards: list[dict]) -> list[dict]:
     """Priced Green candidates without a qualifying historical move."""
     return [card for card in cards if card.get("baseline_rule") and not any(
-        move["kind"] != "CONTEXT" and int(move["picks"]) > 0
-        and int(move["wins"]) / int(move["picks"]) >= 0.5
+        move["kind"] != "CONTEXT" and board_eligible(move)
         for move in card["moves"])]
 
 
@@ -788,12 +784,12 @@ def goal_display_cards(cards: list[dict]) -> list[dict]:
     for card in cards:
         if not card.get("baseline_rule"):
             continue
-        attacks = [move for move in card.get("moves", [])
-                   if not move.get("matchup_buff")
-                   if int(move["picks"]) > 0]
+        eligible_moves = [move for move in card.get("moves", []) if board_eligible(move)]
+        attacks = [move for move in eligible_moves
+                   if not move.get("matchup_buff") or move.get("goal_complete_entry") or move.get("goal_v2")]
         if not attacks:
             continue
-        eligible.append({**card, "move": goal_best_move(card.get('moves',[])),
+        eligible.append({**card, "move": goal_best_move(eligible_moves),
                          "baseline_only": False})
     return sorted(eligible, key=lambda card: (
         card["move"] is not None,
@@ -1321,7 +1317,28 @@ def _card_quick_summary(role, card):
 def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=None,
                     roles: tuple[str, ...] | None = None, show_hero: bool = True,
                     card_controls=None, defer_records: bool = False) -> str:
-    """Compact, escaped HTML for the raid board or selected class lanes."""
+    """Compact cards; final display guard also covers direct/Chosen callers."""
+    visible = {}
+    for role, cards in boards.items():
+        visible[role] = []
+        for card in cards:
+            candidates = list(card.get('moves') or [])
+            candidates += [m for m in (card.get('move'), card.get('points_current_tier')) if m]
+            candidates = [m for m in candidates if board_eligible(m) and m.get('kind') != 'CONTEXT'
+                          and (not m.get('matchup_buff') or m.get('market') == 'SOG' or m.get('goal_complete_entry')
+                               or role == 'Carry' and m.get('goal_v2'))]
+            original = card.get('move')
+            move = (original if board_eligible(original) else
+                    goal_best_move(candidates) if role == 'Carry' else
+                    max(candidates, key=_move_rank, default=None))
+            if move is None:
+                continue
+            current = {**card, 'move': move, 'baseline_only': False}
+            current['moves'] = [m for m in card.get('moves', []) if board_eligible(m)]
+            if role == 'Tank':
+                current['points_current_tier'] = move if move.get('points_current') else None
+            visible[role].append(current)
+    boards = visible
     descriptions = {"Carry": "Finish the fight", "Support": "Set the play",
                     "Tank": "Hold the line", "Jungle": "Control the lanes"}
     selected = tuple(item for item in CLASSES if roles is None or item[0] in roles)
@@ -1376,6 +1393,8 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
             if role == 'Jungle' and move:
                 shown=sog_display_stats(move)
                 wins,picks=shown['hits'],shown['plays']
+            shown = board_stats(move)
+            wins, picks = int(shown['hits']), int(shown['plays'])
             pct = 100 * wins / picks if picks else 0
             late_pct = 100 * late_wins / late_picks if late_picks else 0
             status = (("NO GOAL ATTACK" if role == "Carry" else
@@ -1674,6 +1693,8 @@ def render_warlords(boards: dict[str, list[dict]], limit: int = 5, icon_loader=N
                 record_label = points_original_caption(move)
             if role == 'Jungle' and sog_return_panel(move):
                 record_label = sog_record_caption(move)
+            if record_label == '2026–27 REPLAY %':
+                later_note = f'CURRENT REPLAY {wins}/{picks}'
             if record_label in {"V1 MOVE %","V2 MOVE %","V3 MOVE %","V4 MOVE %","V5 MOVE %","V6 MOVE %"}:
                 later_note = f'{record_label.split()[0]} MOVE {wins}/{picks}'
             record_html = (f'<div class="wn-record"><strong>{pct:.1f}%</strong><span>{wins}/{picks}</span><em>{record_label}</em></div>'

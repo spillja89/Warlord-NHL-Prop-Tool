@@ -64,6 +64,10 @@ def champion_details_html(pick, boards, frame):
     card,row=selected_card(pick,boards,frame)
     if row is None:
         return '<p>Details for this saved selection are not in the loaded slate. The saved pick remains on the roster.</p>'
+    if card and not card.get('move'):
+        return ('<p>This saved pick has no current move meeting the board minimum: '
+                '50% rounded, with an exact 49.5% floor. Your Played selection is preserved.</p>'
+                +_form_html(card, expanded=True))
     if card:
         return render_warlords({ROLES[pick['market']]:[card]},roles=[ROLES[pick['market']]],
                                limit=1,show_hero=False).replace('<details class="wn-card-inspect">','<details class="wn-card-inspect" open>')

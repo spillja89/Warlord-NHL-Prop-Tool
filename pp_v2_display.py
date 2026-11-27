@@ -6,8 +6,9 @@ MIN_HISTORICAL_GAP_PP=15.0
 
 def card_qualified(move):
     from pp_cards import display_record
+    from board_move_policy import board_eligible
     s=display_record(move);gap=s.get('gap')
-    return gap is not None and gap>=MIN_HISTORICAL_GAP_PP
+    return board_eligible(move) and gap is not None and gap>=MIN_HISTORICAL_GAP_PP
 
 def goalie_summary(row):
     from pp_v2_moves import number,normal_name

@@ -185,7 +185,8 @@ def rank_pp_cards(frame, quotes, *, display_filter=True):
         if not moves:
             continue
         from pp_v2_display import card_qualified
-        eligible=[m for m in moves if card_qualified(m)] if display_filter else moves
+        from board_move_policy import board_eligible
+        eligible=[m for m in moves if board_eligible(m) and (not display_filter or card_qualified(m))]
         if not eligible:continue
         eligible=sorted(eligible,key=pp_move_rank,reverse=True)
         moves = sorted(moves, key=pp_move_rank, reverse=True)
@@ -225,7 +226,13 @@ def _rule_checks(row, move, xg):
 def render_pp_cards(cards, portrait_uri='', form_renderer=None, row_controls=None, character_override=None):
     """Compact front; dated PPP form and distinct routes are inside Inspect."""
     articles = []
-    for index, card in enumerate(cards, 1):
+    from pp_v2_display import card_qualified
+    visible = []
+    for card in cards:
+        eligible = [m for m in card.get('moves', []) if card_qualified(m)]
+        if eligible:
+            visible.append({**card, 'best': max(eligible, key=pp_move_rank)})
+    for index, card in enumerate(visible, 1):
         row, quote, move = card['row'], card['quote'], card['best']
         from matchup_display import matchup_label
         game_label=matchup_label(quote.get('Game'),row.get('StartTimeUTC'),row.get('StartTimeLocal'))
@@ -312,5 +319,5 @@ def render_pp_cards(cards, portrait_uri='', form_renderer=None, row_controls=Non
     @keyframes pp-w-shimmer{0%,30%{transform:translateX(-100%)}80%,100%{transform:translateX(100%)}}@media(prefers-reduced-motion:reduce){.pp-w-combo:before{animation:none}}
     .pp-w .wn-form{margin-top:10px;font-size:13px}.pp-w .wn-form summary{cursor:pointer;color:#f0d59b}.pp-w .wn-form-tiles{display:flex;flex-wrap:wrap;gap:6px}.pp-w .wn-form-tiles>div{background:#101b2c;padding:8px;border-radius:5px;min-width:110px}.pp-w .wn-form-tiles small,.pp-w .wn-form-tiles strong{display:block}.pp-w .wn-form-meta{margin:7px 0}.pp-w .wn-form-strip{display:flex;flex-wrap:wrap;gap:4px}.pp-w .wn-form-strip>span{padding:7px;border-radius:5px}.pp-w .wn-form-strip .hit{background:#245744}.pp-w .wn-form-strip .miss{background:#663540}.pp-w .wn-form-strip b,.pp-w .wn-form-strip small{display:block;text-align:center}.pp-w .wn-form-strip small{font-size:11px;margin-top:4px}
     @container(max-width:600px){.pp-w-front{grid-template-columns:minmax(0,1fr) 75px}.pp-w-portrait{display:none}.pp-w-record strong{font-size:25px}.pp-w-heading>strong{font-size:17px}.pp-w-name small{display:inline-block;margin:4px 0}.pp-w-price{overflow-wrap:anywhere}}
-    </style><section class="pp-w"><h3 class="pp-w-title">ϟ Power Play · Spellbook</h3><div class="pp-w-caption">Cards require at least a 15-point gap between updated historical hit rate and the move’s historical average book break-even. Strongest return-ranked qualifying move leads; tonight’s posted BE stays beside the price. Inspect groups other routes and tracked lower-gap levels. Overlapping records are not additive.</div>''' + ''.join(articles) + '</section>'
+    </style><section class="pp-w"><h3 class="pp-w-title">ϟ Power Play · Spellbook</h3><div class="pp-w-caption">Cards require a current combined hit rate of 50% rounded (49.5% minimum) and at least a 15-point gap between updated historical hit rate and the move’s historical average book break-even. Strongest return-ranked qualifying move leads; tonight’s posted BE stays beside the price. Inspect groups other routes and tracked lower-gap levels. Overlapping records are not additive.</div>''' + ''.join(articles) + '</section>'
 
